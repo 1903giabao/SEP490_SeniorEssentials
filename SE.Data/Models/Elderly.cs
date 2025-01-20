@@ -15,6 +15,8 @@ public partial class Elderly
 
     public string LivingSituation { get; set; }
 
+    public string MedicalRecord { get; set; }
+
     public decimal Weight { get; set; }
 
     public decimal Height { get; set; }
@@ -25,13 +27,23 @@ public partial class Elderly
 
     public virtual ICollection<Activity> Activities { get; set; } = new List<Activity>();
 
+    public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+
     public virtual ICollection<EmergencyContact> EmergencyContacts { get; set; } = new List<EmergencyContact>();
+
+    public virtual ICollection<FamilyTie> FamilyTies { get; set; } = new List<FamilyTie>();
 
     public virtual ICollection<HealthIndicator> HealthIndicators { get; set; } = new List<HealthIndicator>();
 
     public virtual ICollection<Iotdevice> Iotdevices { get; set; } = new List<Iotdevice>();
 
+    public virtual ICollection<LessonFeedback> LessonFeedbacks { get; set; } = new List<LessonFeedback>();
+
+    public virtual ICollection<LessonHistory> LessonHistories { get; set; } = new List<LessonHistory>();
+
     public virtual ICollection<Medication> Medications { get; set; } = new List<Medication>();
 
     public virtual ICollection<ProfessorAppointment> ProfessorAppointments { get; set; } = new List<ProfessorAppointment>();
+
+    public virtual ICollection<ProfessorRating> ProfessorRatings { get; set; } = new List<ProfessorRating>();
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace StudySpace.Common
+namespace SE.Common
 {
     public class Const
     {

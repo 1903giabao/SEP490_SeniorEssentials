@@ -5,21 +5,19 @@ using System.Collections.Generic;
 
 namespace SE.Data.Models;
 
-public partial class ProfessorRating
+public partial class FamilyTie
 {
-    public int ProfessorRatingId { get; set; }
+    public int FamilyFamilyTieId { get; set; }
 
-    public int ProfessorId { get; set; }
+    public int FamilyMemberId { get; set; }
 
     public int ElderlyId { get; set; }
 
-    public string RatingComment { get; set; }
-
-    public decimal Rating { get; set; }
+    public string Note { get; set; }
 
     public string Status { get; set; }
 
     public virtual Elderly Elderly { get; set; }
 
-    public virtual Professor Professor { get; set; }
+    public virtual FamilyMember FamilyMember { get; set; }
 }

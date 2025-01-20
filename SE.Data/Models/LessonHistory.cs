@@ -11,7 +11,7 @@ public partial class LessonHistory
 
     public int LessonId { get; set; }
 
-    public int AccountId { get; set; }
+    public int ElderlyId { get; set; }
 
     public DateTime? StartTime { get; set; }
 
@@ -19,7 +19,7 @@ public partial class LessonHistory
 
     public string Status { get; set; }
 
-    public virtual Account Account { get; set; }
+    public virtual Elderly Elderly { get; set; }
 
     public virtual Lesson Lesson { get; set; }
 }

@@ -9,7 +9,7 @@ public partial class Lesson
 {
     public int LessonId { get; set; }
 
-    public int AccountId { get; set; }
+    public int ContentProviderId { get; set; }
 
     public string LessonName { get; set; }
 
@@ -17,7 +17,7 @@ public partial class Lesson
 
     public string Status { get; set; }
 
-    public virtual Account Account { get; set; }
+    public virtual ContentProvider ContentProvider { get; set; }
 
     public virtual ICollection<LessonFeedback> LessonFeedbacks { get; set; } = new List<LessonFeedback>();
 

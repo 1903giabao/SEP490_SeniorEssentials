@@ -9,14 +9,12 @@ using System.Threading.Tasks;
 
 namespace SE.Data.Repository
 {
-    public class AccountRepository : GenericRepository<Account>
+    public class BookingRepository : GenericRepository<Booking>
     {
-        public AccountRepository() { }
-        public AccountRepository(SeniorEssentialsContext context)
+        public BookingRepository() { }
+        public BookingRepository(SeniorEssentialsContext context)
         {
             _context = context;
         }
-
-        
     }
 }

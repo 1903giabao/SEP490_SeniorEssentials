@@ -19,5 +19,7 @@ public partial class MedicationSchedule
 
     public virtual Medication Medication { get; set; }
 
+    public virtual ICollection<MedicationDay> MedicationDays { get; set; } = new List<MedicationDay>();
+
     public virtual ICollection<MedicationHistory> MedicationHistories { get; set; } = new List<MedicationHistory>();
 }

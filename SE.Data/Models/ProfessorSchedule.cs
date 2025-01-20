@@ -11,15 +11,15 @@ public partial class ProfessorSchedule
 
     public int ProfessorId { get; set; }
 
-    public DateOnly ScheduleDate { get; set; }
+    public DateOnly DayOfWeek { get; set; }
 
-    public TimeOnly? StartTime { get; set; }
+    public DateOnly StartDate { get; set; }
 
-    public TimeOnly? EndTime { get; set; }
+    public DateOnly? EndDate { get; set; }
 
     public string Status { get; set; }
 
     public virtual Professor Professor { get; set; }
 
-    public virtual ICollection<ProfessorAppointment> ProfessorAppointments { get; set; } = new List<ProfessorAppointment>();
+    public virtual ICollection<TimeSlot> TimeSlots { get; set; } = new List<TimeSlot>();
 }

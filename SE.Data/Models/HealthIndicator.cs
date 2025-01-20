@@ -15,17 +15,31 @@ public partial class HealthIndicator
 
     public decimal? BloodPressureSystolic { get; set; }
 
+    public string BloodPressureSystolicSource { get; set; }
+
     public decimal? BloodPressureDiastolic { get; set; }
+
+    public string BloodPressureDiastolicSource { get; set; }
 
     public int? HeartRate { get; set; }
 
+    public string HeartRateSource { get; set; }
+
     public decimal? BloodSugar { get; set; }
+
+    public string BloodSugarSource { get; set; }
 
     public decimal? Weight { get; set; }
 
+    public string WeightSource { get; set; }
+
     public decimal? Height { get; set; }
 
+    public string HeightSource { get; set; }
+
     public decimal? BodyTemperature { get; set; }
+
+    public string BodyTemperatureSource { get; set; }
 
     public string Note { get; set; }
 

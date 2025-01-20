@@ -13,17 +13,19 @@ public partial class Medication
 
     public string MedicationName { get; set; }
 
-    public string Content { get; set; }
+    public string Treatment { get; set; }
 
     public string Shape { get; set; }
 
     public string Dosage { get; set; }
 
+    public bool? IsBeforeMeal { get; set; }
+
     public string FrequencyType { get; set; }
 
     public string TimeFrequency { get; set; }
 
-    public string DateFrequency { get; set; }
+    public int? DateFrequency { get; set; }
 
     public DateOnly? StartDate { get; set; }
 

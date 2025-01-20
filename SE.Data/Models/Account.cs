@@ -31,19 +31,15 @@ public partial class Account
 
     public virtual ICollection<Chat> Chats { get; set; } = new List<Chat>();
 
+    public virtual ContentProvider ContentProvider { get; set; }
+
     public virtual Elderly Elderly { get; set; }
 
     public virtual ICollection<EmergencyContact> EmergencyContacts { get; set; } = new List<EmergencyContact>();
 
-    public virtual ICollection<Game> Games { get; set; } = new List<Game>();
+    public virtual FamilyMember FamilyMember { get; set; }
 
     public virtual ICollection<GroupMember> GroupMembers { get; set; } = new List<GroupMember>();
-
-    public virtual ICollection<LessonFeedback> LessonFeedbacks { get; set; } = new List<LessonFeedback>();
-
-    public virtual ICollection<LessonHistory> LessonHistories { get; set; } = new List<LessonHistory>();
-
-    public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
 
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
@@ -51,9 +47,9 @@ public partial class Account
 
     public virtual Professor Professor { get; set; }
 
-    public virtual ICollection<ProfessorRating> ProfessorRatings { get; set; } = new List<ProfessorRating>();
-
     public virtual Role Role { get; set; }
+
+    public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 
     public virtual ICollection<VideoCall> VideoCallCallers { get; set; } = new List<VideoCall>();
 

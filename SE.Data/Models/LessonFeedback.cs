@@ -11,13 +11,13 @@ public partial class LessonFeedback
 
     public int LessonId { get; set; }
 
-    public int AccountId { get; set; }
+    public int ElderlyId { get; set; }
 
     public string FeedbackComment { get; set; }
 
     public string Status { get; set; }
 
-    public virtual Account Account { get; set; }
+    public virtual Elderly Elderly { get; set; }
 
     public virtual Lesson Lesson { get; set; }
 }

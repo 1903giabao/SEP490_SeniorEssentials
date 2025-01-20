@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace StudySpace.Data.Base
+namespace SE.Data.Base
 {
     public class GenericRepository<T> where T : class
     {

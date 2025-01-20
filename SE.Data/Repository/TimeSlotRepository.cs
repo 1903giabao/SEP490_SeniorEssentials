@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 
 namespace SE.Data.Repository
 {
-    public class MedicationRepository : GenericRepository<Medication>
+    public class TimeSlotRepository : GenericRepository<TimeSlot>
     {
-        public MedicationRepository() { }
-        public MedicationRepository(SeniorEssentialsContext context)
+        public TimeSlotRepository() { }
+        public TimeSlotRepository(SeniorEssentialsContext context)
         {
             _context = context;
         }

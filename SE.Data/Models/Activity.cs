@@ -15,6 +15,8 @@ public partial class Activity
 
     public string ActivityDescription { get; set; }
 
+    public string CreatedBy { get; set; }
+
     public string Status { get; set; }
 
     public virtual ICollection<ActivitySchedule> ActivitySchedules { get; set; } = new List<ActivitySchedule>();

@@ -9,7 +9,7 @@ public partial class Game
 {
     public int GameId { get; set; }
 
-    public int AccountId { get; set; }
+    public int ContentProviderId { get; set; }
 
     public string GameName { get; set; }
 
@@ -17,5 +17,5 @@ public partial class Game
 
     public string Status { get; set; }
 
-    public virtual Account Account { get; set; }
+    public virtual ContentProvider ContentProvider { get; set; }
 }

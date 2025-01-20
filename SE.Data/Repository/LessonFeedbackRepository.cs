@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SE.Data.Models;
-using StudySpace.Data.Base;
+using SE.Data.Base;
 
 namespace SE.Data.Repository
 {
