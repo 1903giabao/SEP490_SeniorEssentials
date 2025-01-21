@@ -20,9 +20,9 @@ namespace SE.Service.Services
     {
         private readonly UnitOfWork _unitOfWork;
 
-        public AccountService() {
+        public AccountService(UnitOfWork unitOfWork) {
 
-            _unitOfWork ??= new UnitOfWork();
+            _unitOfWork = unitOfWork;
 
         }
 
@@ -30,10 +30,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var tmp = _unitOfWork.AccountRepository.GetAll();
-
-
-                var existedAcc = await _unitOfWork.AccountRepository.GetByEmailAsync(email);
+                var existedAcc = _unitOfWork.AccountRepository.FindByCondition(e => e.Email.Equals(email)).FirstOrDefault();
                 if (existedAcc != null)
                 {
                     throw new InvalidOperationException("Email is already existed!");
@@ -41,6 +38,7 @@ namespace SE.Service.Services
 
                 var newAccount = new Account
                 {
+                    RoleId = 2,
                     Email = email,
                     Otp = OTP
                 };

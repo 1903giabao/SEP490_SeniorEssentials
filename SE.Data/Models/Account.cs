@@ -23,9 +23,9 @@ public partial class Account
 
     public string PhoneNumber { get; set; }
 
-    public DateTime DateOfBirth { get; set; }
+    public DateTime? DateOfBirth { get; set; }
 
-    public DateTime CreatedDate { get; set; }
+    public DateTime? CreatedDate { get; set; }
 
     public string Status { get; set; }
 

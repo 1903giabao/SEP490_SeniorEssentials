@@ -21,7 +21,7 @@ namespace SE.API.Controllers
         [HttpPost]
         public async Task<IActionResult> SendOTP (string email)
         {
-            var result  = _identityService.SendOtpToUser(email);
+            var result  = await _identityService.SendOtpToUser(email);
 
             return Ok(result);
         }

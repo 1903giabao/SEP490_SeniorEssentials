@@ -16,7 +16,7 @@ namespace SE.Data.Base
 
         public GenericRepository()
         {
-            _context ??= new SeniorEssentialsContext();
+            _context = new SeniorEssentialsContext();
 
         }
 
@@ -24,7 +24,7 @@ namespace SE.Data.Base
 
         public GenericRepository(SeniorEssentialsContext context)
         {
-            _context = context;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         public void PrepareCreate(T entity)
