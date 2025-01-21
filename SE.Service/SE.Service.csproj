@@ -8,11 +8,13 @@
 
   <ItemGroup>
     <Folder Include="Helper\" />
-    <Folder Include="Services\" />
+	  <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SE.Common\SE.Common.csproj" />
+	
+
+	  <ProjectReference Include="..\SE.Common\SE.Common.csproj" />
     <ProjectReference Include="..\SE.Data\SE.Data.csproj" />
   </ItemGroup>
 

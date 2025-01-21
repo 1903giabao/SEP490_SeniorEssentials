@@ -29,6 +29,10 @@ public partial class Account
 
     public string Status { get; set; }
 
+    public string Otp { get; set; }
+
+    public bool? IsVerified { get; set; }
+
     public virtual ICollection<Chat> Chats { get; set; } = new List<Chat>();
 
     public virtual ContentProvider ContentProvider { get; set; }

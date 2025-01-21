@@ -42,6 +42,10 @@ namespace SE.Data.UnitOfWork
         private UserServiceRepository _userServiceRepository;
         private VideoCallRepository _videoCallRepository;
 
+        public UnitOfWork()
+        {
+        }
+
         public UnitOfWork(SeniorEssentialsContext unitOfWorkContext)
         {
             _unitOfWorkContext = unitOfWorkContext ?? throw new ArgumentNullException(nameof(unitOfWorkContext));
