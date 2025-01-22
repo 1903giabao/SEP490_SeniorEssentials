@@ -65,11 +65,11 @@ namespace SE.Service.Services
                     EmailSubject = "XÁC NHẬN MÃ OTP"
                 };
 
-/*                var emailResult = await _emailService.SendEmailAsync(mailData);
+                var emailResult = await _emailService.SendEmailAsync(mailData);
                 if (!emailResult)
                 {
                     return false;
-                }*/
+                }
 
                 var createUserResponse = await _accountService.CreateNewTempAccount(email, otp.ToString());
                 var userReponse =(Account) createUserResponse.Data;
