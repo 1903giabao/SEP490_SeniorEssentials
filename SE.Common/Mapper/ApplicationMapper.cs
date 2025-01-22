@@ -16,6 +16,12 @@ namespace SE.Common.Mapper
         {
             CreateMap<GameModel, Game>().ReverseMap();
             CreateMap<CreateGameRequest, Game>().ReverseMap();
+
+            CreateMap<CreateComboModel, Combo>().ReverseMap();
+            CreateMap<CreateActivityModel, Activity>();
+
+            CreateMap<Combo, ComboDto>();
+
         }
     }
 }
