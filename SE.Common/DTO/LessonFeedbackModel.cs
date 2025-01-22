@@ -6,12 +6,20 @@ using System.Threading.Tasks;
 
 namespace SE.Common.DTO
 {
-    public class LessonModel
+    public class LessonFeedbackModel
     {
+        public int LessonFeedbackId { get; set; }
+
         public int LessonId { get; set; }
-        public int ContentProviderId { get; set; }
+
         public string LessonName { get; set; }
-        public string LessonDescription { get; set; }
+
+        public int ElderlyId { get; set; }
+
+        public string ELderlyName { get; set; }
+
+        public string FeedbackComment { get; set; }
+
         public string Status { get; set; }
     }
 }

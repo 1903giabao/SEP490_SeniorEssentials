@@ -20,6 +20,8 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IFirebaseService, FirebaseService>();
 builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<ILessonService, LessonService>();
+builder.Services.AddScoped<ILessonFeedbackService, LessonFeedbackService>();
+builder.Services.AddScoped<IProfessorScheduleService, ProfessorScheduleService>();
 builder.Services.AddScoped<UnitOfWork>();
 
 var mapperConfig = new MapperConfiguration(mc =>

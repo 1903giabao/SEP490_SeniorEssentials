@@ -6,12 +6,22 @@ using System.Threading.Tasks;
 
 namespace SE.Common.DTO
 {
-    public class LessonModel
+    public class LessonHistoryModel
     {
+        public int LessonHistoryId { get; set; }
+
         public int LessonId { get; set; }
-        public int ContentProviderId { get; set; }
+
         public string LessonName { get; set; }
-        public string LessonDescription { get; set; }
+
+        public int ElderlyId { get; set; }
+
+        public string ELderlyName { get; set; }
+
+        public DateTime? StartTime { get; set; }
+
+        public bool IsCompleted { get; set; }
+
         public string Status { get; set; }
     }
 }

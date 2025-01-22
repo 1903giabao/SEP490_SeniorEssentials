@@ -76,7 +76,15 @@ namespace SE.Service.Services
         {
             try
             {
+                var checkContentProviderExisted = _unitOfWork.ContentProviderRepository.FindByCondition(e => e.ContentProviderId == req.ContentProviderId).FirstOrDefault();
+
+                if (checkContentProviderExisted == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "NGƯỜI DÙNG KHÔNG TỒN TẠI!");
+                }
+
                 var game = _mapper.Map<Game>(req);
+                game.Status = SD.GeneralStatus.ACTIVE;
                 var result = await _unitOfWork.GameRepository.CreateAsync(game);  
 
                 if (result > 0)
