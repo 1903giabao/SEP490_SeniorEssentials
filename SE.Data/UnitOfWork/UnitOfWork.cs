@@ -25,7 +25,9 @@ namespace SE.Data.UnitOfWork
         private GroupRepository _groupRepository;
         private GroupMemberRepository _groupMemberRepository;
         private HealthIndicatorRepository _healthIndicatorRepository;
-        private IotdeviceRepository _idoeviceRepository;
+        private IotdeviceRepository _idoeviceRepository;    
+        private LessonRepository _lessonRepository;
+        private LessonHistoryRepository _lessonHistoryRepository;
         private LessonFeedbackRepository _lessonFeedbackRepository;
         private MedicationDayRepository _medicationDayRepository;
         private MedicationHistoryRepository _medicationHistoryRepository;
@@ -132,6 +134,16 @@ namespace SE.Data.UnitOfWork
         public IotdeviceRepository IotdeviceRepository
         {
             get => _idoeviceRepository ??= new IotdeviceRepository(_unitOfWorkContext);
+        }
+
+        public LessonRepository LessonRepository
+        {
+            get => _lessonRepository ??= new LessonRepository(_unitOfWorkContext);
+        }
+
+        public LessonHistoryRepository LessonHistoryRepository
+        {
+            get => _lessonHistoryRepository ??= new LessonHistoryRepository(_unitOfWorkContext);
         }
 
         public LessonFeedbackRepository LessonFeedbackRepository

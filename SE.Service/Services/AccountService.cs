@@ -20,10 +20,9 @@ namespace SE.Service.Services
     {
         private readonly UnitOfWork _unitOfWork;
 
-        public AccountService(UnitOfWork unitOfWork) {
-
+        public AccountService(UnitOfWork unitOfWork) 
+        {
             _unitOfWork = unitOfWork;
-
         }
 
         public async Task<IBusinessResult> CreateNewTempAccount (string email, string OTP)

@@ -8,8 +8,6 @@ using SE.Common.DTO;
 
 namespace SE.API.Controllers
 {
-
-
     [Route("auth-management")]
     [ApiController]
     public class IdentityController : Controller

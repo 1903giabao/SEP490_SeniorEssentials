@@ -29,7 +29,7 @@ public partial class SeniorEssentialsContext : DbContext
         return connectionString;
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer(GetConnectionString("DefaultConnection"));
+        => optionsBuilder.UseSqlServer(GetConnectionString("BaoConnection"));
 
     public virtual DbSet<Account> Accounts { get; set; }
 

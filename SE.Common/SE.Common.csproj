@@ -8,6 +8,7 @@
 
   <ItemGroup>
 
+	  <PackageReference Include="AutoMapper" Version="13.0.1" />
 	  <PackageReference Include="Firebase.Auth" Version="1.0.0" />
 	  <PackageReference Include="FirebaseAdmin" Version="3.0.1" />
 	  <PackageReference Include="FirebaseAuthentication.Net" Version="4.1.0" />
@@ -16,7 +17,10 @@
 	  <PackageReference Include="MailKit" Version="4.7.1.1" />
 	  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.35.0" />
 	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.26" />
-	  <Folder Include="Enums\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SE.Data\SE.Data.csproj" />
   </ItemGroup>
 
 </Project>
