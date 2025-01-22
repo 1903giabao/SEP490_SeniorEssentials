@@ -27,9 +27,9 @@ namespace SE.Common
         public static int SUCCESS_CREATE = 1;
         public static string SUCCESS_CREATE_MSG = "Create data success";
         public static int SUCCESS_READ = 1;
-        public static string SUCCESS_READ_MSG = "Read datasuccess";
-        public static int SUCCESS_UDATE = 1;
-        public static string SUCCESS_UDATE_MSG = "Update data success";
+        public static string SUCCESS_READ_MSG = "Read data success";
+        public static int SUCCESS_UPDATE = 1;
+        public static string SUCCESS_UPDATE_MSG = "Update data success";
         public static int SUCCESS_DELETE = 1;
         public static string SUCCESS_DELETE_MSG = "Delete data success";
         public static int SUCCESS_LOGIN = 1;
@@ -49,8 +49,8 @@ namespace SE.Common
         public static string FAIL_CREATE_MSG = "Create data fail";
         public static int FAIL_READ = 0;
         public static string FAIL_READ_MSG = "Read data fail";
-        public static int FAIL_UDATE = 0;
-        public static string FAIL_UDATE_MSG = "Update data fail";
+        public static int FAIL_UPDATE = 0;
+        public static string FAIL_UPDATE_MSG = "Update data fail";
         public static int FAIL_DELETE = 0;
         public static string FAIL_DELETE_MSG = "Delete data fail";
         public static int FAIL_LOGIN = 0;
