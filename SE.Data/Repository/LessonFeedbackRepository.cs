@@ -16,5 +16,11 @@ namespace SE.Data.Repository
         {
             _context = context;
         }
+
+        public async Task<List<LessonFeedback>> GetByLessonId(int lessonId)
+        {
+            var result = await _context.LessonFeedbacks.Include(lfb => lfb.Elderly).ThenInclude(l => l.Account).Include(lfb => lfb.Lesson).Where(lfb => lfb.LessonId == lessonId).ToListAsync();
+            return result;
+        }
     }
 }

@@ -8,7 +8,7 @@ namespace SE.Common.DTO
 {
     public class GameModel
     {
-        public int Id { get; set; }
+        public int GameId { get; set; }
         public int ContentProviderId { get; set; }
         public string GameName { get; set; }
         public string GameDescription { get; set; }

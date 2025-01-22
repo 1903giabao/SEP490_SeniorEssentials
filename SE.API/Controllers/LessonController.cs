@@ -22,10 +22,10 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{LessonId}")]
-        public async Task<IActionResult> GetLessonById([FromRoute] int LessonId)
+        [HttpGet("{lessonId}")]
+        public async Task<IActionResult> GetLessonById([FromRoute] int lessonId)
         {
-            var result = await _lessonService.GetLessonById(LessonId);
+            var result = await _lessonService.GetLessonById(lessonId);
             return Ok(result);
         }
 

@@ -16,5 +16,17 @@ namespace SE.Data.Repository
         {
             _context = context;
         }
+
+        public async Task<List<VideoCall>> GetAllIncluding()
+        {
+            var result = await _context.VideoCalls.Include(v => v.Caller).Include(v => v.Receiver).ToListAsync();
+            return result;
+        }
+
+        public async Task<VideoCall> GetByIdIncluding(int id)
+        {
+            var result = await _context.VideoCalls.Include(v => v.Caller).Include(v => v.Receiver).FirstOrDefaultAsync(v => v.VideoCallId == id);
+            return result;
+        }
     }
 }
