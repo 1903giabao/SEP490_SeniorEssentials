@@ -31,6 +31,12 @@ namespace SE.Common.Mapper
                 .ForMember(dest => dest.CallerName, opt => opt.MapFrom(src => src.Caller.FullName))
                 .ForMember(dest => dest.ReceiverName, opt => opt.MapFrom(src => src.Receiver.FullName))
                 .ReverseMap();
+                
+            CreateMap<CreateComboModel, Combo>().ReverseMap();
+            CreateMap<CreateActivityModel, Activity>();
+
+            CreateMap<Combo, ComboDto>();
+
         }
     }
 }

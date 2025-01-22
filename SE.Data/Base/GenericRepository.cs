@@ -154,7 +154,7 @@ namespace SE.Data.Base
         {
             return await _context.Set<T>().FindAsync(id);
         }
-        
+
         public async Task<T> GetByIdAsync(object id)
         {
             return await _context.Set<T>().FindAsync(id);
