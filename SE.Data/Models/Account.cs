@@ -31,8 +31,9 @@ public partial class Account
 
     public string Otp { get; set; }
 
-    public string DeviceToken {  get; set; }
     public bool? IsVerified { get; set; }
+
+    public string DeviceToken { get; set; }
 
     public virtual ICollection<Chat> Chats { get; set; } = new List<Chat>();
 

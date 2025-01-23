@@ -13,6 +13,8 @@ public partial class EmergencyContact
 
     public int AccountId { get; set; }
 
+    public int Priority { get; set; }
+
     public string ContactName { get; set; }
 
     public string Status { get; set; }
