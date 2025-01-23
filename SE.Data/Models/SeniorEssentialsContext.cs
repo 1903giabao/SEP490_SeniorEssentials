@@ -105,12 +105,13 @@ public partial class SeniorEssentialsContext : DbContext
     {
         modelBuilder.Entity<Account>(entity =>
         {
-            entity.HasKey(e => e.AccountId).HasName("PK__Account__349DA5A631B133AA");
+            entity.HasKey(e => e.AccountId).HasName("PK__Account__349DA5A64951D0BD");
 
             entity.ToTable("Account");
 
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
             entity.Property(e => e.DateOfBirth).HasColumnType("datetime");
+            entity.Property(e => e.DeviceToken).HasMaxLength(100);
             entity.Property(e => e.Email).HasMaxLength(50);
             entity.Property(e => e.FullName).HasMaxLength(50);
             entity.Property(e => e.Gender).HasMaxLength(10);
@@ -129,7 +130,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Activity>(entity =>
         {
-            entity.HasKey(e => e.ActivityId).HasName("PK__Activity__45F4A7915C459B42");
+            entity.HasKey(e => e.ActivityId).HasName("PK__Activity__45F4A7915A021F25");
 
             entity.ToTable("Activity");
 
@@ -152,7 +153,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<ActivitySchedule>(entity =>
         {
-            entity.HasKey(e => e.ActivityScheduleId).HasName("PK__Activity__273CEBBFBDFCB39C");
+            entity.HasKey(e => e.ActivityScheduleId).HasName("PK__Activity__273CEBBFB38C24CA");
 
             entity.ToTable("ActivitySchedule");
 
@@ -170,7 +171,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Booking>(entity =>
         {
-            entity.HasKey(e => e.BookingId).HasName("PK__Booking__73951AED312A50A8");
+            entity.HasKey(e => e.BookingId).HasName("PK__Booking__73951AED44F76055");
 
             entity.ToTable("Booking");
 
@@ -206,7 +207,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Chat>(entity =>
         {
-            entity.HasKey(e => e.ChatId).HasName("PK__Chat__A9FBE7C6CD56D7E7");
+            entity.HasKey(e => e.ChatId).HasName("PK__Chat__A9FBE7C63F38ACB5");
 
             entity.ToTable("Chat");
 
@@ -222,7 +223,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Combo>(entity =>
         {
-            entity.HasKey(e => e.ComboId).HasName("PK__Combo__DD42582E91C310FB");
+            entity.HasKey(e => e.ComboId).HasName("PK__Combo__DD42582E5FD0962C");
 
             entity.ToTable("Combo");
 
@@ -243,11 +244,11 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<ContentProvider>(entity =>
         {
-            entity.HasKey(e => e.ContentProviderId).HasName("PK__ContentP__B6C9992A51667653");
+            entity.HasKey(e => e.ContentProviderId).HasName("PK__ContentP__B6C9992A7748F084");
 
             entity.ToTable("ContentProvider");
 
-            entity.HasIndex(e => e.AccountId, "UQ__ContentP__349DA5A78E0DF7BC").IsUnique();
+            entity.HasIndex(e => e.AccountId, "UQ__ContentP__349DA5A73390FDEA").IsUnique();
 
             entity.Property(e => e.Organization)
                 .IsRequired()
@@ -263,11 +264,11 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Elderly>(entity =>
         {
-            entity.HasKey(e => e.ElderlyId).HasName("PK__Elderly__8E4AA95998ECA452");
+            entity.HasKey(e => e.ElderlyId).HasName("PK__Elderly__8E4AA959AE49492C");
 
             entity.ToTable("Elderly");
 
-            entity.HasIndex(e => e.AccountId, "UQ__Elderly__349DA5A7B959A5DD").IsUnique();
+            entity.HasIndex(e => e.AccountId, "UQ__Elderly__349DA5A7CD836F09").IsUnique();
 
             entity.Property(e => e.Allergy).HasMaxLength(100);
             entity.Property(e => e.Height).HasColumnType("decimal(10, 2)");
@@ -285,7 +286,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<EmergencyContact>(entity =>
         {
-            entity.HasKey(e => e.EmergencyContactId).HasName("PK__Emergenc__E8A61D8E9F505F27");
+            entity.HasKey(e => e.EmergencyContactId).HasName("PK__Emergenc__E8A61D8E78291AE5");
 
             entity.ToTable("EmergencyContact");
 
@@ -307,11 +308,11 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<FamilyMember>(entity =>
         {
-            entity.HasKey(e => e.FamilyMemberId).HasName("PK__FamilyMe__B7AD6D9349FCA0C2");
+            entity.HasKey(e => e.FamilyMemberId).HasName("PK__FamilyMe__B7AD6D93F3FA6AC2");
 
             entity.ToTable("FamilyMember");
 
-            entity.HasIndex(e => e.AccountId, "UQ__FamilyMe__349DA5A7015978B9").IsUnique();
+            entity.HasIndex(e => e.AccountId, "UQ__FamilyMe__349DA5A7EBCE6C18").IsUnique();
 
             entity.Property(e => e.Status)
                 .IsRequired()
@@ -324,7 +325,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<FamilyTie>(entity =>
         {
-            entity.HasKey(e => e.FamilyFamilyTieId).HasName("PK__FamilyTi__C515FD2ABF0AEA0D");
+            entity.HasKey(e => e.FamilyFamilyTieId).HasName("PK__FamilyTi__C515FD2A1AC58D92");
 
             entity.ToTable("FamilyTie");
 
@@ -348,7 +349,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Game>(entity =>
         {
-            entity.HasKey(e => e.GameId).HasName("PK__Game__2AB897FD24264263");
+            entity.HasKey(e => e.GameId).HasName("PK__Game__2AB897FDAA04123E");
 
             entity.ToTable("Game");
 
@@ -368,7 +369,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Group>(entity =>
         {
-            entity.HasKey(e => e.GroupId).HasName("PK__Group__149AF36A987A4FCE");
+            entity.HasKey(e => e.GroupId).HasName("PK__Group__149AF36ADC403DB0");
 
             entity.ToTable("Group");
 
@@ -383,11 +384,11 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<GroupMember>(entity =>
         {
-            entity.HasKey(e => e.GroupMemberId).HasName("PK__GroupMem__3448129204308D60");
+            entity.HasKey(e => e.GroupMemberId).HasName("PK__GroupMem__34481292081B9C28");
 
             entity.ToTable("GroupMember");
 
-            entity.HasIndex(e => new { e.GroupId, e.AccountId }, "UQ__GroupMem__67D329313D790F7F").IsUnique();
+            entity.HasIndex(e => new { e.GroupId, e.AccountId }, "UQ__GroupMem__67D32931F2D3AD77").IsUnique();
 
             entity.Property(e => e.Status)
                 .IsRequired()
@@ -406,7 +407,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<HealthIndicator>(entity =>
         {
-            entity.HasKey(e => e.HealthIndicatorId).HasName("PK__HealthIn__FF9AABEA64E94B21");
+            entity.HasKey(e => e.HealthIndicatorId).HasName("PK__HealthIn__FF9AABEA5546D90C");
 
             entity.ToTable("HealthIndicator");
 
@@ -414,10 +415,6 @@ public partial class SeniorEssentialsContext : DbContext
             entity.Property(e => e.BloodPressureDiastolicSource).HasMaxLength(10);
             entity.Property(e => e.BloodPressureSystolic).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.BloodPressureSystolicSource).HasMaxLength(10);
-            entity.Property(e => e.BloodSugar).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.BloodSugarSource).HasMaxLength(10);
-            entity.Property(e => e.BodyTemperature).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.BodyTemperatureSource).HasMaxLength(10);
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
             entity.Property(e => e.HeartRateSource).HasMaxLength(10);
             entity.Property(e => e.Height).HasColumnType("decimal(10, 2)");
@@ -437,7 +434,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Iotdevice>(entity =>
         {
-            entity.HasKey(e => e.DeviceId).HasName("PK__IOTDevic__49E123114CB2B619");
+            entity.HasKey(e => e.DeviceId).HasName("PK__IOTDevic__49E12311F99B8095");
 
             entity.ToTable("IOTDevice");
 
@@ -459,7 +456,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Lesson>(entity =>
         {
-            entity.HasKey(e => e.LessonId).HasName("PK__Lesson__B084ACD0035F64A2");
+            entity.HasKey(e => e.LessonId).HasName("PK__Lesson__B084ACD07B1FD49C");
 
             entity.ToTable("Lesson");
 
@@ -479,7 +476,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<LessonFeedback>(entity =>
         {
-            entity.HasKey(e => e.LessonFeedbackId).HasName("PK__LessonFe__2E315845672EBF90");
+            entity.HasKey(e => e.LessonFeedbackId).HasName("PK__LessonFe__2E315845B540893C");
 
             entity.ToTable("LessonFeedback");
 
@@ -501,7 +498,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<LessonHistory>(entity =>
         {
-            entity.HasKey(e => e.LessonHistoryId).HasName("PK__LessonHi__D3775A59C6524954");
+            entity.HasKey(e => e.LessonHistoryId).HasName("PK__LessonHi__D3775A5907CF9836");
 
             entity.ToTable("LessonHistory");
 
@@ -523,7 +520,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Medication>(entity =>
         {
-            entity.HasKey(e => e.MedicationId).HasName("PK__Medicati__62EC1AFA41C0A7BB");
+            entity.HasKey(e => e.MedicationId).HasName("PK__Medicati__62EC1AFAE8BF835C");
 
             entity.ToTable("Medication");
 
@@ -549,7 +546,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<MedicationDay>(entity =>
         {
-            entity.HasKey(e => e.MedicationDayId).HasName("PK__Medicati__A4BB3CAD3C9D3D45");
+            entity.HasKey(e => e.MedicationDayId).HasName("PK__Medicati__A4BB3CAD45B210F6");
 
             entity.ToTable("MedicationDay");
 
@@ -568,7 +565,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<MedicationHistory>(entity =>
         {
-            entity.HasKey(e => e.MedicationHistoryId).HasName("PK__Medicati__6EB20B7F66E39C14");
+            entity.HasKey(e => e.MedicationHistoryId).HasName("PK__Medicati__6EB20B7FAEA25212");
 
             entity.ToTable("MedicationHistory");
 
@@ -584,7 +581,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<MedicationSchedule>(entity =>
         {
-            entity.HasKey(e => e.MedicationScheduleId).HasName("PK__Medicati__EDCDE99C9A95855F");
+            entity.HasKey(e => e.MedicationScheduleId).HasName("PK__Medicati__EDCDE99CB3B92107");
 
             entity.ToTable("MedicationSchedule");
 
@@ -603,7 +600,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Message>(entity =>
         {
-            entity.HasKey(e => e.MessageId).HasName("PK__Message__C87C0C9CD62ABFBE");
+            entity.HasKey(e => e.MessageId).HasName("PK__Message__C87C0C9CD877CF5F");
 
             entity.ToTable("Message");
 
@@ -626,7 +623,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E1296E1B7E3");
+            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E1256F4591D");
 
             entity.ToTable("Notification");
 
@@ -650,11 +647,11 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Professor>(entity =>
         {
-            entity.HasKey(e => e.ProfessorId).HasName("PK__Professo__90035949FA00682B");
+            entity.HasKey(e => e.ProfessorId).HasName("PK__Professo__900359496E18A8F4");
 
             entity.ToTable("Professor");
 
-            entity.HasIndex(e => e.AccountId, "UQ__Professo__349DA5A7B67BDE76").IsUnique();
+            entity.HasIndex(e => e.AccountId, "UQ__Professo__349DA5A74AC047B3").IsUnique();
 
             entity.Property(e => e.ClinicAddress).HasMaxLength(100);
             entity.Property(e => e.ConsultationFee).HasColumnType("decimal(10, 2)");
@@ -670,7 +667,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<ProfessorAppointment>(entity =>
         {
-            entity.HasKey(e => e.ProfessorAppointmentId).HasName("PK__Professo__CBB3A52E7E132E9C");
+            entity.HasKey(e => e.ProfessorAppointmentId).HasName("PK__Professo__CBB3A52E875C3000");
 
             entity.ToTable("ProfessorAppointment");
 
@@ -698,7 +695,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<ProfessorRating>(entity =>
         {
-            entity.HasKey(e => e.ProfessorRatingId).HasName("PK__Professo__4B8DB8B3C32C95FE");
+            entity.HasKey(e => e.ProfessorRatingId).HasName("PK__Professo__4B8DB8B371BB8171");
 
             entity.ToTable("ProfessorRating");
 
@@ -721,7 +718,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<ProfessorReport>(entity =>
         {
-            entity.HasKey(e => e.ProfessorReportId).HasName("PK__Professo__3DCB0C45FDD4D1DD");
+            entity.HasKey(e => e.ProfessorReportId).HasName("PK__Professo__3DCB0C4516CB135D");
 
             entity.ToTable("ProfessorReport");
 
@@ -734,7 +731,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<ProfessorSchedule>(entity =>
         {
-            entity.HasKey(e => e.ProfessorScheduleId).HasName("PK__Professo__A283D5B4F6DA1927");
+            entity.HasKey(e => e.ProfessorScheduleId).HasName("PK__Professo__A283D5B42C32946E");
 
             entity.ToTable("ProfessorSchedule");
 
@@ -750,7 +747,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Role__8AFACE1AE2CED251");
+            entity.HasKey(e => e.RoleId).HasName("PK__Role__8AFACE1AFF59902C");
 
             entity.ToTable("Role");
 
@@ -764,7 +761,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<TimeSlot>(entity =>
         {
-            entity.HasKey(e => e.TimeSlotId).HasName("PK__TimeSlot__41CC1F3222E2B045");
+            entity.HasKey(e => e.TimeSlotId).HasName("PK__TimeSlot__41CC1F329B4795D7");
 
             entity.ToTable("TimeSlot");
 
@@ -781,7 +778,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Transaction>(entity =>
         {
-            entity.HasKey(e => e.TransactionId).HasName("PK__Transact__55433A6B1E4A77E7");
+            entity.HasKey(e => e.TransactionId).HasName("PK__Transact__55433A6BFBD2E00C");
 
             entity.ToTable("Transaction");
 
@@ -813,7 +810,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<UserService>(entity =>
         {
-            entity.HasKey(e => e.UserServiceId).HasName("PK__UserServ__C737CA992FA9D1B7");
+            entity.HasKey(e => e.UserServiceId).HasName("PK__UserServ__C737CA999CE7132A");
 
             entity.ToTable("UserService");
 
@@ -834,7 +831,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<VideoCall>(entity =>
         {
-            entity.HasKey(e => e.VideoCallId).HasName("PK__VideoCal__29002632AB8F3579");
+            entity.HasKey(e => e.VideoCallId).HasName("PK__VideoCal__2900263212881DFE");
 
             entity.ToTable("VideoCall");
 
