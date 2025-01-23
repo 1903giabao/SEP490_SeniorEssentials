@@ -49,5 +49,19 @@ namespace SE.API.Controllers
             var result = await _lessonService.DeleteLesson(lessonId);
             return Ok(result);
         }
+
+        [HttpGet("feedback/{lessonId}")]
+        public async Task<IActionResult> GetAllFeedbackByLessonId([FromRoute] int lessonId)
+        {
+            var result = await _lessonService.GetAllFeedbackByLessonId(lessonId);
+            return Ok(result);
+        }
+
+        [HttpPost("feedback")]
+        public async Task<IActionResult> Feedback([FromBody] LessonFeedbackRequest req)
+        {
+            var result = await _lessonService.Feedback(req);
+            return Ok(result);
+        }
     }
 }

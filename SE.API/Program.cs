@@ -20,10 +20,19 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IFirebaseService, FirebaseService>();
 builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<ILessonService, LessonService>();
-builder.Services.AddScoped<ILessonFeedbackService, LessonFeedbackService>();
 builder.Services.AddScoped<IProfessorScheduleService, ProfessorScheduleService>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
 builder.Services.AddScoped<IComboService, ComboService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IFamilyTieService, FamilyTieService>();
+builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<IHealthIndicatorService, HealthIndicatorService>();
+builder.Services.AddScoped<IIotDeviceService, IotDeviceService>();
+builder.Services.AddScoped<IMedicationService, MedicationService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<UnitOfWork>();
 
 var mapperConfig = new MapperConfiguration(mc =>
