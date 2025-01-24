@@ -6,12 +6,10 @@ using System.Threading.Tasks;
 
 namespace SE.Common.Request
 {
-    public class CreateEmergencyContactRequest
+    public class CreateFamilyTieRequest
     {
         public int ElderlyId { get; set; }
-        public List<int> AccountIds { get; set; }
-        public List<string> ContactNames { get; set; }
-
-        public List<int> Priorities { get; set; }
+        public int FamilyMemberId { get; set; }
+        public string Note { get; set; }
     }
 }

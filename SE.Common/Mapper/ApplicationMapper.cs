@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using SE.Common.DTO;
 using SE.Common.Request;
+using SE.Common.Request.SE.Common.Request;
 using SE.Data.Models;
 using System;
 using System.Collections.Generic;
@@ -33,7 +34,29 @@ namespace SE.Common.Mapper
                 .ReverseMap();
                 
             CreateMap<CreateComboModel, Combo>().ReverseMap();
-            CreateMap<CreateActivityModel, Activity>();
+            CreateMap<CreateActivityModel, Activity>().ReverseMap();
+
+            CreateMap<Combo, ComboDto>().ReverseMap();
+
+
+            CreateMap<GetEmergencyContactDTO,EmergencyContact>().ReverseMap();
+            CreateMap<CreateFamilyTieRequest, FamilyTie>()
+           .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "Active"));
+
+            CreateMap<FamilyTie, FamilyTieDTO>();
+            CreateMap<CreateFamilyTieRequest, FamilyTie>()
+                        .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "Active"));
+
+            CreateMap<CreateGroupRequest, Group>().ReverseMap();
+
+            CreateMap<GroupMember, GroupMemberDTO>()
+                       .ForMember(dest => dest.GroupName, opt => opt.MapFrom(src => src.Group.GroupName)); 
+
+            CreateMap<CreateHealthIndicatorRequest, HealthIndicator>()
+           .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status ?? "Active"));
+
+            CreateMap<HealthIndicator, CreateHealthIndicatorRequest>().ReverseMap();
+            CreateMap<HealthIndicator, UpdateHealthIndicatorRequest>().ReverseMap();
 
             CreateMap<MedicationModel, Medication>();
             CreateMap<CreateMedicationRequest, Medication>();
@@ -43,7 +66,6 @@ namespace SE.Common.Mapper
             CreateMap<IotDeviceDto, Iotdevice>();
 
             CreateMap<Combo, ComboDto>();
-
         }
     }
 }
