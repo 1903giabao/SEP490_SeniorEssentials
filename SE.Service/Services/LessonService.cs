@@ -20,7 +20,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetAllLesson();
         Task<IBusinessResult> GetLessonById(int lessonId);
         Task<IBusinessResult> CreateLesson(CreateLessonRequest req);
-        Task<IBusinessResult> UpdateLesson(int lessonId, CreateLessonRequest req);
+        Task<IBusinessResult> UpdateLesson(int lessonId, UpdateLessonRequest req);
         Task<IBusinessResult> DeleteLesson(int lessonId);
         Task<IBusinessResult> CreateLessonHistory(LessonHistoryRequest req); 
         Task<IBusinessResult> Feedback(LessonFeedbackRequest req);
@@ -102,7 +102,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateLesson(int lessonId, CreateLessonRequest req)
+        public async Task<IBusinessResult> UpdateLesson(int lessonId, UpdateLessonRequest req)
         {
             try
             {

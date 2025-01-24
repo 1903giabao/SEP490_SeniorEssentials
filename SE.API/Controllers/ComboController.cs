@@ -23,6 +23,13 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
+        [HttpPut("{comboId}")]
+        public async Task<IActionResult> UpdateCombo([FromRoute] int comboId, [FromBody] CreateComboModel model)
+        {
+            var result = await _comboService.UpdateCombo(comboId, model);
+            return Ok(result);
+        }
+
         // GET: combo-management
         [HttpGet]
         public async Task<IActionResult> GetAllCombos()

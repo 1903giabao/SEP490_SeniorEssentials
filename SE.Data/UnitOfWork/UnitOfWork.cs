@@ -29,6 +29,7 @@ namespace SE.Data.UnitOfWork
         private LessonRepository _lessonRepository;
         private LessonHistoryRepository _lessonHistoryRepository;
         private LessonFeedbackRepository _lessonFeedbackRepository;
+        private MedicationRepository _medicationRepository;
         private MedicationDayRepository _medicationDayRepository;
         private MedicationHistoryRepository _medicationHistoryRepository;
         private MedicationScheduleRepository _medicationScheduleRepository;
@@ -149,6 +150,11 @@ namespace SE.Data.UnitOfWork
         public LessonFeedbackRepository LessonFeedbackRepository
         {
             get => _lessonFeedbackRepository ??= new LessonFeedbackRepository(_unitOfWorkContext);
+        }
+
+        public MedicationRepository MedicationRepository
+        {
+            get => _medicationRepository ??= new MedicationRepository(_unitOfWorkContext);
         }
 
         public MedicationDayRepository MedicationDayRepository

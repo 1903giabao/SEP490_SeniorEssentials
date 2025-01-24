@@ -20,7 +20,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetAllGame();
         Task<IBusinessResult> GetGameById(int gameId);
         Task<IBusinessResult> CreateGame(CreateGameRequest req);
-        Task<IBusinessResult> UpdateGame(int gameId, CreateGameRequest req);
+        Task<IBusinessResult> UpdateGame(int gameId, UpdateGameRequest req);
         Task<IBusinessResult> DeleteGame(int gameId);
     }
 
@@ -100,7 +100,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateGame(int gameId, CreateGameRequest req)
+        public async Task<IBusinessResult> UpdateGame(int gameId, UpdateGameRequest req)
         {
             try
             {
