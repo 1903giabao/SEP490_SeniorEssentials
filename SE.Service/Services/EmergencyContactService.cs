@@ -23,7 +23,7 @@ namespace SE.Service.Services
 
     }
 
-    public class EmergencyContactService
+    public class EmergencyContactService : IEmergencyContactService
     {
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
