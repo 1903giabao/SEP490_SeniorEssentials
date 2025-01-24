@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace SE.Common.Request
 {
-    public class CreateEmergencyContactRequest
+    public class UpdateEmergencyContactRequest
     {
         public int ElderlyId { get; set; }
-        public List<int> AccountIds { get; set; }
-        public List<string> ContactNames { get; set; }
+        public int AccountId { get; set; }
+        public string ContactName { get; set; }
+        public int Priority { get; set; }
 
-        public List<int> Priorities { get; set; }
     }
 }
