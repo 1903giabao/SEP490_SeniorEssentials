@@ -17,6 +17,7 @@ namespace SE.Service.Services
     public interface IComboService
     {
         Task<IBusinessResult> CreateCombo(CreateComboModel req);
+        Task<IBusinessResult> UpdateCombo(int comboId, CreateComboModel req);
         Task<IBusinessResult> GetAllCombos();
         Task<IBusinessResult> GetComboById(int comboId);
         Task<IBusinessResult> UpdateComboStatus(int comboId);
@@ -37,14 +38,41 @@ namespace SE.Service.Services
         {
             try
             {
-                // Map the request to the Combo entity
+                if (req.Fee <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "FEE MUST > 0");
+                }
+
+                if (req.ValidityPeriod <= DateTime.UtcNow)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "VALIDITY PERIOD MUST BE IN THE FUTURE");
+                }
+
+                if (req.NumberOfMeeting <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "NUMBER OF MEETINGS MUST BE > 0");
+                }
+
+                if (req.DurationPerMeeting <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "DURATION PER MEETING MUST BE > 0");
+                }
+
+                if (string.IsNullOrWhiteSpace(req.Name))
+                {
+                    return new BusinessResult(Const.FAIL_READ, "NAME MUST NOT BE EMPTY");
+                }
+
+                if (string.IsNullOrWhiteSpace(req.Description))
+                {
+                    return new BusinessResult(Const.FAIL_READ, "DESCRIPTION MUST NOT BE EMPTY");
+                }
+
                 var combo = _mapper.Map<Combo>(req);
 
-                // Set CreatedDate and UpdatedDate
                 combo.CreatedDate = DateTime.UtcNow;
                 combo.UpdatedDate = DateTime.UtcNow;
 
-                // Use the repository to create the new Combo
                 var result = await _unitOfWork.ComboRepository.CreateAsync(combo);
 
                 if (result > 0)
@@ -56,11 +84,73 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                // Log the exception (not shown here)
                 return new BusinessResult(Const.FAIL_CREATE, ex.Message);
             }
         }
 
+        public async Task<IBusinessResult> UpdateCombo(int comboId, CreateComboModel req)
+        {
+            try
+            {
+                if (req.Fee <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "FEE MUST > 0");
+                }
+
+                if (req.ValidityPeriod <= DateTime.UtcNow)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "VALIDITY PERIOD MUST BE IN THE FUTURE");
+                }
+
+                if (req.NumberOfMeeting <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "NUMBER OF MEETINGS MUST BE > 0");
+                }
+
+                if (req.DurationPerMeeting <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "DURATION PER MEETING MUST BE > 0");
+                }
+
+                if (string.IsNullOrWhiteSpace(req.Name))
+                {
+                    return new BusinessResult(Const.FAIL_READ, "NAME MUST NOT BE EMPTY");
+                }
+
+                if (string.IsNullOrWhiteSpace(req.Description))
+                {
+                    return new BusinessResult(Const.FAIL_READ, "DESCRIPTION MUST NOT BE EMPTY");
+                }
+
+                var combo = await _unitOfWork.ComboRepository.GetByIdAsync(comboId);
+
+                if (combo == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "CANNOT FIND COMBO");
+                }
+
+                combo.Name = req.Name;
+                combo.Description = req.Description;
+                combo.Fee = req.Fee;
+                combo.ValidityPeriod = req.ValidityPeriod;
+                combo.NumberOfMeeting = req.NumberOfMeeting;
+                combo.DurationPerMeeting = req.DurationPerMeeting;
+                combo.UpdatedDate = DateTime.UtcNow;
+
+                var result = await _unitOfWork.ComboRepository.UpdateAsync(combo);
+
+                if (result > 0)
+                {
+                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, req);
+                }
+
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, ex.Message);
+            }
+        }
 
         public async Task<IBusinessResult> GetAllCombos()
         {
@@ -73,12 +163,10 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                // Log the exception (not shown here)
                 return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
         }
 
-        // Method to get a combo by ID
         public async Task<IBusinessResult> GetComboById(int comboId)
         {
             try
@@ -88,19 +176,18 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "Invalid combo ID.");
                 }
 
-                var combo = await _unitOfWork.ComboRepository.GetByIdAsync(comboId); // Assuming this method exists
+                var combo = await _unitOfWork.ComboRepository.GetByIdAsync(comboId);
                 if (combo == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, "Combo not found.");
                 }
 
-                var comboDto = _mapper.Map<ComboDto>(combo); // Map to DTO
+                var comboDto = _mapper.Map<ComboDto>(combo);
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, comboDto);
             }
             catch (Exception ex)
             {
-                // Log the exception (not shown here)
                 return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
         }
@@ -110,7 +197,6 @@ namespace SE.Service.Services
         {
             try
             {
-                // Check if the combo exists
                 var checkComboExisted = _unitOfWork.ComboRepository.FindByCondition(c => c.ComboId == comboId).FirstOrDefault();
 
                 if (checkComboExisted == null)
@@ -118,10 +204,8 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "Combo not found.");
                 }
 
-                // Update the status to INACTIVE
                 checkComboExisted.Status = SD.GeneralStatus.INACTIVE;
 
-                // Update the combo in the repository
                 var result = await _unitOfWork.ComboRepository.UpdateAsync(checkComboExisted);
 
                 if (result > 0)
@@ -133,7 +217,6 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                // Log the exception (not shown here)
                 return new BusinessResult(Const.FAIL_UPDATE, ex.Message);
             }
         }

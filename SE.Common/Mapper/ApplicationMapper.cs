@@ -35,6 +35,13 @@ namespace SE.Common.Mapper
             CreateMap<CreateComboModel, Combo>().ReverseMap();
             CreateMap<CreateActivityModel, Activity>();
 
+            CreateMap<MedicationModel, Medication>();
+            CreateMap<CreateMedicationRequest, Medication>();
+            CreateMap<UpdateMedicationRequest, Medication>();
+
+            CreateMap<CreateIotDeviceRequest, Iotdevice>();
+            CreateMap<IotDeviceDto, Iotdevice>();
+
             CreateMap<Combo, ComboDto>();
 
         }
