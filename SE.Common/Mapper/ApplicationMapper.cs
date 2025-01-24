@@ -58,7 +58,14 @@ namespace SE.Common.Mapper
             CreateMap<HealthIndicator, CreateHealthIndicatorRequest>().ReverseMap();
             CreateMap<HealthIndicator, UpdateHealthIndicatorRequest>().ReverseMap();
 
+            CreateMap<MedicationModel, Medication>();
+            CreateMap<CreateMedicationRequest, Medication>();
+            CreateMap<UpdateMedicationRequest, Medication>();
 
+            CreateMap<CreateIotDeviceRequest, Iotdevice>();
+            CreateMap<IotDeviceDto, Iotdevice>();
+
+            CreateMap<Combo, ComboDto>();
         }
     }
 }

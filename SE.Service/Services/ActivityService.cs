@@ -32,25 +32,23 @@ namespace SE.Service.Services
         {
             try
             {
-                // Validate the input date format
                 if (!DateTime.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate))
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid date format. Please use YYYY-MM-DD.");
                 }
 
-                // Extract the date part (this will be 2025-01-23 00:00:00)
-                DateTime startOfDay = parsedDate.Date; // This gives you the date part
+                DateTime startOfDay = parsedDate.Date;
 
                   var schedules = await _unitOfWork.ActivityScheduleRepository.GetAllAsync();
                 var filteredSchedules = schedules
-                    .Where(a => a.StartTime.HasValue && a.StartTime.Value.Date == startOfDay) // Compare only the date part
+                    .Where(a => a.StartTime.HasValue && a.StartTime.Value.Date == startOfDay)
                     .Select(a => new GetAllScheduleModel
                     {
                         ActivityId = a.Activity.ActivityId,
                         ElderlyId = a.Activity.ElderlyId,
                         ActivityName = a.Activity.ActivityName,
-                        StartTime = a.StartTime, // Format for output
-                        EndTime = a.EndTime // Format for output
+                        StartTime = a.StartTime,
+                        EndTime = a.EndTime
                     })
                     .ToList();
 
@@ -58,7 +56,6 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                // Log the exception (not shown here)
                 return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
             }
@@ -66,21 +63,18 @@ namespace SE.Service.Services
         {
             try
             {
-                // Validate the input model
                 if (model == null || string.IsNullOrWhiteSpace(model.ActivityName) || model.StartTime == null || model.EndTime == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid activity data.");
                 }
 
-                // Map the CreateActivityModel to Activity entity
                 var activity = _mapper.Map<Activity>(model);
-                activity.Status = SD.GeneralStatus.ACTIVE; // Set the status
+                activity.Status = SD.GeneralStatus.ACTIVE;
                 await _unitOfWork.ActivityRepository.CreateAsync(activity);
 
-                // Create the ActivitySchedule entity
                 var activitySchedule = new ActivitySchedule
                 {
-                    ActivityId = activity.ActivityId, // Assuming ActivityId is generated after saving the activity
+                    ActivityId = activity.ActivityId,
                     StartTime = model.StartTime,
                     EndTime = model.EndTime,
                     Status = SD.GeneralStatus.ACTIVE
@@ -92,7 +86,6 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                // Log the exception (not shown here)
                 return new BusinessResult(Const.FAIL_CREATE, ex.Message);
             }
         }
@@ -138,20 +131,17 @@ namespace SE.Service.Services
         {
             try
             {
-                // Validate the input parameter
                 if (activityId <= 0)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid activity ID.");
                 }
 
-                // Fetch the existing activity
                 var activity = await _unitOfWork.ActivityRepository.GetByIdAsync(activityId);
                 if (activity == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Activity not found.");
                 }
 
-                // Fetch associated activity schedules
                 var schedules = await _unitOfWork.ActivityScheduleRepository.GetAllAsync();
                 var associatedSchedules = schedules
                     .Where(a => a.ActivityId == activityId)
@@ -165,12 +155,10 @@ namespace SE.Service.Services
                     })
                     .ToList();
 
-                // Return the result wrapped in a business result object
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, associatedSchedules);
             }
             catch (Exception ex)
             {
-                // Log the exception (not shown here)
                 throw new Exception(ex.Message, ex);
             }
 
