@@ -10,6 +10,19 @@ using SE.Service.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAnyOrigin",
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                   .AllowAnyHeader()
+                   .AllowAnyMethod();
+        });
+});
+
+
 var emailConfig = builder.Configuration.GetSection("EmailConfiguration").Get<EmailSettings>();
 builder.Services.AddSingleton(emailConfig);
 builder.Services.AddTransient<EmailService>();
@@ -86,6 +99,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors("AllowAnyOrigin");
 
 app.UseHttpsRedirection();
 

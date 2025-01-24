@@ -37,7 +37,7 @@ namespace SE.API.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> UpdateLesson([FromQuery] int lessonId, [FromBody] CreateLessonRequest req)
+        public async Task<IActionResult> UpdateLesson([FromQuery] int lessonId, [FromBody] UpdateLessonRequest req)
         {
             var result = await _lessonService.UpdateLesson(lessonId, req);
             return Ok(result);

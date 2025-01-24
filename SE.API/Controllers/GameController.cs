@@ -37,7 +37,7 @@ namespace SE.API.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> UpdateGame([FromQuery] int gameId, [FromBody] CreateGameRequest req)
+        public async Task<IActionResult> UpdateGame([FromQuery] int gameId, [FromBody] UpdateGameRequest req)
         {
             var result = await _gameService.UpdateGame(gameId, req);
             return Ok(result);

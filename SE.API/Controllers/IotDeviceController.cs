@@ -25,13 +25,13 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        // PUT: iot-device-management/{deviceId}
+    /*    // PUT: iot-device-management/{deviceId}
         [HttpPut("{deviceId}")]
         public async Task<IActionResult> UpdateIotDevice([FromRoute] int deviceId, [FromBody] CreateIotDeviceRequest req)
         {
             var result = await _iotDeviceService.UpdateIotDevice(deviceId, req);
             return Ok(result);
-        }
+        }*/
 
         // GET: iot-device-management
         [HttpGet]
