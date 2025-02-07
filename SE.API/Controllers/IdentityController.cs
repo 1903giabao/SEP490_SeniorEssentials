@@ -19,10 +19,18 @@ namespace SE.API.Controllers
             _emailService = emailService;
             _identityService = identityService; 
         }
-        [HttpPost]
+        [HttpPost("managed-auths/otp/send")]
         public async Task<IActionResult> SendOTP (string email)
         {
             var result  = await _identityService.SendOtpToUser(email);
+            return Ok(result);
+        }
+
+
+        [HttpPost("managed-auths/otp/verify")]
+        public async Task<IActionResult> SubmitOTP(CreateUserReq req)
+        {
+            var result = await _identityService.SubmitOTP(req);
             return Ok(result);
         }
 
@@ -33,19 +41,20 @@ namespace SE.API.Controllers
            var result = await _identityService.SignupForElderly(req);
                   return Ok(result);
         }
-
         [AllowAnonymous]
         [HttpPost("managed-auths/sign-ins")]
         public async Task<IActionResult> Login([FromBody] LoginRequestModel req)
         {
             var loginResult = await _identityService.Login(req.Email, req.Password, req.DeviceToken);
-            var handler = new JwtSecurityTokenHandler();
 
-            var rs = handler.WriteToken( (JwtSecurityToken)loginResult.Data);
-
-
-            return Ok(rs);
+            if (loginResult.Data is string token)
+            {
+                return Ok(token);
+            }
+            else
+            {
+                return BadRequest("Login failed.");
+            }
         }
-
     }
 }
