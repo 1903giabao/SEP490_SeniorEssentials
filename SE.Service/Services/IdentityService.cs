@@ -22,7 +22,7 @@ using static System.Net.WebRequestMethods;
 
 namespace SE.Service.Services
 {
-    
+
     public interface IIdentityService
     {
         Task<bool> SendOtpToUser(string email);
@@ -55,7 +55,7 @@ namespace SE.Service.Services
         {
             try
             {
-               
+
                 var otp = new Random().Next(100000, 999999);
                 var mailData = new EmailData
                 {
@@ -72,7 +72,7 @@ namespace SE.Service.Services
                 }
 
                 var createUserResponse = await _accountService.CreateNewTempAccount(email, otp.ToString());
-                var userReponse =(Account) createUserResponse.Data;
+                var userReponse = (Account)createUserResponse.Data;
 
                 if (userReponse.Otp != otp.ToString())
                 {
@@ -103,7 +103,7 @@ namespace SE.Service.Services
         {
             try
             {
-            
+
                 var rs = new BusinessResult();
                 var user = _unitOfWork.AccountRepository.FindByCondition(u => u.Email.Equals(req.Email)).FirstOrDefault();
 
@@ -117,7 +117,7 @@ namespace SE.Service.Services
                 }
                 user.Otp = "0";
                 user.IsVerified = true;
-                user.Status ="Active";
+                user.Status = "Active";
                 var result = await _unitOfWork.AccountRepository.UpdateAsync(user);
                 rs.Message = "XÁC MINH OTP THÀNH CÔNG!";
                 if (result > 0)
@@ -168,15 +168,15 @@ namespace SE.Service.Services
 
                 var res = await _unitOfWork.AccountRepository.CreateAsync(newUser);
 
-       /*         var mailUpdateData = new EmailData
-                {
-                    EmailToId = req.Email,
-                    EmailToName = "Senior Essentials",
-                    EmailBody = "Dang ki thanh cong",
-                    EmailSubject = "XAC NHAN DANG KI THANH CONG"
-                };
+                /*         var mailUpdateData = new EmailData
+                         {
+                             EmailToId = req.Email,
+                             EmailToName = "Senior Essentials",
+                             EmailBody = "Dang ki thanh cong",
+                             EmailSubject = "XAC NHAN DANG KI THANH CONG"
+                         };
 
-                var rsUpdate = await _emailService.SendEmailAsync(mailUpdateData);*/
+                         var rsUpdate = await _emailService.SendEmailAsync(mailUpdateData);*/
 
                 if (res < 0)
                 {
@@ -212,7 +212,6 @@ namespace SE.Service.Services
                 if (user.IsVerified == false)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Email is registered but not verified!");
-
                 }
 
                 var userRole = _unitOfWork.RoleRepository
@@ -224,7 +223,9 @@ namespace SE.Service.Services
                     user.DeviceToken = deviceToken;
                 }
                 _unitOfWork.AccountRepository.Update(user);
-                return new BusinessResult(Const.SUCCESS_LOGIN, Const.SUCCESS_LOGIN_MSG,CreateJwtToken(user));
+
+                // Return the token string directly
+                return new BusinessResult(Const.SUCCESS_LOGIN, Const.SUCCESS_LOGIN_MSG, CreateJwtToken(user));
             }
             catch (Exception ex)
             {
@@ -232,40 +233,49 @@ namespace SE.Service.Services
             }
         }
 
-        public SecurityToken CreateJwtToken(Account user)
+        public string CreateJwtToken(Account user)
         {
             try
             {
                 var utcNow = DateTime.UtcNow;
                 var userRole = _unitOfWork.RoleRepository.FindByCondition(u => u.RoleId == user.RoleId).FirstOrDefault();
+                var isInformation = _unitOfWork.AccountRepository
+                    .FindByCondition(u => u.FullName != null && u.Email.Equals(user.Email))
+                    .FirstOrDefault();
                 var authClaims = new List<Claim>
-          {
-              new(JwtRegisteredClaimNames.NameId, user.AccountId.ToString()),
-              new(JwtRegisteredClaimNames.Email, user.Email),
-              new(ClaimTypes.Role, userRole.RoleName),
-              new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-          };
+        {
+            new(JwtRegisteredClaimNames.NameId, user.AccountId.ToString()),
+            new(JwtRegisteredClaimNames.Email, user.Email),
+            new(ClaimTypes.Role, userRole.RoleName),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(JwtRegisteredClaimNames.Name, user.FullName ?? "null"),
+            new("Avatar", user.Avatar ?? "null"),
+            new("IsInformation", isInformation != null ? "true" : "false")
+        };
+                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtSettings.Key));
+                var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-                var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
+                var header = new JwtHeader(credentials);
 
-                var tokenDescriptor = new SecurityTokenDescriptor()
-                {
-                    Subject = new ClaimsIdentity(authClaims),
-                    SigningCredentials =
-                        new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256),
-                    Expires = utcNow.Add(TimeSpan.FromHours(1)),
-                };
+                var payload = new JwtPayload
+    {
+        { JwtRegisteredClaimNames.Sub, user.AccountId.ToString() },
+        { JwtRegisteredClaimNames.Email, user.Email },
+        { JwtRegisteredClaimNames.Name, user.FullName},
+        { ClaimTypes.Role, userRole.RoleName },
+        { JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString() },
+        { "Avatar", user.Avatar},
+                    { "IsInformation", isInformation != null ? "true" : "false" }
 
-                var handler = new JwtSecurityTokenHandler();
+    };
 
-                var token = handler.CreateToken(tokenDescriptor);
+                var token = new JwtSecurityToken(header, payload);
 
-                return token;
+                return new JwtSecurityTokenHandler().WriteToken(token);
             }
             catch (Exception ex)
             {
                 return null;
-
             }
         }
 
