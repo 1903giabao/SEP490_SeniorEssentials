@@ -32,7 +32,7 @@ namespace SE.Service.Services
                 var existedAcc = _unitOfWork.AccountRepository.FindByCondition(e => e.Email.Equals(email)).FirstOrDefault();
                 if (existedAcc != null)
                 {
-                    throw new InvalidOperationException("Email is already existed!");
+                    return new BusinessResult(Const.SUCCESS_CREATE, "Email already existed!", existedAcc);
                 }
 
                 var newAccount = new Account

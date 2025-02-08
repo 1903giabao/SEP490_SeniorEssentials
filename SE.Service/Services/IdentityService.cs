@@ -6,12 +6,16 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using AutoMapper;
 using Firebase.Auth;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Org.BouncyCastle.Asn1.Pkcs;
+using Org.BouncyCastle.Ocsp;
 using SE.Common;
 using SE.Common.DTO;
+using SE.Common.Enums;
 using SE.Common.Request;
 using SE.Common.Setting;
 using SE.Data.Models;
@@ -25,10 +29,12 @@ namespace SE.Service.Services
 
     public interface IIdentityService
     {
-        Task<bool> SendOtpToUser(string email);
+        Task<IBusinessResult> SendOtpToUser(string email);
         Task<IBusinessResult> SubmitOTP(CreateUserReq req);
         Task<IBusinessResult> SignupForElderly(ElderlySignUpModel req);
         Task<IBusinessResult> Login(string email, string password, string deviceToken);
+        Task<UserModel> GetUserInToken(string token);
+        Task<IBusinessResult> GetUserByEmail(string username);
 
     }
 
@@ -40,58 +46,89 @@ namespace SE.Service.Services
         private readonly string _confirmUrl;
         private readonly string _frontendUrl;
         private readonly IEmailService _emailService;
+        private readonly IMapper _mapper;
+
+
         private readonly IAccountService _accountService;
 
-        public IdentityService(UnitOfWork unitOfWork, IOptions<JwtSettings> jwtSettingsOptions, IFirebaseService firebaseService, IEmailService emailService, IAccountService accountService)
+        public IdentityService(IMapper mapper, UnitOfWork unitOfWork, IOptions<JwtSettings> jwtSettingsOptions, IFirebaseService firebaseService, IEmailService emailService, IAccountService accountService)
         {
             _unitOfWork = unitOfWork;
             _jwtSettings = jwtSettingsOptions.Value;
             _firebaseService = firebaseService;
             _emailService = emailService;
             _accountService = accountService;
+                _mapper = mapper;
         }
 
-        public async Task<bool> SendOtpToUser(string email)
+        public async Task<IBusinessResult> SendOtpToUser(string account)
         {
             try
             {
-
                 var otp = new Random().Next(100000, 999999);
-                var mailData = new EmailData
+                var rs = new Object();
+                if (FunctionCommon.IsValidEmail(account))
                 {
-                    EmailToId = email,
-                    EmailToName = "Senior Essentials",
-                    EmailBody = otp.ToString(),
-                    EmailSubject = "XÁC NHẬN MÃ OTP"
-                };
+                    var existedEmail = await _unitOfWork.AccountRepository.GetByEmailAsync(account);
 
-                var emailResult = await _emailService.SendEmailAsync(mailData);
-                if (!emailResult)
-                {
-                    return false;
-                }
-
-                var createUserResponse = await _accountService.CreateNewTempAccount(email, otp.ToString());
-                var userReponse = (Account)createUserResponse.Data;
-
-                if (userReponse.Otp != otp.ToString())
-                {
-                    var mailUpdateData = new EmailData
+                    if (existedEmail!=null && existedEmail.IsVerified == true && existedEmail.FullName== null)
                     {
-                        EmailToId = email,
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Your email is created! Please login to fill information");
+
+                    }
+
+                    var mailData = new EmailData
+                    {
+                        EmailToId = account,
                         EmailToName = "Senior Essentials",
                         EmailBody = otp.ToString(),
                         EmailSubject = "XÁC NHẬN MÃ OTP"
                     };
 
-                    var rsUpdate = await _emailService.SendEmailAsync(mailUpdateData);
-                    if (!rsUpdate)
+                    var emailResult = await _emailService.SendEmailAsync(mailData);
+                    if (!emailResult)
                     {
-                        return false;
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Can not send email!");
                     }
+                    
+
+                    var createUserResponse = await _accountService.CreateNewTempAccount(account, otp.ToString());
+
+                    var userReponse = (Account)createUserResponse.Data;
+
+                 
+                    rs = new
+                    {
+                        Message = "Send OTP successfully!",
+                        Method = "Email",
+                        AccountId = userReponse.AccountId,
+                    };
+                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, rs);
+
                 }
 
-                return true;
+                else if (FunctionCommon.IsValidPhoneNumber(account)) 
+                
+                
+                {
+
+                    rs = new
+                    {
+                        Message = "Send OTP successfully!",
+                        Method = "Phone number"
+                    };
+
+                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, rs);
+                }
+
+
+                rs = new
+                {
+                    Message = "Wrong format of Email or Phone number",
+                    Method = ""
+                };
+
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, rs);
             }
             catch (Exception ex)
             {
@@ -122,7 +159,7 @@ namespace SE.Service.Services
                 rs.Message = "XÁC MINH OTP THÀNH CÔNG!";
                 if (result > 0)
                 {
-                    return rs;
+                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, "Verify successfully!");
                 }
                 return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot submit OTP");
             }
@@ -136,47 +173,43 @@ namespace SE.Service.Services
         {
             try
             {
-                if (!FunctionCommon.IsValidEmail(req.Email))
+                if (!FunctionCommon.IsValidEmail(req.Email) && !FunctionCommon.IsValidPhoneNumber(req.PhoneNumber))
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Wrong email format!");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Wrong email or phone number format format!");
                 }
-                var user = _unitOfWork.AccountRepository.FindByCondition(u => u.Email == req.Email).FirstOrDefault();
-
-                if (user != null)
+                var user = _unitOfWork.AccountRepository.GetById(req.AccountId);
+                
+                if (user != null && user.IsVerified == false)
                 {
-                    if (user.IsVerified == true)
-                    {
-                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Existed email");
-
-                    }
-                    else
-                    {
                         return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Email is registered but not verified!");
-                    }
                 }
 
-                var newUser = new Account
+                var urlLink = await CloudinaryHelper.UploadImageAsync(req.Avatar);
+                string medicalRecordsPassage = string.Join(".", req.MedicalRecord);
+
+                user.Avatar = urlLink.Url;
+                user.Email = req.Email;
+                user.PhoneNumber = req.PhoneNumber;
+                user.Status = SD.GeneralStatus.ACTIVE;
+                user.Password = SecurityUtil.Hash(req.Password);
+                user.RoleId = 2;
+                user.FullName = req.FullName;
+                user.Gender = req.Gender;
+                user.DateOfBirth = DateTime.Parse(req.DateOfBirth);
+                user.CreatedDate = DateTime.Now;
+
+                var res = await _unitOfWork.AccountRepository.UpdateAsync(user);
+
+
+                var newElderly = new Elderly
                 {
-                    Email = req.Email,
-                    Password = SecurityUtil.Hash(req.Password),
-                    FullName = req.FullName,
-                    Status = "Active",
-                    IsVerified = false,
-                    Avatar = "https://static-00.iconduck.com/assets.00/avatar-icon-2048x2048-aiocer4i.png",
-                    RoleId = 2
+                    AccountId = user.AccountId,
+                    MedicalRecord = medicalRecordsPassage,
+                    Weight = Decimal.Parse(req.Weight),
+                    Height = Decimal.Parse(req.Height),
+                    Status = SD.GeneralStatus.ACTIVE,
                 };
-
-                var res = await _unitOfWork.AccountRepository.CreateAsync(newUser);
-
-                /*         var mailUpdateData = new EmailData
-                         {
-                             EmailToId = req.Email,
-                             EmailToName = "Senior Essentials",
-                             EmailBody = "Dang ki thanh cong",
-                             EmailSubject = "XAC NHAN DANG KI THANH CONG"
-                         };
-
-                         var rsUpdate = await _emailService.SendEmailAsync(mailUpdateData);*/
+                 var rsE = _unitOfWork.ElderlyRepository.CreateAsync(newElderly);
 
                 if (res < 0)
                 {
@@ -224,7 +257,6 @@ namespace SE.Service.Services
                 }
                 _unitOfWork.AccountRepository.Update(user);
 
-                // Return the token string directly
                 return new BusinessResult(Const.SUCCESS_LOGIN, Const.SUCCESS_LOGIN_MSG, CreateJwtToken(user));
             }
             catch (Exception ex)
@@ -279,8 +311,43 @@ namespace SE.Service.Services
             }
         }
 
+        public async Task<UserModel> GetUserInToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                throw new Exception("Authorization header is missing or invalid.");
+            }
+            // Decode the JWT token
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(token);
 
+            // Check if the token is expired
+            if (jwtToken.ValidTo < DateTime.UtcNow)
+            {
+                throw new Exception("Token has expired.");
+            }
+            string userName = jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
 
+            var user = _unitOfWork.AccountRepository.GetByEmailAsync(userName);
+            if (user is null)
+            {
+                throw new Exception("Cannot find User");
+            }
+            return _mapper.Map<UserModel>(user);
+        }
+
+        public async Task<IBusinessResult> GetUserByEmail(string username)
+        {
+            try
+            {
+                var result = _mapper.Map<UserModel>(_unitOfWork.AccountRepository.GetByEmailAsync(username));
+                return new BusinessResult(Const.SUCCESS_READ,Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(500, ex.Message);
+            }
+        }
 
     }
 }
