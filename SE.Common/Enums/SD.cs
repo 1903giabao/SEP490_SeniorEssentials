@@ -20,8 +20,8 @@ namespace SE.Common.Enums
 
         public class GeneralStatus
         {
-            public static string ACTIVE = "HOẠT ĐỘNG";
-            public static string INACTIVE = "KHÔNG HOẠT ĐỘNG";
+            public static string ACTIVE = "Active";
+            public static string INACTIVE = "Inactive";
         }
     }
 }
