@@ -1,7 +1,9 @@
 using System.Text;
 using AutoMapper;
+using Google.Api;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using SE.Common.DTO;
 using SE.Common.Mapper;
 using SE.Common.Setting;
@@ -59,10 +61,6 @@ builder.Services.AddSingleton(mapper);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c=>
-{
-    c.EnableAnnotations();
-});
 
 string pathToServiceAccountKey = "D:/FPT/Term 9/Do an/Project/testproject-bc2e2-firebase-adminsdk-lqlxd-9709c02fcf.json";
 Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", pathToServiceAccountKey);
@@ -73,7 +71,36 @@ builder.Services.Configure<JwtSettings>(val =>
     val.Key = jwtSettings.Key;
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddMvc();
+builder.Services.AddSwaggerGen(option =>
+{
+    option.SwaggerDoc("v1", new OpenApiInfo { Title = "Mock API", Version = "v1" });
+    option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter a valid token",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
+    });
+    option.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type=ReferenceType.SecurityScheme,
+                                Id="Bearer"
+                            }
+                        },
+                        new string[]{}
+                    }
+                });
+    option.EnableAnnotations();
+});
 
 builder.Services.AddAuthentication(options =>
 {
@@ -83,7 +110,7 @@ builder.Services.AddAuthentication(options =>
 })
     .AddJwtBearer(options =>
     {
-        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters()
+        options.TokenValidationParameters = new TokenValidationParameters()
         {
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
             ValidateIssuer = false,
@@ -93,25 +120,25 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
+builder.Services.AddAuthorization();
+
+builder.Services.AddCors(option =>
+    option.AddPolicy("CORS", builder =>
+        builder.AllowAnyMethod().AllowAnyHeader().SetIsOriginAllowed((host) => true)));
 
 var app = builder.Build();
 
-
-
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-app.UseCors("AllowAnyOrigin");
+app.UseSwagger(op => op.SerializeAsV2 = false);
+app.UseSwaggerUI();
+app.UseCors("CORS");
 
 app.UseHttpsRedirection();
+
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
 app.MapControllers();
-
 
 app.Run();
