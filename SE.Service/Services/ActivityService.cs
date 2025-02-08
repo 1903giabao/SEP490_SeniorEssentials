@@ -12,7 +12,7 @@ namespace SE.Service.Services
 {
     public interface IActivityService
     {
-        Task<IBusinessResult> GetAllScheduleForDay(string date);
+        Task<IBusinessResult> GetAllScheduleForDay(DateTime date);
         Task<IBusinessResult> CreateActivityWithSchedule(CreateActivityModel model);
         Task<IBusinessResult> UpdateSchedule(UpdateScheduleModel model);
         Task<IBusinessResult> GetActivityById(int activityId);
@@ -28,20 +28,20 @@ namespace SE.Service.Services
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        public async Task<IBusinessResult> GetAllScheduleForDay(string date)
+        public async Task<IBusinessResult> GetAllScheduleForDay(DateTime date)
         {
             try
             {
-                if (!DateTime.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate))
+              /*  if (!DateTime.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate))
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid date format. Please use YYYY-MM-DD.");
                 }
 
-                DateTime startOfDay = parsedDate.Date;
+                DateTime startOfDay = parsedDate.Date;*/
 
                   var schedules = await _unitOfWork.ActivityScheduleRepository.GetAllAsync();
                 var filteredSchedules = schedules
-                    .Where(a => a.StartTime.HasValue && a.StartTime.Value.Date == startOfDay)
+                    .Where(a => a.StartTime.HasValue && a.StartTime.Value.Date >= date)
                     .Select(a => new GetAllScheduleModel
                     {
                         ActivityId = a.Activity.ActivityId,

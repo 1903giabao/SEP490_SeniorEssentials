@@ -59,8 +59,13 @@ builder.Services.AddSingleton(mapper);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c=>
+{
+    c.EnableAnnotations();
+});
 
+string pathToServiceAccountKey = "D:/FPT/Term 9/Do an/Project/testproject-bc2e2-firebase-adminsdk-lqlxd-9709c02fcf.json";
+Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", pathToServiceAccountKey);
 
 var jwtSettings =  builder.Configuration.GetSection(nameof(JwtSettings)).Get<JwtSettings>();
 builder.Services.Configure<JwtSettings>(val =>
