@@ -105,9 +105,7 @@ namespace SE.API.Controllers
             }
             var handler = new JwtSecurityTokenHandler();
             var jwtToken = handler.ReadJwtToken(token);
-
-        
-
+       
             string email = jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
 
             var user = await _identityService.GetUserByEmail(email);

@@ -265,50 +265,41 @@ namespace SE.Service.Services
             }
         }
 
-        public string CreateJwtToken(Account user)
+        private string CreateJwtToken(Account user)
         {
-            try
+            var utcNow = DateTime.UtcNow;
+            var userRole = _unitOfWork.RoleRepository.FindByCondition(u => u.RoleId == user.RoleId).FirstOrDefault();
+            var isInformation = _unitOfWork.AccountRepository
+                .FindByCondition(u => u.FullName != null && u.Email.Equals(user.Email))
+                .FirstOrDefault();
+            var authClaims = new List<Claim>
             {
-                var utcNow = DateTime.UtcNow;
-                var userRole = _unitOfWork.RoleRepository.FindByCondition(u => u.RoleId == user.RoleId).FirstOrDefault();
-                var isInformation = _unitOfWork.AccountRepository
-                    .FindByCondition(u => u.FullName != null && u.Email.Equals(user.Email))
-                    .FirstOrDefault();
-                var authClaims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.NameId, user.AccountId.ToString()),
-            new(JwtRegisteredClaimNames.Email, user.Email),
-            new(ClaimTypes.Role, userRole.RoleName),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new(JwtRegisteredClaimNames.Name, user.FullName ?? "null"),
-            new("Avatar", user.Avatar ?? "null"),
-            new("IsInformation", isInformation != null ? "true" : "false")
-        };
-                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtSettings.Key));
-                var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                new(JwtRegisteredClaimNames.NameId, user.AccountId.ToString()),
+                new(JwtRegisteredClaimNames.Email, user.Email),
+                new(ClaimTypes.Role, userRole.RoleName),
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new(JwtRegisteredClaimNames.Name, user.FullName ?? "null"),
+                new("Avatar", user.Avatar ?? "null"),
+                new("IsInformation", isInformation != null ? "true" : "false")
+            };
 
-                var header = new JwtHeader(credentials);
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
 
-                var payload = new JwtPayload
-    {
-        { JwtRegisteredClaimNames.Sub, user.AccountId.ToString() },
-        { JwtRegisteredClaimNames.Email, user.Email },
-        { JwtRegisteredClaimNames.Name, user.FullName},
-        { ClaimTypes.Role, userRole.RoleName },
-        { JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString() },
-        { "Avatar", user.Avatar},
-                    { "IsInformation", isInformation != null ? "true" : "false" }
-
-    };
-
-                var token = new JwtSecurityToken(header, payload);
-
-                return new JwtSecurityTokenHandler().WriteToken(token);
-            }
-            catch (Exception ex)
+            var tokenDescriptor = new SecurityTokenDescriptor()
             {
-                return null;
-            }
+                Subject = new ClaimsIdentity(authClaims),
+                SigningCredentials =
+                    new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256),
+                Expires = utcNow.Add(TimeSpan.FromHours(1)),
+            };
+
+            var handler = new JwtSecurityTokenHandler();
+
+            var token = handler.CreateToken(tokenDescriptor);
+
+            var writeToken = new JwtSecurityTokenHandler().WriteToken(token);
+
+            return writeToken;
         }
 
         public async Task<UserModel> GetUserInToken(string token)
@@ -317,18 +308,16 @@ namespace SE.Service.Services
             {
                 throw new Exception("Authorization header is missing or invalid.");
             }
-            // Decode the JWT token
             var handler = new JwtSecurityTokenHandler();
             var jwtToken = handler.ReadJwtToken(token);
 
-            // Check if the token is expired
             if (jwtToken.ValidTo < DateTime.UtcNow)
             {
                 throw new Exception("Token has expired.");
             }
             string userName = jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
 
-            var user = _unitOfWork.AccountRepository.GetByEmailAsync(userName);
+            var user = await _unitOfWork.AccountRepository.GetByEmailAsync(userName);
             if (user is null)
             {
                 throw new Exception("Cannot find User");
@@ -340,7 +329,8 @@ namespace SE.Service.Services
         {
             try
             {
-                var result = _mapper.Map<UserModel>(_unitOfWork.AccountRepository.GetByEmailAsync(username));
+                var account = await _unitOfWork.AccountRepository.GetByEmailAsync(username);
+                var result = _mapper.Map<UserModel>(account);
                 return new BusinessResult(Const.SUCCESS_READ,Const.SUCCESS_READ_MSG, result);
             }
             catch (Exception ex)
