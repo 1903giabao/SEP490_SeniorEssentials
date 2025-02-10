@@ -50,6 +50,9 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IEmergencyContactService, EmergencyContactService>();
 builder.Services.AddScoped<UnitOfWork>();
+builder.Services.AddScoped<ISmsService, SmsService>();
+
+
 
 var mapperConfig = new MapperConfiguration(mc =>
 {

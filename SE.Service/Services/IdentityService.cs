@@ -29,9 +29,9 @@ namespace SE.Service.Services
 
     public interface IIdentityService
     {
-        Task<IBusinessResult> SendOtpToUser(string email);
+        Task<IBusinessResult> SendOtpToUser(string email,string password, int role);
         Task<IBusinessResult> SubmitOTP(CreateUserReq req);
-        Task<IBusinessResult> SignupForElderly(ElderlySignUpModel req);
+        Task<IBusinessResult> Signup(SignUpModel req);
         Task<IBusinessResult> Login(string email, string password, string deviceToken);
         Task<UserModel> GetUserInToken(string token);
         Task<IBusinessResult> GetUserByEmail(string username);
@@ -47,11 +47,11 @@ namespace SE.Service.Services
         private readonly string _frontendUrl;
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
-
+        private readonly ISmsService _smsService;
 
         private readonly IAccountService _accountService;
 
-        public IdentityService(IMapper mapper, UnitOfWork unitOfWork, IOptions<JwtSettings> jwtSettingsOptions, IFirebaseService firebaseService, IEmailService emailService, IAccountService accountService)
+        public IdentityService(IMapper mapper, UnitOfWork unitOfWork, IOptions<JwtSettings> jwtSettingsOptions, IFirebaseService firebaseService, IEmailService emailService, IAccountService accountService, ISmsService smsService)
         {
             _unitOfWork = unitOfWork;
             _jwtSettings = jwtSettingsOptions.Value;
@@ -59,9 +59,10 @@ namespace SE.Service.Services
             _emailService = emailService;
             _accountService = accountService;
                 _mapper = mapper;
+            _smsService = smsService;
         }
 
-        public async Task<IBusinessResult> SendOtpToUser(string account)
+        public async Task<IBusinessResult> SendOtpToUser(string account, string password, int role)
         {
             try
             {
@@ -90,9 +91,16 @@ namespace SE.Service.Services
                     {
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Can not send email!");
                     }
-                    
 
-                    var createUserResponse = await _accountService.CreateNewTempAccount(account, otp.ToString());
+                    var newAccount = new CreateNewAccountDTO
+                    {
+                        Account = account,
+                        OTP = otp.ToString(),
+                        Password = password,
+                        RoleId = role
+                    };
+
+                    var createUserResponse = await _accountService.CreateNewTempAccount(newAccount );
 
                     var userReponse = (Account)createUserResponse.Data;
 
@@ -108,9 +116,20 @@ namespace SE.Service.Services
                 }
 
                 else if (FunctionCommon.IsValidPhoneNumber(account)) 
-                
-                
-                {
+                {0
+                    var sendPhoneOTP = await _smsService.SendSmsAsync(account, otp.ToString());
+                    if (sendPhoneOTP == null)
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot send sms.");
+                    }
+                    var newAccount = new CreateNewAccountDTO
+                    {
+                        Account = account,
+                        OTP = otp.ToString(),
+                        Password = password,
+                        RoleId = role
+                    };
+                    var createUserResponse = await _accountService.CreateNewTempAccount(newAccount);
 
                     rs = new
                     {
@@ -142,7 +161,7 @@ namespace SE.Service.Services
             {
 
                 var rs = new BusinessResult();
-                var user = _unitOfWork.AccountRepository.FindByCondition(u => u.Email.Equals(req.Email)).FirstOrDefault();
+                var user = _unitOfWork.AccountRepository.FindByCondition(u => u.Email.Equals(req.Email) || u.PhoneNumber.Equals(req.Email)).FirstOrDefault();
 
                 if (user == null)
                 {
@@ -169,7 +188,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> SignupForElderly(ElderlySignUpModel req)
+        public async Task<IBusinessResult> Signup(SignUpModel req)
         {
             try
             {
@@ -185,13 +204,11 @@ namespace SE.Service.Services
                 }
 
                 var urlLink = await CloudinaryHelper.UploadImageAsync(req.Avatar);
-                string medicalRecordsPassage = string.Join(".", req.MedicalRecord);
 
                 user.Avatar = urlLink.Url;
                 user.Email = req.Email;
                 user.PhoneNumber = req.PhoneNumber;
                 user.Status = SD.GeneralStatus.ACTIVE;
-                user.Password = SecurityUtil.Hash(req.Password);
                 user.RoleId = 2;
                 user.FullName = req.FullName;
                 user.Gender = req.Gender;
@@ -200,16 +217,22 @@ namespace SE.Service.Services
 
                 var res = await _unitOfWork.AccountRepository.UpdateAsync(user);
 
-
-                var newElderly = new Elderly
+                if (req.RoleId == 2)
                 {
-                    AccountId = user.AccountId,
-                    MedicalRecord = medicalRecordsPassage,
-                    Weight = Decimal.Parse(req.Weight),
-                    Height = Decimal.Parse(req.Height),
-                    Status = SD.GeneralStatus.ACTIVE,
-                };
-                 var rsE = _unitOfWork.ElderlyRepository.CreateAsync(newElderly);
+                    string medicalRecordsPassage = string.Join(".", req.MedicalRecord);
+
+                    var newElderly = new Elderly
+                    {
+                        AccountId = user.AccountId,
+                        MedicalRecord = medicalRecordsPassage,
+                        Weight = Decimal.Parse(req.Weight),
+                        Height = Decimal.Parse(req.Height),
+                        Status = SD.GeneralStatus.ACTIVE,
+                    };
+                    var rsE = _unitOfWork.ElderlyRepository.CreateAsync(newElderly);
+                }
+
+              
 
                 if (res < 0)
                 {
