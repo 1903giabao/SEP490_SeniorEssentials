@@ -116,7 +116,7 @@ namespace SE.Service.Services
                 }
 
                 else if (FunctionCommon.IsValidPhoneNumber(account)) 
-                {0
+                {
                     var sendPhoneOTP = await _smsService.SendSmsAsync(account, otp.ToString());
                     if (sendPhoneOTP == null)
                     {
@@ -161,7 +161,7 @@ namespace SE.Service.Services
             {
 
                 var rs = new BusinessResult();
-                var user = _unitOfWork.AccountRepository.FindByCondition(u => u.Email.Equals(req.Email) || u.PhoneNumber.Equals(req.Email)).FirstOrDefault();
+                var user = _unitOfWork.AccountRepository.FindByCondition(u => u.Email.Equals(req.Account) || u.PhoneNumber.Equals(req.Account)).FirstOrDefault();
 
                 if (user == null)
                 {
