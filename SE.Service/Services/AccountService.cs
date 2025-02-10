@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AutoMapper;
 using CloudinaryDotNet;
 using Org.BouncyCastle.Ocsp;
 using SE.Common;
@@ -17,26 +18,30 @@ namespace SE.Service.Services
     public interface IAccountService
     {
         Task<IBusinessResult> CreateNewTempAccount(CreateNewAccountDTO req);
+        Task<IBusinessResult> GetAllUsers();
 
     }
 
     public class AccountService : IAccountService
     {
         private readonly UnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public AccountService(UnitOfWork unitOfWork) 
+        public AccountService(UnitOfWork unitOfWork, IMapper mapper
+)
         {
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
-        public async Task<IBusinessResult> CreateNewTempAccount (CreateNewAccountDTO req)
+        public async Task<IBusinessResult> CreateNewTempAccount(CreateNewAccountDTO req)
         {
             try
             {
                 var existedAcc = _unitOfWork.AccountRepository.FindByCondition(e => e.Email.Equals(req.Account)).FirstOrDefault();
 
                 int rs;
-                var newAccount = new Data.Models.Account(); 
+                var newAccount = new Data.Models.Account();
                 if (existedAcc != null)
                 {
                     return new BusinessResult(Const.SUCCESS_CREATE, "Email already existed!", existedAcc);
@@ -67,12 +72,12 @@ namespace SE.Service.Services
                     rs = await _unitOfWork.AccountRepository.CreateAsync(newAccount);
                 }
 
-                   
+
                 if (rs > 0)
                 {
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newAccount);
                 }
-                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG,newAccount);
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, newAccount);
 
             }
             catch (Exception ex)
@@ -81,6 +86,13 @@ namespace SE.Service.Services
             }
         }
 
+        public async Task<IBusinessResult> GetAllUsers()
+        {
+            var users = _unitOfWork.AccountRepository.GetAll();
+
+            var rs = _mapper.Map<List<UserDTO>>(users);
+            return new BusinessResult (Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
+        }
 
     }
 }

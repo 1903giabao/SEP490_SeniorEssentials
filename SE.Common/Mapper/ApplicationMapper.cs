@@ -68,6 +68,8 @@ namespace SE.Common.Mapper
             CreateMap<IotDeviceDto, Iotdevice>();
 
             CreateMap<Combo, ComboDto>();
+
+            CreateMap<Account, UserDTO>();
         }
     }
 }
