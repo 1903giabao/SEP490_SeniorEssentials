@@ -24,10 +24,10 @@ namespace SE.API.Controllers
         }
 
         [HttpPost("managed-auths/otp/send")]
-        public async Task<IActionResult> SendOTP(string account)
+        public async Task<IActionResult> SendOTP(string account, string password, int role)
         {
-            var result = await _identityService.SendOtpToUser(account);
-            bool isSuccess = result.Data != null && result.Message == Const.SUCCESS_CREATE_MSG; // Adjust based on your success criteria
+            var result = await _identityService.SendOtpToUser(account, password, role);
+            bool isSuccess = result.Data != null && result.Message == Const.SUCCESS_CREATE_MSG; 
 
             var response = new
             {
@@ -42,7 +42,7 @@ namespace SE.API.Controllers
         public async Task<IActionResult> SubmitOTP(CreateUserReq req)
         {
             var result = await _identityService.SubmitOTP(req);
-            bool isSuccess = result.Data != null && result.Message == Const.SUCCESS_CREATE_MSG; // Adjust based on your success criteria
+            bool isSuccess = result.Data != null && result.Message == Const.SUCCESS_CREATE_MSG;
 
             var response = new
             {
@@ -55,9 +55,9 @@ namespace SE.API.Controllers
 
         [AllowAnonymous]
         [HttpPost("managed-auths/sign-ups")]
-        public async Task<IActionResult> Signup( ElderlySignUpModel req)
+        public async Task<IActionResult> Signup( SignUpModel req)
         {
-            var result = await _identityService.SignupForElderly(req);
+            var result = await _identityService.Signup(req);
             bool isSuccess = result.Data != null && result.Message == Const.SUCCESS_CREATE_MSG; 
 
             var response = new

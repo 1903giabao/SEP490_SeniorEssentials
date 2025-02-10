@@ -3,16 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CloudinaryDotNet;
+using Org.BouncyCastle.Ocsp;
 using SE.Common;
+using SE.Common.DTO;
 using SE.Data.Models;
 using SE.Data.UnitOfWork;
 using SE.Service.Base;
+using SE.Service.Helper;
 
 namespace SE.Service.Services
 {
     public interface IAccountService
     {
-        Task<IBusinessResult> CreateNewTempAccount(string email, string OTP);
+        Task<IBusinessResult> CreateNewTempAccount(CreateNewAccountDTO req);
 
     }
 
@@ -25,24 +29,46 @@ namespace SE.Service.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<IBusinessResult> CreateNewTempAccount (string email, string OTP)
+        public async Task<IBusinessResult> CreateNewTempAccount (CreateNewAccountDTO req)
         {
             try
             {
-                var existedAcc = _unitOfWork.AccountRepository.FindByCondition(e => e.Email.Equals(email)).FirstOrDefault();
+                var existedAcc = _unitOfWork.AccountRepository.FindByCondition(e => e.Email.Equals(req.Account)).FirstOrDefault();
+
+                int rs;
+                var newAccount = new Data.Models.Account(); 
                 if (existedAcc != null)
                 {
                     return new BusinessResult(Const.SUCCESS_CREATE, "Email already existed!", existedAcc);
                 }
 
-                var newAccount = new Account
+                if (FunctionCommon.IsValidPhoneNumber(req.Account))
                 {
-                    RoleId = 2,
-                    Email = email,
-                    Otp = OTP
-                };
-                var result = await _unitOfWork.AccountRepository.CreateAsync(newAccount);
-                if (result > 0)
+                    newAccount = new Data.Models.Account
+                    {
+                        RoleId = req.RoleId,
+                        PhoneNumber = req.Account,
+                        Otp = req.OTP,
+                        Password = SecurityUtil.Hash(req.Password),
+                        IsVerified = false
+                    };
+                    rs = await _unitOfWork.AccountRepository.CreateAsync(newAccount);
+                }
+                else
+                {
+                    newAccount = new Data.Models.Account
+                    {
+                        RoleId = req.RoleId,
+                        PhoneNumber = req.Account,
+                        Otp = req.OTP,
+                        Password = SecurityUtil.Hash(req.Password),
+                        IsVerified = false
+                    };
+                    rs = await _unitOfWork.AccountRepository.CreateAsync(newAccount);
+                }
+
+                   
+                if (rs > 0)
                 {
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newAccount);
                 }
