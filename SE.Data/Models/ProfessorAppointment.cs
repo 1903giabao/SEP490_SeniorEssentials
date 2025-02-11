@@ -27,6 +27,8 @@ public partial class ProfessorAppointment
 
     public string Status { get; set; }
 
+    public string Report { get; set; }
+
     public virtual Booking Booking { get; set; }
 
     public virtual Elderly Elderly { get; set; }

@@ -14,7 +14,6 @@ namespace SE.Data.UnitOfWork
         private ActivityRepository _activityRepository;
         private ActivityScheduleRepository _activityScheduleRepository; 
         private BookingRepository _bookingRepository;
-        private ChatRepository _chatRepository;
         private ComboRepository _comboRepository;
         private ContentProviderRepository _contentProviderRepository;
         private EmergencyContactRepository _emergencyContactRepository;
@@ -33,7 +32,6 @@ namespace SE.Data.UnitOfWork
         private MedicationDayRepository _medicationDayRepository;
         private MedicationHistoryRepository _medicationHistoryRepository;
         private MedicationScheduleRepository _medicationScheduleRepository;
-        private MessageRepository _messageRepository;
         private NotificationRepository _notificationRepository;
         private ProfessorAppointmentRepository _professorAppointmentRepository;
         private ProfessorRatingRepository _professorRatingRepository;
@@ -75,11 +73,6 @@ namespace SE.Data.UnitOfWork
         public BookingRepository BookingRepository
         {
             get => _bookingRepository ??= new BookingRepository(_unitOfWorkContext);
-        }
-
-        public ChatRepository ChatRepository
-        {
-            get => _chatRepository ??= new ChatRepository(_unitOfWorkContext);
         }
 
         public ComboRepository ComboRepository
@@ -170,11 +163,6 @@ namespace SE.Data.UnitOfWork
         public MedicationScheduleRepository MedicationScheduleRepository
         {
             get => _medicationScheduleRepository ??= new MedicationScheduleRepository(_unitOfWorkContext);
-        }
-
-        public MessageRepository MessageRepository
-        {
-            get => _messageRepository ??= new MessageRepository(_unitOfWorkContext);
         }
 
         public NotificationRepository NotificationRepository

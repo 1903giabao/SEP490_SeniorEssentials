@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SE.Common.Request
 {
-    public class LoginRequestModel
+    public class LoginRequest
     {
         public string Email {  get; set; }
         public string Password { get; set; }

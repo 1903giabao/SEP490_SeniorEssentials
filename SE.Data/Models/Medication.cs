@@ -37,7 +37,11 @@ public partial class Medication
 
     public string Status { get; set; }
 
+    public int PrescriptionId { get; set; }
+
     public virtual Elderly Elderly { get; set; }
 
     public virtual ICollection<MedicationSchedule> MedicationSchedules { get; set; } = new List<MedicationSchedule>();
+
+    public virtual Prescription Prescription { get; set; }
 }

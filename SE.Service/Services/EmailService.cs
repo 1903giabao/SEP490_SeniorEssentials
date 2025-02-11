@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using MimeKit;
 using Org.BouncyCastle.Asn1.Pkcs;
 using SE.Common.DTO;
+using SE.Service.Helper;
 
 namespace SE.Service.Services
 {

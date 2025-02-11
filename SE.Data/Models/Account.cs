@@ -35,8 +35,6 @@ public partial class Account
 
     public string DeviceToken { get; set; }
 
-    public virtual ICollection<Chat> Chats { get; set; } = new List<Chat>();
-
     public virtual ContentProvider ContentProvider { get; set; }
 
     public virtual Elderly Elderly { get; set; }
@@ -46,8 +44,6 @@ public partial class Account
     public virtual FamilyMember FamilyMember { get; set; }
 
     public virtual ICollection<GroupMember> GroupMembers { get; set; } = new List<GroupMember>();
-
-    public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 

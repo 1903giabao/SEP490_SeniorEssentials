@@ -8,6 +8,7 @@ using SE.Common.DTO;
 using SE.Common.Mapper;
 using SE.Common.Setting;
 using SE.Data.UnitOfWork;
+using SE.Service.Helper;
 using SE.Service.Services;
 
 var builder = WebApplication.CreateBuilder(args);

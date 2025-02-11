@@ -39,7 +39,7 @@ namespace SE.API.Controllers
         }
 
         [HttpPost("managed-auths/otp/verify")]
-        public async Task<IActionResult> SubmitOTP(CreateUserReq req)
+        public async Task<IActionResult> SubmitOTP(CreateUserRequest req)
         {
             var result = await _identityService.SubmitOTP(req);
             bool isSuccess = result.Data != null && result.Message == Const.SUCCESS_CREATE_MSG;
@@ -71,7 +71,7 @@ namespace SE.API.Controllers
 
         [AllowAnonymous]
         [HttpPost("managed-auths/sign-ins")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestModel req)
+        public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
             var loginResult = await _identityService.Login(req.Email, req.Password, req.DeviceToken);
             bool isSuccess = loginResult.Data != null && loginResult.Message == Const.SUCCESS_LOGIN_MSG;

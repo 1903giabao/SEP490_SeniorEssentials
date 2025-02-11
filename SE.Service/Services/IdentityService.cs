@@ -30,7 +30,7 @@ namespace SE.Service.Services
     public interface IIdentityService
     {
         Task<IBusinessResult> SendOtpToUser(string email,string password, int role);
-        Task<IBusinessResult> SubmitOTP(CreateUserReq req);
+        Task<IBusinessResult> SubmitOTP(CreateUserRequest req);
         Task<IBusinessResult> Signup(SignUpModel req);
         Task<IBusinessResult> Login(string email, string password, string deviceToken);
         Task<UserModel> GetUserInToken(string token);
@@ -155,7 +155,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> SubmitOTP(CreateUserReq req)
+        public async Task<IBusinessResult> SubmitOTP(CreateUserRequest req)
         {
             try
             {
