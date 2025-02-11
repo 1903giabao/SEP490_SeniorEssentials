@@ -16,6 +16,7 @@ using Org.BouncyCastle.Ocsp;
 using AutoMapper.Execution;
 using SE.Data.Models;
 using Microsoft.IdentityModel.Tokens;
+using System.Text.RegularExpressions;
 
 namespace SE.Service.Services
 {
@@ -268,13 +269,37 @@ namespace SE.Service.Services
         {
             try
             {
+                var userGroupIds = new Dictionary<int, HashSet<int>>();
+
                 foreach (var user in req.Members)
                 {
                     var isExisted = await _unitOfWork.AccountRepository.GetByIdAsync(user.AccountId);
-
                     if (isExisted == null)
                     {
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
+                    }
+
+                    var userGroups = _unitOfWork.GroupMemberRepository
+                        .GetAll().Where(gm => gm.AccountId == user.AccountId).ToList();
+
+                    if (!userGroups.Any())
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, $"User {user.AccountId} is not in any group!");
+                    }
+
+                    userGroupIds[user.AccountId] = new HashSet<int>(userGroups.Select(gm => gm.GroupId));
+                }
+
+                if (userGroupIds.Count > 0)
+                {
+                    var firstUserGroupIds = userGroupIds.Values.First();
+
+                    foreach (var groupIds in userGroupIds.Values.Skip(1))
+                    {
+                        if (!firstUserGroupIds.Overlaps(groupIds))
+                        {
+                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Not all users are in the same group!");
+                        }
                     }
                 }
 
