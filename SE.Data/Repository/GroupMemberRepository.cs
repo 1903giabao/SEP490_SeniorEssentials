@@ -20,6 +20,7 @@ namespace SE.Data.Repository
         public async Task<List<GroupMember>> GetGroupMembersByAccountIdAsync(int accountId)
         {
             return await _context.GroupMembers
+                .Include(x => x.Account)
                 .Include(x=>x.Group)
                 .Where(gm => gm.AccountId == accountId)
                 .ToListAsync();
@@ -29,12 +30,15 @@ namespace SE.Data.Repository
         {
             return await _context.GroupMembers
                 .Include(gm => gm.Group) 
+                .Include(x => x.Account)
                 .Where(gm => gm.GroupId == groupId)
                 .ToListAsync();
         }
         public async Task<GroupMember> GetByGroupIdAndAccountIdAsync(int groupId, int accountId)
         {
             return await _context.GroupMembers
+                .Include(x => x.Account)
+                .Include(x=>x.Group)
                 .FirstOrDefaultAsync(gm => gm.GroupId == groupId && gm.AccountId == accountId);
         }
     }

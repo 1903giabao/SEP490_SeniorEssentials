@@ -47,12 +47,15 @@ namespace SE.Common.Mapper
 
             CreateMap<FamilyTie, FamilyTieDTO>();
             CreateMap<CreateFamilyTieRequest, FamilyTie>()
-                        .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "Active"));
+                        .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "Active")).ReverseMap();
 
             CreateMap<CreateGroupRequest, Group>().ReverseMap();
 
             CreateMap<GroupMember, GroupMemberDTO>()
-                       .ForMember(dest => dest.GroupName, opt => opt.MapFrom(src => src.Group.GroupName)); 
+                       .ForMember(dest => dest.GroupName, opt => opt.MapFrom(src => src.Group.GroupName))
+                       .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Account.FullName))
+                       .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Account.Avatar))
+                       .ReverseMap();
 
             CreateMap<CreateHealthIndicatorRequest, HealthIndicator>()
            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status ?? "Active"));
