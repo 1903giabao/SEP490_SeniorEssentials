@@ -64,7 +64,7 @@ namespace SE.Service.Services
                     newAccount = new Data.Models.Account
                     {
                         RoleId = req.RoleId,
-                        PhoneNumber = req.Account,
+                        Email = req.Account,
                         Otp = req.OTP,
                         Password = SecurityUtil.Hash(req.Password),
                         IsVerified = false
