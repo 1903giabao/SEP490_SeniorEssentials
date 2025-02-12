@@ -17,16 +17,19 @@ using AutoMapper.Execution;
 using SE.Data.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.Text.RegularExpressions;
+using Firebase.Auth;
+using SE.Service.Helper;
 
 namespace SE.Service.Services
 {
     public interface IChatService
     {
         Task<IBusinessResult> SendMessage(SendMessageRequest req);
+        Task<IBusinessResult> ReplyMessage(ReplyMessageRequest req);
         Task<IBusinessResult> GetAllMessages(string roomId);
         Task<IBusinessResult> GetAllRoomChat(int userId);
         Task<IBusinessResult> MarkMessagesAsSeen(string roomId, long currentUserId);
-        Task<IBusinessResult> ChangeStatus(string roomId);
+        Task<IBusinessResult> ChangeStatus(int userId);
         Task<IBusinessResult> CreateGroupChat(CreateGroupChatRequest req);
     }
 
@@ -65,22 +68,143 @@ namespace SE.Service.Services
 
                 CollectionReference messagesRef = chatRef.Collection("Messages");
 
-                var newMessage = new
+                var urlLink = ("", "");
+
+                if (req.MessageType.Equals("Image"))
                 {
-                    SenderId = req.SenderId,
-                    SenderName = user.FullName,
-                    Message = req.Message,
-                    MessageType = req.MessageType,
-                    SentTime = DateTime.UtcNow,
-                    IsSeen = false,
-                    RepliedMessage = req.RepliedMessage,
-                    RepliedTo = req.RepliedTo,
-                    RepliedMessageType = req.RepliedMessageType,
-                };
+                    urlLink = await CloudinaryHelper.UploadImageAsync(req.FileMessage);
+                }
+                else if (req.MessageType.Equals("Video"))
+                {
+                    urlLink = await CloudinaryHelper.UploadVideoAsync(req.FileMessage);
+                }
+                else if (req.MessageType.Equals("Audio"))
+                {
+                    urlLink = await CloudinaryHelper.UploadAudioAsync(req.FileMessage);
+                }
 
-                await messagesRef.AddAsync(newMessage);
+                if (req.MessageType.Equals("Text") || req.MessageType.Equals("Gif")) 
+                {
+                    var newMessage = new
+                    {
+                        SenderId = req.SenderId,
+                        SenderName = user.FullName,
+                        Message = req.Message,
+                        MessageType = req.MessageType,
+                        SentTime = DateTime.UtcNow,
+                        IsSeen = false,
+                    };
 
-                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
+                    await messagesRef.AddAsync(newMessage);
+                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
+                }
+                else
+                {
+                    var newMessage = new
+                    {
+                        SenderId = req.SenderId,
+                        SenderName = user.FullName,
+                        Message = urlLink.Item2,
+                        MessageType = req.MessageType,
+                        SentTime = DateTime.UtcNow,
+                        IsSeen = false,
+                    };
+
+                    await messagesRef.AddAsync(newMessage);
+                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> ReplyMessage(ReplyMessageRequest req)
+        {
+            try
+            {
+                var user = await _unitOfWork.AccountRepository.GetByIdAsync(req.SenderId);
+
+                if (user == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
+                }
+
+                DocumentReference chatRef = _firestoreDb.Collection("ChatRooms").Document(req.RoomId);
+
+                DocumentReference userInRoom = chatRef.Collection("Members").Document(req.SenderId.ToString());
+                DocumentSnapshot snapshot = await userInRoom.GetSnapshotAsync();
+
+                if (!snapshot.Exists)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not belong to this room chat!");
+                }
+
+                DocumentReference messageInRoom = chatRef.Collection("Messages").Document(req.RepliedMessageId);
+                DocumentSnapshot messageSnapshot = await userInRoom.GetSnapshotAsync();
+
+                if (!messageSnapshot.Exists)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Message is not in this room chat!");
+                }
+
+                CollectionReference messagesRef = chatRef.Collection("Messages");
+
+                var urlLink = ("", "");
+
+                if (req.FileMessage != null)
+                {
+                    if (req.MessageType.Equals("Image"))
+                    {
+                        urlLink = await CloudinaryHelper.UploadImageAsync(req.FileMessage);
+                    }
+                    else if (req.MessageType.Equals("Video"))
+                    {
+                        urlLink = await CloudinaryHelper.UploadVideoAsync(req.FileMessage);
+                    }
+                    else if (req.MessageType.Equals("Audio"))
+                    {
+                        urlLink = await CloudinaryHelper.UploadAudioAsync(req.FileMessage);
+                    }
+                }
+
+                if (req.MessageType.Equals("Text") || req.MessageType.Equals("Gif"))
+                {
+                    var newMessage = new
+                    {
+                        SenderId = req.SenderId,
+                        SenderName = user.FullName,
+                        RepliedMessageId = req.RepliedMessageId,
+                        RepliedMessage = req.RepliedMessage,
+                        RepliedMessageType = req.RepliedMessageType,
+                        Message = req.Message,
+                        MessageType = req.MessageType,
+                        SentTime = DateTime.UtcNow,
+                        IsSeen = false,
+                    };
+
+                    await messagesRef.AddAsync(newMessage);
+                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
+                }
+                else
+                {
+                    var newMessage = new
+                    {
+                        SenderId = req.SenderId,
+                        SenderName = user.FullName,
+                        RepliedMessageId = req.RepliedMessageId,
+                        RepliedMessage = req.RepliedMessage,
+                        RepliedMessageType = req.RepliedMessageType,
+                        Message = urlLink.Item2,
+                        MessageType = req.MessageType,
+                        SentTime = DateTime.UtcNow,
+                        IsSeen = false,
+                    };
+
+                    await messagesRef.AddAsync(newMessage);
+                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
+                }
             }
             catch (Exception ex)
             {
@@ -146,8 +270,9 @@ namespace SE.Service.Services
                     var data = document.ToDictionary();
 
                     int numberOfMems = 0;
-                    var RoomName = string.Empty; 
-                    var RoomAvatar = string.Empty;
+                    var roomName = string.Empty; 
+                    var roomAvatar = string.Empty;
+                    var isOnline = false;
                     List<string> memberIdsList = new List<string>();
 
                     if (data.TryGetValue("MemberIds", out var memberIdsObj) &&
@@ -157,19 +282,35 @@ namespace SE.Service.Services
 
                         if (numberOfMems == 2)
                         {
-                            foreach (var key in memberIds.Keys)
+                            foreach (var member in memberIds)
                             {
-                                if (!key.Equals(userId.ToString()))
+                                if (!member.Key.Equals(userId.ToString()))
                                 {
-                                    var getUser = await _unitOfWork.AccountRepository.GetByIdAsync(int.Parse(key));
+                                    var getUser = await _unitOfWork.AccountRepository.GetByIdAsync(int.Parse(member.Key));
 
                                     if (getUser == null) 
                                     {
                                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
                                     }
 
-                                    RoomName = getUser.FullName;
-                                    RoomAvatar = getUser.Avatar;
+                                    DocumentReference onlineRef = _firestoreDb.Collection("OnlineMembers").Document(member.Key);
+
+                                    DocumentSnapshot onlineSnapshot = await onlineRef.GetSnapshotAsync();
+
+                                    if (!onlineSnapshot.Exists)
+                                    {
+                                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not belong to this room chat!");
+                                    }
+
+                                    var onlineData = onlineSnapshot.ToDictionary();
+
+                                    if (onlineData.TryGetValue("IsOnline", out var isOnlineCheck))
+                                    {
+                                        isOnline = (bool)isOnlineCheck;
+                                    }                            
+
+                                    roomName = getUser.FullName;
+                                    roomAvatar = getUser.Avatar;
                                 }
                             }
                         }
@@ -179,10 +320,10 @@ namespace SE.Service.Services
                     {
                         RoomId = document.Id,
                         CreatedAt = data["CreatedAt"]?.ToString(),
-                        IsOnline = data["IsOnline"] as bool? ?? false,
+                        IsOnline = isOnline,
                         IsGroupChat = data["IsGroupChat"] as bool? ?? false,
-                        RoomName = numberOfMems == 2 ? RoomName : data["RoomName"].ToString(),
-                        RoomAvatar = numberOfMems == 2 ? RoomAvatar : data["RoomAvatar"].ToString(),
+                        RoomName = numberOfMems == 2 ? roomName : data["RoomName"].ToString(),
+                        RoomAvatar = numberOfMems == 2 ? roomAvatar : data["RoomAvatar"].ToString(),
                         SenderId = data["SenderID"] as int?,
                         LastMessage = data["LastMessage"]?.ToString(),
                         SentTime = data["SentTime"]?.ToString(),
@@ -233,31 +374,50 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> ChangeStatus(string roomId)
+        public async Task<IBusinessResult> ChangeStatus(int userId)
         {
             try
             {
-                DocumentReference roomRef = _firestoreDb.Collection("ChatRooms").Document(roomId);
-
-                DocumentSnapshot roomSnapshot = await roomRef.GetSnapshotAsync();
-
-                if (!roomSnapshot.Exists)
+                var isExisted = await _unitOfWork.AccountRepository.GetByIdAsync(userId);
+                if (isExisted == null)
                 {
-                    return new BusinessResult(Const.FAIL_UPDATE, "Chat room does not exist.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
                 }
 
-                bool currentStatus = roomSnapshot.TryGetValue("IsOnline", out bool isOnline) && isOnline;
+                var userGroups = _unitOfWork.GroupMemberRepository
+                    .GetAll().Where(gm => gm.AccountId == userId).ToList();
 
-                bool newStatus = !currentStatus;
-
-                var updateData = new Dictionary<string, object>
+                if (!userGroups.Any())
                 {
-                    { "IsOnline", newStatus }
-                };
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, $"User {userId} is not in any group!");
+                }
 
-                await roomRef.UpdateAsync(updateData);
+                CollectionReference onlineMembersRef = _firestoreDb.Collection("OnlineMembers");
+                
+                DocumentSnapshot userSnapshot = await onlineMembersRef.Document(userId.ToString()).GetSnapshotAsync();
 
-                return new BusinessResult(Const.SUCCESS_UPDATE, $"Chat room status updated to {(newStatus ? "Online" : "Offline")}.");
+                bool newStatus;
+
+                if (userSnapshot.Exists)
+                {
+                    bool currentStatus = userSnapshot.TryGetValue("IsOnline", out bool isOnline) && isOnline;
+                    newStatus = !currentStatus;
+
+                    await onlineMembersRef.Document(userId.ToString()).UpdateAsync(new Dictionary<string, object>
+                    {
+                        { "IsOnline", newStatus }
+                    });
+                }
+                else
+                {
+                    newStatus = true;
+                    await onlineMembersRef.Document(userId.ToString()).SetAsync(new Dictionary<string, object>
+                    {
+                        { "IsOnline", newStatus }
+                    });
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, $"User  status updated to {(newStatus ? "Online" : "Offline")}.");
             }
             catch (Exception ex)
             {
@@ -305,6 +465,12 @@ namespace SE.Service.Services
 
                 if (string.IsNullOrEmpty(req.GroupId))
                 {
+                    int creatorCount = req.Members.Count(m => m.IsCreator);
+                    if (creatorCount != 1)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "There must be exactly one creator!");
+                    }
+
                     if (req.Members.Count <= 2)
                     {
                         return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Group must be > 2 members");
@@ -315,7 +481,6 @@ namespace SE.Service.Services
                     var newGroupData = new Dictionary<string, object>
                     {
                             { "CreatedAt", DateTime.UtcNow },
-                            { "IsOnline", false },
                             { "IsGroupChat", true },
                             { "RoomName", req.GroupName },
                             { "RoomAvatar", req.GroupAvatar },
@@ -343,8 +508,10 @@ namespace SE.Service.Services
                     var currentMembersList = currentMembers.Keys.ToList(); 
                     
                     var memberIdsList = new List<string>();
+
                     var membersRef = groupRef.Collection("Members");
-                    var membersSnapshot = await membersRef.GetSnapshotAsync();
+
+                    var onlineMembersRef = _firestoreDb.Collection("OnlineMembers");
 
                     foreach (var user in req.Members)
                     {
@@ -358,6 +525,13 @@ namespace SE.Service.Services
                             };
 
                             await membersRef.Document(user.AccountId.ToString()).SetAsync(memberData);
+
+                            var onlineMemberData = new Dictionary<string, object>
+                            {
+                                { "IsOnline", true }
+                            };
+
+                            await onlineMembersRef.Document(user.AccountId.ToString()).SetAsync(onlineMemberData);
                         }
                     }
 

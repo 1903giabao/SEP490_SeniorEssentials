@@ -7,10 +7,13 @@ using System.Threading.Tasks;
 
 namespace SE.Common.Request
 {
-    public class SendMessageRequest
+    public class ReplyMessageRequest
     {
         public int SenderId { get; set; }
         public string RoomId { get; set; }
+        public string RepliedMessageId { get; set; }
+        public string RepliedMessage { get; set; }
+        public string RepliedMessageType { get; set; }
         public string? Message { get; set; }
         public IFormFile? FileMessage { get; set; }
         public string MessageType { get; set; }
