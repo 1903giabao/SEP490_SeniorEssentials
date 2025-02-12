@@ -33,9 +33,16 @@ namespace SE.API.Controllers
 
 
         [HttpPost("send-message")]
-        public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest req)
+        public async Task<IActionResult> SendMessage([FromForm] SendMessageRequest req)
         {
             var result = await _chatService.SendMessage(req);
+            return Ok(result);
+        }
+
+        [HttpPost("reply-message")]
+        public async Task<IActionResult> ReplyMessage([FromForm] ReplyMessageRequest req)
+        {
+            var result = await _chatService.ReplyMessage(req);
             return Ok(result);
         }
 
@@ -61,9 +68,9 @@ namespace SE.API.Controllers
         }
 
         [HttpPut("change-status")]
-        public async Task<IActionResult> ChangeStatus([FromQuery] string roomId)
+        public async Task<IActionResult> ChangeStatus([FromQuery] int userId)
         {
-            var result = await _chatService.ChangeStatus(roomId);
+            var result = await _chatService.ChangeStatus(userId);
             return Ok(result);
         }
     }
