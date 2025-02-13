@@ -42,7 +42,7 @@ namespace SE.Service.Services
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _firestoreDb = FirestoreDb.Create("testproject-bc2e2");
+            _firestoreDb = FirestoreDb.Create("senioressentials-3ebc7");
         }
 
         public async Task<IBusinessResult> SendMessage(SendMessageRequest req)

@@ -1,9 +1,12 @@
 using System.Text;
 using AutoMapper;
+using FirebaseAdmin;
 using Google.Api;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json;
 using SE.Common.DTO;
 using SE.Common.Mapper;
 using SE.Common.Setting;
@@ -66,7 +69,7 @@ builder.Services.AddSingleton(mapper);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-string pathToServiceAccountKey = "D:/FPT/Term 9/Do an/Project/testproject-bc2e2-firebase-adminsdk-lqlxd-9709c02fcf.json";
+string pathToServiceAccountKey = "D:/FPT/Term 9/Do an/senioressentials-3ebc7-firebase-adminsdk-fbsvc-b54b1a4c41.json";
 Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", pathToServiceAccountKey);
 
 var jwtSettings =  builder.Configuration.GetSection(nameof(JwtSettings)).Get<JwtSettings>();
