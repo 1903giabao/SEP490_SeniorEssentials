@@ -14,6 +14,7 @@ namespace SE.Common.Request
         public string RepliedMessageId { get; set; }
         public string RepliedMessage { get; set; }
         public string RepliedMessageType { get; set; }
+        public string ReplyTo { get; set; }
         public string? Message { get; set; }
         public IFormFile? FileMessage { get; set; }
         public string MessageType { get; set; }

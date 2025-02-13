@@ -7,6 +7,7 @@ using SE.Service.Base;
 using SE.Common.Enums;
 using SE.Common.Request.SE.Common.Request;
 using Google.Cloud.Firestore;
+using Firebase.Auth;
 
 namespace SE.Service.Services
 {
@@ -28,7 +29,7 @@ namespace SE.Service.Services
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _firestoreDb = FirestoreDb.Create("testproject-bc2e2");
+            _firestoreDb = FirestoreDb.Create("senioressentials-3ebc7");
         }
 
         public async Task<IBusinessResult> CreateGroup(CreateGroupRequest request)
@@ -112,7 +113,6 @@ namespace SE.Service.Services
                         var pairChatRoomData = new Dictionary<string, object>
                         {
                             { "CreatedAt", DateTime.UtcNow },
-                            { "IsOnline", false }, 
                             { "IsGroupChat", false },
                             { "RoomName", groupName },
                             { "RoomAvatar", "" },
@@ -141,7 +141,6 @@ namespace SE.Service.Services
                     var groupChatRoomData = new Dictionary<string, object>
                     {
                         { "CreatedAt", DateTime.UtcNow },
-                        { "IsOnline", false },
                         { "IsGroupChat", true },
                         { "RoomName", groupName },
                         { "RoomAvatar", "" },
@@ -161,6 +160,20 @@ namespace SE.Service.Services
                         await groupChatRoomRef.Collection("Members").Document(member.AccountId.ToString()).SetAsync(new { IsCreator = member.IsCreator });
                     }
                 }
+
+                var onlineMembersRef = _firestoreDb.Collection("OnlineMembers");
+
+                foreach (var member in groupMembers)
+                {
+                    var onlineMemberData = new Dictionary<string, object>
+                            {
+                                { "IsOnline", true }
+                            };
+
+                    await onlineMembersRef.Document(member.AccountId.ToString()).SetAsync(onlineMemberData);
+                }
+
+
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Chat rooms created successfully.");
             }

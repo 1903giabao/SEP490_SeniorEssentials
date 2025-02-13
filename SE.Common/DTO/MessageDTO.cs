@@ -15,7 +15,7 @@ namespace SE.Common.DTO
         public string SentTime { get; set; }
         public bool IsSeen { get; set; }
         public string RepliedMessage { get; set; }
-        public string RepliedTo { get; set; }
+        public string ReplyTo { get; set; }
         public string RepliedMessageType { get; set; }
 
     }
