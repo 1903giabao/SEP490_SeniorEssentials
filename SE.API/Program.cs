@@ -1,9 +1,10 @@
 using System.Text;
 using AutoMapper;
 using FirebaseAdmin;
-using Google.Api;
 using Google.Apis.Auth.OAuth2;
+using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
@@ -16,7 +17,7 @@ using SE.Service.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+// CORS policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAnyOrigin",
@@ -28,11 +29,12 @@ builder.Services.AddCors(options =>
         });
 });
 
-
+// Email configuration
 var emailConfig = builder.Configuration.GetSection("EmailConfiguration").Get<EmailSettings>();
 builder.Services.AddSingleton(emailConfig);
 builder.Services.AddTransient<EmailService>();
 
+// Dependency injection for services
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IIdentityService, IdentityService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
@@ -57,7 +59,19 @@ builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddScoped<ISmsService, SmsService>();
 
 
+var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountKey.json");
+System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialPath);
 
+// Initialize Firebase Admin SDK
+FirebaseApp.Create(new AppOptions()
+{
+    Credential = GoogleCredential.GetApplicationDefault()
+});
+
+// Add Firestore DB Service (use Project ID)
+builder.Services.AddSingleton(FirestoreDb.Create("beyzasproject"));
+
+// AutoMapper configuration
 var mapperConfig = new MapperConfiguration(mc =>
 {
     mc.AddProfile(new ApplicationMapper());
@@ -66,20 +80,19 @@ var mapperConfig = new MapperConfiguration(mc =>
 IMapper mapper = mapperConfig.CreateMapper();
 builder.Services.AddSingleton(mapper);
 
+// Add controllers and endpoints
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-string pathToServiceAccountKey = "D:/FPT/Term 9/Do an/senioressentials-3ebc7-firebase-adminsdk-fbsvc-b54b1a4c41.json";
-Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", pathToServiceAccountKey);
 
-var jwtSettings =  builder.Configuration.GetSection(nameof(JwtSettings)).Get<JwtSettings>();
+// JWT settings
+var jwtSettings = builder.Configuration.GetSection(nameof(JwtSettings)).Get<JwtSettings>();
 builder.Services.Configure<JwtSettings>(val =>
 {
     val.Key = jwtSettings.Key;
 });
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddMvc();
+// Swagger configuration
 builder.Services.AddSwaggerGen(option =>
 {
     option.SwaggerDoc("v1", new OpenApiInfo { Title = "Mock API", Version = "v1" });
@@ -93,59 +106,57 @@ builder.Services.AddSwaggerGen(option =>
         Scheme = "Bearer"
     });
     option.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
                 {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type=ReferenceType.SecurityScheme,
-                                Id="Bearer"
-                            }
-                        },
-                        new string[]{}
-                    }
-                });
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[]{}
+        }
+    });
     option.EnableAnnotations();
 });
 
+// Authentication configuration
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-    .AddJwtBearer(options =>
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters()
     {
-        options.TokenValidationParameters = new TokenValidationParameters()
-        {
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true
-        };
-    });
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true
+    };
+});
 
+// Authorization configuration
 builder.Services.AddAuthorization();
 
+// CORS configuration
 builder.Services.AddCors(option =>
     option.AddPolicy("CORS", builder =>
         builder.AllowAnyMethod().AllowAnyHeader().SetIsOriginAllowed((host) => true)));
 
 var app = builder.Build();
 
+// Middleware configuration
 app.UseSwagger(op => op.SerializeAsV2 = false);
 app.UseSwaggerUI();
 app.UseCors("CORS");
-
 app.UseHttpsRedirection();
-
-
 app.UseAuthentication();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

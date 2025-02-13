@@ -130,11 +130,13 @@ namespace SE.Service.Services
                         RoleId = role
                     };
                     var createUserResponse = await _accountService.CreateNewTempAccount(newAccount);
-
+                    var user = (Account)createUserResponse;
                     rs = new
                     {
                         Message = "Send OTP successfully!",
-                        Method = "Phone number"
+                        Method = "Phone number",
+                        AccountId = user.AccountId
+
                     };
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, rs);
@@ -251,12 +253,12 @@ namespace SE.Service.Services
         {
             try
             {
-                if (!FunctionCommon.IsValidEmail(email))
+                if (!FunctionCommon.IsValidEmail(email) && !FunctionCommon.IsValidPhoneNumber(email))
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Wrong email format!");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid email or phone number format!");
                 }
                 var user = _unitOfWork.AccountRepository
-                                            .FindByCondition(u => u.Email == email)
+                                            .FindByCondition(u => u.Email == email || u.PhoneNumber == email)
                                             .FirstOrDefault();
                 var hash = SecurityUtil.Hash(password);
 

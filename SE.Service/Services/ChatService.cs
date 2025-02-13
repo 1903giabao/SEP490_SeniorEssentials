@@ -101,7 +101,7 @@ namespace SE.Service.Services
                     {
                         { "LastMessage", req.Message },
                         { "SentTime", DateTime.UtcNow },
-                        { "SentTime", req.SenderId },
+                        { "SenderID", req.SenderId },
                     });
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
@@ -124,7 +124,7 @@ namespace SE.Service.Services
                     {
                         { "LastMessage", req.Message },
                         { "SentTime", DateTime.UtcNow },
-                        { "SentTime", req.SenderId },
+                        { "SenderID", req.SenderId },
                     });
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
@@ -207,7 +207,7 @@ namespace SE.Service.Services
                     {
                         { "LastMessage", req.Message },
                         { "SentTime", DateTime.UtcNow },
-                        { "SenderID", req.SenderId },
+                        { "SenderID", req.SenderId }
                     });
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
@@ -233,7 +233,7 @@ namespace SE.Service.Services
                     {
                         { "LastMessage", req.Message },
                         { "SentTime", DateTime.UtcNow },
-                        { "SenderID", req.SenderId },
+                        { "SenderID", req.SenderId }
                     });
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
