@@ -96,6 +96,14 @@ namespace SE.Service.Services
                     };
 
                     await messagesRef.AddAsync(newMessage);
+
+                    await chatRef.UpdateAsync(new Dictionary<string, object>
+                    {
+                        { "LastMessage", req.Message },
+                        { "SentTime", DateTime.UtcNow },
+                        { "SentTime", req.SenderId },
+                    });
+
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
                 }
                 else
@@ -111,6 +119,14 @@ namespace SE.Service.Services
                     };
 
                     await messagesRef.AddAsync(newMessage);
+
+                    await chatRef.UpdateAsync(new Dictionary<string, object>
+                    {
+                        { "LastMessage", req.Message },
+                        { "SentTime", DateTime.UtcNow },
+                        { "SentTime", req.SenderId },
+                    });
+
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
                 }
             }
@@ -178,6 +194,7 @@ namespace SE.Service.Services
                         RepliedMessageId = req.RepliedMessageId,
                         RepliedMessage = req.RepliedMessage,
                         RepliedMessageType = req.RepliedMessageType,
+                        ReplyTo = req.ReplyTo,
                         Message = req.Message,
                         MessageType = req.MessageType,
                         SentTime = DateTime.UtcNow,
@@ -185,6 +202,14 @@ namespace SE.Service.Services
                     };
 
                     await messagesRef.AddAsync(newMessage);
+
+                    await chatRef.UpdateAsync(new Dictionary<string, object>
+                    {
+                        { "LastMessage", req.Message },
+                        { "SentTime", DateTime.UtcNow },
+                        { "SenderID", req.SenderId },
+                    });
+
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
                 }
                 else
@@ -203,6 +228,14 @@ namespace SE.Service.Services
                     };
 
                     await messagesRef.AddAsync(newMessage);
+
+                    await chatRef.UpdateAsync(new Dictionary<string, object>
+                    {
+                        { "LastMessage", req.Message },
+                        { "SentTime", DateTime.UtcNow },
+                        { "SenderID", req.SenderId },
+                    });
+
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
                 }
             }
@@ -234,7 +267,7 @@ namespace SE.Service.Services
                         SentTime = messageData.ContainsKey("SentTime") ? messageData["SentTime"].ToString() : string.Empty,
                         IsSeen = messageData.ContainsKey("IsSeen") && (bool)messageData["IsSeen"],
                         RepliedMessage = messageData.ContainsKey("RepliedMessage") ? messageData["RepliedMessage"].ToString() : string.Empty,
-                        RepliedTo = messageData.ContainsKey("RepliedTo") ? messageData["RepliedTo"].ToString() : string.Empty,
+                        ReplyTo = messageData.ContainsKey("ReplyTo") ? messageData["ReplyTo"].ToString() : string.Empty,
                         RepliedMessageType = messageData.ContainsKey("RepliedMessageType") ? messageData["RepliedMessageType"].ToString() : string.Empty,
                     };
                     messages.Add(message);
