@@ -19,9 +19,26 @@ namespace SE.API.Controllers
         [HttpGet]
         [SwaggerOperation(Summary = "Get all activities of elderly in day")]
 
-        public async Task<IActionResult> GetallUsers()
+        public async Task<IActionResult> GetAllUsers()
         {
             var result = await _activityService.GetAllUsers();
+            bool isSuccess = result.Data != null && result.Message == Const.SUCCESS_READ_MSG;
+
+            var response = new
+            {
+                isSuccess = isSuccess,
+                data = result.Data
+            };
+
+            return Ok(result);
+        }
+
+        [HttpGet("userId")]
+        [SwaggerOperation(Summary = "Get detail user by id")]
+
+        public async Task<IActionResult> GetUserById(int userId)
+        {
+            var result = await _activityService.GetUserById(userId);
             bool isSuccess = result.Data != null && result.Message == Const.SUCCESS_READ_MSG;
 
             var response = new

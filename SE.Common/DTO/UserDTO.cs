@@ -35,5 +35,7 @@ namespace SE.Common.DTO
         public bool? IsVerified { get; set; }
 
         public string DeviceToken { get; set; }
+
+        public bool? IsOnline { get; set; }
     }
 }

@@ -69,7 +69,7 @@ FirebaseApp.Create(new AppOptions()
 });
 
 // Add Firestore DB Service (use Project ID)
-builder.Services.AddSingleton(FirestoreDb.Create("beyzasproject"));
+builder.Services.AddSingleton(FirestoreDb.Create("senioressentials-3ebc7"));
 
 // AutoMapper configuration
 var mapperConfig = new MapperConfiguration(mc =>
