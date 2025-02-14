@@ -38,11 +38,11 @@ namespace SE.Service.Services
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly FirestoreDb _firestoreDb;
-        public ChatService(UnitOfWork unitOfWork, IMapper mapper)
+        public ChatService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _firestoreDb = FirestoreDb.Create("senioressentials-3ebc7");
+            _firestoreDb = firestoreDb;
         }
 
         public async Task<IBusinessResult> SendMessage(SendMessageRequest req)
@@ -83,15 +83,20 @@ namespace SE.Service.Services
                     urlLink = await CloudinaryHelper.UploadAudioAsync(req.FileMessage);
                 }
 
+                var sentTime = DateTime.Now;
+
                 if (req.MessageType.Equals("Text") || req.MessageType.Equals("Gif")) 
                 {
                     var newMessage = new
                     {
                         SenderId = req.SenderId,
                         SenderName = user.FullName,
+                        SenderAvatar = user.Avatar,
                         Message = req.Message,
                         MessageType = req.MessageType,
-                        SentTime = DateTime.UtcNow,
+                        SentDate = sentTime.ToString("dd-MM-yyyy"),
+                        SentTime = string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes),
+                        SentDateTime = sentTime.ToString("dd-MM-yyyy HH:mm"),
                         IsSeen = false,
                     };
 
@@ -100,7 +105,9 @@ namespace SE.Service.Services
                     await chatRef.UpdateAsync(new Dictionary<string, object>
                     {
                         { "LastMessage", req.Message },
-                        { "SentTime", DateTime.UtcNow },
+                        { "SentDate", sentTime.ToString("dd-MM-yyyy") },
+                        { "SentTime", string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
+                        { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
                         { "SenderID", req.SenderId },
                     });
 
@@ -112,9 +119,12 @@ namespace SE.Service.Services
                     {
                         SenderId = req.SenderId,
                         SenderName = user.FullName,
+                        SenderAvatar = user.Avatar,
                         Message = urlLink.Item2,
                         MessageType = req.MessageType,
-                        SentTime = DateTime.UtcNow,
+                        SentDate = sentTime.ToString("dd-MM-yyyy"),
+                        SentTime = string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes),
+                        SentDateTime = sentTime.ToString("dd-MM-yyyy HH:mm"),
                         IsSeen = false,
                     };
 
@@ -123,7 +133,9 @@ namespace SE.Service.Services
                     await chatRef.UpdateAsync(new Dictionary<string, object>
                     {
                         { "LastMessage", req.Message },
-                        { "SentTime", DateTime.UtcNow },
+                        { "SentDate", sentTime.ToString("dd-MM-yyyy") },
+                        { "SentTime", string.Format("{0:D2}:{1:D2}",(int) sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
+                        { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
                         { "SenderID", req.SenderId },
                     });
 
@@ -185,19 +197,24 @@ namespace SE.Service.Services
                     }
                 }
 
+                var sentTime = DateTime.Now;
+
                 if (req.MessageType.Equals("Text") || req.MessageType.Equals("Gif"))
                 {
                     var newMessage = new
                     {
                         SenderId = req.SenderId,
                         SenderName = user.FullName,
+                        SenderAvatar = user.Avatar,
                         RepliedMessageId = req.RepliedMessageId,
                         RepliedMessage = req.RepliedMessage,
                         RepliedMessageType = req.RepliedMessageType,
                         ReplyTo = req.ReplyTo,
                         Message = req.Message,
                         MessageType = req.MessageType,
-                        SentTime = DateTime.UtcNow,
+                        SentDate = sentTime.ToString("dd-MM-yyyy"),
+                        SentTime = string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes),
+                        SentDateTime = sentTime.ToString("dd-MM-yyyy HH:mm"),
                         IsSeen = false,
                     };
 
@@ -206,8 +223,10 @@ namespace SE.Service.Services
                     await chatRef.UpdateAsync(new Dictionary<string, object>
                     {
                         { "LastMessage", req.Message },
-                        { "SentTime", DateTime.UtcNow },
-                        { "SenderID", req.SenderId }
+                        { "SentDate", sentTime.ToString("dd-MM-yyyy") },
+                        { "SentTime", string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
+                        { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
+                        { "SenderID", req.SenderId },
                     });
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
@@ -218,12 +237,15 @@ namespace SE.Service.Services
                     {
                         SenderId = req.SenderId,
                         SenderName = user.FullName,
+                        SenderAvatar = user.Avatar,
                         RepliedMessageId = req.RepliedMessageId,
                         RepliedMessage = req.RepliedMessage,
                         RepliedMessageType = req.RepliedMessageType,
                         Message = urlLink.Item2,
                         MessageType = req.MessageType,
-                        SentTime = DateTime.UtcNow,
+                        SentDate = sentTime.ToString("dd-MM-yyyy"),
+                        SentTime = string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes),
+                        SentDateTime = sentTime.ToString("dd-MM-yyyy HH:mm"),
                         IsSeen = false,
                     };
 
@@ -232,8 +254,10 @@ namespace SE.Service.Services
                     await chatRef.UpdateAsync(new Dictionary<string, object>
                     {
                         { "LastMessage", req.Message },
-                        { "SentTime", DateTime.UtcNow },
-                        { "SenderID", req.SenderId }
+                        { "SentDate", sentTime.ToString("dd-MM-yyyy") },
+                        { "SentTime", string.Format("{0:D2}:{1:D2}",(int) sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
+                        { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
+                        { "SenderID", req.SenderId },
                     });
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
@@ -251,7 +275,7 @@ namespace SE.Service.Services
             {
                 CollectionReference messagesRef = _firestoreDb.Collection("ChatRooms").Document(roomId).Collection("Messages");
 
-                QuerySnapshot snapshot = await messagesRef.OrderBy("SentTime").GetSnapshotAsync();
+                QuerySnapshot snapshot = await messagesRef.OrderBy("SentDateTime").GetSnapshotAsync();
 
                 List<MessageDTO> messages = new List<MessageDTO>();
 
@@ -261,10 +285,13 @@ namespace SE.Service.Services
                     var message = new MessageDTO
                     {
                         SenderName = messageData.ContainsKey("SenderName") ? messageData["SenderName"].ToString() : string.Empty,
+                        SenderAvatar = messageData.ContainsKey("SenderAvatar") ? messageData["SenderAvatar"].ToString() : string.Empty,
                         MessageId = document.Id,
                         Message = messageData.ContainsKey("Message") ? messageData["Message"].ToString() : string.Empty,
                         MessageType = messageData.ContainsKey("MessageType") ? messageData["MessageType"].ToString() : string.Empty,
+                        SentDate = messageData.ContainsKey("SentDate") ? messageData["SentDate"].ToString() : string.Empty,
                         SentTime = messageData.ContainsKey("SentTime") ? messageData["SentTime"].ToString() : string.Empty,
+                        SentDateTime = messageData.ContainsKey("SentDateTime") ? messageData["SentDateTime"].ToString() : string.Empty,
                         IsSeen = messageData.ContainsKey("IsSeen") && (bool)messageData["IsSeen"],
                         RepliedMessage = messageData.ContainsKey("RepliedMessage") ? messageData["RepliedMessage"].ToString() : string.Empty,
                         ReplyTo = messageData.ContainsKey("ReplyTo") ? messageData["ReplyTo"].ToString() : string.Empty,
@@ -357,9 +384,11 @@ namespace SE.Service.Services
                         IsGroupChat = data["IsGroupChat"] as bool? ?? false,
                         RoomName = numberOfMems == 2 ? roomName : data["RoomName"].ToString(),
                         RoomAvatar = numberOfMems == 2 ? roomAvatar : data["RoomAvatar"].ToString(),
-                        SenderId = data["SenderID"] as int?,
+                        SenderId = data["SenderID"] as long?,
                         LastMessage = data["LastMessage"]?.ToString(),
+                        SentDate = data["SentDate"]?.ToString(),
                         SentTime = data["SentTime"]?.ToString(),
+                        SentDateTime = data["SentDateTime"]?.ToString(),
                         NumberOfMems = numberOfMems
                     });
                 }
@@ -513,13 +542,15 @@ namespace SE.Service.Services
                     var newGroupRef = _firestoreDb.Collection("ChatRooms").Document(req.GroupId);
                     var newGroupData = new Dictionary<string, object>
                     {
-                            { "CreatedAt", DateTime.UtcNow },
+                            { "CreatedAt", DateTime.Now.ToString("dd-MM-yyyy HH:mm") },
                             { "IsGroupChat", true },
                             { "RoomName", req.GroupName },
                             { "RoomAvatar", req.GroupAvatar },
                             { "SenderID", 0 },
                             { "LastMessage", "" },
+                            { "SentDate",  null },
                             { "SentTime",  null },
+                            { "SentDateTime",  null },
                             { "MemberIds", new Dictionary<string, object>() },
                     };
 

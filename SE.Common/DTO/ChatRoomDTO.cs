@@ -15,8 +15,10 @@ namespace SE.Common.DTO
         public bool? IsOnline { get; set; }
         public bool? IsGroupChat { get; set; }
         public int? NumberOfMems { get; set; }
-        public int? SenderId { get; set; }
+        public long? SenderId { get; set; }
         public string? LastMessage { get; set; }
+        public string? SentDate { get; set; }
         public string? SentTime { get; set; }
+        public string? SentDateTime { get; set; }
     }
 }

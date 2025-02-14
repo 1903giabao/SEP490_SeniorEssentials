@@ -25,11 +25,11 @@ namespace SE.Service.Services
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly FirestoreDb _firestoreDb;
-        public GroupService(UnitOfWork unitOfWork, IMapper mapper)
+        public GroupService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _firestoreDb = FirestoreDb.Create("senioressentials-3ebc7");
+            _firestoreDb = firestoreDb;
         }
 
         public async Task<IBusinessResult> CreateGroup(CreateGroupRequest request)
@@ -52,7 +52,7 @@ namespace SE.Service.Services
                 }
 
                 var group = _mapper.Map<Group>(request);
-                group.CreatedDate = DateTime.UtcNow;
+                group.CreatedDate = DateTime.Now;
                 group.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.GroupRepository.CreateAsync(group);
@@ -112,13 +112,15 @@ namespace SE.Service.Services
 
                         var pairChatRoomData = new Dictionary<string, object>
                         {
-                            { "CreatedAt", DateTime.UtcNow },
+                            { "CreatedAt", DateTime.Now.ToString("dd-MM-yyyy HH:mm") },
                             { "IsGroupChat", false },
                             { "RoomName", groupName },
                             { "RoomAvatar", "" },
                             { "SenderID", 0 },
                             { "LastMessage", "" },
+                            { "SentDate",  null },
                             { "SentTime",  null },
+                            { "SentDateTime",  null },
                             { "MemberIds", new Dictionary<string, object>
                                 {
                                     { member1.AccountId.ToString(), true },
@@ -140,13 +142,15 @@ namespace SE.Service.Services
 
                     var groupChatRoomData = new Dictionary<string, object>
                     {
-                        { "CreatedAt", DateTime.UtcNow },
+                        { "CreatedAt", DateTime.Now.ToString("dd-MM-yyyy HH:mm") },
                         { "IsGroupChat", true },
                         { "RoomName", groupName },
                         { "RoomAvatar", "" },
                         { "SenderID", 0 },
                         { "LastMessage", "" },
+                        { "SentDate", null },
                         { "SentTime", null },
+                        { "SentDateTime", null },
                             {
                                 "MemberIds", groupMembers
                                     .ToDictionary(m => m.AccountId.ToString(), m => (object)true)

@@ -72,7 +72,7 @@ namespace SE.Common.Mapper
 
             CreateMap<Combo, ComboDto>();
 
-            CreateMap<Account, UserDTO>();
+            CreateMap<Account, UserDTO>().ReverseMap();
         }
     }
 }

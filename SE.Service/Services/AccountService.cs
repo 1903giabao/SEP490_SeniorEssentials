@@ -4,7 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
+using AutoMapper.Execution;
 using CloudinaryDotNet;
+using Firebase.Auth;
+using Google.Cloud.Firestore;
 using Org.BouncyCastle.Ocsp;
 using SE.Common;
 using SE.Common.DTO;
@@ -19,19 +22,20 @@ namespace SE.Service.Services
     {
         Task<IBusinessResult> CreateNewTempAccount(CreateNewAccountDTO req);
         Task<IBusinessResult> GetAllUsers();
-
+        Task<IBusinessResult> GetUserById(int id);
     }
 
     public class AccountService : IAccountService
     {
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly FirestoreDb _firestoreDb;
 
-        public AccountService(UnitOfWork unitOfWork, IMapper mapper
-)
+        public AccountService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _firestoreDb = firestoreDb;
         }
 
         public async Task<IBusinessResult> CreateNewTempAccount(CreateNewAccountDTO req)
@@ -91,7 +95,56 @@ namespace SE.Service.Services
             var users = _unitOfWork.AccountRepository.GetAll();
 
             var rs = _mapper.Map<List<UserDTO>>(users);
+
+            CollectionReference onlineRef = _firestoreDb.Collection("OnlineMembers");
+
+            foreach (var user in rs)
+            {
+                DocumentSnapshot onlineSnapshot = await onlineRef.Document(user.AccountId.ToString()).GetSnapshotAsync();
+
+                var onlineData = onlineSnapshot.ToDictionary();
+
+                if (onlineData != null)
+                {
+                    user.IsOnline = onlineData.ContainsKey("IsOnline") && (bool)onlineData["IsOnline"];
+                }
+                else
+                {
+                    user.IsOnline = false;
+                }
+
+            }
+
             return new BusinessResult (Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
+        }
+
+        public async Task<IBusinessResult> GetUserById(int id)
+        {
+            try
+            {
+                var user = await _unitOfWork.AccountRepository.GetByIdAsync(id);
+
+                if (user == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
+                }
+
+                DocumentReference onlineRef = _firestoreDb.Collection("OnlineMembers").Document(id.ToString());
+
+                DocumentSnapshot onlineSnapshot = await onlineRef.GetSnapshotAsync();
+
+                var onlineData = onlineSnapshot.ToDictionary();
+
+                var rs = _mapper.Map<UserDTO>(user);
+
+                rs.IsOnline = onlineData.ContainsKey("IsOnline") && (bool)onlineData["IsOnline"];
+
+                return new BusinessResult (Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
         }
 
     }
