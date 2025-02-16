@@ -68,9 +68,9 @@ namespace SE.API.Controllers
         }
 
         [HttpPut("change-status")]
-        public async Task<IActionResult> ChangeStatus([FromQuery] int userId)
+        public async Task<IActionResult> ChangeStatus([FromQuery] int userId, [FromQuery] bool isOnline)
         {
-            var result = await _chatService.ChangeStatus(userId);
+            var result = await _chatService.ChangeStatus(userId, isOnline);
             return Ok(result);
         }
     }
