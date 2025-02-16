@@ -284,7 +284,7 @@ namespace SE.Service.Services
                     var messageData = document.ToDictionary();
                     var message = new MessageDTO
                     {
-                        SenderId = messageData.ContainsKey("SenderId") ? (int)messageData["SenderId"] : 0,
+                        SenderId = messageData.ContainsKey("SenderId") ? (long)messageData["SenderId"] : 0,
                         SenderName = messageData.ContainsKey("SenderName") ? messageData["SenderName"].ToString() : string.Empty,
                         SenderAvatar = messageData.ContainsKey("SenderAvatar") ? messageData["SenderAvatar"].ToString() : string.Empty,
                         MessageId = document.Id,
