@@ -42,6 +42,7 @@ namespace SE.Data.UnitOfWork
         private TransactionRepository _transactionRepository;
         private UserServiceRepository _userServiceRepository;
         private VideoCallRepository _videoCallRepository;
+        private PrescriptionRepository _prescriptionRepository;
 
         public UnitOfWork()
         {
@@ -58,6 +59,15 @@ namespace SE.Data.UnitOfWork
             get
             {
                 return _accountRepository ??= new AccountRepository(_unitOfWorkContext);
+            }
+        }
+
+
+        public PrescriptionRepository PrescriptionRepository
+        {
+            get
+            {
+                return _prescriptionRepository ??= new PrescriptionRepository(_unitOfWorkContext);
             }
         }
         public ActivityRepository ActivityRepository
