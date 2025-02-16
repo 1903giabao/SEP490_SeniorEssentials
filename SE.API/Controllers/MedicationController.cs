@@ -16,9 +16,9 @@ namespace SE.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Scan( IFormFile day)
+        public async Task<IActionResult> Scan( IFormFile day, int ElderlyId)
         {
-            var result = await _medicationService.ScanFromPic(day);
+            var result = await _medicationService.ScanFromPic(day,ElderlyId);
             return Ok(result);
         }
     }
