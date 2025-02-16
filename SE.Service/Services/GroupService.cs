@@ -108,7 +108,28 @@ namespace SE.Service.Services
                         var member1 = groupMembers[i];
                         var member2 = groupMembers[j];
 
-                        DocumentReference pairChatRoomRef = _firestoreDb.Collection("ChatRooms").Document(); 
+                        var chatRoomQuery = _firestoreDb.Collection("ChatRooms")
+                            .WhereEqualTo($"MemberIds.{member1.AccountId}", true);
+
+                        var chatRoomSnapshot = await chatRoomQuery.GetSnapshotAsync();
+
+                        bool chatRoomExists = false;
+                        foreach (var doc in chatRoomSnapshot.Documents)
+                        {
+                            var memberIds = doc.GetValue<Dictionary<string, bool>>("MemberIds");
+                            if (memberIds != null && memberIds.ContainsKey(member2.AccountId.ToString()))
+                            {
+                                chatRoomExists = true;
+                                break;
+                            }
+                        }
+
+                        if (chatRoomExists)
+                        {
+                            continue;
+                        }
+
+                        DocumentReference pairChatRoomRef = _firestoreDb.Collection("ChatRooms").Document();
 
                         var pairChatRoomData = new Dictionary<string, object>
                         {
@@ -116,7 +137,7 @@ namespace SE.Service.Services
                             { "IsGroupChat", false },
                             { "RoomName", groupName },
                             { "RoomAvatar", "" },
-                            { "SenderID", 0 },
+                            { "SenderId", 0 },
                             { "LastMessage", "" },
                             { "SentDate",  null },
                             { "SentTime",  null },
@@ -146,7 +167,7 @@ namespace SE.Service.Services
                         { "IsGroupChat", true },
                         { "RoomName", groupName },
                         { "RoomAvatar", "" },
-                        { "SenderID", 0 },
+                        { "SenderId", 0 },
                         { "LastMessage", "" },
                         { "SentDate", null },
                         { "SentTime", null },

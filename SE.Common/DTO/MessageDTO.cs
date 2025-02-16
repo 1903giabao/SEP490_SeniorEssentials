@@ -8,6 +8,7 @@ namespace SE.Common.DTO
 {
     public class MessageDTO
     {
+        public int SenderId { get; set; }
         public string SenderName { get; set; }
         public string SenderAvatar { get; set; }
         public string MessageId { get; set; }

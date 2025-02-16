@@ -29,7 +29,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetAllMessages(string roomId);
         Task<IBusinessResult> GetAllRoomChat(int userId);
         Task<IBusinessResult> MarkMessagesAsSeen(string roomId, long currentUserId);
-        Task<IBusinessResult> ChangeStatus(int userId);
+        Task<IBusinessResult> ChangeStatus(int userId, bool isOnline);
         Task<IBusinessResult> CreateGroupChat(CreateGroupChatRequest req);
     }
 
@@ -108,7 +108,7 @@ namespace SE.Service.Services
                         { "SentDate", sentTime.ToString("dd-MM-yyyy") },
                         { "SentTime", string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
                         { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
-                        { "SenderID", req.SenderId },
+                        { "SenderId", req.SenderId },
                     });
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
@@ -136,7 +136,7 @@ namespace SE.Service.Services
                         { "SentDate", sentTime.ToString("dd-MM-yyyy") },
                         { "SentTime", string.Format("{0:D2}:{1:D2}",(int) sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
                         { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
-                        { "SenderID", req.SenderId },
+                        { "SenderId", req.SenderId },
                     });
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
@@ -226,7 +226,7 @@ namespace SE.Service.Services
                         { "SentDate", sentTime.ToString("dd-MM-yyyy") },
                         { "SentTime", string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
                         { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
-                        { "SenderID", req.SenderId },
+                        { "SenderId", req.SenderId },
                     });
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
@@ -257,7 +257,7 @@ namespace SE.Service.Services
                         { "SentDate", sentTime.ToString("dd-MM-yyyy") },
                         { "SentTime", string.Format("{0:D2}:{1:D2}",(int) sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
                         { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
-                        { "SenderID", req.SenderId },
+                        { "SenderId", req.SenderId },
                     });
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
@@ -284,6 +284,7 @@ namespace SE.Service.Services
                     var messageData = document.ToDictionary();
                     var message = new MessageDTO
                     {
+                        SenderId = messageData.ContainsKey("SenderId") ? (int)messageData["SenderId"] : 0,
                         SenderName = messageData.ContainsKey("SenderName") ? messageData["SenderName"].ToString() : string.Empty,
                         SenderAvatar = messageData.ContainsKey("SenderAvatar") ? messageData["SenderAvatar"].ToString() : string.Empty,
                         MessageId = document.Id,
@@ -384,7 +385,7 @@ namespace SE.Service.Services
                         IsGroupChat = data["IsGroupChat"] as bool? ?? false,
                         RoomName = numberOfMems == 2 ? roomName : data["RoomName"].ToString(),
                         RoomAvatar = numberOfMems == 2 ? roomAvatar : data["RoomAvatar"].ToString(),
-                        SenderId = data["SenderID"] as long?,
+                        SenderId = data["SenderId"] as long?,
                         LastMessage = data["LastMessage"]?.ToString(),
                         SentDate = data["SentDate"]?.ToString(),
                         SentTime = data["SentTime"]?.ToString(),
@@ -415,7 +416,7 @@ namespace SE.Service.Services
                 {
                     var messageData = document.ToDictionary();
 
-                    if (messageData.TryGetValue("SenderId", out var senderId) && (long)senderId != currentUserId)
+                    if (messageData.TryGetValue("SenderId", out var SenderId) && (long)SenderId != currentUserId)
                     {
                         var updateData = new Dictionary<string, object>
                         {
@@ -436,7 +437,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> ChangeStatus(int userId)
+        public async Task<IBusinessResult> ChangeStatus(int userId, bool isOnline)
         {
             try
             {
@@ -455,31 +456,14 @@ namespace SE.Service.Services
                 }
 
                 CollectionReference onlineMembersRef = _firestoreDb.Collection("OnlineMembers");
-                
-                DocumentSnapshot userSnapshot = await onlineMembersRef.Document(userId.ToString()).GetSnapshotAsync();
 
-                bool newStatus;
-
-                if (userSnapshot.Exists)
+                // Update the user's online status based on the provided parameter
+                await onlineMembersRef.Document(userId.ToString()).SetAsync(new Dictionary<string, object>
                 {
-                    bool currentStatus = userSnapshot.TryGetValue("IsOnline", out bool isOnline) && isOnline;
-                    newStatus = !currentStatus;
+                    { "IsOnline", isOnline }
+                }, SetOptions.MergeAll); // Use MergeAll to update the field without overwriting other fields
 
-                    await onlineMembersRef.Document(userId.ToString()).UpdateAsync(new Dictionary<string, object>
-                    {
-                        { "IsOnline", newStatus }
-                    });
-                }
-                else
-                {
-                    newStatus = true;
-                    await onlineMembersRef.Document(userId.ToString()).SetAsync(new Dictionary<string, object>
-                    {
-                        { "IsOnline", newStatus }
-                    });
-                }
-
-                return new BusinessResult(Const.SUCCESS_UPDATE, $"User  status updated to {(newStatus ? "Online" : "Offline")}.");
+                return new BusinessResult(Const.SUCCESS_UPDATE, $"User status updated to {(isOnline ? "Online" : "Offline")}.");
             }
             catch (Exception ex)
             {
@@ -546,7 +530,7 @@ namespace SE.Service.Services
                             { "IsGroupChat", true },
                             { "RoomName", req.GroupName },
                             { "RoomAvatar", req.GroupAvatar },
-                            { "SenderID", 0 },
+                            { "SenderId", 0 },
                             { "LastMessage", "" },
                             { "SentDate",  null },
                             { "SentTime",  null },
