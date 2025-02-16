@@ -101,6 +101,8 @@ namespace SE.Service.Services
 
                 List<Task> chatRoomTasks = new List<Task>();
 
+                var currentTime = DateTime.Now;
+
                 for (int i = 0; i < groupMembers.Count; i++)
                 {
                     for (int j = i + 1; j < groupMembers.Count; j++)
@@ -133,15 +135,15 @@ namespace SE.Service.Services
 
                         var pairChatRoomData = new Dictionary<string, object>
                         {
-                            { "CreatedAt", DateTime.Now.ToString("dd-MM-yyyy HH:mm") },
+                            { "CreatedAt",  currentTime.ToString("dd-MM-yyyy HH:mm") },
                             { "IsGroupChat", false },
                             { "RoomName", groupName },
                             { "RoomAvatar", "" },
                             { "SenderId", 0 },
                             { "LastMessage", "" },
-                            { "SentDate",  null },
-                            { "SentTime",  null },
-                            { "SentDateTime",  null },
+                            { "SentDate", currentTime.ToString("dd-MM-yyyy") },
+                            { "SentTime", currentTime.ToString("HH:mm") },
+                            { "SentDateTime", currentTime.ToString("dd-MM-yyyy HH:mm") },
                             { "MemberIds", new Dictionary<string, object>
                                 {
                                     { member1.AccountId.ToString(), true },
@@ -163,15 +165,15 @@ namespace SE.Service.Services
 
                     var groupChatRoomData = new Dictionary<string, object>
                     {
-                        { "CreatedAt", DateTime.Now.ToString("dd-MM-yyyy HH:mm") },
+                        { "CreatedAt", currentTime.ToString("dd-MM-yyyy HH:mm") },
                         { "IsGroupChat", true },
                         { "RoomName", groupName },
                         { "RoomAvatar", "" },
                         { "SenderId", 0 },
                         { "LastMessage", "" },
-                        { "SentDate", null },
-                        { "SentTime", null },
-                        { "SentDateTime", null },
+                        { "SentDate", currentTime.ToString("dd-MM-yyyy") },
+                        { "SentTime", currentTime.ToString("HH:mm") },
+                        { "SentDateTime", currentTime.ToString("dd-MM-yyyy HH:mm") },
                             {
                                 "MemberIds", groupMembers
                                     .ToDictionary(m => m.AccountId.ToString(), m => (object)true)

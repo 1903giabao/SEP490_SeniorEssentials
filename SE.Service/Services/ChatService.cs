@@ -19,6 +19,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text.RegularExpressions;
 using Firebase.Auth;
 using SE.Service.Helper;
+using System.Reflection.Metadata;
+using System.Globalization;
 
 namespace SE.Service.Services
 {
@@ -28,6 +30,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> ReplyMessage(ReplyMessageRequest req);
         Task<IBusinessResult> GetAllMessages(string roomId);
         Task<IBusinessResult> GetAllRoomChat(int userId);
+        Task<IBusinessResult> GetStatusInRoomChat(string roomId, long currentUserId);
         Task<IBusinessResult> MarkMessagesAsSeen(string roomId, long currentUserId);
         Task<IBusinessResult> ChangeStatus(int userId, bool isOnline);
         Task<IBusinessResult> CreateGroupChat(CreateGroupChatRequest req);
@@ -394,11 +397,80 @@ namespace SE.Service.Services
                     });
                 }
 
-                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, chatRooms);
+                var orderedChatRooms = chatRooms
+                            .OrderByDescending(chatRoom =>
+                                DateTime.TryParseExact(chatRoom.SentDateTime, "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var sentDateTime) ? sentDateTime : DateTime.MinValue).ToList();
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, orderedChatRooms);
             }
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetStatusInRoomChat(string roomId, long currentUserId)
+        {
+            try
+            {
+                DocumentReference roomChatRef = _firestoreDb.Collection("ChatRooms").Document(roomId);
+
+                DocumentSnapshot documentSnapshot = await roomChatRef.GetSnapshotAsync();
+
+                var data = documentSnapshot.ToDictionary();
+
+                // Check if currentUser Id is in the MemberIds dictionary
+                if (data.TryGetValue("MemberIds", out var memberIdsObj) &&
+                    memberIdsObj is IDictionary<string, object> memberIds && memberIds.ContainsKey(currentUserId.ToString()))
+                {
+                    var numberOfMems = memberIds.Count;
+
+                    if (numberOfMems == 2)
+                    {
+                        foreach (var member in memberIds)
+                        {
+                            if (!member.Key.Equals(currentUserId.ToString()))
+                            {
+                                var getUser = await _unitOfWork.AccountRepository.GetByIdAsync(int.Parse(member.Key));
+
+                                if (getUser == null)
+                                {
+                                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
+                                }
+
+                                DocumentReference onlineRef = _firestoreDb.Collection("OnlineMembers").Document(member.Key);
+
+                                DocumentSnapshot onlineSnapshot = await onlineRef.GetSnapshotAsync();
+
+                                if (!onlineSnapshot.Exists)
+                                {
+                                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not belong to this room chat!");
+                                }
+
+                                var onlineData = onlineSnapshot.ToDictionary();
+
+                                if (onlineData.TryGetValue("IsOnline", out var isOnlineCheck))
+                                {
+                                    return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, new { IsOnline = (bool)isOnlineCheck });
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "This is a group chat!");
+                    }
+                }
+                else
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not belong to this room chat!");
+                }
+
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Something Wrong!");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
             }
         }
 

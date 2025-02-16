@@ -29,6 +29,13 @@ namespace SE.API.Controllers
         {
             var result = await _chatService.GetAllRoomChat(userId);
             return Ok(result);
+        }        
+        
+        [HttpGet("status-in-room-chat")]
+        public async Task<IActionResult> GetStatusInRoomChat([FromQuery] string roomId, [FromQuery] long currentUserId)
+        {
+            var result = await _chatService.GetStatusInRoomChat(roomId, currentUserId);
+            return Ok(result);
         }
 
 
