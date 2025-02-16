@@ -173,12 +173,14 @@ namespace SE.Service.Services
                 }
 
                 DocumentReference messageInRoom = chatRef.Collection("Messages").Document(req.RepliedMessageId);
-                DocumentSnapshot messageSnapshot = await userInRoom.GetSnapshotAsync();
+                DocumentSnapshot messageSnapshot = await messageInRoom.GetSnapshotAsync();
 
                 if (!messageSnapshot.Exists)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Message is not in this room chat!");
                 }
+
+                var repliedMessageData = messageSnapshot.ToDictionary();
 
                 CollectionReference messagesRef = chatRef.Collection("Messages");
 
@@ -210,9 +212,9 @@ namespace SE.Service.Services
                         SenderName = user.FullName,
                         SenderAvatar = user.Avatar,
                         RepliedMessageId = req.RepliedMessageId,
-                        RepliedMessage = req.RepliedMessage,
-                        RepliedMessageType = req.RepliedMessageType,
-                        ReplyTo = req.ReplyTo,
+                        RepliedMessage = repliedMessageData.ContainsKey("Message") ? repliedMessageData["Message"].ToString() : string.Empty,
+                        RepliedMessageType = repliedMessageData.ContainsKey("MessageType") ? repliedMessageData["MessageType"].ToString() : string.Empty,
+                        ReplyTo = repliedMessageData.ContainsKey("SenderName") ? repliedMessageData["SenderName"].ToString() : string.Empty,
                         Message = req.Message,
                         MessageType = req.MessageType,
                         SentDate = sentTime.ToString("dd-MM-yyyy"),
@@ -242,8 +244,9 @@ namespace SE.Service.Services
                         SenderName = user.FullName,
                         SenderAvatar = user.Avatar,
                         RepliedMessageId = req.RepliedMessageId,
-                        RepliedMessage = req.RepliedMessage,
-                        RepliedMessageType = req.RepliedMessageType,
+                        RepliedMessage = repliedMessageData.ContainsKey("Message") ? repliedMessageData["Message"].ToString() : string.Empty,
+                        RepliedMessageType = repliedMessageData.ContainsKey("MessageType") ? repliedMessageData["MessageType"].ToString() : string.Empty,
+                        ReplyTo = repliedMessageData.ContainsKey("SenderName") ? repliedMessageData["SenderName"].ToString() : string.Empty,
                         Message = urlLink.Item2,
                         MessageType = req.MessageType,
                         SentDate = sentTime.ToString("dd-MM-yyyy"),
@@ -419,7 +422,6 @@ namespace SE.Service.Services
 
                 var data = documentSnapshot.ToDictionary();
 
-                // Check if currentUser Id is in the MemberIds dictionary
                 if (data.TryGetValue("MemberIds", out var memberIdsObj) &&
                     memberIdsObj is IDictionary<string, object> memberIds && memberIds.ContainsKey(currentUserId.ToString()))
                 {
