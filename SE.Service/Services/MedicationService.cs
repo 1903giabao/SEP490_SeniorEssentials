@@ -1,20 +1,27 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Org.BouncyCastle.Asn1.Pkcs;
+using Org.BouncyCastle.Ocsp;
 using SE.Common;
 using SE.Common.DTO;
 using SE.Common.Request;
 using SE.Data.Models;
 using SE.Data.UnitOfWork;
 using SE.Service.Base;
+using SE.Service.Helper;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+using Tesseract;
+
 
 namespace SE.Service.Services
 {
     public interface IMedicationService
     {
+        Task<IBusinessResult> ScanFromPic(IFormFile file);
 
     }
 
@@ -28,6 +35,137 @@ namespace SE.Service.Services
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
+
+
+        public async Task<IBusinessResult> ScanFromPic(IFormFile file)
+        {
+            try
+            {
+
+                var extractedText = ExtractTextFromImage(file);
+
+                List<string> medicines = ParseMedicineDetails(extractedText);
+
+                var t = CreateMedicationRequests(medicines);
+
+                return new BusinessResult(Const.SUCCESS_CREATE, "Medication created successfully.", medicines);
+
+
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, ex.Message);
+            }
+        }
+
+        public static string ExtractTextFromImage(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return "Invalid file";
+
+            string tempFilePath = Path.GetTempFileName(); // Temporary file path
+
+            try
+            {
+                using (var stream = new FileStream(tempFilePath, FileMode.Create))
+                {
+                    file.CopyTo(stream);
+                }
+                var credentialPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tessdata");
+
+                using (var engine = new TesseractEngine(credentialPath, "vie", EngineMode.Default))
+                {
+                    using (var img = Pix.LoadFromFile(tempFilePath))
+                    {
+                        using (var page = engine.Process(img))
+                        {
+                            return page.GetText().Trim();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+            finally
+            {
+                if (File.Exists(tempFilePath))
+                {
+                    File.Delete(tempFilePath);
+                }
+            }
+        }
+
+        static List<string> ParseMedicineDetails(string text)
+        {
+            string pattern = @"(\d+\.\.\s.*?Uông\s*:\s*.*?)(?=\n\s*\d+\.\.|$)";
+            MatchCollection matches = Regex.Matches(text, pattern, RegexOptions.Singleline);
+
+            List<string> medications = new List<string>();
+
+            foreach (Match match in matches)
+            {
+                medications.Add(match.Value.Trim());
+            }
+
+            string formattedText = string.Join(Environment.NewLine, medications).Replace(Environment.NewLine + Environment.NewLine, Environment.NewLine).Trim();
+
+
+            string[] lines = formattedText.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+
+            bool inMedicationSection = true;
+            List<string> medication2s = new List<string>();
+
+            foreach (string line in lines)
+            {
+                if (line.StartsWith("-L") || line.StartsWith("Ngày") || line.StartsWith("Bác s?") || line.StartsWith("-Khám")/* || line.StartsWith("- Tên")*/)
+                {
+                    inMedicationSection = false;
+                    continue;
+                }
+
+                if (line.StartsWith("H"))
+                {
+                    medication2s.Add(line.Trim());
+                }
+                if (inMedicationSection)
+                {
+                    medication2s.Add(line.Trim());
+                    //      Console.WriteLine(line.Trim());
+                }
+            }
+
+            return medication2s;
+
+
+        }
+
+
+        static List<CreateMedicationRequest> CreateMedicationRequests(List<string> medicines)
+        {
+            List<CreateMedicationRequest> requests = new List<CreateMedicationRequest>();
+
+            foreach (var medicine in medicines)
+            {
+                if (char.IsDigit(medicine[0]))
+                {
+                    var match = Regex.Match(medicine, @"^(\d+\.\.\s+|\d+\.\s+)?(.+?)\s+(\d+mg)?.*SL:\s*(\d+) Viên", RegexOptions.IgnoreCase);
+                    if (!match.Success) return null;
+
+                    string name = match.Groups[2].Value.Trim();
+                    string quantity = match.Groups[4].Value;
+                    string timeToTake = "";
+                    string dosage = "";
+                }
+            }
+
+            return requests;
+        }
+
+
+
+
 
         public async Task<IBusinessResult> CreateMedication(CreateMedicationRequest req)
         {
