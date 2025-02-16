@@ -17,7 +17,6 @@ namespace SE.Service.Services
     {
         Task<IBusinessResult> CreateHealthIndicator(CreateHealthIndicatorRequest request);
         Task<IBusinessResult> GetAllHealthIndicatorsByElderlyId(int elderlyId);
-
         Task<IBusinessResult> GetHealthIndicatorById(int healthIndicatorId);
         Task<IBusinessResult> UpdateHealthIndicator(UpdateHealthIndicatorRequest request);
         Task<IBusinessResult> UpdateHealthIndicatorStatus(int HealthIndicatorId);
