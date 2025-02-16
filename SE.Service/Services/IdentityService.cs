@@ -314,8 +314,7 @@ namespace SE.Service.Services
             {
                 Subject = new ClaimsIdentity(authClaims),
                 SigningCredentials =
-                    new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256),
-                Expires = utcNow.Add(TimeSpan.FromHours(1)),
+                    new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
             };
 
             var handler = new JwtSecurityTokenHandler();

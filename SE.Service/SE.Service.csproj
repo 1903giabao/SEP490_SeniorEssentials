@@ -8,6 +8,8 @@
 
   <ItemGroup>
 	  <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
+	  <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
+	  <PackageReference Include="Tesseract" Version="5.2.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -15,6 +17,12 @@
 
 	  <ProjectReference Include="..\SE.Common\SE.Common.csproj" />
     <ProjectReference Include="..\SE.Data\SE.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="tessdata\vie.traineddata">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
