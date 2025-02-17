@@ -13,7 +13,6 @@ namespace SE.Service.Helper
 
         static CloudinaryHelper()
         {
-
             _cloudinary = CloudinaryConfig.GetCloudinary();
         }
 
