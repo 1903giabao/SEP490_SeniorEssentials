@@ -86,7 +86,7 @@ namespace SE.Service.Services
                     urlLink = await CloudinaryHelper.UploadAudioAsync(req.FileMessage);
                 }
 
-                var sentTime = DateTime.Now;
+                var sentTime = DateTime.UtcNow.AddHours(7);
 
                 if (req.MessageType.Equals("Text") || req.MessageType.Equals("Gif")) 
                 {
@@ -107,7 +107,7 @@ namespace SE.Service.Services
 
                     await chatRef.UpdateAsync(new Dictionary<string, object>
                     {
-                        { "LastMessage", req.Message },
+                        { "LastMessage", newMessage.Message },
                         { "SentDate", sentTime.ToString("dd-MM-yyyy") },
                         { "SentTime", string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
                         { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
@@ -135,7 +135,7 @@ namespace SE.Service.Services
 
                     await chatRef.UpdateAsync(new Dictionary<string, object>
                     {
-                        { "LastMessage", req.Message },
+                        { "LastMessage", newMessage.Message },
                         { "SentDate", sentTime.ToString("dd-MM-yyyy") },
                         { "SentTime", string.Format("{0:D2}:{1:D2}",(int) sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
                         { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
@@ -202,7 +202,7 @@ namespace SE.Service.Services
                     }
                 }
 
-                var sentTime = DateTime.Now;
+                var sentTime = DateTime.UtcNow.AddHours(7);
 
                 if (req.MessageType.Equals("Text") || req.MessageType.Equals("Gif"))
                 {
@@ -227,7 +227,7 @@ namespace SE.Service.Services
 
                     await chatRef.UpdateAsync(new Dictionary<string, object>
                     {
-                        { "LastMessage", req.Message },
+                        { "LastMessage", newMessage.Message },
                         { "SentDate", sentTime.ToString("dd-MM-yyyy") },
                         { "SentTime", string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
                         { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
@@ -259,7 +259,7 @@ namespace SE.Service.Services
 
                     await chatRef.UpdateAsync(new Dictionary<string, object>
                     {
-                        { "LastMessage", req.Message },
+                        { "LastMessage", newMessage.Message },
                         { "SentDate", sentTime.ToString("dd-MM-yyyy") },
                         { "SentTime", string.Format("{0:D2}:{1:D2}",(int) sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
                         { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },

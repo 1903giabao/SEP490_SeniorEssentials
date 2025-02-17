@@ -101,7 +101,7 @@ namespace SE.Service.Services
 
                 List<Task> chatRoomTasks = new List<Task>();
 
-                var currentTime = DateTime.Now;
+                var currentTime = DateTime.UtcNow.AddHours(7);
 
                 for (int i = 0; i < groupMembers.Count; i++)
                 {
