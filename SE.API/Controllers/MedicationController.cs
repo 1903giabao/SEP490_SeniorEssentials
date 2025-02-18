@@ -21,5 +21,12 @@ namespace SE.API.Controllers
             var result = await _medicationService.ScanFromPic(day,ElderlyId);
             return Ok(result);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll(int ElderlyId)
+        {
+            var result = await _medicationService.GetMedicationsForToday(ElderlyId);
+            return Ok(result);
+        }
     }
 }
