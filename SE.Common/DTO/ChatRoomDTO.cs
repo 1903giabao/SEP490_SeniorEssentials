@@ -20,5 +20,13 @@ namespace SE.Common.DTO
         public string? SentDate { get; set; }
         public string? SentTime { get; set; }
         public string? SentDateTime { get; set; }
+        public List<UserInRoomChatDTO> Users { get; set; }
+    }
+
+
+    public class UserInRoomChatDTO
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 }

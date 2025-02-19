@@ -59,8 +59,8 @@ builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddScoped<ISmsService, SmsService>();
 
 
-//var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountKey.json");
-var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "tempKey.json");
+var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountKey.json");
+//var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "tempKey.json");
 System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialPath);
 
 // Initialize Firebase Admin SDK
@@ -70,8 +70,8 @@ FirebaseApp.Create(new AppOptions()
 });
 
 // Add Firestore DB Service (use Project ID)
-builder.Services.AddSingleton(FirestoreDb.Create("testproject-bc2e2"));
-//builder.Services.AddSingleton(FirestoreDb.Create("senioressentials-3ebc7"));
+//builder.Services.AddSingleton(FirestoreDb.Create("testproject-bc2e2"));
+builder.Services.AddSingleton(FirestoreDb.Create("senioressentials-3ebc7"));
 
 // AutoMapper configuration
 var mapperConfig = new MapperConfiguration(mc =>

@@ -341,47 +341,53 @@ namespace SE.Service.Services
                     var roomAvatar = string.Empty;
                     var isOnline = false;
                     List<string> memberIdsList = new List<string>();
+                    var listUser = new List<UserInRoomChatDTO>();
 
                     if (data.TryGetValue("MemberIds", out var memberIdsObj) &&
                         memberIdsObj is IDictionary<string, object> memberIds)
                     {
                         numberOfMems = memberIds.Count;
-
-                        if (numberOfMems == 2)
+                        foreach (var member in memberIds)
                         {
-                            foreach (var member in memberIds)
+                            var getUser = await _unitOfWork.AccountRepository.GetByIdAsync(int.Parse(member.Key));
+                            if (getUser == null)
+                            {
+                                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
+                            }
+
+                            listUser.Add(new UserInRoomChatDTO
+                            {
+                                Id = int.Parse(member.Key),
+                                Name = getUser.FullName
+                            });
+
+                            if (numberOfMems == 2)
                             {
                                 if (!member.Key.Equals(userId.ToString()))
                                 {
-                                    var getUser = await _unitOfWork.AccountRepository.GetByIdAsync(int.Parse(member.Key));
-
-                                    if (getUser == null) 
-                                    {
-                                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
-                                    }
-
                                     DocumentReference onlineRef = _firestoreDb.Collection("OnlineMembers").Document(member.Key);
-
                                     DocumentSnapshot onlineSnapshot = await onlineRef.GetSnapshotAsync();
-
                                     if (!onlineSnapshot.Exists)
                                     {
                                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not belong to this room chat!");
                                     }
-
                                     var onlineData = onlineSnapshot.ToDictionary();
-
                                     if (onlineData.TryGetValue("IsOnline", out var isOnlineCheck))
                                     {
                                         isOnline = (bool)isOnlineCheck;
                                     }                            
-
                                     roomName = getUser.FullName;
                                     roomAvatar = getUser.Avatar;
                                 }
                             }
+                                
+
+
                         }
+
                     }
+
+
 
                     chatRooms.Add(new ChatRoomDTO
                     {
@@ -396,7 +402,8 @@ namespace SE.Service.Services
                         SentDate = data["SentDate"]?.ToString(),
                         SentTime = data["SentTime"]?.ToString(),
                         SentDateTime = data["SentDateTime"]?.ToString(),
-                        NumberOfMems = numberOfMems
+                        NumberOfMems = numberOfMems,
+                        Users = listUser
                     });
                 }
 
