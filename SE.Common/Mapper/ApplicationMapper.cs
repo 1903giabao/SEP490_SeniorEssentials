@@ -42,13 +42,7 @@ namespace SE.Common.Mapper
 
 
             CreateMap<GetEmergencyContactDTO,EmergencyContact>().ReverseMap();
-            CreateMap<CreateFamilyTieRequest, FamilyTie>()
-           .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "Active"));
-
-            CreateMap<FamilyTie, FamilyTieDTO>();
-            CreateMap<CreateFamilyTieRequest, FamilyTie>()
-                        .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "Active")).ReverseMap();
-
+            
             CreateMap<CreateGroupRequest, Group>().ReverseMap();
 
             CreateMap<GroupMember, GroupMemberDTO>()

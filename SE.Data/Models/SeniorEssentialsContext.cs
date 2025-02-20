@@ -30,6 +30,7 @@ public partial class SeniorEssentialsContext : DbContext
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer(GetConnectionString("DefaultConnection"));
+
     public virtual DbSet<Account> Accounts { get; set; }
 
     public virtual DbSet<Activity> Activities { get; set; }
@@ -48,8 +49,6 @@ public partial class SeniorEssentialsContext : DbContext
 
     public virtual DbSet<FamilyMember> FamilyMembers { get; set; }
 
-    public virtual DbSet<FamilyTie> FamilyTies { get; set; }
-
     public virtual DbSet<Game> Games { get; set; }
 
     public virtual DbSet<Group> Groups { get; set; }
@@ -67,10 +66,6 @@ public partial class SeniorEssentialsContext : DbContext
     public virtual DbSet<LessonHistory> LessonHistories { get; set; }
 
     public virtual DbSet<Medication> Medications { get; set; }
-
-    public virtual DbSet<MedicationDay> MedicationDays { get; set; }
-
-    public virtual DbSet<MedicationHistory> MedicationHistories { get; set; }
 
     public virtual DbSet<MedicationSchedule> MedicationSchedules { get; set; }
 
@@ -91,6 +86,8 @@ public partial class SeniorEssentialsContext : DbContext
     public virtual DbSet<TimeSlot> TimeSlots { get; set; }
 
     public virtual DbSet<Transaction> Transactions { get; set; }
+
+    public virtual DbSet<UserLink> UserLinks { get; set; }
 
     public virtual DbSet<UserService> UserServices { get; set; }
 
@@ -302,30 +299,6 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasConstraintName("FK__FamilyMem__Accou__07C12930");
         });
 
-        modelBuilder.Entity<FamilyTie>(entity =>
-        {
-            entity.HasKey(e => e.FamilyFamilyTieId).HasName("PK__FamilyTi__C515FD2AB0895C0F");
-
-            entity.ToTable("FamilyTie");
-
-            entity.Property(e => e.Note)
-                .IsRequired()
-                .HasMaxLength(50);
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasMaxLength(20);
-
-            entity.HasOne(d => d.Elderly).WithMany(p => p.FamilyTies)
-                .HasForeignKey(d => d.ElderlyId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__FamilyTie__Elder__08B54D69");
-
-            entity.HasOne(d => d.FamilyMember).WithMany(p => p.FamilyTies)
-                .HasForeignKey(d => d.FamilyMemberId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__FamilyTie__Famil__09A971A2");
-        });
-
         modelBuilder.Entity<Game>(entity =>
         {
             entity.HasKey(e => e.GameId).HasName("PK__Game__2AB897FDF5785108");
@@ -390,18 +363,50 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.ToTable("HealthIndicator");
 
+            entity.Property(e => e.Alp)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("ALP");
+            entity.Property(e => e.Alt)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("ALT");
+            entity.Property(e => e.Ast)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("AST");
+            entity.Property(e => e.BloodGlucose).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.BloodGlucoseSource).HasMaxLength(255);
             entity.Property(e => e.BloodPressureDiastolic).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.BloodPressureDiastolicSource).HasMaxLength(10);
             entity.Property(e => e.BloodPressureSystolic).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.BloodPressureSystolicSource).HasMaxLength(10);
+            entity.Property(e => e.Bun)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("BUN");
+            entity.Property(e => e.Creatinine).HasColumnType("decimal(5, 2)");
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
+            entity.Property(e => e.EGfr)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("eGFR");
+            entity.Property(e => e.Ggt)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("GGT");
+            entity.Property(e => e.Hdlcholesterol)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("HDLCholesterol");
             entity.Property(e => e.HeartRateSource).HasMaxLength(10);
             entity.Property(e => e.Height).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.HeightSource).HasMaxLength(10);
+            entity.Property(e => e.KidneyFunctionSource).HasMaxLength(255);
+            entity.Property(e => e.Ldlcholesterol)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("LDLCholesterol");
+            entity.Property(e => e.LipidProfileSource).HasMaxLength(255);
+            entity.Property(e => e.LiverEnzymesSource).HasMaxLength(255);
             entity.Property(e => e.Note).HasMaxLength(255);
             entity.Property(e => e.Status)
                 .IsRequired()
                 .HasMaxLength(20);
+            entity.Property(e => e.TotalCholesterol).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.Triglycerides).HasColumnType("decimal(5, 2)");
             entity.Property(e => e.Weight).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.WeightSource).HasMaxLength(10);
 
@@ -528,47 +533,13 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasConstraintName("FK__Medicatio__Presc__2BFE89A6");
         });
 
-        modelBuilder.Entity<MedicationDay>(entity =>
-        {
-            entity.HasKey(e => e.MedicationDayId).HasName("PK__Medicati__A4BB3CAD98518A25");
-
-            entity.ToTable("MedicationDay");
-
-            entity.Property(e => e.DayOfWeek)
-                .IsRequired()
-                .HasMaxLength(10);
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasMaxLength(20);
-
-            entity.HasOne(d => d.MedicationSchedule).WithMany(p => p.MedicationDays)
-                .HasForeignKey(d => d.MedicationScheduleId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Medicatio__Medic__151B244E");
-        });
-
-        modelBuilder.Entity<MedicationHistory>(entity =>
-        {
-            entity.HasKey(e => e.MedicationHistoryId).HasName("PK__Medicati__6EB20B7F89699EEA");
-
-            entity.ToTable("MedicationHistory");
-
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasMaxLength(20);
-
-            entity.HasOne(d => d.MedicationSchedule).WithMany(p => p.MedicationHistories)
-                .HasForeignKey(d => d.MedicationScheduleId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Medicatio__Medic__160F4887");
-        });
-
         modelBuilder.Entity<MedicationSchedule>(entity =>
         {
             entity.HasKey(e => e.MedicationScheduleId).HasName("PK__Medicati__EDCDE99C09A80189");
 
             entity.ToTable("MedicationSchedule");
 
+            entity.Property(e => e.DateTaken).HasColumnType("datetime");
             entity.Property(e => e.Dosage)
                 .IsRequired()
                 .HasMaxLength(20);
@@ -613,7 +584,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.ToTable("Prescription");
 
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
-            entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.CreatedBy).HasMaxLength(50);
             entity.Property(e => e.Status)
                 .IsRequired()
                 .HasMaxLength(20);
@@ -773,6 +744,34 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasForeignKey(d => d.BookingId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Transacti__Booki__236943A5");
+        });
+
+        modelBuilder.Entity<UserLink>(entity =>
+        {
+            entity.HasKey(e => e.UserLinkId).HasName("PK__UserLink__36BB989DA8E38988");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.RelationshipType)
+                .IsRequired()
+                .HasMaxLength(50);
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasDefaultValue("Pending");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.AccountId1Navigation).WithMany(p => p.UserLinkAccountId1Navigations)
+                .HasForeignKey(d => d.AccountId1)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Relationship_Account1");
+
+            entity.HasOne(d => d.AccountId2Navigation).WithMany(p => p.UserLinkAccountId2Navigations)
+                .HasForeignKey(d => d.AccountId2)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Relationship_Account2");
         });
 
         modelBuilder.Entity<UserService>(entity =>

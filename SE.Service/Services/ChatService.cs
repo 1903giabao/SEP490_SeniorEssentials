@@ -607,7 +607,7 @@ namespace SE.Service.Services
                     var newGroupRef = _firestoreDb.Collection("ChatRooms").Document(req.GroupId);
                     var newGroupData = new Dictionary<string, object>
                     {
-                            { "CreatedAt", DateTime.Now.ToString("dd-MM-yyyy HH:mm") },
+                            { "CreatedAt", DateTime.UtcNow.AddHours(7).ToString("dd-MM-yyyy HH:mm") },
                             { "IsGroupChat", true },
                             { "RoomName", req.GroupName },
                             { "RoomAvatar", req.GroupAvatar },

@@ -30,7 +30,7 @@ namespace SE.Service.Helper
             }
 
             using var fileStream = imageFile.OpenReadStream();
-            var uniqueFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{imageFile.FileName}";
+            var uniqueFileName = $"{DateTime.UtcNow.AddHours(7):yyyyMMddHHmmss}_{imageFile.FileName}";
 
             var uploadParams = new ImageUploadParams
             {
@@ -58,7 +58,7 @@ namespace SE.Service.Helper
             }
 
             using var fileStream = videoFile.OpenReadStream();
-            var uniqueFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{videoFile.FileName}";
+            var uniqueFileName = $"{DateTime.UtcNow.AddHours(7):yyyyMMddHHmmss}_{videoFile.FileName}";
 
             var uploadParams = new VideoUploadParams
             {
@@ -86,7 +86,7 @@ namespace SE.Service.Helper
             }
 
             using var fileStream = audioFile.OpenReadStream();
-            var uniqueFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{audioFile.FileName}";
+            var uniqueFileName = $"{DateTime.UtcNow.AddHours(7):yyyyMMddHHmmss}_{audioFile.FileName}";
 
             var uploadParams = new RawUploadParams
             {
@@ -114,7 +114,7 @@ namespace SE.Service.Helper
             }
 
             using var fileStream = documentFile.OpenReadStream();
-            var uniqueFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{documentFile.FileName}";
+            var uniqueFileName = $"{DateTime.UtcNow.AddHours(7):yyyyMMddHHmmss}_{documentFile.FileName}";
 
             var uploadParams = new RawUploadParams
             {
@@ -194,7 +194,7 @@ namespace SE.Service.Helper
             }
 
             using var fileStream = newImageFile.OpenReadStream();
-            var uniqueFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{newImageFile.FileName}";
+            var uniqueFileName = $"{DateTime.UtcNow.AddHours(7):yyyyMMddHHmmss}_{newImageFile.FileName}";
 
             var uploadParams = new ImageUploadParams
             {

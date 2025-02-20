@@ -11,15 +11,13 @@ public partial class MedicationSchedule
 
     public int MedicationId { get; set; }
 
-    public TimeOnly TimeOfDay { get; set; }
-
     public string Dosage { get; set; }
 
     public string Status { get; set; }
 
+    public DateTime? DateTaken { get; set; }
+
+    public bool? IsTaken { get; set; }
+
     public virtual Medication Medication { get; set; }
-
-    public virtual ICollection<MedicationDay> MedicationDays { get; set; } = new List<MedicationDay>();
-
-    public virtual ICollection<MedicationHistory> MedicationHistories { get; set; } = new List<MedicationHistory>();
 }

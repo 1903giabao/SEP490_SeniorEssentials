@@ -12,25 +12,22 @@ namespace SE.Data.UnitOfWork
 
         private AccountRepository _accountRepository;
         private ActivityRepository _activityRepository;
-        private ActivityScheduleRepository _activityScheduleRepository; 
+        private ActivityScheduleRepository _activityScheduleRepository;
         private BookingRepository _bookingRepository;
         private ComboRepository _comboRepository;
         private ContentProviderRepository _contentProviderRepository;
         private EmergencyContactRepository _emergencyContactRepository;
         private ElderlyRepository _elderlyRepository;
         private FamilyMemberRepository _familyMemberRepository;
-        private FamilyTieRepository _familyTieRepository;
         private GameRepository _gameRepository;
         private GroupRepository _groupRepository;
         private GroupMemberRepository _groupMemberRepository;
         private HealthIndicatorRepository _healthIndicatorRepository;
-        private IotdeviceRepository _idoeviceRepository;    
+        private IotdeviceRepository _idoeviceRepository;
         private LessonRepository _lessonRepository;
         private LessonHistoryRepository _lessonHistoryRepository;
         private LessonFeedbackRepository _lessonFeedbackRepository;
         private MedicationRepository _medicationRepository;
-        private MedicationDayRepository _medicationDayRepository;
-        private MedicationHistoryRepository _medicationHistoryRepository;
         private MedicationScheduleRepository _medicationScheduleRepository;
         private NotificationRepository _notificationRepository;
         private ProfessorAppointmentRepository _professorAppointmentRepository;
@@ -43,6 +40,7 @@ namespace SE.Data.UnitOfWork
         private UserServiceRepository _userServiceRepository;
         private VideoCallRepository _videoCallRepository;
         private PrescriptionRepository _prescriptionRepository;
+        private UserLinkRepository _userLinkRepository;
 
         public UnitOfWork()
         {
@@ -110,11 +108,6 @@ namespace SE.Data.UnitOfWork
             get => _familyMemberRepository ??= new FamilyMemberRepository(_unitOfWorkContext);
         }
 
-        public FamilyTieRepository FamilyTieRepository
-        {
-            get => _familyTieRepository ??= new FamilyTieRepository(_unitOfWorkContext);
-        }
-
         public GameRepository GameRepository
         {
             get => _gameRepository ??= new GameRepository(_unitOfWorkContext);
@@ -160,16 +153,6 @@ namespace SE.Data.UnitOfWork
             get => _medicationRepository ??= new MedicationRepository(_unitOfWorkContext);
         }
 
-        public MedicationDayRepository MedicationDayRepository
-        {
-            get => _medicationDayRepository ??= new MedicationDayRepository(_unitOfWorkContext);
-        }
-
-        public MedicationHistoryRepository MedicationHistoryRepository
-        {
-            get => _medicationHistoryRepository ??= new MedicationHistoryRepository(_unitOfWorkContext);
-        }
-
         public MedicationScheduleRepository MedicationScheduleRepository
         {
             get => _medicationScheduleRepository ??= new MedicationScheduleRepository(_unitOfWorkContext);
@@ -194,30 +177,30 @@ namespace SE.Data.UnitOfWork
         {
             get => _professorScheduleRepository ??= new ProfessorScheduleRepository(_unitOfWorkContext);
         }
-
         public ProfessorRepository ProfessorRepository
         {
             get => _professorRepository ??= new ProfessorRepository(_unitOfWorkContext);
         }
-
         public RoleRepository RoleRepository
         {
             get => _roleRepository ??= new RoleRepository(_unitOfWorkContext);
         }
-
         public TimeSlotRepository TimeSlotRepository
         {
             get => _timeSlotRepository ??= new TimeSlotRepository(_unitOfWorkContext);
         }
-
         public TransactionRepository TransactionRepository
         {
             get => _transactionRepository ??= new TransactionRepository(_unitOfWorkContext);
         }
-
         public UserServiceRepository UserServiceRepository
         {
             get => _userServiceRepository ??= new UserServiceRepository(_unitOfWorkContext);
+        }
+
+        public UserLinkRepository UserLinkRepository
+        {
+            get => _userLinkRepository ??= new UserLinkRepository(_unitOfWorkContext);
         }
 
         public VideoCallRepository VideoCallRepository

@@ -17,7 +17,9 @@ public partial class Prescription
 
     public string Status { get; set; }
 
-    public string Name { get; set; }
+    public string Treatment { get; set; }
+
+    public string CreatedBy { get; set; }
 
     public virtual Elderly ElderlyNavigation { get; set; }
 

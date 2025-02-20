@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿/*using Microsoft.AspNetCore.Mvc;
 using SE.Service.Services;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -30,3 +30,4 @@ namespace SE.API.Controllers
         }
     }
 }
+*/

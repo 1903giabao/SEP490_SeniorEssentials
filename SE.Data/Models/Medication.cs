@@ -39,6 +39,8 @@ public partial class Medication
 
     public int PrescriptionId { get; set; }
 
+    public int? Remaining { get; set; }
+
     public virtual Elderly Elderly { get; set; }
 
     public virtual ICollection<MedicationSchedule> MedicationSchedules { get; set; } = new List<MedicationSchedule>();
