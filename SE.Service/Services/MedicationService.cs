@@ -25,7 +25,8 @@ namespace SE.Service.Services
     public interface IMedicationService
     {
         Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID);
-
+        Task<IBusinessResult> GetMedicationsForToday(int elderlyId);
+             
     }
 
     public class MedicationService : IMedicationService
@@ -328,7 +329,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> GetAllMedications()
+        /*public async Task<IBusinessResult> GetAllMedicationsInPrescription(int elderlyId)
         {
             try
             {
@@ -341,8 +342,95 @@ namespace SE.Service.Services
             {
                 return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
+        }*/
+
+        public static System.DateTime? ConvertToDateTime(DateOnly? dateOnly)
+        {
+            return dateOnly?.ToDateTime(new TimeOnly(0, 0)); // Convert to DateTime at midnight
         }
 
+        public async Task<IBusinessResult> GetMedicationsForToday(int elderlyId)
+        {
+            try
+            {
+                var today = System.DateTime.Today;
+
+                var prescription = await _unitOfWork.PrescriptionRepository
+                    .GetAllIncludeMedicationInElderly(elderlyId);
+
+                if (prescription == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No prescription found for the given elderly ID.");
+                }
+
+                var medicationDtos = new List<MedicationModel>();
+
+                foreach (var medication in prescription.Medications
+                    .Where(m => ConvertToDateTime(m.StartDate) <= today &&
+                                 (m.EndDate == null || ConvertToDateTime(m.EndDate) >= today)))
+                {
+                    var startDate = ConvertToDateTime(medication.StartDate) ?? today;
+
+
+                    var endDate = ConvertToDateTime(medication.EndDate) ?? today;
+
+                    var totalDays = (today - startDate).Days + 1; 
+                    var totalTablets = (endDate - startDate).Days; 
+
+
+                    var medicationSchedule = _unitOfWork.MedicationScheduleRepository.FindByCondition(ms => ms.MedicationId == medication.MedicationId).FirstOrDefault();
+                    var medicationHistories =  _unitOfWork.MedicationHistoryRepository
+                        .FindByCondition(mh => mh.MedicationScheduleId == medicationSchedule.MedicationScheduleId).ToList();
+
+                    var missedDays = medicationHistories.Count();
+
+                    var remainingTablets = totalTablets - (totalDays - missedDays);
+
+                    var medicationDto = new MedicationModel
+                    {
+                        Id = medication.MedicationId,
+                        Name = medication.MedicationName,
+                        Dosage = medication.Dosage,
+                        Form = medication.Shape,
+                        Remaining = remainingTablets.ToString(), 
+                        TypeFrequency = medication.FrequencyType,
+                        FrequencyEvery = medication.DateFrequency?.ToString(),
+                        FrequencySelect = medication.MedicationSchedules
+                    .SelectMany(ms => ms.MedicationDays) 
+                    .Select(md => md.DayOfWeek)
+                    .Distinct()
+                    .ToList(),
+                        MealTime = medication.IsBeforeMeal == true ? "Trước ăn" : "Sau ăn",
+                        Schedule = medication.MedicationSchedules
+                            .Select(ms => new ScheduleModel
+                            {
+                                Time = ms.TimeOfDay.ToString("hh\\:mm"), 
+                                Status = "unUsed" 
+                            }).ToList()
+                    };
+
+                    medicationDtos.Add(medicationDto);
+                }
+
+                var result = new
+                {
+                    Id = elderlyId,
+                    Name = prescription.Name,
+                    Treatment = "viêm họng",
+                    StartDate = today.ToString("yyyy-MM-dd"),
+                    Medicines = medicationDtos
+                };
+
+                return new BusinessResult(Const.SUCCESS_READ, "Medications retrieved successfully.", result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, ex.Message);
+            }
+        }
+
+        
+        
         public async Task<IBusinessResult> GetMedicationById(int medicationId)
         {
             try

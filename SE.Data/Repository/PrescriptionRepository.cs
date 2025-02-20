@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using SE.Data.Base;
 using SE.Data.Models;
 
@@ -14,6 +15,15 @@ namespace SE.Data.Repository
         public PrescriptionRepository(SeniorEssentialsContext context)
         {
             _context = context;
+        }
+        public async Task<Prescription> GetAllIncludeMedicationInElderly(int elderlyID)
+        {
+            var prescription = await _context.Prescriptions
+                .Include(p => p.Medications)
+                    .ThenInclude(m => m.MedicationSchedules) // Include MedicationSchedules
+                        .ThenInclude(ms => ms.MedicationDays) // Include MedicationDays
+                .FirstOrDefaultAsync(p => p.Elderly == elderlyID && p.CreatedAt.Date <= DateTime.Now);
+            return prescription;
         }
     }
 }

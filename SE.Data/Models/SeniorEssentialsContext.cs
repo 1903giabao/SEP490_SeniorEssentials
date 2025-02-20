@@ -30,7 +30,6 @@ public partial class SeniorEssentialsContext : DbContext
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer(GetConnectionString("DefaultConnection"));
-
     public virtual DbSet<Account> Accounts { get; set; }
 
     public virtual DbSet<Activity> Activities { get; set; }
@@ -614,6 +613,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.ToTable("Prescription");
 
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.Status)
                 .IsRequired()
                 .HasMaxLength(20);
