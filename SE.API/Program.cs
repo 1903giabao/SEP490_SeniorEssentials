@@ -54,6 +54,7 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IEmergencyContactService, EmergencyContactService>();
+builder.Services.AddScoped<IUserLinkService, UserLinkService>();
 builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddScoped<ISmsService, SmsService>();
 

@@ -196,7 +196,7 @@ namespace SE.Service.Services
             {
                 if (!FunctionCommon.IsValidEmail(req.Email) && !FunctionCommon.IsValidPhoneNumber(req.PhoneNumber))
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Wrong email or phone number format format!");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Wrong email or phone number format!");
                 }
                 var user = _unitOfWork.AccountRepository.GetById(req.AccountId);
                 

@@ -23,6 +23,10 @@ namespace SE.Data.Repository
             return result;
         }
 
-
+        public async Task<Account> GetByPhoneNumberAsync(string phoneNumber)
+        {
+            var result = await _context.Accounts.Include(a => a.Role).FirstOrDefaultAsync(e => e.PhoneNumber == phoneNumber);
+            return result;
+        }
     }
 }
