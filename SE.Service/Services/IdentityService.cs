@@ -215,7 +215,7 @@ namespace SE.Service.Services
                 user.FullName = req.FullName;
                 user.Gender = req.Gender;
                 user.DateOfBirth = DateTime.Parse(req.DateOfBirth);
-                user.CreatedDate = DateTime.Now;
+                user.CreatedDate = DateTime.UtcNow.AddHours(7);
 
                 var res = await _unitOfWork.AccountRepository.UpdateAsync(user);
 

@@ -51,10 +51,6 @@
          "ObjectType": 0
       },
       {
-         "Name": "[dbo].[FamilyTie]",
-         "ObjectType": 0
-      },
-      {
          "Name": "[dbo].[Game]",
          "ObjectType": 0
       },
@@ -88,14 +84,6 @@
       },
       {
          "Name": "[dbo].[Medication]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[MedicationDay]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[MedicationHistory]",
          "ObjectType": 0
       },
       {
@@ -136,6 +124,10 @@
       },
       {
          "Name": "[dbo].[Transaction]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[UserLinks]",
          "ObjectType": 0
       },
       {

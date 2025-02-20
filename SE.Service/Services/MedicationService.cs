@@ -24,8 +24,8 @@ namespace SE.Service.Services
 {
     public interface IMedicationService
     {
-        Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID);
-        Task<IBusinessResult> GetMedicationsForToday(int elderlyId);
+    /*    Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID);
+        Task<IBusinessResult> GetMedicationsForToday(int elderlyId);*/
              
     }
 
@@ -41,7 +41,7 @@ namespace SE.Service.Services
         }
 
 
-        public async Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID)
+/*        public async Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID)
         {
             try
             {
@@ -52,7 +52,7 @@ namespace SE.Service.Services
                 var newImage = new Prescription
                 {
                     Elderly = ElderlyID,
-                    CreatedAt = System.DateTime.Now,
+                    CreatedAt = System.DateTime.UtcNow.AddHours(7),
                     Status = SD.GeneralStatus.ACTIVE,
                      Url = image.Url
                 };
@@ -69,7 +69,7 @@ namespace SE.Service.Services
                     {
                         ElderlyId = ElderlyID,
                         Dosage = (medicine.Dosage == "I Viên") ? "1 Viên" : medicine.Dosage,
-                        CreatedDate = System.DateTime.Now,
+                        CreatedDate = System.DateTime.UtcNow.AddHours(7),
                         DateFrequency = medicine.DateFrequency,
                         EndDate = DateOnly.FromDateTime(medicine.EndDate ?? System.DateTime.MinValue),
                         FrequencyType = medicine.TimeFrequency,
@@ -117,7 +117,7 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_CREATE, ex.Message);
             }
         }
-
+*/
         public static string ExtractTextFromImage(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -229,8 +229,8 @@ namespace SE.Service.Services
                         var rs = new NewMedicationFromPicDTO
                         {
                             Shape = "Viên",
-                            StartDate = System.DateTime.Now,
-                            EndDate = System.DateTime.Now.AddDays(double.Parse(quantity)),
+                            StartDate = System.DateTime.UtcNow.AddHours(7),
+                            EndDate = System.DateTime.UtcNow.AddHours(7).AddDays(double.Parse(quantity)),
                             Dosage = dosage,
                             MedicationName = name,
                             TimeFrequency= timeToTake,
@@ -349,7 +349,7 @@ namespace SE.Service.Services
             return dateOnly?.ToDateTime(new TimeOnly(0, 0)); // Convert to DateTime at midnight
         }
 
-        public async Task<IBusinessResult> GetMedicationsForToday(int elderlyId)
+/*        public async Task<IBusinessResult> GetMedicationsForToday(int elderlyId)
         {
             try
             {
@@ -428,7 +428,7 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
         }
-
+*/
         
         
         public async Task<IBusinessResult> GetMedicationById(int medicationId)

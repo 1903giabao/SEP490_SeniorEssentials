@@ -73,7 +73,7 @@ namespace SE.Service.Services
                 }
 
                 var group = _mapper.Map<Group>(request);
-                group.CreatedDate = DateTime.Now;
+                group.CreatedDate = DateTime.UtcNow.AddHours(7);
                 group.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.GroupRepository.CreateAsync(group);

@@ -37,5 +37,37 @@ public partial class HealthIndicator
 
     public string Status { get; set; }
 
+    public decimal? BloodGlucose { get; set; }
+
+    public string BloodGlucoseSource { get; set; }
+
+    public decimal? TotalCholesterol { get; set; }
+
+    public decimal? Ldlcholesterol { get; set; }
+
+    public decimal? Hdlcholesterol { get; set; }
+
+    public decimal? Triglycerides { get; set; }
+
+    public string LipidProfileSource { get; set; }
+
+    public decimal? Alt { get; set; }
+
+    public decimal? Ast { get; set; }
+
+    public decimal? Alp { get; set; }
+
+    public decimal? Ggt { get; set; }
+
+    public string LiverEnzymesSource { get; set; }
+
+    public decimal? Creatinine { get; set; }
+
+    public decimal? Bun { get; set; }
+
+    public decimal? EGfr { get; set; }
+
+    public string KidneyFunctionSource { get; set; }
+
     public virtual Elderly Elderly { get; set; }
 }

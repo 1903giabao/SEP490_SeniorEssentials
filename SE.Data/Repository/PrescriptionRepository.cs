@@ -20,9 +20,8 @@ namespace SE.Data.Repository
         {
             var prescription = await _context.Prescriptions
                 .Include(p => p.Medications)
-                    .ThenInclude(m => m.MedicationSchedules) // Include MedicationSchedules
-                        .ThenInclude(ms => ms.MedicationDays) // Include MedicationDays
-                .FirstOrDefaultAsync(p => p.Elderly == elderlyID && p.CreatedAt.Date <= DateTime.Now);
+                    .ThenInclude(m => m.MedicationSchedules)
+                .FirstOrDefaultAsync(p => p.Elderly == elderlyID && p.CreatedAt.Date <= DateTime.UtcNow.AddHours(7));
             return prescription;
         }
     }

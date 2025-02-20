@@ -53,6 +53,10 @@ public partial class Account
 
     public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 
+    public virtual ICollection<UserLink> UserLinkAccountId1Navigations { get; set; } = new List<UserLink>();
+
+    public virtual ICollection<UserLink> UserLinkAccountId2Navigations { get; set; } = new List<UserLink>();
+
     public virtual ICollection<VideoCall> VideoCallCallers { get; set; } = new List<VideoCall>();
 
     public virtual ICollection<VideoCall> VideoCallReceivers { get; set; } = new List<VideoCall>();
