@@ -51,6 +51,27 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, "Invalid creator account ID.");
                 }
 
+                var checkCreator = await _unitOfWork.AccountRepository.GetByIdAsync(request.CreatorAccountId);
+
+                if (checkCreator.RoleId != 3)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Creator is not Family Member");
+                }
+
+                var accountIds = request.Members.Select(m => m.AccountId).ToList();
+
+                var existingGroupIds = _unitOfWork.GroupMemberRepository.GetAll()
+                    .Where(gm => accountIds.Contains(gm.AccountId))
+                    .GroupBy(gm => gm.GroupId)
+                    .Where(g => g.Count() == accountIds.Count)
+                    .Select(g => g.Key)
+                    .ToList();
+
+                if (existingGroupIds.Any())
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "A group with the same members already exists.");
+                }
+
                 var group = _mapper.Map<Group>(request);
                 group.CreatedDate = DateTime.Now;
                 group.Status = SD.GeneralStatus.ACTIVE;
