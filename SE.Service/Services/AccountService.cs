@@ -23,6 +23,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateNewTempAccount(CreateNewAccountDTO req);
         Task<IBusinessResult> GetAllUsers();
         Task<IBusinessResult> GetUserById(int id);
+        Task<IBusinessResult> GetUserByPhoneNumber(string phoneNumber);
     }
 
     public class AccountService : IAccountService
@@ -140,6 +141,32 @@ namespace SE.Service.Services
                 rs.IsOnline = onlineData.ContainsKey("IsOnline") && (bool)onlineData["IsOnline"];
 
                 return new BusinessResult (Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetUserByPhoneNumber(string phoneNumber)
+        {
+            try
+            {
+                if (!FunctionCommon.IsValidPhoneNumber(phoneNumber))
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Wrong phone number format!");
+                }
+
+                var user = await _unitOfWork.AccountRepository.GetByPhoneNumberAsync(phoneNumber);
+
+                if (user == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
+                }
+
+                var rs = _mapper.Map<UserDTO>(user);
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
             }
             catch (Exception ex)
             {

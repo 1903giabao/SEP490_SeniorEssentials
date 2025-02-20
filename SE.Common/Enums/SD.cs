@@ -22,6 +22,14 @@ namespace SE.Common.Enums
         {
             public static string ACTIVE = "Active";
             public static string INACTIVE = "Inactive";
+        }        
+        
+        public class UserLinkStatus
+        {
+            public static string PENDING = "Pending";
+            public static string ACCEPTED = "Accepted";
+            public static string REJECTED = "Rejected";
+            public static string DELETED = "Deleted";
         }
     }
 }
