@@ -60,7 +60,8 @@ builder.Services.AddScoped<ISmsService, SmsService>();
 
 
 //var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountKey.json");
-var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountTemp.json");
+var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountKey2.json");
+//var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountTemp.json");
 //var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "tempKey.json");
 System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialPath);
 
@@ -73,7 +74,8 @@ FirebaseApp.Create(new AppOptions()
 // Add Firestore DB Service (use Project ID)
 //builder.Services.AddSingleton(FirestoreDb.Create("testproject-bc2e2")); //tempKey.json
 //builder.Services.AddSingleton(FirestoreDb.Create("senioressentials-3ebc7")); //serviceAccountKey.json
-builder.Services.AddSingleton(FirestoreDb.Create("senioressentials-94d8e")); //serviceAccountTemp.json
+//builder.Services.AddSingleton(FirestoreDb.Create("senioressentials-94d8e")); //serviceAccountTemp.json
+builder.Services.AddSingleton(FirestoreDb.Create("senioressentials2")); //serviceAccountTemp.json
 
 // AutoMapper configuration
 var mapperConfig = new MapperConfiguration(mc =>
