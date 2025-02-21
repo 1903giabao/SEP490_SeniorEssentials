@@ -1,4 +1,4 @@
-﻿/*using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SE.Service.Services;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -16,18 +16,17 @@ namespace SE.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Scan( IFormFile day, int ElderlyId)
+        public async Task<IActionResult> Scan(IFormFile day, int ElderlyId)
         {
-            var result = await _medicationService.ScanFromPic(day,ElderlyId);
+            var result = await _medicationService.ScanFromPic(day, ElderlyId);
             return Ok(result);
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll(int ElderlyId)
+        public async Task<IActionResult> GetAll(int ElderlyId, DateTime day)
         {
-            var result = await _medicationService.GetMedicationsForToday(ElderlyId);
+            var result = await _medicationService.GetMedicationsForToday(ElderlyId, day);
             return Ok(result);
         }
     }
 }
-*/

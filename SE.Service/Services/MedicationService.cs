@@ -17,6 +17,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Tesseract;
+using static SE.Common.DTO.GetPresciptionFromScan;
 using static System.Net.Mime.MediaTypeNames;
 
 
@@ -24,9 +25,9 @@ namespace SE.Service.Services
 {
     public interface IMedicationService
     {
-    /*    Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID);
-        Task<IBusinessResult> GetMedicationsForToday(int elderlyId);*/
-             
+        Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID);
+       Task<IBusinessResult> GetMedicationsForToday(int elderlyId, System.DateTime today);
+
     }
 
     public class MedicationService : IMedicationService
@@ -41,74 +42,78 @@ namespace SE.Service.Services
         }
 
 
-/*        public async Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID)
+        public async Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID)
         {
             try
             {
 
                 var extractedText = ExtractTextFromImage(file);
+                /*
+                                var image = await CloudinaryHelper.UploadImageAsync(file);
+                                var newImage = new Prescription
+                                {
+                                    Elderly = ElderlyID,
+                                    CreatedAt = System.DateTime.UtcNow.AddHours(7),
+                                    Status = SD.GeneralStatus.ACTIVE,
+                                     Url = image.Url,
+                                     Treatment = ParseDiagnosis(extractedText)
+                                };
 
-                var image = await CloudinaryHelper.UploadImageAsync(file);
-                var newImage = new Prescription
-                {
-                    Elderly = ElderlyID,
-                    CreatedAt = System.DateTime.UtcNow.AddHours(7),
-                    Status = SD.GeneralStatus.ACTIVE,
-                     Url = image.Url
-                };
-
-                var rsImage = await _unitOfWork.PrescriptionRepository.CreateAsync(newImage);
+                                var rsImage = await _unitOfWork.PrescriptionRepository.CreateAsync(newImage);*/
 
                 List<string> medicines = ParseMedicineDetails(extractedText);
 
                 var listMediFromPic = CreateMedicationRequests(medicines);
 
+                var medications = new List<GetMedicationFromScanDTO>();
+
                 foreach (var medicine in listMediFromPic)
                 {
-                    var rs = new Medication
+                    DetermineFrequencyType(medicine);
+                    var rs = new GetMedicationFromScanDTO
                     {
-                        ElderlyId = ElderlyID,
                         Dosage = (medicine.Dosage == "I Viên") ? "1 Viên" : medicine.Dosage,
                         CreatedDate = System.DateTime.UtcNow.AddHours(7),
                         DateFrequency = medicine.DateFrequency,
                         EndDate = DateOnly.FromDateTime(medicine.EndDate ?? System.DateTime.MinValue),
-                        FrequencyType = medicine.TimeFrequency,
+                        FrequencyType = medicine.FrequencyType,
                         TimeFrequency = medicine.TimeFrequency,
                         StartDate = DateOnly.FromDateTime(medicine.StartDate ?? System.DateTime.MinValue),
                         Shape = medicine.Shape,
                         Status = SD.GeneralStatus.ACTIVE,
-                        PrescriptionId = newImage.PrescriptionId,
-                        MedicationName  = medicine.MedicationName
+                        MedicationName = medicine.MedicationName,
+                        Remaining = medicine.Quantity
+
                     };
-                    var rs1 =await _unitOfWork.MedicationRepository.CreateAsync(rs);
-                   
+                    /*  var rs1 =await _unitOfWork.MedicationRepository.CreateAsync(rs);
 
-                    var newSchedule = new MedicationSchedule
-                    {
-                        MedicationId = rs.MedicationId,
-                        Dosage = (medicine.Dosage == "I Viên") ? "1 Viên" : medicine.Dosage,
-                        TimeOfDay = (rs.TimeFrequency == "Sáng") ? new TimeOnly(7, 0) :
-                                    (rs.TimeFrequency == "Trưa") ? new TimeOnly(11, 0) :
-                                    (rs.TimeFrequency == "Chiều") ? new TimeOnly(17, 0) :
-                                    (rs.TimeFrequency == "Tối") ? new TimeOnly(20, 0) : TimeOnly.MinValue,
-                        Status = SD.GeneralStatus.ACTIVE
-                    };
 
-                    var rs2 = await _unitOfWork.MedicationScheduleRepository.CreateAsync(newSchedule);
+                      var newSchedule = new MedicationSchedule
+                      {
+                          MedicationId = rs.MedicationId,
+                          Dosage = (medicine.Dosage == "I Viên") ? "1 Viên" : medicine.Dosage,
+                         DateTaken = (rs.TimeFrequency == "Sáng") ? new TimeOnly(7, 0) :
+                                      (rs.TimeFrequency == "Trưa") ? new TimeOnly(11, 0) :
+                                      (rs.TimeFrequency == "Chiều") ? new TimeOnly(17, 0) :
+                                      (rs.TimeFrequency == "Tối") ? new TimeOnly(20, 0) : TimeOnly.MinValue,
 
-                    var newScheduleDay = new MedicationDay
-                    {
-                        Status = SD.GeneralStatus.ACTIVE,
-                        DayOfWeek = "All Day",
-                        MedicationScheduleId = newSchedule.MedicationScheduleId
-                    };
-                    var rs3 =await _unitOfWork.MedicationDayRepository.CreateAsync(newScheduleDay);
 
+
+                          Status = SD.GeneralStatus.ACTIVE
+                      };
+
+                      var rs2 = await _unitOfWork.MedicationScheduleRepository.CreateAsync(newSchedule);*/
+
+                    medications.Add(rs);
                 }
 
+                var result = new GetPresciptionFromScan
+                {
+                    Treatment = ParseDiagnosis(extractedText),
+                    Medication = medications
+                };
 
-
-                return new BusinessResult(Const.SUCCESS_CREATE, "Medication created successfully.");
+                return new BusinessResult(Const.SUCCESS_CREATE, "Medication scan successfully.", result);
 
 
             }
@@ -117,7 +122,7 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_CREATE, ex.Message);
             }
         }
-*/
+
         public static string ExtractTextFromImage(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -156,11 +161,25 @@ namespace SE.Service.Services
                 }
             }
         }
+        static string ParseDiagnosis(string text)
+        {
+            string pattern = @"(Chuẩn đoán|Chvẩn đoán):.*?(?=\n\d+\.\.|$)";
+            Match match = Regex.Match(text, pattern, RegexOptions.Singleline);
 
+            if (match.Success)
+            {
+                string result = match.Value.Split(new[] { ':' }, 2).Last().Trim();
+                return result;
+            }
+
+            return "Diagnosis not found.";
+        }
         static List<string> ParseMedicineDetails(string text)
         {
-            string pattern = @"(\d+\.\.\s.*?Uông\s*:\s*.*?)(?=\n\s*\d+\.\.|$)";
-            MatchCollection matches = Regex.Matches(text, pattern, RegexOptions.Singleline);
+            string corrected = Regex.Replace(text, @"\bUông\b", "Uống");
+            string textFormat = corrected.Replace("I", "1");
+
+            string pattern = @"(\d+\.\.\s.*?Uống\s*:\s*.*?)(?=\n\s*\d+\.\.|$)"; MatchCollection matches = Regex.Matches(textFormat, pattern, RegexOptions.Singleline);
 
             List<string> medications = new List<string>();
 
@@ -200,12 +219,30 @@ namespace SE.Service.Services
 
         }
 
-
+        public void DetermineFrequencyType(NewMedicationFromPicDTO medication)
+        {
+            if (medication.Instruction.Contains("Uống : Sáng") || medication.Instruction.Contains("Uống : Chiều") || medication.Instruction.Contains("Uống : Tối"))
+            {
+                medication.FrequencyType = "Daily";
+            }
+            else if (medication.Instruction.Contains("Uống: Cách ngày"))
+            {
+                medication.FrequencyType = "Every X days"; // Uống cách ngày
+            }
+            else if (medication.Instruction.Contains("Uống: Mỗi tuần"))
+            {
+                medication.FrequencyType = "Weekly"; // Uống hàng tuần
+            }
+            else
+            {
+                medication.FrequencyType = "Unknown"; // Không xác định
+            }
+        }
         static List<NewMedicationFromPicDTO> CreateMedicationRequests(List<string> medicines)
         {
             List<NewMedicationFromPicDTO> requests = new List<NewMedicationFromPicDTO>();
             int daysToAdd = ExtractDays(medicines);
-            string name="Unknow";
+            string name = "Unknow";
             string quantity = "0";
             foreach (var medicine in medicines)
             {
@@ -214,9 +251,9 @@ namespace SE.Service.Services
                     var match = Regex.Match(medicine, @"^(\d+\.\.\s+|\d+\.\s+)?(.+?)\s+(\d+mg)?.*SL:\s*(\d+) Viên", RegexOptions.IgnoreCase);
                     if (!match.Success) return null;
 
-                     name = match.Groups[2].Value.Trim();
-                     quantity = match.Groups[4].Value;
-                    
+                    name = match.Groups[2].Value.Trim();
+                    quantity = match.Groups[4].Value;
+
                 }
 
                 else if (Regex.IsMatch(medicine, @"U[oôố]ng\s*[:\-]?\s*(Sáng|Chiều|Tối)\s*([1I\d]+)\s*Viên", RegexOptions.IgnoreCase))
@@ -233,9 +270,10 @@ namespace SE.Service.Services
                             EndDate = System.DateTime.UtcNow.AddHours(7).AddDays(double.Parse(quantity)),
                             Dosage = dosage,
                             MedicationName = name,
-                            TimeFrequency= timeToTake,
-                            DateFrequency =1
-
+                            TimeFrequency = timeToTake,
+                            DateFrequency = 1,
+                            Quantity = int.Parse(quantity),
+                            Instruction = medicine
                         };
                         requests.Add(rs);
                     }
@@ -259,8 +297,68 @@ namespace SE.Service.Services
         }
 
 
+        /*     public void GenerateMedicationSchedules(Medication medication)
+             {
+                 if (medication.StartDate == null || medication.EndDate == null)
+                 {
+                     throw new InvalidOperationException("StartDate and EndDate must be set.");
+                 }
+
+                 var schedules = new List<MedicationSchedule>();
+                 var currentDate = medication.StartDate.Value;
+
+                 while (currentDate <= medication.EndDate.Value)
+                 {
+                     if (ShouldTakeMedication(currentDate))
+                     {
+                         var schedule = new MedicationSchedule
+                         {
+                             MedicationId = medication.MedicationId,
+                             Dosage = medication.Dosage,
+                             Status = "Pending",
+                             DateTaken = GetMedicationTime(currentDate),
+                             IsTaken = false
+                         };
+                         schedules.Add(schedule);
+                     }
+
+                     currentDate = currentDate.AddDays(1);
+                 }
+
+                 MediationSchedules = schedules;
+             }
+
+             private bool ShouldTakeMedication(DateOnly date)
+             {
+                 if (FrequencyType == "Daily")
+                 {
+                     return true;
+                 }
+                 else if (FrequencyType == "Every X days" && DateFrequency.HasValue)
+                 {
+                     var daysSinceStart = (date.ToDateTime(TimeOnly.MinValue) - StartDate.Value.ToDateTime(TimeOnly.MinValue)).Days;
+                     return daysSinceStart % DateFrequency.Value == 0;
+                 }
+
+                 return false;
+             }
+
+             private DateTime GetMedicationTime(DateOnly date)
+             {
+                 var time = TimeFrequency switch
+                 {
+                     "Morning" => new TimeOnly(7, 0),
+                     "Noon" => new TimeOnly(11, 0),
+                     "Afternoon" => new TimeOnly(17, 0),
+                     "Evening" => new TimeOnly(20, 0),
+                     _ => throw new InvalidOperationException("Invalid TimeFrequency.")
+                 };
+
+                 return date.ToDateTime(time);
+             }
 
 
+     */
 
         public async Task<IBusinessResult> CreateMedication(CreateMedicationRequest req)
         {
@@ -346,15 +444,13 @@ namespace SE.Service.Services
 
         public static System.DateTime? ConvertToDateTime(DateOnly? dateOnly)
         {
-            return dateOnly?.ToDateTime(new TimeOnly(0, 0)); // Convert to DateTime at midnight
+            return dateOnly?.ToDateTime(new TimeOnly(0, 0));
         }
 
-/*        public async Task<IBusinessResult> GetMedicationsForToday(int elderlyId)
+        public async Task<IBusinessResult> GetMedicationsForToday(int elderlyId, System.DateTime today)
         {
             try
             {
-                var today = System.DateTime.Today;
-
                 var prescription = await _unitOfWork.PrescriptionRepository
                     .GetAllIncludeMedicationInElderly(elderlyId);
 
@@ -369,43 +465,25 @@ namespace SE.Service.Services
                     .Where(m => ConvertToDateTime(m.StartDate) <= today &&
                                  (m.EndDate == null || ConvertToDateTime(m.EndDate) >= today)))
                 {
-                    var startDate = ConvertToDateTime(medication.StartDate) ?? today;
-
-
-                    var endDate = ConvertToDateTime(medication.EndDate) ?? today;
-
-                    var totalDays = (today - startDate).Days + 1; 
-                    var totalTablets = (endDate - startDate).Days; 
-
-
+                   
                     var medicationSchedule = _unitOfWork.MedicationScheduleRepository.FindByCondition(ms => ms.MedicationId == medication.MedicationId).FirstOrDefault();
-                    var medicationHistories =  _unitOfWork.MedicationHistoryRepository
-                        .FindByCondition(mh => mh.MedicationScheduleId == medicationSchedule.MedicationScheduleId).ToList();
-
-                    var missedDays = medicationHistories.Count();
-
-                    var remainingTablets = totalTablets - (totalDays - missedDays);
-
+                  
                     var medicationDto = new MedicationModel
                     {
                         Id = medication.MedicationId,
                         Name = medication.MedicationName,
                         Dosage = medication.Dosage,
                         Form = medication.Shape,
-                        Remaining = remainingTablets.ToString(), 
+                        Remaining = medication.Remaining.ToString(),
                         TypeFrequency = medication.FrequencyType,
                         FrequencyEvery = medication.DateFrequency?.ToString(),
-                        FrequencySelect = medication.MedicationSchedules
-                    .SelectMany(ms => ms.MedicationDays) 
-                    .Select(md => md.DayOfWeek)
-                    .Distinct()
-                    .ToList(),
+                        FrequencySelect = GetWeeklyMedicationScheduleForMedication(medication.MedicationId, today),
                         MealTime = medication.IsBeforeMeal == true ? "Trước ăn" : "Sau ăn",
-                        Schedule = medication.MedicationSchedules
+                       Schedule = medication.MedicationSchedules
                             .Select(ms => new ScheduleModel
                             {
-                                Time = ms.TimeOfDay.ToString("hh\\:mm"), 
-                                Status = "unUsed" 
+                                Time = ms.DateTaken.HasValue ? ms.DateTaken.Value.ToString("h:mm:ss") : null,
+                                Status = "unUsed"
                             }).ToList()
                     };
 
@@ -415,7 +493,6 @@ namespace SE.Service.Services
                 var result = new
                 {
                     Id = elderlyId,
-                    Name = prescription.Name,
                     Treatment = "viêm họng",
                     StartDate = today.ToString("yyyy-MM-dd"),
                     Medicines = medicationDtos
@@ -428,9 +505,32 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
         }
-*/
-        
-        
+
+        private List<string> GetWeeklyMedicationScheduleForMedication(int medicationId, System.DateTime today)
+        {
+            var dayOfWeek = (int)today.DayOfWeek;
+            var mondayOfWeek = today.AddDays(-((dayOfWeek == 0 ? 7 : dayOfWeek) - 1)).Date;
+            var sundayOfWeek = mondayOfWeek.AddDays(6);
+
+            var schedules =  _unitOfWork.MedicationScheduleRepository
+                .FindByCondition(ms => ms.MedicationId == medicationId &&
+                                       ms.DateTaken >= mondayOfWeek &&
+                                       ms.DateTaken <= sundayOfWeek)
+                .ToList();
+
+            if (!schedules.Any())
+                return new List<string>();
+
+            var daysTaken = schedules
+                .Select(s => s.DateTaken?.ToString("dddd")) // Convert Date to day name
+                .Distinct()
+                .ToList();
+
+            return daysTaken;
+        }
+
+
+
         public async Task<IBusinessResult> GetMedicationById(int medicationId)
         {
             try
@@ -465,7 +565,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "Medication not found.");
                 }
 
-                medication.Status = status; 
+                medication.Status = status;
 
                 var result = await _unitOfWork.MedicationRepository.UpdateAsync(medication);
                 if (result > 0)

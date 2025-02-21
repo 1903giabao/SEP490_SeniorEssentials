@@ -15,5 +15,8 @@ namespace SE.Common.DTO
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public string Shape { get; set; }
+        public int Quantity { get; set; }
+        public string FrequencyType { get; set; }
+        public string Instruction { get; set; }
     }
 }
