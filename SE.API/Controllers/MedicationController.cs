@@ -15,17 +15,17 @@ namespace SE.API.Controllers
             _medicationService = medicationService;
         }
 
-        [HttpPost]
+        [HttpGet("scan")]
         public async Task<IActionResult> Scan(IFormFile day, int ElderlyId)
         {
             var result = await _medicationService.ScanFromPic(day, ElderlyId);
             return Ok(result);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll(int ElderlyId, DateTime day)
+        [HttpGet("{elderlyId}/Date")]
+        public async Task<IActionResult> GetAll([FromRoute] int elderlyId, DateTime day)
         {
-            var result = await _medicationService.GetMedicationsForToday(ElderlyId, day);
+            var result = await _medicationService.GetMedicationsForToday(elderlyId, day);
             return Ok(result);
         }
     }
