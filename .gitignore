@@ -3,12 +3,6 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
-# Allow specific Tesseract DLLs inside ignored x64 folder
-!C:\Users\TV\.nuget\packages\tesseract\5.2.0\x64/leptonica-1.82.0.dll
-!C:\Users\TV\.nuget\packages\tesseract\5.2.0\x64/tesseract50.dll
-!C:\Users\TV\.nuget\packages\tesseract\5.2.0\x86/leptonica-1.82.0.dll
-!C:\Users\TV\.nuget\packages\tesseract\5.2.0\x86/tesseract50.dll
-
 # User-specific files
 *.rsuser
 *.suo
@@ -27,8 +21,8 @@ mono_crash.*
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
-x64/
-x86/
+#!x64/
+#!x86/
 [Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
