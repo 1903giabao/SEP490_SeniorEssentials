@@ -15,10 +15,10 @@ namespace SE.API.Controllers
             _medicationService = medicationService;
         }
 
-        [HttpGet("scan")]
-        public async Task<IActionResult> Scan(IFormFile day, int ElderlyId)
+        [HttpPost("scan")]
+        public async Task<IActionResult> Scan(IFormFile picture, int ElderlyId)
         {
-            var result = await _medicationService.ScanFromPic(day, ElderlyId);
+            var result = await _medicationService.ScanFromPic(picture, ElderlyId);
             return Ok(result);
         }
 
