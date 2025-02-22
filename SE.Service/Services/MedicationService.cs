@@ -124,22 +124,72 @@ namespace SE.Service.Services
             }
         }
 
+        /*        public static string ExtractTextFromImage(IFormFile file)
+                {
+                    if (file == null || file.Length == 0)
+                        return "Invalid file";
+
+                    string tempFilePath = Path.GetTempFileName(); // Temporary file path
+
+                    try
+                    {
+                        using (var stream = new FileStream(tempFilePath, FileMode.Create))
+                        {
+                            file.CopyTo(stream);
+                        }
+                        var credentialPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tessdata");
+
+                        using (var engine = new TesseractEngine(credentialPath, "vie", EngineMode.Default))
+                        {
+                            using (var img = Pix.LoadFromFile(tempFilePath))
+                            {
+                                using (var page = engine.Process(img))
+                                {
+                                    return page.GetText().Trim();
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        return $"Error: {ex.Message}";
+                    }
+                    finally
+                    {
+                        if (File.Exists(tempFilePath))
+                        {
+                            File.Delete(tempFilePath);
+                        }
+                    }
+                }*/
+
         public static string ExtractTextFromImage(IFormFile file)
         {
             if (file == null || file.Length == 0)
-                return "Invalid file";
+                return "Error: Invalid file or empty content.";
 
-            string tempFilePath = Path.GetTempFileName(); // Temporary file path
+            string tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".jpg");
+            string tessdataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tessdata");
 
             try
             {
+                // Check if tessdata directory exists
+                if (!Directory.Exists(tessdataPath))
+                    return $"Error: 'tessdata' directory not found at {tessdataPath}.";
+
+                // Check if Vietnamese language data file exists
+                string trainedDataFile = Path.Combine(tessdataPath, "vie.traineddata");
+                if (!File.Exists(trainedDataFile))
+                    return $"Error: 'vie.traineddata' file is missing in {tessdataPath}.";
+
+                // Save uploaded file to a temp location
                 using (var stream = new FileStream(tempFilePath, FileMode.Create))
                 {
                     file.CopyTo(stream);
                 }
-                var credentialPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tessdata");
 
-                using (var engine = new TesseractEngine(credentialPath, "vie", EngineMode.Default))
+                // Initialize Tesseract Engine
+                using (var engine = new TesseractEngine(tessdataPath, "vie", EngineMode.Default))
                 {
                     using (var img = Pix.LoadFromFile(tempFilePath))
                     {
@@ -150,15 +200,36 @@ namespace SE.Service.Services
                     }
                 }
             }
+            catch (DirectoryNotFoundException dirEx)
+            {
+                return $"Error: Directory not found - {dirEx.Message}";
+            }
+            catch (FileNotFoundException fileEx)
+            {
+                return $"Error: File not found - {fileEx.Message}";
+            }
+            catch (UnauthorizedAccessException accessEx)
+            {
+                return $"Error: Permission issue - {accessEx.Message}";
+            }
+            catch (TesseractException tessEx)
+            {
+                return $"Error: Tesseract processing failed - {tessEx.Message}";
+            }
             catch (Exception ex)
             {
-                return $"Error: {ex.Message}";
+                return $"Error: {ex.Message}. Inner Exception: {ex.InnerException?.Message}";
             }
             finally
             {
+                // Cleanup temp file
                 if (File.Exists(tempFilePath))
                 {
-                    File.Delete(tempFilePath);
+                    try { File.Delete(tempFilePath); }
+                    catch (Exception cleanupEx)
+                    {
+                        Console.WriteLine($"Warning: Failed to delete temp file - {cleanupEx.Message}");
+                    }
                 }
             }
         }
