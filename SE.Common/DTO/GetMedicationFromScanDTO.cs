@@ -12,6 +12,8 @@ namespace SE.Common.DTO
 
         public List<GetMedicationFromScanDTO> Medication { get; set; }
 
+        public string tmp {  get; set; }
+
         public class GetMedicationFromScanDTO
         {
             public string MedicationName { get; set; }
