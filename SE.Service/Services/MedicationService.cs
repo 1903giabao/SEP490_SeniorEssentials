@@ -110,7 +110,8 @@ namespace SE.Service.Services
                 var result = new GetPresciptionFromScan
                 {
                     Treatment = ParseDiagnosis(extractedText),
-                    Medication = medications
+                    Medication = medications,
+                    tmp = extractedText
                 };
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Medication scan successfully.", result);
