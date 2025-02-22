@@ -1,8 +1,8 @@
 # Base stage (Used in production & debugging)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 
-# Set non-root user
-USER $APP_UID
+# Ensure we have root privileges
+USER root
 
 # Set working directory
 WORKDIR /app
@@ -13,12 +13,12 @@ EXPOSE 8081
 # Set ASP.NET environment
 ENV ASPNETCORE_ENVIRONMENT=Development
 
-# Install Tesseract OCR and dependencies for Linux-based containers
-RUN apt-get update && apt-get install -y \
+# Install required dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     libtesseract-dev \
     libleptonica-dev \
-    && rm -rf /var/lib/apt/lists/*  # Clean up unnecessary files
+    && rm -rf /var/lib/apt/lists/*  # Clean up cache to reduce image size
 
 # Build stage (Compiles the service project)
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
@@ -59,7 +59,7 @@ WORKDIR /app
 # Copy published app from previous stage
 COPY --from=publish /app/publish .
 
-# Ensure Tesseract is installed (Optional but useful for debugging)
+# Verify that Tesseract is installed (Optional for debugging)
 RUN tesseract --version
 
 # Set entry point
