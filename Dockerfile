@@ -1,33 +1,66 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
+# Base stage (Used in production & debugging)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+
+# Set non-root user
 USER $APP_UID
+
+# Set working directory
 WORKDIR /app
-EXPOSE 8080
+
+# Expose API on port 8081
 EXPOSE 8081
+
+# Set ASP.NET environment
 ENV ASPNETCORE_ENVIRONMENT=Development
 
-# This stage is used to build the service project
+# Install Tesseract OCR and dependencies for Linux-based containers
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    libtesseract-dev \
+    libleptonica-dev \
+    && rm -rf /var/lib/apt/lists/*  # Clean up unnecessary files
+
+# Build stage (Compiles the service project)
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
+
+# Set working directory for source
 WORKDIR /src
+
+# Copy project files
 COPY ["SE.API/SE.API.csproj", "SE.API/"]
 COPY ["SE.Common/SE.Common.csproj", "SE.Common/"]
 COPY ["SE.Data/SE.Data.csproj", "SE.Data/"]
 COPY ["SE.Service/SE.Service.csproj", "SE.Service/"]
+
+# Restore dependencies
 RUN dotnet restore "./SE.API/SE.API.csproj"
+
+# Copy the rest of the source files
 COPY . .
+
+# Set working directory to the API project
 WORKDIR "/src/SE.API"
+
+# Build the project
 RUN dotnet build "./SE.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# This stage is used to publish the service project to be copied to the final stage
+# Publish stage (Prepares final app output)
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
+
+# Publish the application
 RUN dotnet publish "./SE.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
+# Final stage (Production-ready container)
 FROM base AS final
 WORKDIR /app
+
+# Copy published app from previous stage
 COPY --from=publish /app/publish .
+
+# Ensure Tesseract is installed (Optional but useful for debugging)
+RUN tesseract --version
+
+# Set entry point
 ENTRYPOINT ["dotnet", "SE.API.dll"]
