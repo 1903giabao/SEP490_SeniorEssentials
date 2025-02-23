@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Google.Type;
+using IronOcr;
 using Microsoft.AspNetCore.Http;
 using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Ocsp;
@@ -39,6 +40,7 @@ namespace SE.Service.Services
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            IronOcr.License.LicenseKey = "IRONSUITE.BAONNGSE173536.FPT.EDU.VN.4904-54145B3AC1-AIPEXVP3OKGPU4CT-ZT6SMG2OESJY-T24M3BJKTUI7-JH4IFL4YXC64-A4TFAMKRJRIE-4AL6GUXZJHAH-RDO4GV-TJ6GOR3JD3GOUA-DEPLOYMENT.TRIAL-7CKKRI.TRIAL.EXPIRES.25.MAR.2025";
         }
 
 
@@ -168,53 +170,27 @@ namespace SE.Service.Services
             if (file == null || file.Length == 0)
                 return "Error: Invalid file or empty content.";
 
-            string tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".jpg");
-            string tessdataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tessdata");
+            // Create a temporary file path
+            string tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(file.FileName));
 
             try
             {
-                // Check if tessdata directory exists
-                if (!Directory.Exists(tessdataPath))
-                    return $"Error: 'tessdata' directory not found at {tessdataPath}.";
-
-                // Check if Vietnamese language data file exists
-                string trainedDataFile = Path.Combine(tessdataPath, "vie.traineddata");
-                if (!File.Exists(trainedDataFile))
-                    return $"Error: 'vie.traineddata' file is missing in {tessdataPath}.";
-
-                // Save uploaded file to a temp location
+                // Save the uploaded file to the temporary path
                 using (var stream = new FileStream(tempFilePath, FileMode.Create))
                 {
                     file.CopyTo(stream);
                 }
 
-                // Initialize Tesseract Engine
-                using (var engine = new TesseractEngine(tessdataPath, "vie", EngineMode.Default))
+                // Initialize IronOCR
+                var ocr = new IronTesseract();
+                ocr.Language = OcrLanguage.Vietnamese;
+
+                // Perform OCR on the saved temporary file
+                using (var input = new OcrInput(tempFilePath))
                 {
-                    using (var img = Pix.LoadFromFile(tempFilePath))
-                    {
-                        using (var page = engine.Process(img))
-                        {
-                            return page.GetText().Trim();
-                        }
-                    }
+                    var result = ocr.Read(input);
+                    return result.Text.Trim();
                 }
-            }
-            catch (DirectoryNotFoundException dirEx)
-            {
-                return $"Error: Directory not found - {dirEx.Message}";
-            }
-            catch (FileNotFoundException fileEx)
-            {
-                return $"Error: File not found - {fileEx.Message}";
-            }
-            catch (UnauthorizedAccessException accessEx)
-            {
-                return $"Error: Permission issue - {accessEx.Message}";
-            }
-            catch (TesseractException tessEx)
-            {
-                return $"Error: Tesseract processing failed - {tessEx.Message}";
             }
             catch (Exception ex)
             {
@@ -222,20 +198,16 @@ namespace SE.Service.Services
             }
             finally
             {
-                // Cleanup temp file
+                // Optionally delete the temporary file after processing
                 if (File.Exists(tempFilePath))
                 {
-                    try { File.Delete(tempFilePath); }
-                    catch (Exception cleanupEx)
-                    {
-                        Console.WriteLine($"Warning: Failed to delete temp file - {cleanupEx.Message}");
-                    }
+                    File.Delete(tempFilePath);
                 }
             }
         }
         static string ParseDiagnosis(string text)
         {
-            string pattern = @"(Chuẩn đoán|Chvẩn đoán):.*?(?=\n\d+\.\.|$)";
+            string pattern = @"(Chuẩn đoán|Chvẩn đoán|Chắn đoán):.*?(?=\n\d+\.\.|$)";
             Match match = Regex.Match(text, pattern, RegexOptions.Singleline);
 
             if (match.Success)
