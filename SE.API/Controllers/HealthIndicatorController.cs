@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿/*using Microsoft.AspNetCore.Mvc;
 using SE.Common.DTO;
 using SE.Common.Request;
 using SE.Service.Services;
@@ -57,4 +57,4 @@ namespace SE.API.Controllers
             return Ok(result);
         }
     }
-}
+}*/

@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Google.Type;
 using Microsoft.AspNetCore.Http;
 using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Ocsp;
@@ -13,6 +12,7 @@ using SE.Service.Base;
 using SE.Service.Helper;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -27,6 +27,10 @@ namespace SE.Service.Services
     {
         Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID);
        Task<IBusinessResult> GetMedicationsForToday(int elderlyId, System.DateTime today);
+
+
+        Task<IBusinessResult> CreateMedicationByManually(CreateMedicationRequest req);
+
 
     }
 
@@ -298,92 +302,157 @@ namespace SE.Service.Services
         }
 
 
-        /*     public void GenerateMedicationSchedules(Medication medication)
-             {
-                 if (medication.StartDate == null || medication.EndDate == null)
-                 {
-                     throw new InvalidOperationException("StartDate and EndDate must be set.");
-                 }
+        public async Task<int> GenerateMedicationSchedules(Medication medication, List<string> scheduleTimes, List<string> frequencySelect = null)
+        {
+            if (medication.StartDate == null || medication.EndDate == null || scheduleTimes == null || !scheduleTimes.Any())
+            {
+                throw new InvalidOperationException("StartDate, EndDate, and scheduleTimes must be set and non-empty.");
+            }
 
-                 var schedules = new List<MedicationSchedule>();
-                 var currentDate = medication.StartDate.Value;
+            var currentDate = medication.StartDate.Value;
+            var endDate = medication.EndDate.Value;
+            var rs = 0;
 
-                 while (currentDate <= medication.EndDate.Value)
-                 {
-                     if (ShouldTakeMedication(currentDate))
-                     {
-                         var schedule = new MedicationSchedule
-                         {
-                             MedicationId = medication.MedicationId,
-                             Dosage = medication.Dosage,
-                             Status = "Pending",
-                             DateTaken = GetMedicationTime(currentDate),
-                             IsTaken = false
-                         };
-                         schedules.Add(schedule);
-                     }
+            while (currentDate <= endDate)
+            {
+                // Check if the current date matches the selected days (if FrequencyType is "Select")
+                if (medication.FrequencyType == "Select" && frequencySelect != null && frequencySelect.Any())
+                {
+                    var dayOfWeek = GetVietnameseDayOfWeek(currentDate.DayOfWeek);
+                    if (!frequencySelect.Contains(dayOfWeek))
+                    {
+                        currentDate = currentDate.AddDays(1); // Skip to the next day
+                        continue;
+                    }
+                }
 
-                     currentDate = currentDate.AddDays(1);
-                 }
+                foreach (var time in scheduleTimes)
+                {
+                    // Parse the time string (e.g., "8:00") into a TimeSpan
+                    var timeOfDay = TimeSpan.Parse(time);
 
-                 MediationSchedules = schedules;
-             }
+                    // Create a new MedicationSchedule for the current date and time
+                    var schedule = new MedicationSchedule
+                    {
+                        MedicationId = medication.MedicationId,
+                        Dosage = medication.Dosage,
+                        Status = "Unused",
+                        DateTaken = new System.DateTime(currentDate.Year, currentDate.Month, currentDate.Day)
+                                    .Add(timeOfDay), // Combine date and time
+                        IsTaken = false
+                    };
 
-             private bool ShouldTakeMedication(DateOnly date)
-             {
-                 if (FrequencyType == "Daily")
-                 {
-                     return true;
-                 }
-                 else if (FrequencyType == "Every X days" && DateFrequency.HasValue)
-                 {
-                     var daysSinceStart = (date.ToDateTime(TimeOnly.MinValue) - StartDate.Value.ToDateTime(TimeOnly.MinValue)).Days;
-                     return daysSinceStart % DateFrequency.Value == 0;
-                 }
+                    // Save the schedule to the database
+                    var result = await _unitOfWork.MedicationScheduleRepository.CreateAsync(schedule);
+                    if (result > 0)
+                    {
+                        rs++; // Increment the success count
+                    }
+                }
 
-                 return false;
-             }
+                // Move to the next date based on FrequencyType
+                if (medication.FrequencyType == "Daily")
+                {
+                    currentDate = currentDate.AddDays(1); // Move to the next day
+                }
+                else if (medication.FrequencyType.StartsWith("Every ") && medication.FrequencyType.EndsWith(" day"))
+                {
+                    string numberStr = medication.FrequencyType.Replace("Every ", "").Replace(" day", "").Trim();
+                    if (int.TryParse(numberStr, out int day))
+                    {
+                        currentDate = currentDate.AddDays(day); // Move by X days
+                    }
+                }
+                else if (medication.FrequencyType == "Select")
+                {
+                    currentDate = currentDate.AddDays(1); // Move to the next day
+                }
+                else
+                {
+                    throw new InvalidOperationException("Invalid FrequencyType or missing DateFrequency.");
+                }
+            }
 
-             private DateTime GetMedicationTime(DateOnly date)
-             {
-                 var time = TimeFrequency switch
-                 {
-                     "Morning" => new TimeOnly(7, 0),
-                     "Noon" => new TimeOnly(11, 0),
-                     "Afternoon" => new TimeOnly(17, 0),
-                     "Evening" => new TimeOnly(20, 0),
-                     _ => throw new InvalidOperationException("Invalid TimeFrequency.")
-                 };
+            return rs; // Return the total number of schedules created
+        }
 
-                 return date.ToDateTime(time);
-             }
-
-
-     */
-
-        public async Task<IBusinessResult> CreateMedication(CreateMedicationRequest req)
+        private string GetVietnameseDayOfWeek(System.DayOfWeek dayOfWeek)
+        {
+            switch (dayOfWeek)
+            {
+                case System.DayOfWeek.Monday:
+                    return "Thứ 2";
+                case System.DayOfWeek.Tuesday:
+                    return "Thứ 3";
+                case System.DayOfWeek.Wednesday:
+                    return "Thứ 4";
+                case System.DayOfWeek.Thursday:
+                    return "Thứ 5";
+                case System.DayOfWeek.Friday:
+                    return "Thứ 6";
+                case System.DayOfWeek.Saturday:
+                    return "Thứ 7";
+                case System.DayOfWeek.Sunday:
+                    return "Chủ nhật";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(dayOfWeek), dayOfWeek, null);
+            }
+        }
+        public async Task<IBusinessResult> CreateMedicationByManually(CreateMedicationRequest req)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(req.MedicationName))
+                var checkElderly = await _unitOfWork.ElderlyRepository.GetByIdAsync(req.ElderlyId);
+                if (checkElderly == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "MEDICATION NAME MUST NOT BE EMPTY");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Elderly not existed.");
                 }
 
-                if (req.StartDate > req.EndDate)
+                var newPrescription = new Prescription
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "THỜI GIAN BẮT ĐẦU PHẢI TRƯỚC THỜI GIAN KẾT THÚC!");
+                    Elderly = checkElderly.ElderlyId,
+                    CreatedAt = System.DateTime.UtcNow.AddHours(7),
+                    Status = SD.GeneralStatus.ACTIVE,
+                    Url = "Manually",
+                    Treatment = req.Treatment
+                };
+
+                var rsImage = await _unitOfWork.PrescriptionRepository.CreateAsync(newPrescription);
+
+                foreach (var medication in req.Medication)
+                {
+                    // Determine TimeFrequency based on the schedule
+                    var timeFrequency = DetermineTimeFrequency(medication.Schedule);
+
+                    var rs = new Medication
+                    {
+                        Dosage = medication.Dosage,
+                        CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                        EndDate = medication.EndDate,
+                        FrequencyType = medication.FrequencyType,
+                        StartDate = medication.StartDate,
+                        Shape = medication.Shape,
+                        Status = SD.GeneralStatus.ACTIVE,
+                        MedicationName = medication.MedicationName,
+                        Remaining = medication.Remaining,
+                        PrescriptionId = newPrescription.PrescriptionId,
+                        ElderlyId = req.ElderlyId
+                    };
+
+                    var createMedication = await _unitOfWork.MedicationRepository.CreateAsync(rs);
+                    if (createMedication < 1)
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create medication.");
+                    }
+
+                    var createSchedule = await GenerateMedicationSchedules(rs, medication.Schedule,medication.FrequencySelect);
+                    if (createSchedule < 1)
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create medication schedule.");
+                    }
                 }
 
-                var medication = _mapper.Map<Medication>(req);
-
-                var result = await _unitOfWork.MedicationRepository.CreateAsync(medication);
-                if (result > 0)
-                {
-                    return new BusinessResult(Const.SUCCESS_CREATE, "Medication created successfully.", req);
-                }
-
-                return new BusinessResult(Const.FAIL_CREATE, "Failed to create medication.");
+                return new BusinessResult(Const.SUCCESS_CREATE, "Medication created successfully.", req);
             }
             catch (Exception ex)
             {
@@ -391,6 +460,35 @@ namespace SE.Service.Services
             }
         }
 
+        private string DetermineTimeFrequency(List<string> scheduleTimes)
+        {
+            var timeFrequencies = new List<string>();
+
+            foreach (var time in scheduleTimes)
+            {
+                var timeOfDay = TimeSpan.Parse(time);
+
+                if (timeOfDay >= TimeSpan.FromHours(5) && timeOfDay < TimeSpan.FromHours(10))
+                {
+                    timeFrequencies.Add("Sáng");
+                }
+                else if (timeOfDay >= TimeSpan.FromHours(10) && timeOfDay < TimeSpan.FromHours(15))
+                {
+                    timeFrequencies.Add("Trưa");
+                }
+                else if (timeOfDay >= TimeSpan.FromHours(15) && timeOfDay < TimeSpan.FromHours(18))
+                {
+                    timeFrequencies.Add("Chiều");
+                }
+                else
+                {
+                    timeFrequencies.Add("Tối");
+                }
+            }
+
+            // Remove duplicates and join into a single string
+            return string.Join(", ", timeFrequencies.Distinct());
+        }
         public async Task<IBusinessResult> UpdateMedication(int medicationId, UpdateMedicationRequest req)
         {
             try
@@ -407,8 +505,6 @@ namespace SE.Service.Services
                 medication.Dosage = req.Dosage;
                 medication.IsBeforeMeal = req.IsBeforeMeal;
                 medication.FrequencyType = req.FrequencyType;
-                medication.TimeFrequency = req.TimeFrequency;
-                medication.DateFrequency = req.DateFrequency;
                 medication.StartDate = req.StartDate;
                 medication.EndDate = req.EndDate;
                 medication.Note = req.Note;
@@ -477,7 +573,6 @@ namespace SE.Service.Services
                         Form = medication.Shape,
                         Remaining = medication.Remaining.ToString(),
                         TypeFrequency = medication.FrequencyType,
-                        FrequencyEvery = medication.DateFrequency?.ToString(),
                         FrequencySelect = GetWeeklyMedicationScheduleForMedication(medication.MedicationId, today),
                         MealTime = medication.IsBeforeMeal == true ? "Trước ăn" : "Sau ăn",
                        Schedule = medication.MedicationSchedules
@@ -523,7 +618,7 @@ namespace SE.Service.Services
                 return new List<string>();
 
             var daysTaken = schedules
-                .Select(s => s.DateTaken?.ToString("dddd")) // Convert Date to day name
+                .Select(s => s.DateTaken?.ToString("dddd"))
                 .Distinct()
                 .ToList();
 

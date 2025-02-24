@@ -50,12 +50,12 @@ namespace SE.Common.Mapper
                        .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Account.FullName))
                        .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Account.Avatar))
                        .ReverseMap();
-
+/*
             CreateMap<CreateHealthIndicatorRequest, HealthIndicator>()
            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status ?? "Active"));
 
             CreateMap<HealthIndicator, CreateHealthIndicatorRequest>().ReverseMap();
-            CreateMap<HealthIndicator, UpdateHealthIndicatorRequest>().ReverseMap();
+            CreateMap<HealthIndicator, UpdateHealthIndicatorRequest>().ReverseMap();*/
 
             CreateMap<MedicationModel, Medication>();
             CreateMap<CreateMedicationRequest, Medication>();

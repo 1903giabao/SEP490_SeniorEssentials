@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SE.Common.Request;
 using SE.Service.Services;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -19,6 +20,13 @@ namespace SE.API.Controllers
         public async Task<IActionResult> Scan(IFormFile picture, int ElderlyId)
         {
             var result = await _medicationService.ScanFromPic(picture, ElderlyId);
+            return Ok(result);
+        }
+
+        [HttpPost()]
+        public async Task<IActionResult> CreateNewMedicationByManually([FromBody] CreateMedicationRequest medicationRequest)
+        {
+            var result = await _medicationService.CreateMedicationByManually(medicationRequest);
             return Ok(result);
         }
 
