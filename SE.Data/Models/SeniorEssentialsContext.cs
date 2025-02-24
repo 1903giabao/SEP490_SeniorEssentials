@@ -576,7 +576,6 @@ public partial class SeniorEssentialsContext : DbContext
             entity.Property(e => e.Status)
                 .IsRequired()
                 .HasMaxLength(20);
-            entity.Property(e => e.TimeFrequency).HasMaxLength(50);
             entity.Property(e => e.Treatment).HasMaxLength(100);
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.Medications)

@@ -47,7 +47,6 @@ builder.Services.AddScoped<IComboService, ComboService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
-builder.Services.AddScoped<IHealthIndicatorService, HealthIndicatorService>();
 builder.Services.AddScoped<IIotDeviceService, IotDeviceService>();
 builder.Services.AddScoped<IMedicationService, MedicationService>();
 builder.Services.AddScoped<IMessageService, MessageService>();

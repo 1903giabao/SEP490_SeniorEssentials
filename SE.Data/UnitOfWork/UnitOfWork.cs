@@ -22,7 +22,6 @@ namespace SE.Data.UnitOfWork
         private GameRepository _gameRepository;
         private GroupRepository _groupRepository;
         private GroupMemberRepository _groupMemberRepository;
-        private HealthIndicatorRepository _healthIndicatorRepository;
         private IotdeviceRepository _idoeviceRepository;
         private LessonRepository _lessonRepository;
         private LessonHistoryRepository _lessonHistoryRepository;
@@ -41,6 +40,14 @@ namespace SE.Data.UnitOfWork
         private VideoCallRepository _videoCallRepository;
         private PrescriptionRepository _prescriptionRepository;
         private UserLinkRepository _userLinkRepository;
+        private BloodPressureRepository _bloodPressureRepository;
+        private BloodGlucoseRepository _bloodGlucoseRepository;
+        private HeartRateRepository _heartRateRepository;
+        private KidneyFunctionRepository _kidneyFunctionRepository;
+        private LipidProfileRepository _lipidProfileRepository;
+        private LiverEnzymeRepository _liverEnzymeRepository;
+        private WeightHeightRepository _weightHeightRepository;
+
 
         public UnitOfWork()
         {
@@ -59,7 +66,6 @@ namespace SE.Data.UnitOfWork
                 return _accountRepository ??= new AccountRepository(_unitOfWorkContext);
             }
         }
-
 
         public PrescriptionRepository PrescriptionRepository
         {
@@ -122,12 +128,6 @@ namespace SE.Data.UnitOfWork
         {
             get => _groupMemberRepository ??= new GroupMemberRepository(_unitOfWorkContext);
         }
-
-        public HealthIndicatorRepository HealthIndicatorRepository
-        {
-            get => _healthIndicatorRepository ??= new HealthIndicatorRepository(_unitOfWorkContext);
-        }
-
         public IotdeviceRepository IotdeviceRepository
         {
             get => _idoeviceRepository ??= new IotdeviceRepository(_unitOfWorkContext);
@@ -208,6 +208,41 @@ namespace SE.Data.UnitOfWork
             get => _videoCallRepository ??= new VideoCallRepository(_unitOfWorkContext);
         }
 
+        public BloodGlucoseRepository BloodGlucoseRepository
+        {
+            get => _bloodGlucoseRepository ??= new BloodGlucoseRepository(_unitOfWorkContext);
+        }
+
+        public BloodPressureRepository BloodPressureRepository
+        {
+            get => _bloodPressureRepository ??= new BloodPressureRepository(_unitOfWorkContext);
+        }
+
+        public HeartRateRepository HeartRateRepository
+        {
+            get => _heartRateRepository ??= new HeartRateRepository(_unitOfWorkContext);
+        }
+
+        public KidneyFunctionRepository KidneyFunctionRepository
+        {
+            get => _kidneyFunctionRepository ??= new KidneyFunctionRepository(_unitOfWorkContext);
+        }
+
+        public LipidProfileRepository LipidProfileRepository
+        {
+            get => _lipidProfileRepository ??= new LipidProfileRepository(_unitOfWorkContext);
+        }
+
+        public LiverEnzymeRepository LiverEnzymeRepository
+        {
+            get => _liverEnzymeRepository ??= new LiverEnzymeRepository(_unitOfWorkContext);
+        }
+
+        public WeightHeightRepository WeightHeightRepository
+        {
+            get => _weightHeightRepository ??= new WeightHeightRepository(_unitOfWorkContext);
+
+        }
         public int SaveChangesWithTransaction()
         {
             int result = -1;
