@@ -13,6 +13,7 @@ using SE.Service.Helper;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -28,9 +29,11 @@ namespace SE.Service.Services
         Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID);
        Task<IBusinessResult> GetMedicationsForToday(int elderlyId, System.DateTime today);
 
+        Task<IBusinessResult> UpdateMedicationInPrescription(int prescriptionId, UpdateMedicationInPrescriptionRequest req);
 
         Task<IBusinessResult> CreateMedicationByManually(CreateMedicationRequest req);
 
+        Task<IBusinessResult> ConfirmMedicationDrinking(ConfirmMedicationDrinkingReq request);
 
     }
 
@@ -312,37 +315,33 @@ namespace SE.Service.Services
             var currentDate = medication.StartDate.Value;
             var endDate = medication.EndDate.Value;
             var rs = 0;
+            int frequencyEvery;
 
             while (currentDate <= endDate)
             {
-                // Check if the current date matches the selected days (if FrequencyType is "Select")
                 if (medication.FrequencyType == "Select" && frequencySelect != null && frequencySelect.Any())
                 {
                     var dayOfWeek = GetVietnameseDayOfWeek(currentDate.DayOfWeek);
                     if (!frequencySelect.Contains(dayOfWeek))
                     {
-                        currentDate = currentDate.AddDays(1); // Skip to the next day
+                        currentDate = currentDate.AddDays(1); 
                         continue;
                     }
                 }
 
                 foreach (var time in scheduleTimes)
                 {
-                    // Parse the time string (e.g., "8:00") into a TimeSpan
                     var timeOfDay = TimeSpan.Parse(time);
 
-                    // Create a new MedicationSchedule for the current date and time
                     var schedule = new MedicationSchedule
                     {
                         MedicationId = medication.MedicationId,
                         Dosage = medication.Dosage,
                         Status = "Unused",
                         DateTaken = new System.DateTime(currentDate.Year, currentDate.Month, currentDate.Day)
-                                    .Add(timeOfDay), // Combine date and time
+                                    .Add(timeOfDay),
                         IsTaken = false
                     };
-
-                    // Save the schedule to the database
                     var result = await _unitOfWork.MedicationScheduleRepository.CreateAsync(schedule);
                     if (result > 0)
                     {
@@ -354,7 +353,7 @@ namespace SE.Service.Services
                     string numberStr = medication.FrequencyType.Replace("Every ", "").Replace(" day", "").Trim();
                     if (int.TryParse(numberStr, out int day))
                     {
-                        currentDate = currentDate.AddDays(day); // Move by X days
+                        currentDate = currentDate.AddDays(day);
                     }
                 }
                 else if (medication.FrequencyType == "Select")
@@ -407,6 +406,7 @@ namespace SE.Service.Services
                     Elderly = checkElderly.ElderlyId,
                     CreatedAt = System.DateTime.UtcNow.AddHours(7),
                     Status = SD.GeneralStatus.ACTIVE,
+                    CreatedBy = req.CreatedBy,
                     Url = "Manually",
                     Treatment = req.Treatment
                 };
@@ -452,44 +452,7 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_CREATE, ex.Message);
             }
         }
-
-       
-        public async Task<IBusinessResult> UpdateMedication(int medicationId, UpdateMedicationRequest req)
-        {
-            try
-            {
-                var medication = await _unitOfWork.MedicationRepository.GetByIdAsync(medicationId);
-                if (medication == null)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "CANNOT FIND MEDICATION");
-                }
-
-                medication.MedicationName = req.MedicationName;
-                medication.Treatment = req.Treatment;
-                medication.Shape = req.Shape;
-                medication.Dosage = req.Dosage;
-                medication.IsBeforeMeal = req.IsBeforeMeal;
-                medication.FrequencyType = req.FrequencyType;
-                medication.StartDate = req.StartDate;
-                medication.EndDate = req.EndDate;
-                medication.Note = req.Note;
-
-                var result = await _unitOfWork.MedicationRepository.UpdateAsync(medication);
-                if (result > 0)
-                {
-                    return new BusinessResult(Const.SUCCESS_UPDATE, "Medication updated successfully.", req);
-                }
-
-                return new BusinessResult(Const.FAIL_UPDATE, "Failed to update medication.");
-
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_UPDATE, ex.Message);
-            }
-        }
-
-        /*public async Task<IBusinessResult> GetAllMedicationsInPrescription(int elderlyId)
+        public async Task<IBusinessResult> GetAllMedicationsInPrescription(int elderlyId, int prescriptionId)
         {
             try
             {
@@ -502,7 +465,7 @@ namespace SE.Service.Services
             {
                 return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
-        }*/
+        }
 
         public static System.DateTime? ConvertToDateTime(DateOnly? dateOnly)
         {
@@ -527,9 +490,16 @@ namespace SE.Service.Services
                     .Where(m => ConvertToDateTime(m.StartDate) <= today &&
                                  (m.EndDate == null || ConvertToDateTime(m.EndDate) >= today)))
                 {
-                   
+                    string frequencyEvery = null;
                     var medicationSchedule = _unitOfWork.MedicationScheduleRepository.FindByCondition(ms => ms.MedicationId == medication.MedicationId).FirstOrDefault();
-                  
+                    if (medication.FrequencyType.StartsWith("Every ") && medication.FrequencyType.EndsWith(" day"))
+                    {
+                        string numberStr = medication.FrequencyType.Replace("Every ", "").Replace(" day", "").Trim();
+                        if (int.TryParse(numberStr, out int day))
+                        {
+                            frequencyEvery = day.ToString();
+                        }
+                    }
                     var medicationDto = new MedicationModel
                     {
                         Id = medication.MedicationId,
@@ -540,7 +510,9 @@ namespace SE.Service.Services
                         TypeFrequency = medication.FrequencyType,
                         FrequencySelect = GetWeeklyMedicationScheduleForMedication(medication.MedicationId, today),
                         MealTime = medication.IsBeforeMeal == true ? "Trước ăn" : "Sau ăn",
-                       Schedule = medication.MedicationSchedules
+                        FrequencyEvery = frequencyEvery,
+
+                        Schedule = medication.MedicationSchedules
                             .Select(ms => new ScheduleModel
                             {
                                 Time = ms.DateTaken.HasValue ? ms.DateTaken.Value.ToString("h:mm:ss") : null,
@@ -590,8 +562,6 @@ namespace SE.Service.Services
             return daysTaken;
         }
 
-
-
         public async Task<IBusinessResult> GetMedicationById(int medicationId)
         {
             try
@@ -616,6 +586,139 @@ namespace SE.Service.Services
             }
         }
 
+        public async Task<IBusinessResult> CancelPresciption(int prescriptionId)
+        {
+            try
+            {
+                var checkPrescription = _unitOfWork.PrescriptionRepository.GetById(prescriptionId);
+                if (checkPrescription == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "Prescription ID does not existed.");
+                }
+                checkPrescription.Status = SD.GeneralStatus.INACTIVE;
+                var rs = await _unitOfWork.PrescriptionRepository.UpdateAsync(checkPrescription);
+                if (rs > 0)
+                {
+                    return new BusinessResult(Const.SUCCESS_UNACTIVATE, Const.SUCCESS_UNACTIVATE_MSG);
+                }
+                return new BusinessResult(Const.FAIL_UNACTIVATE, Const.FAIL_UNACTIVATE_MSG);
+
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateMedicationInPrescription(int prescriptionId, UpdateMedicationInPrescriptionRequest req)
+        {
+            try
+            {
+                var existingPrescription = await _unitOfWork.PrescriptionRepository.GetByIdAsync(prescriptionId);
+                if (existingPrescription == null)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Prescription not found.");
+                }
+                existingPrescription.Treatment = req.Treatment;
+
+                var updatePrescriptionResult = await _unitOfWork.PrescriptionRepository.UpdateAsync(existingPrescription);
+                if (updatePrescriptionResult < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to update prescription.");
+                }
+
+                var existingMedications = await _unitOfWork.MedicationRepository.GetByPrescriptionIdAsync(prescriptionId);
+
+                foreach (var medicationReq in req.Medication)
+                {
+                    var existingMedication = existingMedications.FirstOrDefault(m => m.MedicationId == medicationReq.MedicationId);
+                    if (existingMedication != null)
+                    {
+                        existingMedication.Treatment = medicationReq.Treatment;
+                        existingMedication.MedicationName = medicationReq.MedicationName;
+                        existingMedication.Dosage = medicationReq.Dosage;
+                        existingMedication.EndDate = medicationReq.EndDate;
+                        existingMedication.FrequencyType = medicationReq.FrequencyType;
+                        existingMedication.StartDate = medicationReq.StartDate;
+                        existingMedication.Shape = medicationReq.Shape;
+                        existingMedication.Status = medicationReq.Status;
+                        existingMedication.Remaining = medicationReq.Remaining;
+
+                        var updateMedicationResult = await _unitOfWork.MedicationRepository.UpdateAsync(existingMedication);
+                        if (updateMedicationResult < 1)
+                        {
+                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to update medication.");
+                        }
+                        var deleteSchedulesResult = await _unitOfWork.MedicationScheduleRepository.DeleteByMedicationIdAsync(existingMedication.MedicationId);
+                        if (deleteSchedulesResult < 0)
+                        {
+                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to delete existing schedules.");
+                        }
+
+                        var createScheduleResult = await GenerateMedicationSchedules(existingMedication, medicationReq.Schedule, medicationReq.FrequencySelect);
+                        if (createScheduleResult < 1)
+                        {
+                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to create new schedules.");
+                        }
+                    }
+             
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Medication updated successfully.", req);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> ConfirmMedicationDrinking(ConfirmMedicationDrinkingReq request)
+        {
+            try
+            {
+                int updatedCount = 0;
+
+                foreach (var confirmation in request.Confirmations)
+                {
+                    // Parse the string date into DateTime
+                    if (!DateTime.TryParseExact(confirmation.DateTaken, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTaken))
+                    {
+                        // Handle invalid date format
+                        return new BusinessResult(Const.FAIL_UPDATE, $"Invalid date format: {confirmation.DateTaken}");
+                    }
+
+                    // Use the parsed DateTime
+                    var schedule = await _unitOfWork.MedicationScheduleRepository
+                        .GetByDateAndMedicationIdAsync(dateTaken, confirmation.MedicationId);
+
+                    if (schedule != null)
+                    {
+                        // Update the schedule
+                        schedule.IsTaken = true;
+                        schedule.Status = "Taken";
+
+                        var updateResult = await _unitOfWork.MedicationScheduleRepository.UpdateAsync(schedule);
+                        if (updateResult > 0)
+                        {
+                            updatedCount++;
+                        }
+                    }
+                }
+
+                if (updatedCount == request.Confirmations.Count)
+                {
+                    return new BusinessResult(Const.SUCCESS_UPDATE, "All medication schedules confirmed successfully.");
+                }
+                else
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, ex.Message);
+            }
+        }
         public async Task<IBusinessResult> UpdateMedicationStatus(int medicationId, string status)
         {
             try
