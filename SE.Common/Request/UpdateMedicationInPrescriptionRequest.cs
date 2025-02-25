@@ -6,20 +6,16 @@ using System.Threading.Tasks;
 
 namespace SE.Common.Request
 {
-    public class CreateMedicationRequest
+    public class UpdateMedicationInPrescriptionRequest
     {
-
-        public int ElderlyId { get; set; }
         public string Treatment { get; set; }
         public DateOnly? EndDate { get; set; }
-        public List<CreateMedicationModel> Medication { get; set; }
-
-        public string CreatedBy {  get; set; }
-
+        public List<UpdateMedicationModel> Medication { get; set; }
     }
 
-    public class CreateMedicationModel
+    public class UpdateMedicationModel
     {
+        public int MedicationId { get; set; }
         public string MedicationName { get; set; }
 
         public string Treatment { get; set; }
@@ -49,6 +45,5 @@ namespace SE.Common.Request
         public List<string> Schedule { get; set; }
 
     }
-
 
 }

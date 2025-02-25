@@ -36,5 +36,19 @@ namespace SE.API.Controllers
             var result = await _medicationService.GetMedicationsForToday(elderlyId, day);
             return Ok(result);
         }
+
+        [HttpPut("prescription/{prescriptionId}")]
+        public async Task<IActionResult> UpdateMediInPrescription(int prescriptionId, UpdateMedicationInPrescriptionRequest req)
+        {
+            var result = await _medicationService.UpdateMedicationInPrescription(prescriptionId,req);
+            return Ok(result);
+        }
+
+        [HttpPut("confirm")]
+        public async Task<IActionResult> ConfirmMedicationDrinking( ConfirmMedicationDrinkingReq req)
+        {
+            var result = await _medicationService.ConfirmMedicationDrinking(req);
+            return Ok(result);
+        }
     }
 }

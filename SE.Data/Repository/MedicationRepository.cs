@@ -1,4 +1,5 @@
-﻿using SE.Data.Base;
+﻿using Microsoft.EntityFrameworkCore;
+using SE.Data.Base;
 using SE.Data.Models;
 using System;
 using System.Collections.Generic;
@@ -15,5 +16,14 @@ namespace SE.Data.Repository
         {
             _context = context;
         }
+
+        public async Task<List<Medication>> GetByPrescriptionIdAsync(int prescriptionId)
+        {
+            return await _context.Medications
+                .Where(m => m.PrescriptionId == prescriptionId)
+                .ToListAsync();
+        }
+
+      
     }
 }
