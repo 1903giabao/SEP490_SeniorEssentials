@@ -14,6 +14,7 @@ public partial class SeniorEssentialsContext : DbContext
     {
     }
 
+
     public SeniorEssentialsContext()
     {
     }
@@ -31,11 +32,16 @@ public partial class SeniorEssentialsContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer(GetConnectionString("DefaultConnection"));
 
+
     public virtual DbSet<Account> Accounts { get; set; }
 
     public virtual DbSet<Activity> Activities { get; set; }
 
     public virtual DbSet<ActivitySchedule> ActivitySchedules { get; set; }
+
+    public virtual DbSet<BloodGlucose> BloodGlucoses { get; set; }
+
+    public virtual DbSet<BloodPressure> BloodPressures { get; set; }
 
     public virtual DbSet<Booking> Bookings { get; set; }
 
@@ -55,15 +61,21 @@ public partial class SeniorEssentialsContext : DbContext
 
     public virtual DbSet<GroupMember> GroupMembers { get; set; }
 
-    public virtual DbSet<HealthIndicator> HealthIndicators { get; set; }
+    public virtual DbSet<HeartRate> HeartRates { get; set; }
 
     public virtual DbSet<Iotdevice> Iotdevices { get; set; }
+
+    public virtual DbSet<KidneyFunction> KidneyFunctions { get; set; }
 
     public virtual DbSet<Lesson> Lessons { get; set; }
 
     public virtual DbSet<LessonFeedback> LessonFeedbacks { get; set; }
 
     public virtual DbSet<LessonHistory> LessonHistories { get; set; }
+
+    public virtual DbSet<LipidProfile> LipidProfiles { get; set; }
+
+    public virtual DbSet<LiverEnzyme> LiverEnzymes { get; set; }
 
     public virtual DbSet<Medication> Medications { get; set; }
 
@@ -92,6 +104,8 @@ public partial class SeniorEssentialsContext : DbContext
     public virtual DbSet<UserService> UserServices { get; set; }
 
     public virtual DbSet<VideoCall> VideoCalls { get; set; }
+
+    public virtual DbSet<WeightHeight> WeightHeights { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -159,6 +173,33 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasForeignKey(d => d.ActivityId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__ActivityS__Activ__7F2BE32F");
+        });
+
+        modelBuilder.Entity<BloodGlucose>(entity =>
+        {
+            entity.HasKey(e => e.BloodGlucoseId).HasName("PK__BloodGlu__D56DFCB383513908");
+
+            entity.ToTable("BloodGlucose");
+
+            entity.Property(e => e.BloodGlucoseId).ValueGeneratedNever();
+            entity.Property(e => e.BloodGlucose1)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("BloodGlucose");
+            entity.Property(e => e.BloodGlucoseSource).HasMaxLength(255);
+            entity.Property(e => e.DateRecorded).HasColumnType("datetime");
+            entity.Property(e => e.Status).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<BloodPressure>(entity =>
+        {
+            entity.HasKey(e => e.BloodPressureId).HasName("PK__BloodPre__B6BB8B4E34859022");
+
+            entity.ToTable("BloodPressure");
+
+            entity.Property(e => e.BloodPressureId).ValueGeneratedNever();
+            entity.Property(e => e.DateRecorded).HasColumnType("datetime");
+            entity.Property(e => e.BloodPressureSource).HasMaxLength(20);
+            entity.Property(e => e.Status).HasMaxLength(50);
         });
 
         modelBuilder.Entity<Booking>(entity =>
@@ -357,63 +398,17 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasConstraintName("FK__GroupMemb__Group__0C85DE4D");
         });
 
-        modelBuilder.Entity<HealthIndicator>(entity =>
+        modelBuilder.Entity<HeartRate>(entity =>
         {
-            entity.HasKey(e => e.HealthIndicatorId).HasName("PK__HealthIn__FF9AABEA8258968E");
+            entity.HasKey(e => e.HeartRateId).HasName("PK__HeartRat__1FFE198928F08C83");
 
-            entity.ToTable("HealthIndicator");
+            entity.ToTable("HeartRate");
 
-            entity.Property(e => e.Alp)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("ALP");
-            entity.Property(e => e.Alt)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("ALT");
-            entity.Property(e => e.Ast)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("AST");
-            entity.Property(e => e.BloodGlucose).HasColumnType("decimal(5, 2)");
-            entity.Property(e => e.BloodGlucoseSource).HasMaxLength(255);
-            entity.Property(e => e.BloodPressureDiastolic).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.BloodPressureDiastolicSource).HasMaxLength(10);
-            entity.Property(e => e.BloodPressureSystolic).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.BloodPressureSystolicSource).HasMaxLength(10);
-            entity.Property(e => e.Bun)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("BUN");
-            entity.Property(e => e.Creatinine).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.HeartRateId).ValueGeneratedNever();
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
-            entity.Property(e => e.EGfr)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("eGFR");
-            entity.Property(e => e.Ggt)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("GGT");
-            entity.Property(e => e.Hdlcholesterol)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("HDLCholesterol");
-            entity.Property(e => e.HeartRateSource).HasMaxLength(10);
-            entity.Property(e => e.Height).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.HeightSource).HasMaxLength(10);
-            entity.Property(e => e.KidneyFunctionSource).HasMaxLength(255);
-            entity.Property(e => e.Ldlcholesterol)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("LDLCholesterol");
-            entity.Property(e => e.LipidProfileSource).HasMaxLength(255);
-            entity.Property(e => e.LiverEnzymesSource).HasMaxLength(255);
-            entity.Property(e => e.Note).HasMaxLength(255);
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasMaxLength(20);
-            entity.Property(e => e.TotalCholesterol).HasColumnType("decimal(5, 2)");
-            entity.Property(e => e.Triglycerides).HasColumnType("decimal(5, 2)");
-            entity.Property(e => e.Weight).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.WeightSource).HasMaxLength(10);
-
-            entity.HasOne(d => d.Elderly).WithMany(p => p.HealthIndicators)
-                .HasForeignKey(d => d.ElderlyId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__HealthInd__Elder__0D7A0286");
+            entity.Property(e => e.HeartRate1).HasColumnName("HeartRate");
+            entity.Property(e => e.HeartRateSource).HasMaxLength(255);
+            entity.Property(e => e.Status).HasMaxLength(50);
         });
 
         modelBuilder.Entity<Iotdevice>(entity =>
@@ -436,6 +431,25 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasForeignKey(d => d.ElderlyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__IOTDevice__Elder__0E6E26BF");
+        });
+
+        modelBuilder.Entity<KidneyFunction>(entity =>
+        {
+            entity.HasKey(e => e.KidneyFunctionId).HasName("PK__KidneyFu__55187E7AFC3F5AC9");
+
+            entity.ToTable("KidneyFunction");
+
+            entity.Property(e => e.KidneyFunctionId).ValueGeneratedNever();
+            entity.Property(e => e.Bun)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("BUN");
+            entity.Property(e => e.Creatinine).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.DateRecorded).HasColumnType("datetime");
+            entity.Property(e => e.EGfr)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("eGFR");
+            entity.Property(e => e.KidneyFunctionSource).HasMaxLength(255);
+            entity.Property(e => e.Status).HasMaxLength(50);
         });
 
         modelBuilder.Entity<Lesson>(entity =>
@@ -502,6 +516,48 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasConstraintName("FK__LessonHis__Lesso__1332DBDC");
         });
 
+        modelBuilder.Entity<LipidProfile>(entity =>
+        {
+            entity.HasKey(e => e.LipidProfileId).HasName("PK__LipidPro__5B5E777C8BA28B70");
+
+            entity.ToTable("LipidProfile");
+
+            entity.Property(e => e.LipidProfileId).ValueGeneratedNever();
+            entity.Property(e => e.DateRecorded).HasColumnType("datetime");
+            entity.Property(e => e.Hdlcholesterol)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("HDLCholesterol");
+            entity.Property(e => e.Ldlcholesterol)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("LDLCholesterol");
+            entity.Property(e => e.LipidProfileSource).HasMaxLength(255);
+            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.TotalCholesterol).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.Triglycerides).HasColumnType("decimal(5, 2)");
+        });
+
+        modelBuilder.Entity<LiverEnzyme>(entity =>
+        {
+            entity.HasKey(e => e.LiverEnzymesId).HasName("PK__LiverEnz__96CA6DE9A6B21A10");
+
+            entity.Property(e => e.LiverEnzymesId).ValueGeneratedNever();
+            entity.Property(e => e.Alp)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("ALP");
+            entity.Property(e => e.Alt)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("ALT");
+            entity.Property(e => e.Ast)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("AST");
+            entity.Property(e => e.DateRecorded).HasColumnType("datetime");
+            entity.Property(e => e.Ggt)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("GGT");
+            entity.Property(e => e.LiverEnzymesSource).HasMaxLength(255);
+            entity.Property(e => e.Status).HasMaxLength(50);
+        });
+
         modelBuilder.Entity<Medication>(entity =>
         {
             entity.HasKey(e => e.MedicationId).HasName("PK__Medicati__62EC1AFA40A3EE22");
@@ -519,7 +575,6 @@ public partial class SeniorEssentialsContext : DbContext
             entity.Property(e => e.Status)
                 .IsRequired()
                 .HasMaxLength(20);
-            entity.Property(e => e.TimeFrequency).HasMaxLength(50);
             entity.Property(e => e.Treatment).HasMaxLength(100);
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.Medications)
@@ -816,6 +871,21 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasForeignKey(d => d.ReceiverId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__VideoCall__Recei__2739D489");
+        });
+
+        modelBuilder.Entity<WeightHeight>(entity =>
+        {
+            entity.HasKey(e => e.WeightHeightId).HasName("PK__WeightHe__D1C0A982B570824B");
+
+            entity.ToTable("WeightHeight");
+
+            entity.Property(e => e.WeightHeightId).ValueGeneratedNever();
+            entity.Property(e => e.DateRecorded).HasColumnType("datetime");
+            entity.Property(e => e.Height).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.HeightSource).HasMaxLength(255);
+            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.Weight).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.WeightSource).HasMaxLength(255);
         });
 
         OnModelCreatingPartial(modelBuilder);
