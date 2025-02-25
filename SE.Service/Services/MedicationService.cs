@@ -349,13 +349,7 @@ namespace SE.Service.Services
                         rs++; // Increment the success count
                     }
                 }
-
-                // Move to the next date based on FrequencyType
-                if (medication.FrequencyType == "Daily")
-                {
-                    currentDate = currentDate.AddDays(1); // Move to the next day
-                }
-                else if (medication.FrequencyType.StartsWith("Every ") && medication.FrequencyType.EndsWith(" day"))
+                if (medication.FrequencyType.StartsWith("Every ") && medication.FrequencyType.EndsWith(" day"))
                 {
                     string numberStr = medication.FrequencyType.Replace("Every ", "").Replace(" day", "").Trim();
                     if (int.TryParse(numberStr, out int day))
@@ -365,7 +359,7 @@ namespace SE.Service.Services
                 }
                 else if (medication.FrequencyType == "Select")
                 {
-                    currentDate = currentDate.AddDays(1); // Move to the next day
+                    currentDate = currentDate.AddDays(1); 
                 }
                 else
                 {
@@ -421,8 +415,7 @@ namespace SE.Service.Services
 
                 foreach (var medication in req.Medication)
                 {
-                    // Determine TimeFrequency based on the schedule
-                    var timeFrequency = DetermineTimeFrequency(medication.Schedule);
+                 
 
                     var rs = new Medication
                     {
@@ -460,35 +453,7 @@ namespace SE.Service.Services
             }
         }
 
-        private string DetermineTimeFrequency(List<string> scheduleTimes)
-        {
-            var timeFrequencies = new List<string>();
-
-            foreach (var time in scheduleTimes)
-            {
-                var timeOfDay = TimeSpan.Parse(time);
-
-                if (timeOfDay >= TimeSpan.FromHours(5) && timeOfDay < TimeSpan.FromHours(10))
-                {
-                    timeFrequencies.Add("Sáng");
-                }
-                else if (timeOfDay >= TimeSpan.FromHours(10) && timeOfDay < TimeSpan.FromHours(15))
-                {
-                    timeFrequencies.Add("Trưa");
-                }
-                else if (timeOfDay >= TimeSpan.FromHours(15) && timeOfDay < TimeSpan.FromHours(18))
-                {
-                    timeFrequencies.Add("Chiều");
-                }
-                else
-                {
-                    timeFrequencies.Add("Tối");
-                }
-            }
-
-            // Remove duplicates and join into a single string
-            return string.Join(", ", timeFrequencies.Distinct());
-        }
+       
         public async Task<IBusinessResult> UpdateMedication(int medicationId, UpdateMedicationRequest req)
         {
             try
