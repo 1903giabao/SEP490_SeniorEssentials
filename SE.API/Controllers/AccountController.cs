@@ -33,7 +33,7 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{userId}")]
+        [HttpGet("userId")]
         [SwaggerOperation(Summary = "Get detail user by id")]
 
         public async Task<IActionResult> GetUserById(int userId)
@@ -50,7 +50,7 @@ namespace SE.API.Controllers
             return Ok(result);
         }        
         
-        [HttpGet("{phoneNumber}")]
+        [HttpGet("phoneNumber")]
         [SwaggerOperation(Summary = "Get detail user by phone number")]
 
         public async Task<IActionResult> GetUserByPhoneNumber(string phoneNumber)
