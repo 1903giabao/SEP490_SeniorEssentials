@@ -17,9 +17,7 @@ public partial class BloodPressure
 
     public int? Diastolic { get; set; }
 
-    public string SystolicSource { get; set; }
-
-    public string DiastolicSource { get; set; }
+    public string BloodPressureSource { get; set; }
 
     public string Status { get; set; }
 }
