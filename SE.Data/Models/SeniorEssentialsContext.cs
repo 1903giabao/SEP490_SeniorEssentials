@@ -198,9 +198,8 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.Property(e => e.BloodPressureId).ValueGeneratedNever();
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
-            entity.Property(e => e.DiastolicSource).HasMaxLength(255);
+            entity.Property(e => e.BloodPressureSource).HasMaxLength(20);
             entity.Property(e => e.Status).HasMaxLength(50);
-            entity.Property(e => e.SystolicSource).HasMaxLength(255);
         });
 
         modelBuilder.Entity<Booking>(entity =>

@@ -50,12 +50,6 @@ namespace SE.Common.Mapper
                        .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Account.FullName))
                        .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.Account.Avatar))
                        .ReverseMap();
-/*
-            CreateMap<CreateHealthIndicatorRequest, HealthIndicator>()
-           .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status ?? "Active"));
-
-            CreateMap<HealthIndicator, CreateHealthIndicatorRequest>().ReverseMap();
-            CreateMap<HealthIndicator, UpdateHealthIndicatorRequest>().ReverseMap();*/
 
             CreateMap<MedicationModel, Medication>();
             CreateMap<CreateMedicationRequest, Medication>();
@@ -67,6 +61,14 @@ namespace SE.Common.Mapper
             CreateMap<Combo, ComboDto>();
 
             CreateMap<Account, UserDTO>().ReverseMap();
+
+            CreateMap<BloodPressure, CreateBloodPressureRequest>().ReverseMap();
+            CreateMap<BloodGlucose, CreateBloodGlucoseRequest>().ReverseMap();
+            CreateMap<WeightHeight, CreateWeightHeightRequest>().ReverseMap();
+            CreateMap<HeartRate, CreateHeartRateRequest>().ReverseMap();
+            CreateMap<LipidProfile, CreateLipidProfileRequest>().ReverseMap();
+            CreateMap<LiverEnzyme, CreateLiverEnzymesRequest> ().ReverseMap();
+            CreateMap<KidneyFunction, CreateKidneyFunctionRequest> ().ReverseMap();
         }
     }
 }
