@@ -27,6 +27,14 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[BloodGlucose]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[BloodPressure]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[Booking]",
          "ObjectType": 0
       },
@@ -63,11 +71,15 @@
          "ObjectType": 0
       },
       {
-         "Name": "[dbo].[HealthIndicator]",
+         "Name": "[dbo].[HeartRate]",
          "ObjectType": 0
       },
       {
          "Name": "[dbo].[IOTDevice]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[KidneyFunction]",
          "ObjectType": 0
       },
       {
@@ -80,6 +92,14 @@
       },
       {
          "Name": "[dbo].[LessonHistory]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LipidProfile]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[LiverEnzymes]",
          "ObjectType": 0
       },
       {
@@ -136,6 +156,10 @@
       },
       {
          "Name": "[dbo].[VideoCall]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[WeightHeight]",
          "ObjectType": 0
       }
    ],

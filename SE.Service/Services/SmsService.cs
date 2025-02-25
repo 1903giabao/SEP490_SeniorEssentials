@@ -21,9 +21,9 @@ namespace SE.Service.Services
 
         public SmsService(IConfiguration configuration)
         {
-            _apiKey = configuration["SMS:ApiKey"];
-            _secretKey = configuration["SMS:SecretKey"];
-            _brandName = configuration["SMS:BrandName"];
+            _apiKey = Environment.GetEnvironmentVariable("SMSApiKey");
+            _secretKey = Environment.GetEnvironmentVariable("SMSSecretKey");
+            _brandName = Environment.GetEnvironmentVariable("SMSBrandName");
         }
 
 

@@ -1,13 +1,17 @@
 using System.Text;
 using AutoMapper;
+using dotenv.net;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
+using Google.Cloud.Firestore.V1;
+using Grpc.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
+using SE.API.ConfigModel;
 using SE.Common.DTO;
 using SE.Common.Mapper;
 using SE.Common.Setting;
@@ -47,7 +51,6 @@ builder.Services.AddScoped<IComboService, ComboService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
-builder.Services.AddScoped<IHealthIndicatorService, HealthIndicatorService>();
 builder.Services.AddScoped<IIotDeviceService, IotDeviceService>();
 builder.Services.AddScoped<IMedicationService, MedicationService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
@@ -60,23 +63,74 @@ builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddScoped<ISmsService, SmsService>();
 
 
+DotEnv.Load();
+var firebase = new FirebaseConfigModel();
+
+
 //var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountKey.json");
-var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountKey2.json");
+//var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountKey2.json");
 //var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountTemp.json");
 //var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "tempKey.json");
-System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialPath);
+//System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialPath);
+
+
+var tmp = $@"{{
+                        ""type"": ""service_account"",
+                        ""project_id"": ""{firebase.ProjectId}"",
+                        ""private_key_id"": ""{firebase.PrivateKeyId}"",
+                        ""private_key"": ""{firebase.PrivateKey}"",
+                        ""client_email"": ""{firebase.ClientEmail}"",
+                        ""client_id"": ""{firebase.ClientId}"",
+                        ""auth_uri"": ""{firebase.AuthUri}"",
+                        ""token_uri"": ""{firebase.TokenUri}"",
+                        ""auth_provider_x509_cert_url"": ""{firebase.AuthProviderx509CertUrl}"",
+                        ""client_x509_cert_url"": ""{firebase.Clientx509CertUrl}"",
+                        ""universe_domain"": ""{firebase.UniverseDomain}""
+                    }}";
+
+var tmp2 = GoogleCredential.FromJson($@"
+                    {{
+                        ""type"": ""service_account"",
+                        ""project_id"": ""{firebase.ProjectId}"",
+                        ""private_key_id"": ""{firebase.PrivateKeyId}"",
+                        ""private_key"": ""{firebase.PrivateKey}"",
+                        ""client_email"": ""{firebase.ClientEmail}"",
+                        ""client_id"": ""{firebase.ClientId}"",
+                        ""auth_uri"": ""{firebase.AuthUri}"",
+                        ""token_uri"": ""{firebase.TokenUri}"",
+                        ""auth_provider_x509_cert_url"": ""{firebase.AuthProviderx509CertUrl}"",
+                        ""client_x509_cert_url"": ""{firebase.Clientx509CertUrl}"",
+                        ""universe_domain"": ""{firebase.UniverseDomain}""
+                    }}");
+var channel = tmp2.ToChannelCredentials();
+var client = new FirestoreClientBuilder{
+    ChannelCredentials = channel
+    }.Build();
 
 // Initialize Firebase Admin SDK
 FirebaseApp.Create(new AppOptions()
 {
-    Credential = GoogleCredential.GetApplicationDefault()
+    Credential = GoogleCredential.FromJson($@"
+                    {{
+                        ""type"": ""service_account"",
+                        ""project_id"": ""{firebase.ProjectId}"",
+                        ""private_key_id"": ""{firebase.PrivateKeyId}"",
+                        ""private_key"": ""{firebase.PrivateKey}"",
+                        ""client_email"": ""{firebase.ClientEmail}"",
+                        ""client_id"": ""{firebase.ClientId}"",
+                        ""auth_uri"": ""{firebase.AuthUri}"",
+                        ""token_uri"": ""{firebase.TokenUri}"",
+                        ""auth_provider_x509_cert_url"": ""{firebase.AuthProviderx509CertUrl}"",
+                        ""client_x509_cert_url"": ""{firebase.Clientx509CertUrl}"",
+                        ""universe_domain"": ""{firebase.UniverseDomain}""
+                    }}")
 });
 
 // Add Firestore DB Service (use Project ID)
 //builder.Services.AddSingleton(FirestoreDb.Create("testproject-bc2e2")); //tempKey.json
 //builder.Services.AddSingleton(FirestoreDb.Create("senioressentials-3ebc7")); //serviceAccountKey.json
 //builder.Services.AddSingleton(FirestoreDb.Create("senioressentials-94d8e")); //serviceAccountTemp.json
-builder.Services.AddSingleton(FirestoreDb.Create("senioressentials2")); //serviceAccountTemp.json
+builder.Services.AddSingleton(FirestoreDb.Create(firebase.ProjectId, client)); //serviceAccountTemp.json
 
 // AutoMapper configuration
 var mapperConfig = new MapperConfiguration(mc =>

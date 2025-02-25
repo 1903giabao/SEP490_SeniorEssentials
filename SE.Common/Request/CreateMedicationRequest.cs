@@ -8,17 +8,47 @@ namespace SE.Common.Request
 {
     public class CreateMedicationRequest
     {
+
         public int ElderlyId { get; set; }
-        public string MedicationName { get; set; }
         public string Treatment { get; set; }
-        public string Shape { get; set; }
-        public string Dosage { get; set; }
-        public bool? IsBeforeMeal { get; set; }
-        public string FrequencyType { get; set; }
-        public string TimeFrequency { get; set; }
-        public int? DateFrequency { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
-        public string Note { get; set; }
+
+        public List<CreateMedicationModel> Medication { get; set; }
+
+
+
     }
+
+    public class CreateMedicationModel
+    {
+        public string MedicationName { get; set; }
+
+        public string Treatment { get; set; }
+
+        public string Shape { get; set; }
+
+        public string Dosage { get; set; }
+
+        public bool? IsBeforeMeal { get; set; }
+
+        public string FrequencyType { get; set; }
+
+        public List<string> FrequencySelect { get; set; }
+
+        public DateOnly? StartDate { get; set; }
+
+        public DateOnly? EndDate { get; set; }
+
+        public DateTime CreatedDate { get; set; }
+
+        public string Note { get; set; }
+
+        public string Status { get; set; }
+
+        public int? Remaining { get; set; }
+
+        public List<string> Schedule { get; set; }
+
+    }
+
+
 }

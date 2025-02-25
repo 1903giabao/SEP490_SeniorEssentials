@@ -31,8 +31,6 @@ public partial class Elderly
 
     public virtual ICollection<EmergencyContact> EmergencyContacts { get; set; } = new List<EmergencyContact>();
 
-    public virtual ICollection<HealthIndicator> HealthIndicators { get; set; } = new List<HealthIndicator>();
-
     public virtual ICollection<Iotdevice> Iotdevices { get; set; } = new List<Iotdevice>();
 
     public virtual ICollection<LessonFeedback> LessonFeedbacks { get; set; } = new List<LessonFeedback>();

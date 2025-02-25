@@ -308,8 +308,10 @@ namespace SE.Service.Services
                 new("IsInformation", isInformation != null ? "true" : "false")
             };
 
-            var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
+            //            var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
 
+
+            var key = Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JwtSettings"));
             var tokenDescriptor = new SecurityTokenDescriptor()
             {
                 Subject = new ClaimsIdentity(authClaims),

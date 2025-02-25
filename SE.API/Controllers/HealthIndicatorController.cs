@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
+using SE.Common.DTO;
 using SE.Common.Request;
 using SE.Service.Services;
 
@@ -203,7 +204,7 @@ public class HealthIndicatorController : ControllerBase
         var result = await _healthIndicatorService.UpdateLiverEnzymesStatus(liverEnzymesId, status);
         return Ok(result);
     }
-
+}
     [HttpPut("update-status/kidney-function/{kidneyFunctionId}")]
     public async Task<IActionResult> UpdateKidneyFunctionStatus(int kidneyFunctionId, [FromBody] string status)
     {

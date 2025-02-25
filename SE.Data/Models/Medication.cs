@@ -23,10 +23,6 @@ public partial class Medication
 
     public string FrequencyType { get; set; }
 
-    public string TimeFrequency { get; set; }
-
-    public int? DateFrequency { get; set; }
-
     public DateOnly? StartDate { get; set; }
 
     public DateOnly? EndDate { get; set; }
