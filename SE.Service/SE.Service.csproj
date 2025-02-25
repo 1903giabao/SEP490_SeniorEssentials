@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+	  <PackageReference Include="dotenv.net" Version="3.2.1" />
 	  <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17" />
 	  <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
 	  <PackageReference Include="Tesseract" Version="5.2.0" />

@@ -1,5 +1,6 @@
 using System.Text;
 using AutoMapper;
+using dotenv.net;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
@@ -57,6 +58,8 @@ builder.Services.AddScoped<IUserLinkService, UserLinkService>();
 builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddScoped<ISmsService, SmsService>();
 
+
+DotEnv.Load();
 
 //var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountKey.json");
 var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountKey2.json");
