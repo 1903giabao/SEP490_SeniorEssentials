@@ -1,4 +1,4 @@
-﻿/*using AutoMapper;
+﻿using AutoMapper;
 using SE.Common.Request;
 using SE.Common;
 using SE.Data.Models;
@@ -436,8 +436,8 @@ namespace SE.Service.Services
             {
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
-        }        
-        
+        }
+
         public async Task<IBusinessResult> GetHeartRateById(int id)
         {
             try
@@ -452,8 +452,8 @@ namespace SE.Service.Services
             {
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
-        }        
-        
+        }
+
         public async Task<IBusinessResult> GetBloodGlucoseById(int id)
         {
             try
@@ -468,8 +468,8 @@ namespace SE.Service.Services
             {
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
-        }        
-        
+        }
+
         public async Task<IBusinessResult> GetLipidProfileById(int id)
         {
             try
@@ -484,8 +484,8 @@ namespace SE.Service.Services
             {
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
-        }        
-        
+        }
+
         public async Task<IBusinessResult> GetLiverEnzymesById(int id)
         {
             try
@@ -500,8 +500,8 @@ namespace SE.Service.Services
             {
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
-        }        
-        
+        }
+
         public async Task<IBusinessResult> GetKidneyFunctionById(int id)
         {
             try
@@ -736,4 +736,3 @@ namespace SE.Service.Services
         }
     }
 }
-*/
