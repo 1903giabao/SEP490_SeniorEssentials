@@ -9,7 +9,6 @@ namespace SE.Common.Request
     public class CreateBloodGlucoseRequest
     {
         public int ElderlyId { get; set; }
-        public DateTime DateRecorded { get; set; }
         public string BloodGlucose { get; set; }
         public string BloodGlucoseSource { get; set; }
         public string Status { get; set; }

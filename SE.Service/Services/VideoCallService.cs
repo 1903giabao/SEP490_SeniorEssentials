@@ -11,6 +11,9 @@ using System.Threading.Tasks;
 using SE.Common.Request;
 using SE.Data.Models;
 using SE.Common.Enums;
+using Google.Cloud.Firestore;
+using Google.Cloud.Firestore.V1;
+using Firebase.Auth;
 
 namespace SE.Service.Services
 {
@@ -18,18 +21,21 @@ namespace SE.Service.Services
     {
         Task<IBusinessResult> GetAllVideoCallHistory();
         Task<IBusinessResult> GetVideoCallHistoryById(int vidCallId);
-        Task<IBusinessResult> CreateVideoCall(VideoCallRequest req);
+        Task<IBusinessResult> VideoCall(VideoCallRequest req);
     }
 
-    public class VideoCallService
+    public class VideoCallService : IVideoCallService
     {
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly FirestoreDb _firestoreDb;
 
-        public VideoCallService(UnitOfWork unitOfWork, IMapper mapper)
+        public VideoCallService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _firestoreDb = firestoreDb;
+            _firestoreDb = firestoreDb;
         }
 
         public async Task<IBusinessResult> GetAllVideoCallHistory()
@@ -64,45 +70,110 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> CreateVideoCall(VideoCallRequest req)
+        public async Task<IBusinessResult> VideoCall(VideoCallRequest req)
         {
             try
             {
-                var caller = _unitOfWork.AccountRepository.FindByCondition(v => v.AccountId == req.CallerId).FirstOrDefault();
-
+                var caller = await _unitOfWork.AccountRepository.GetByIdAsync(req.CallerId);
                 if (caller == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "NGƯỜI GỌI KHÔNG TỒN TẠI!");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Caller does not exist!");
                 }
 
-                var receiver = _unitOfWork.AccountRepository.FindByCondition(v => v.AccountId == req.ReceiverId).FirstOrDefault();
-
-                if (receiver == null)
+                foreach (var receiverId in req.ListReceiverId)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "NGƯỜI NHẬN KHÔNG TỒN TẠI!");
+                    var receiver = await _unitOfWork.AccountRepository.GetByIdAsync(receiverId);
+                    if (receiver == null)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, $"Receiver with ID {receiverId} does not exist!");
+                    }
                 }
 
-                if (req.StartTime > req.EndTime)
+                var listUserInRoomChat = new List<int>
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "THỜI GIAN BẮT ĐẦU PHẢI TRƯỚC THỜI GIAN KẾT THÚC!");
-                }
+                    caller.AccountId,
+                };
 
-                var videoCall = _mapper.Map<VideoCall>(req);
+                listUserInRoomChat.AddRange(req.ListReceiverId);
 
-                videoCall.Status = SD.GeneralStatus.ACTIVE;
+                var roomChatId = await FindChatRoomContainingAllUsers(listUserInRoomChat);
 
-                var result = await _unitOfWork.VideoCallRepository.CreateAsync(videoCall);
+                var sentTime = DateTime.UtcNow.AddHours(7);
 
-                if (result > 0)
+                DocumentReference chatRef = _firestoreDb.Collection("ChatRooms").Document(roomChatId);
+
+                var messagesRef = chatRef.Collection("Messages");
+
+                var newMessage = new
                 {
-                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, req);
-                }
+                    SenderId = req.CallerId,
+                    SenderName = caller.FullName,
+                    SenderAvatar = caller.Avatar,
+                    Message = req.Duration,
+                    MessageType = req.Status.ToString(),
+                    SentDate = sentTime.ToString("dd-MM-yyyy"),
+                    SentTime = string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes),
+                    SentDateTime = sentTime.ToString(),
+                    IsSeen = false,
+                };
 
-                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                await messagesRef.AddAsync(newMessage);
+
+                await chatRef.UpdateAsync(new Dictionary<string, object>
+                    {
+                        { "LastMessage", "Cuộc gọi" },
+                        { "SentDate", sentTime.ToString("dd-MM-yyyy") },
+                        { "SentTime", string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
+                        { "SentDateTime", sentTime.ToString() },
+                        { "SenderId", req.CallerId },
+                    });
+
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newMessage);
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<string> FindChatRoomContainingAllUsers(List<int> listUserInRoomChat)
+        {
+            try
+            {
+                // Convert the list of user IDs to a HashSet for easier comparison
+                var userSet = new HashSet<string>(listUserInRoomChat.Select(id => id.ToString()));
+
+                // Query the ChatRooms collection
+                var chatRoomsRef = _firestoreDb.Collection("ChatRooms");
+                var chatRoomsSnapshot = await chatRoomsRef.GetSnapshotAsync();
+
+                foreach (var chatRoomDoc in chatRoomsSnapshot.Documents)
+                {
+                    // Get the MemberIds dictionary from the chat room document
+                    var memberIds = chatRoomDoc.GetValue<Dictionary<string, object>>("MemberIds");
+
+                    if (memberIds != null)
+                    {
+                        // Convert the keys of the MemberIds dictionary to a HashSet
+                        var roomUserSet = new HashSet<string>(memberIds.Keys);
+
+                        // Check if the roomUserSet contains all users in the userSet
+                        if (roomUserSet.IsSupersetOf(userSet))
+                        {
+                            // Return the chat room ID if it contains all users
+                            return chatRoomDoc.Id;
+                        }
+                    }
+                }
+
+                // If no chat room contains all users, return null or an empty string
+                return null;
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions (e.g., log the error)
+                Console.WriteLine($"Error finding chat room: {ex.Message}");
+                return null;
             }
         }
     }

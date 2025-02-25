@@ -15,6 +15,8 @@ public partial class Prescription
 
     public DateTime CreatedAt { get; set; }
 
+    public DateTime EndDate { get; set; }
+
     public string Status { get; set; }
 
     public string Treatment { get; set; }

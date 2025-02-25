@@ -8,6 +8,7 @@ using SE.Common.Enums;
 using SE.Common.Request.SE.Common.Request;
 using Google.Cloud.Firestore;
 using Firebase.Auth;
+using SE.Common.DTO;
 
 namespace SE.Service.Services
 {
@@ -18,6 +19,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> RemoveMemberFromGroup(int groupId, int accountId);
         Task<IBusinessResult> RemoveGroup(int groupId);
         Task<IBusinessResult> GetMembersByGroupId(int groupId);
+        Task<IBusinessResult> GetAllGroupMembersByUserId(int userId);
     }
 
     public class GroupService : IGroupService
@@ -337,6 +339,63 @@ namespace SE.Service.Services
             }
         }
 
+        public async Task<IBusinessResult> GetAllGroupMembersByUserId(int userId)
+        {
+            try
+            {
+                if (userId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "Invalid user ID.");
+                }
 
+                var userGroups = _unitOfWork.GroupMemberRepository.GetAll()
+                    .Where(gm => gm.AccountId == userId && gm.Status == SD.GeneralStatus.ACTIVE)
+                    .Select(gm => gm.GroupId)
+                    .ToList();
+
+                if (!userGroups.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "User is not a member of any group.");
+                }
+
+                var result = new List<GetAllGroupMembersDTO>();
+
+                foreach (var groupId in userGroups)
+                {
+                    var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
+
+                    var groupMembers = _unitOfWork.GroupMemberRepository.GetAll()
+                        .Where(gm => gm.GroupId == groupId && gm.Status == SD.GeneralStatus.ACTIVE)
+                        .Select(gm => gm.AccountId)
+                        .ToList();
+
+                    if (groupMembers.Any())
+                    {
+                        var users = _unitOfWork.AccountRepository.GetAll()
+                            .Where(a => groupMembers.Contains(a.AccountId))
+                            .Select(a => _mapper.Map<UserDTO>(a))
+                            .ToList();
+
+                        result.Add(new GetAllGroupMembersDTO
+                        {
+                            GroupId = groupId,
+                            GroupName = group.GroupName,
+                            Members = users
+                        });
+                    }
+                }
+
+                if (!result.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No active members found in any group.");
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
     }
 }

@@ -61,6 +61,7 @@ builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IEmergencyContactService, EmergencyContactService>();
 builder.Services.AddScoped<IUserLinkService, UserLinkService>();
 builder.Services.AddScoped<IHealthIndicatorService, HealthIndicatorService>();
+builder.Services.AddScoped<IVideoCallService, VideoCallService>();
 builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddScoped<ISmsService, SmsService>();
 

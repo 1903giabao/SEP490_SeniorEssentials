@@ -639,6 +639,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.ToTable("Prescription");
 
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.EndDate).HasColumnType("datetime");
             entity.Property(e => e.CreatedBy).HasMaxLength(50);
             entity.Property(e => e.Status)
                 .IsRequired()

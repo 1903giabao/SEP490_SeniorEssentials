@@ -9,7 +9,6 @@ namespace SE.Common.Request
     public class CreateWeightHeightRequest
     {
         public int ElderlyId { get; set; }
-        public DateTime DateRecorded { get; set; }
         public decimal? Weight { get; set; }
         public string WeightSource { get; set; }
         public decimal? Height { get; set; }

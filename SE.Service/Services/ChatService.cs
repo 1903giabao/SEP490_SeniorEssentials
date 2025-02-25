@@ -21,6 +21,7 @@ using Firebase.Auth;
 using SE.Service.Helper;
 using System.Reflection.Metadata;
 using System.Globalization;
+using Microsoft.AspNetCore.Http;
 
 namespace SE.Service.Services
 {
@@ -34,6 +35,9 @@ namespace SE.Service.Services
         Task<IBusinessResult> MarkMessagesAsSeen(string roomId, long currentUserId);
         Task<IBusinessResult> ChangeStatus(int userId, bool isOnline);
         Task<IBusinessResult> CreateGroupChat(CreateGroupChatRequest req);
+        Task<IBusinessResult> UpdateGroupName(string groupId, string newGroupName);
+        Task<IBusinessResult> UpdateGroupAvatar(string groupId, IFormFile newGroupAvatar);
+        Task<IBusinessResult> RemoveMemberFromGroup(string groupId, int memberId);
     }
 
     public class ChatService : IChatService
@@ -99,7 +103,7 @@ namespace SE.Service.Services
                         MessageType = req.MessageType,
                         SentDate = sentTime.ToString("dd-MM-yyyy"),
                         SentTime = string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes),
-                        SentDateTime = sentTime.ToString("dd-MM-yyyy HH:mm"),
+                        SentDateTime = sentTime.ToString(),
                         IsSeen = false,
                     };
 
@@ -110,7 +114,7 @@ namespace SE.Service.Services
                         { "LastMessage", newMessage.Message },
                         { "SentDate", sentTime.ToString("dd-MM-yyyy") },
                         { "SentTime", string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
-                        { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
+                        { "SentDateTime", sentTime.ToString() },
                         { "SenderId", req.SenderId },
                     });
 
@@ -127,7 +131,7 @@ namespace SE.Service.Services
                         MessageType = req.MessageType,
                         SentDate = sentTime.ToString("dd-MM-yyyy"),
                         SentTime = string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes),
-                        SentDateTime = sentTime.ToString("dd-MM-yyyy HH:mm"),
+                        SentDateTime = sentTime.ToString(),
                         IsSeen = false,
                     };
 
@@ -138,7 +142,7 @@ namespace SE.Service.Services
                         { "LastMessage", newMessage.Message },
                         { "SentDate", sentTime.ToString("dd-MM-yyyy") },
                         { "SentTime", string.Format("{0:D2}:{1:D2}",(int) sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
-                        { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
+                        { "SentDateTime", sentTime.ToString() },
                         { "SenderId", req.SenderId },
                     });
 
@@ -219,7 +223,7 @@ namespace SE.Service.Services
                         MessageType = req.MessageType,
                         SentDate = sentTime.ToString("dd-MM-yyyy"),
                         SentTime = string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes),
-                        SentDateTime = sentTime.ToString("dd-MM-yyyy HH:mm"),
+                        SentDateTime = sentTime.ToString(),
                         IsSeen = false,
                     };
 
@@ -230,7 +234,7 @@ namespace SE.Service.Services
                         { "LastMessage", newMessage.Message },
                         { "SentDate", sentTime.ToString("dd-MM-yyyy") },
                         { "SentTime", string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
-                        { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
+                        { "SentDateTime", sentTime.ToString() },
                         { "SenderId", req.SenderId },
                     });
 
@@ -251,7 +255,7 @@ namespace SE.Service.Services
                         MessageType = req.MessageType,
                         SentDate = sentTime.ToString("dd-MM-yyyy"),
                         SentTime = string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes),
-                        SentDateTime = sentTime.ToString("dd-MM-yyyy HH:mm"),
+                        SentDateTime = sentTime.ToString(),
                         IsSeen = false,
                     };
 
@@ -262,7 +266,7 @@ namespace SE.Service.Services
                         { "LastMessage", newMessage.Message },
                         { "SentDate", sentTime.ToString("dd-MM-yyyy") },
                         { "SentTime", string.Format("{0:D2}:{1:D2}",(int) sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
-                        { "SentDateTime", sentTime.ToString("dd-MM-yyyy HH:mm") },
+                        { "SentDateTime", sentTime.ToString() },
                         { "SenderId", req.SenderId },
                     });
 
@@ -281,7 +285,7 @@ namespace SE.Service.Services
             {
                 CollectionReference messagesRef = _firestoreDb.Collection("ChatRooms").Document(roomId).Collection("Messages");
 
-                QuerySnapshot snapshot = await messagesRef.OrderBy("SentDateTime").GetSnapshotAsync();
+                QuerySnapshot snapshot = await messagesRef.OrderByDescending("SentDateTime").GetSnapshotAsync();
 
                 List<MessageDTO> messages = new List<MessageDTO>();
 
@@ -379,15 +383,10 @@ namespace SE.Service.Services
                                     roomName = getUser.FullName;
                                     roomAvatar = getUser.Avatar;
                                 }
-                            }
-                                
-
-
+                            }                              
                         }
 
                     }
-
-
 
                     chatRooms.Add(new ChatRoomDTO
                     {
@@ -409,7 +408,7 @@ namespace SE.Service.Services
 
                 var orderedChatRooms = chatRooms
                             .OrderByDescending(chatRoom =>
-                                DateTime.TryParseExact(chatRoom.SentDateTime, "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var sentDateTime) ? sentDateTime : DateTime.MinValue).ToList();
+                                DateTime.TryParse(chatRoom.SentDateTime, out DateTime sentDateTime) ? sentDateTime : DateTime.MinValue).ToList();
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, orderedChatRooms);
             }
@@ -538,11 +537,10 @@ namespace SE.Service.Services
 
                 CollectionReference onlineMembersRef = _firestoreDb.Collection("OnlineMembers");
 
-                // Update the user's online status based on the provided parameter
                 await onlineMembersRef.Document(userId.ToString()).SetAsync(new Dictionary<string, object>
                 {
                     { "IsOnline", isOnline }
-                }, SetOptions.MergeAll); // Use MergeAll to update the field without overwriting other fields
+                }, SetOptions.MergeAll);
 
                 return new BusinessResult(Const.SUCCESS_UPDATE, $"User status updated to {(isOnline ? "Online" : "Offline")}.");
             }
@@ -592,7 +590,21 @@ namespace SE.Service.Services
 
                 if (string.IsNullOrEmpty(req.GroupId))
                 {
+                    var urlLink = ("", "");
+
+                    urlLink = await CloudinaryHelper.UploadImageAsync(req.GroupAvatar);
+
+                    var creator = req.Members.Where(m => m.IsCreator).FirstOrDefault();
+
+                    var creatorCheck = await _unitOfWork.AccountRepository.GetByIdAsync(creator.AccountId);
+
+                    if (creatorCheck.RoleId != 3)
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Creator is not Family Member");
+                    }
+
                     int creatorCount = req.Members.Count(m => m.IsCreator);
+
                     if (creatorCount != 1)
                     {
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "There must be exactly one creator!");
@@ -610,7 +622,7 @@ namespace SE.Service.Services
                             { "CreatedAt", DateTime.UtcNow.AddHours(7).ToString("dd-MM-yyyy HH:mm") },
                             { "IsGroupChat", true },
                             { "RoomName", req.GroupName },
-                            { "RoomAvatar", req.GroupAvatar },
+                            { "RoomAvatar", urlLink.Item2 },
                             { "SenderId", 0 },
                             { "LastMessage", "" },
                             { "SentDate",  null },
@@ -681,6 +693,142 @@ namespace SE.Service.Services
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_UPDATE, ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateGroupName(string groupId, string newGroupName)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(groupId))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group ID cannot be empty!");
+                }
+
+                if (string.IsNullOrEmpty(newGroupName))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "New group name cannot be empty!");
+                }
+
+                var groupRef = _firestoreDb.Collection("ChatRooms").Document(groupId);
+                var groupDoc = await groupRef.GetSnapshotAsync();
+
+                if (!groupDoc.Exists)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat does not exist!");
+                }
+
+                var updateData = new Dictionary<string, object>
+                {
+                    { "RoomName", newGroupName }
+                };
+
+                await groupRef.UpdateAsync(updateData);
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateGroupAvatar(string groupId, IFormFile newGroupAvatar)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(groupId))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group ID cannot be empty!");
+                }
+
+                if (newGroupAvatar == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "New group avatar cannot be empty!");
+                }
+
+                var groupRef = _firestoreDb.Collection("ChatRooms").Document(groupId);
+                var groupDoc = await groupRef.GetSnapshotAsync();
+
+                if (!groupDoc.Exists)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat does not exist!");
+                }
+
+                var urlLink = ("", "");
+
+                urlLink = await CloudinaryHelper.UploadImageAsync(newGroupAvatar);
+
+                var updateData = new Dictionary<string, object>
+                {
+                    { "RoomAvatar", urlLink.Item2 }
+                };
+
+                await groupRef.UpdateAsync(updateData);
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> RemoveMemberFromGroup(string groupId, int memberId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(groupId))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group ID cannot be empty!");
+                }
+
+                if (memberId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Member ID is invalid!");
+                }
+
+                var groupRef = _firestoreDb.Collection("ChatRooms").Document(groupId);
+                var groupDoc = await groupRef.GetSnapshotAsync();
+
+                if (!groupDoc.Exists)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat does not exist!");
+                }
+
+                // Get the current members of the group
+                var currentMembers = groupDoc.GetValue<Dictionary<string, object>>("MemberIds") ?? new Dictionary<string, object>();
+                var memberIdStr = memberId.ToString();
+
+                if (!currentMembers.ContainsKey(memberIdStr))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Member is not part of this group!");
+                }
+
+                // Remove the member from the group's MemberIds
+                currentMembers.Remove(memberIdStr);
+
+                // Update the group document with the new MemberIds
+                var updateData = new Dictionary<string, object>
+                {
+                    { "MemberIds", currentMembers }
+                };
+
+                await groupRef.UpdateAsync(updateData);
+
+                // Remove the member from the Members subcollection
+                var membersRef = groupRef.Collection("Members").Document(memberIdStr);
+                await membersRef.DeleteAsync();
+
+                // Remove the member from the OnlineMembers collection
+                var onlineMembersRef = _firestoreDb.Collection("OnlineMembers").Document(memberIdStr);
+                await onlineMembersRef.DeleteAsync();
+
+                return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_DELETE, ex.Message);
             }
         }
     }

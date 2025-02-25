@@ -11,6 +11,7 @@ using Google.Cloud.Firestore;
 using Org.BouncyCastle.Ocsp;
 using SE.Common;
 using SE.Common.DTO;
+using SE.Common.Enums;
 using SE.Data.Models;
 using SE.Data.UnitOfWork;
 using SE.Service.Base;
@@ -23,7 +24,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateNewTempAccount(CreateNewAccountDTO req);
         Task<IBusinessResult> GetAllUsers();
         Task<IBusinessResult> GetUserById(int id);
-        Task<IBusinessResult> GetUserByPhoneNumber(string phoneNumber);
+        Task<IBusinessResult> GetUserByPhoneNumber(string phoneNumber, int userId);
     }
 
     public class AccountService : IAccountService
@@ -148,7 +149,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> GetUserByPhoneNumber(string phoneNumber)
+        public async Task<IBusinessResult> GetUserByPhoneNumber(string phoneNumber, int userId)
         {
             try
             {
@@ -157,14 +158,38 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Wrong phone number format!");
                 }
 
-                var user = await _unitOfWork.AccountRepository.GetByPhoneNumberAsync(phoneNumber);
+                var userPhone = await _unitOfWork.AccountRepository.GetByPhoneNumberAsync(phoneNumber);
 
-                if (user == null)
+                if (userPhone == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
                 }
 
-                var rs = _mapper.Map<UserDTO>(user);
+                var userLink = await _unitOfWork.UserLinkRepository.GetByUserIdsAsync(userId, userPhone.AccountId);
+
+                if (userLink != null)
+                {
+                    if (userLink.RelationshipType.Equals("Friend") && userLink.Status.Equals(SD.UserLinkStatus.ACCEPTED))
+                    {
+                        return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, new { isFriend = true });
+                    }
+
+                    if (userLink.RelationshipType.Equals("Family") && userLink.Status.Equals(SD.UserLinkStatus.ACCEPTED))
+                    {
+                        return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, new { isFamily = true });
+                    }
+
+                    if (userLink.Status.Equals(SD.UserLinkStatus.PENDING))
+                    {
+                        var result = _mapper.Map<GetUserPhoneNumberDTO>(userPhone);
+                        result.RequestUserId = userLink.AccountId1;
+                        
+                        return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+                    }
+                }
+
+                var rs = _mapper.Map<UserDTO>(userPhone);
+
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
             }

@@ -51,6 +51,13 @@ namespace SE.API.Controllers
         {
             var result = await _groupService.GetMembersByGroupId(groupId);
             return Ok(result);
+        }        
+        
+        [HttpGet("group/members/{userId}")]
+        public async Task<IActionResult> GetAllGroupMembersByUserId(int userId)
+        {
+            var result = await _groupService.GetAllGroupMembersByUserId(userId);
+            return Ok(result);
         }
     }
 }

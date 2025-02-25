@@ -15,98 +15,98 @@ public class HealthIndicatorController : ControllerBase
     }
 
     // Get endpoints
-    [HttpGet("weight-height/{elderlyId}")]
+    [HttpGet("weight-height/elderlyId")]
     public async Task<IActionResult> GetWeightHeightByElderlyId(int elderlyId)
     {
         var result = await _healthIndicatorService.GetWeightHeightByElderlyId(elderlyId);
         return Ok(result);
     }
 
-    [HttpGet("blood-pressure/{elderlyId}")]
+    [HttpGet("blood-pressure/elderlyId")]
     public async Task<IActionResult> GetBloodPressureByElderlyId(int elderlyId)
     {
         var result = await _healthIndicatorService.GetBloodPressureByElderlyId(elderlyId);
         return Ok(result);
     }
 
-    [HttpGet("heart-rate/{elderlyId}")]
+    [HttpGet("heart-rate/elderlyId")]
     public async Task<IActionResult> GetHeartRateByElderlyId(int elderlyId)
     {
         var result = await _healthIndicatorService.GetHeartRateByElderlyId(elderlyId);
         return Ok(result);
     }
 
-    [HttpGet("blood-glucose/{elderlyId}")]
+    [HttpGet("blood-glucose/elderlyId")]
     public async Task<IActionResult> GetBloodGlucoseByElderlyId(int elderlyId)
     {
         var result = await _healthIndicatorService.GetBloodGlucoseByElderlyId(elderlyId);
         return Ok(result);
     }
 
-    [HttpGet("lipid-profile/{elderlyId}")]
+    [HttpGet("lipid-profile/elderlyId")]
     public async Task<IActionResult> GetLipidProfileByElderlyId(int elderlyId)
     {
         var result = await _healthIndicatorService.GetLipidProfileByElderlyId(elderlyId);
         return Ok(result);
     }
 
-    [HttpGet("liver-enzymes/{elderlyId}")]
+    [HttpGet("liver-enzymes/elderlyId")]
     public async Task<IActionResult> GetLiverEnzymesByElderlyId(int elderlyId)
     {
         var result = await _healthIndicatorService.GetLiverEnzymesByElderlyId(elderlyId);
         return Ok(result);
     }
 
-    [HttpGet("kidney-function/{elderlyId}")]
+    [HttpGet("kidney-function/elderlyId")]
     public async Task<IActionResult> GetKidneyFunctionByElderlyId(int elderlyId)
     {
         var result = await _healthIndicatorService.GetKidneyFunctionByElderlyId(elderlyId);
         return Ok(result);
     }
 
-    [HttpGet("weight-height/{weightHeightId}")]
+    [HttpGet("weight-height/weightHeightId")]
     public async Task<IActionResult> GetWeightHeightById(int weightHeightId)
     {
         var result = await _healthIndicatorService.GetWeightHeightById(weightHeightId);
         return Ok(result);
     }
 
-    [HttpGet("blood-pressure/{bloodPressureId}")]
+    [HttpGet("blood-pressure/bloodPressureId")]
     public async Task<IActionResult> GetBloodPressureById(int bloodPressureId)
     {
         var result = await _healthIndicatorService.GetBloodPressureById(bloodPressureId);
         return Ok(result);
     }
 
-    [HttpGet("heart-rate/{heartRateId}")]
+    [HttpGet("heart-rate/heartRateId")]
     public async Task<IActionResult> GetHeartRateById(int heartRateId)
     {
         var result = await _healthIndicatorService.GetHeartRateById(heartRateId);
         return Ok(result);
     }
 
-    [HttpGet("blood-glucose/{bloodGlucoseId}")]
+    [HttpGet("blood-glucose/bloodGlucoseId")]
     public async Task<IActionResult> GetBloodGlucoseById(int bloodGlucoseId)
     {
         var result = await _healthIndicatorService.GetBloodGlucoseById(bloodGlucoseId);
         return Ok(result);
     }
 
-    [HttpGet("lipid-profile/{lipidProfileId}")]
+    [HttpGet("lipid-profile/lipidProfileId")]
     public async Task<IActionResult> GetLipidProfileById(int lipidProfileId)
     {
         var result = await _healthIndicatorService.GetLipidProfileById(lipidProfileId);
         return Ok(result);
     }
 
-    [HttpGet("liver-enzymes/{liverEnzymeId}")]
+    [HttpGet("liver-enzymes/liverEnzymeId")]
     public async Task<IActionResult> GetLiverEnzymesById(int liverEnzymeId)
     {
         var result = await _healthIndicatorService.GetLiverEnzymesById(liverEnzymeId);
         return Ok(result);
     }
 
-    [HttpGet("kidney-function/{kidneyFunctionId}")]
+    [HttpGet("kidney-function/kidneyFunctionId")]
     public async Task<IActionResult> GetKidneyFunctionById(int kidneyFunctionId)
     {
         var result = await _healthIndicatorService.GetKidneyFunctionById(kidneyFunctionId);

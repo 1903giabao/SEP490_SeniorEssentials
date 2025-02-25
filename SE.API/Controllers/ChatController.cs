@@ -55,9 +55,23 @@ namespace SE.API.Controllers
         }
 
         [HttpPost("group-chat")]
-        public async Task<IActionResult> CreateGroupChat([FromBody] CreateGroupChatRequest req)
+        public async Task<IActionResult> CreateGroupChat([FromForm] CreateGroupChatRequest req)
         {
             var result = await _chatService.CreateGroupChat(req);
+            return Ok(result);
+        }
+
+        [HttpPut("group-chat/group-name")]
+        public async Task<IActionResult> UpdateGroupName([FromQuery] string groupId, [FromQuery] string groupName)
+        {
+            var result = await _chatService.UpdateGroupName(groupId, groupName);
+            return Ok(result);
+        }        
+        
+        [HttpPut("group-chat/group-avatar")]
+        public async Task<IActionResult> UpdateGroupAvatar([FromQuery] string groupId, IFormFile groupAvatar)
+        {
+            var result = await _chatService.UpdateGroupAvatar(groupId, groupAvatar);
             return Ok(result);
         }
 
@@ -79,6 +93,13 @@ namespace SE.API.Controllers
         public async Task<IActionResult> ChangeStatus([FromQuery] int userId, [FromQuery] bool isOnline)
         {
             var result = await _chatService.ChangeStatus(userId, isOnline);
+            return Ok(result);
+        }        
+        
+        [HttpPut("kick-member")]
+        public async Task<IActionResult> RemoveMemberFromGroup([FromQuery] string groupId, [FromQuery] int userId)
+        {
+            var result = await _chatService.RemoveMemberFromGroup(groupId, userId);
             return Ok(result);
         }
     }
