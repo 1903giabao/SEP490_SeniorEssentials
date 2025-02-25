@@ -32,7 +32,7 @@ namespace SE.Service.Services
             {
                 using (var emailMessage = new MimeMessage())
                 {
-                    MailboxAddress emailFrom = new MailboxAddress(_mailSettings.SenderName, _mailSettings.SenderEmail);
+                    MailboxAddress emailFrom = new MailboxAddress(Environment.GetEnvironmentVariable("EmailSenderName"), Environment.GetEnvironmentVariable("SenderEmail"));
                     emailMessage.From.Add(emailFrom);
                     MailboxAddress emailTo = new MailboxAddress(mailData.EmailToName, mailData.EmailToId);
                     emailMessage.To.Add(emailTo);
@@ -42,8 +42,8 @@ namespace SE.Service.Services
                     emailMessage.Body = bodyBuilder.ToMessageBody();
                     using (var client = new MailKit.Net.Smtp.SmtpClient())
                     {
-                        client.Connect(_mailSettings.Server, 587, MailKit.Security.SecureSocketOptions.StartTls);
-                        client.Authenticate(_mailSettings.UserName, _mailSettings.Password);
+                        client.Connect(Environment.GetEnvironmentVariable("Server"), 587, MailKit.Security.SecureSocketOptions.StartTls);
+                        client.Authenticate(Environment.GetEnvironmentVariable("UserName"), Environment.GetEnvironmentVariable("Password"));
                         client.Send(emailMessage);
                         client.Disconnect(true);
                     }
@@ -53,9 +53,7 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                // Log the exception or handle it as per your application's requirement
                 throw new Exception(ex.Message, ex);
-                return false;
             }
         }
     }
