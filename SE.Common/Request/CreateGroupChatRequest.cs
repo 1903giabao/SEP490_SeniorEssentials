@@ -9,9 +9,9 @@ namespace SE.Common.Request
 {
     public class CreateGroupChatRequest
     {
-        public string GroupId { get; set; }
-        public string GroupName { get; set; }
-        public string GroupAvatar {  get; set; }
+        public string? GroupId { get; set; }
+        public string? GroupName { get; set; }
+        public string? GroupAvatar {  get; set; }
         public List<GroupMemberRequest> Members { get; set; }
 
     }

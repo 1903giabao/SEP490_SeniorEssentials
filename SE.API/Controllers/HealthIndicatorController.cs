@@ -204,7 +204,6 @@ public class HealthIndicatorController : ControllerBase
         var result = await _healthIndicatorService.UpdateLiverEnzymesStatus(liverEnzymesId, status);
         return Ok(result);
     }
-}
     [HttpPut("update-status/kidney-function/{kidneyFunctionId}")]
     public async Task<IActionResult> UpdateKidneyFunctionStatus(int kidneyFunctionId, [FromBody] string status)
     {
@@ -212,3 +211,4 @@ public class HealthIndicatorController : ControllerBase
         return Ok(result);
     }
 }
+

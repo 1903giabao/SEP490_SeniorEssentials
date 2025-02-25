@@ -33,8 +33,10 @@ builder.Services.AddCors(options =>
         });
 });
 
+var emailConfig = new EmailSettings();
+
+
 // Email configuration
-var emailConfig = builder.Configuration.GetSection("EmailConfiguration").Get<EmailSettings>();
 builder.Services.AddSingleton(emailConfig);
 builder.Services.AddTransient<EmailService>();
 
@@ -66,28 +68,6 @@ builder.Services.AddScoped<ISmsService, SmsService>();
 DotEnv.Load();
 var firebase = new FirebaseConfigModel();
 
-
-//var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountKey.json");
-//var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountKey2.json");
-//var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "serviceAccountTemp.json");
-//var credentialPath = Path.Combine(Directory.GetCurrentDirectory(), "Configurations", "tempKey.json");
-//System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialPath);
-
-
-var tmp = $@"{{
-                        ""type"": ""service_account"",
-                        ""project_id"": ""{firebase.ProjectId}"",
-                        ""private_key_id"": ""{firebase.PrivateKeyId}"",
-                        ""private_key"": ""{firebase.PrivateKey}"",
-                        ""client_email"": ""{firebase.ClientEmail}"",
-                        ""client_id"": ""{firebase.ClientId}"",
-                        ""auth_uri"": ""{firebase.AuthUri}"",
-                        ""token_uri"": ""{firebase.TokenUri}"",
-                        ""auth_provider_x509_cert_url"": ""{firebase.AuthProviderx509CertUrl}"",
-                        ""client_x509_cert_url"": ""{firebase.Clientx509CertUrl}"",
-                        ""universe_domain"": ""{firebase.UniverseDomain}""
-                    }}";
-
 var tmp2 = GoogleCredential.FromJson($@"
                     {{
                         ""type"": ""service_account"",
@@ -104,10 +84,8 @@ var tmp2 = GoogleCredential.FromJson($@"
                     }}");
 var channel = tmp2.ToChannelCredentials();
 var client = new FirestoreClientBuilder{
-    ChannelCredentials = channel
+    GoogleCredential= tmp2
     }.Build();
-
-// Initialize Firebase Admin SDK
 FirebaseApp.Create(new AppOptions()
 {
     Credential = GoogleCredential.FromJson($@"
@@ -126,9 +104,8 @@ FirebaseApp.Create(new AppOptions()
                     }}")
 });
 
-builder.Services.AddSingleton(FirestoreDb.Create(firebase.ProjectId, client)); //serviceAccountTemp.json
+builder.Services.AddSingleton(FirestoreDb.Create(firebase.ProjectId, client));
 
-// AutoMapper configuration
 var mapperConfig = new MapperConfiguration(mc =>
 {
     mc.AddProfile(new ApplicationMapper());
@@ -137,19 +114,15 @@ var mapperConfig = new MapperConfiguration(mc =>
 IMapper mapper = mapperConfig.CreateMapper();
 builder.Services.AddSingleton(mapper);
 
-// Add controllers and endpoints
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 
-// JWT settings
-var jwtSettings = builder.Configuration.GetSection(nameof(JwtSettings)).Get<JwtSettings>();
 builder.Services.Configure<JwtSettings>(val =>
 {
-    val.Key = jwtSettings.Key;
+    val.Key = Environment.GetEnvironmentVariable("JwtSettings");
 });
 
-// Swagger configuration
 builder.Services.AddSwaggerGen(option =>
 {
     option.SwaggerDoc("v1", new OpenApiInfo { Title = "Mock API", Version = "v1" });
@@ -179,7 +152,6 @@ builder.Services.AddSwaggerGen(option =>
     option.EnableAnnotations();
 });
 
-// Authentication configuration
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -190,7 +162,7 @@ builder.Services.AddAuthentication(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters()
     {
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JwtSettings"))),
         ValidateIssuer = false,
         ValidateAudience = false,
         ValidateLifetime = false,
@@ -198,17 +170,14 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Authorization configuration
 builder.Services.AddAuthorization();
 
-// CORS configuration
 builder.Services.AddCors(option =>
     option.AddPolicy("CORS", builder =>
         builder.AllowAnyMethod().AllowAnyHeader().SetIsOriginAllowed((host) => true)));
 
 var app = builder.Build();
 
-// Middleware configuration
 app.UseSwagger(op => op.SerializeAsV2 = false);
 app.UseSwaggerUI();
 app.UseCors("CORS");
