@@ -125,10 +125,6 @@ FirebaseApp.Create(new AppOptions()
                     }}")
 });
 
-// Add Firestore DB Service (use Project ID)
-//builder.Services.AddSingleton(FirestoreDb.Create("testproject-bc2e2")); //tempKey.json
-//builder.Services.AddSingleton(FirestoreDb.Create("senioressentials-3ebc7")); //serviceAccountKey.json
-//builder.Services.AddSingleton(FirestoreDb.Create("senioressentials-94d8e")); //serviceAccountTemp.json
 builder.Services.AddSingleton(FirestoreDb.Create(firebase.ProjectId, client)); //serviceAccountTemp.json
 
 // AutoMapper configuration
