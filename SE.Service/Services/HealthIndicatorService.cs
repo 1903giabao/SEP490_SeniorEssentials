@@ -78,7 +78,7 @@ namespace SE.Service.Services
                 }
 
                 var weightHeight = _mapper.Map<WeightHeight>(request);
-                weightHeight.DateRecorded = request.DateRecorded;
+                weightHeight.DateRecorded = DateTime.UtcNow.AddHours(7);
                 weightHeight.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.WeightHeightRepository.CreateAsync(weightHeight);
@@ -106,7 +106,7 @@ namespace SE.Service.Services
                 }
 
                 var bloodPressure = _mapper.Map<BloodPressure>(request);
-                bloodPressure.DateRecorded = request.DateRecorded;
+                bloodPressure.DateRecorded = DateTime.UtcNow.AddHours(7);
                 bloodPressure.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.BloodPressureRepository.CreateAsync(bloodPressure);
@@ -134,7 +134,7 @@ namespace SE.Service.Services
                 }
 
                 var heartRate = _mapper.Map<HeartRate>(request);
-                heartRate.DateRecorded = request.DateRecorded;
+                heartRate.DateRecorded = DateTime.UtcNow.AddHours(7);
                 heartRate.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.HeartRateRepository.CreateAsync(heartRate);
@@ -162,7 +162,7 @@ namespace SE.Service.Services
                 }
 
                 var bloodGlucose = _mapper.Map<BloodGlucose>(request);
-                bloodGlucose.DateRecorded = request.DateRecorded;
+                bloodGlucose.DateRecorded = DateTime.UtcNow.AddHours(7);
                 bloodGlucose.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.BloodGlucoseRepository.CreateAsync(bloodGlucose);
@@ -190,7 +190,7 @@ namespace SE.Service.Services
                 }
 
                 var lipidProfile = _mapper.Map<LipidProfile>(request);
-                lipidProfile.DateRecorded = request.DateRecorded;
+                lipidProfile.DateRecorded = DateTime.UtcNow.AddHours(7);
                 lipidProfile.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.LipidProfileRepository.CreateAsync(lipidProfile);
@@ -218,7 +218,7 @@ namespace SE.Service.Services
                 }
 
                 var liverEnzyme = _mapper.Map<LiverEnzyme>(request);
-                liverEnzyme.DateRecorded = request.DateRecorded;
+                liverEnzyme.DateRecorded = DateTime.UtcNow.AddHours(7);
                 liverEnzyme.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.LiverEnzymeRepository.CreateAsync(liverEnzyme);
@@ -246,7 +246,7 @@ namespace SE.Service.Services
                 }
 
                 var kidneyFunction = _mapper.Map<KidneyFunction>(request);
-                kidneyFunction.DateRecorded = request.DateRecorded;
+                kidneyFunction.DateRecorded = DateTime.UtcNow.AddHours(7);
                 kidneyFunction.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.KidneyFunctionRepository.CreateAsync(kidneyFunction);

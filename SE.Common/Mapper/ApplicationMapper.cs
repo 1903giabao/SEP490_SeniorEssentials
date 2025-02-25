@@ -61,6 +61,7 @@ namespace SE.Common.Mapper
             CreateMap<Combo, ComboDto>();
 
             CreateMap<Account, UserDTO>().ReverseMap();
+            CreateMap<Account, GetUserPhoneNumberDTO>().ReverseMap();
 
             CreateMap<BloodPressure, CreateBloodPressureRequest>().ReverseMap();
             CreateMap<BloodGlucose, CreateBloodGlucoseRequest>().ReverseMap();

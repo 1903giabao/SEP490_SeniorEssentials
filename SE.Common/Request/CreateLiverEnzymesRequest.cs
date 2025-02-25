@@ -9,7 +9,6 @@ namespace SE.Common.Request
     public class CreateLiverEnzymesRequest
     {
         public int ElderlyId { get; set; }
-        public DateTime DateRecorded { get; set; }
         public string ALT { get; set; }
         public string AST { get; set; }
         public string ALP { get; set; }

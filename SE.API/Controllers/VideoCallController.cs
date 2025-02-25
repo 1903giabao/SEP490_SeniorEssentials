@@ -4,6 +4,8 @@ using SE.Service.Services;
 
 namespace SE.API.Controllers
 {
+    [Route("video-call-management")]
+    [ApiController]
     public class VideoCallController : Controller
     {
         private readonly IVideoCallService _videoCallService;
@@ -20,17 +22,17 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{videoCallId}")]
-        public async Task<IActionResult> GetAllVideoCallHistory([FromRoute] int videoCallId)
+        [HttpGet("video-call/{videoCallId}")]
+        public async Task<IActionResult> GetVideoCallHistoryById([FromRoute] int videoCallId)
         {
             var result = await _videoCallService.GetVideoCallHistoryById(videoCallId);
             return Ok(result);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateVideoCall([FromBody] VideoCallRequest req)
+        public async Task<IActionResult> MakeAVideoCall([FromBody] VideoCallRequest req)
         {
-            var result = await _videoCallService.CreateVideoCall(req);
+            var result = await _videoCallService.VideoCall(req);
             return Ok(result);
         }
     }

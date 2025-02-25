@@ -53,9 +53,9 @@ namespace SE.API.Controllers
         [HttpGet("phoneNumber")]
         [SwaggerOperation(Summary = "Get detail user by phone number")]
 
-        public async Task<IActionResult> GetUserByPhoneNumber(string phoneNumber)
+        public async Task<IActionResult> GetUserByPhoneNumber(string phoneNumber, int userId)
         {
-            var result = await _activityService.GetUserByPhoneNumber(phoneNumber);
+            var result = await _activityService.GetUserByPhoneNumber(phoneNumber, userId);
             bool isSuccess = result.Data != null && result.Message == Const.SUCCESS_READ_MSG;
 
             var response = new

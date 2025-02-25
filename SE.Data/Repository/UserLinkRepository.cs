@@ -28,5 +28,15 @@ namespace SE.Data.Repository
             var result = await _context.UserLinks.Include(u => u.AccountId1Navigation).Include(u => u.AccountId2Navigation).FirstOrDefaultAsync(u => u.AccountId2 == accountId);
             return result;
         }
+
+        public async Task<UserLink> GetByUserIdsAsync(int userId1, int userId2)
+        {
+            var result = await _context.UserLinks
+                .Include(u => u.AccountId1Navigation)
+                .Include(u => u.AccountId2Navigation)
+                .FirstOrDefaultAsync(u => (u.AccountId1 == userId1 && u.AccountId2 == userId2) ||
+                                           (u.AccountId1 == userId2 && u.AccountId2 == userId1));
+            return result;
+        }
     }
 }

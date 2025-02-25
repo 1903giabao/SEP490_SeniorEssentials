@@ -10,10 +10,10 @@ namespace SE.Common.Request
     {
         public int CallerId { get; set; }
 
-        public int ReceiverId { get; set; }
+        public List<int> ListReceiverId { get; set; }
 
-        public DateTime? StartTime { get; set; }
+        public string Duration { get; set; }
 
-        public DateTime? EndTime { get; set; }
+        public bool Status { get; set; }
     }
 }
