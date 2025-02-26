@@ -76,7 +76,7 @@ pipeline {
                 echo 'Deploying and cleaning'
                 sh 'if [ $(docker ps -q -f name=senioressentials) ]; then docker container stop senioressentials; fi'
                 sh 'echo y | docker system prune'
-                sh 'docker container run -d --name senioressentials -p 8080:8080 -p 8081:8081'+
+                sh 'docker container run -d --name senioressentials -p 8080:8080 -p 8081:8081 '+
                    '-e JwtSettings=${JwtSettings} ' +
                    '-e SMSApiKey=${SMSApiKey} '+
                    '-e SMSSecretKey=${SMSSecretKey} ' +
