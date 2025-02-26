@@ -528,7 +528,7 @@ namespace SE.Service.Services
                 {
                     Id = elderlyId,
                     Treatment = prescription.Treatment,
-                    EndDate = prescription.EndDate.ToString("yyyy-MM-dd"),
+                    EndDate = prescription.EndDate?.ToString("yyyy-MM-dd"),
                     StartDate = prescription.CreatedAt.ToString("yyyy-MM-dd"),
                     Medicines = medicationDtos
                 };
