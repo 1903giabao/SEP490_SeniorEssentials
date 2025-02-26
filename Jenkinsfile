@@ -65,7 +65,7 @@ pipeline {
         stage('Push to DockerHub') {
             steps {
                 withDockerRegistry(credentialsId: 'dockerhub', url: 'https://index.docker.io/v1/') {
-                    sh 'docker tag senioressentials:latest senioressentials/senioressentials:latest'
+                    sh 'docker tag senioressentials:latest senioressntials/senioressentials:latest'
                     sh 'docker push senioressntials/senioressentials:latest'
                 }
             }
