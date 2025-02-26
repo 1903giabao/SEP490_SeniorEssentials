@@ -19,7 +19,7 @@ namespace SE.API.Controllers
         [HttpGet]
         [SwaggerOperation(Summary = "Get all activities of elderly in day")]
 
-        public async Task<IActionResult> GetAllActivities([FromQuery] DateTime day, int elderlyID)
+        public async Task<IActionResult> GetAllActivities([FromQuery] DateOnly day, int elderlyID)
         {
             var result = await _activityService.GetAllActivityForDay( elderlyID, day);
             return Ok(result);
@@ -32,7 +32,7 @@ namespace SE.API.Controllers
 
         public async Task<IActionResult> CreateActivityWithSchedule([FromBody] CreateActivityModel model)
         {
-            var result = await _activityService.CreateActivityWithSchedule(model);
+            var result = await _activityService.CreateActivity(model);
             return Ok(result);
         }
 

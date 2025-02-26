@@ -34,8 +34,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateMedicationByManually(CreateMedicationRequest req);
 
         Task<IBusinessResult> ConfirmMedicationDrinking(ConfirmMedicationDrinkingReq request);
-        Task<IBusinessResult> CancelPresciption(int prescriptionId);
-
+        Task<IBusinessResult> CancelPrescription(int prescriptionId);
         Task<IBusinessResult> GetPrescriptionOfElderly(int elderlyId);
 
 
@@ -420,7 +419,7 @@ namespace SE.Service.Services
 
                 foreach (var medication in req.Medication)
                 {
-                 
+            
 
                     var rs = new Medication
                     {
@@ -455,20 +454,6 @@ namespace SE.Service.Services
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_CREATE, ex.Message);
-            }
-        }
-        public async Task<IBusinessResult> GetAllMedicationsInPrescription(int elderlyId, int prescriptionId)
-        {
-            try
-            {
-                var medications = await _unitOfWork.MedicationRepository.GetAllAsync();
-                var medicationDtos = _mapper.Map<List<MedicationModel>>(medications);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Medications retrieved successfully.", medicationDtos);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
         }
 
@@ -568,31 +553,8 @@ namespace SE.Service.Services
             return daysTaken;
         }
 
-        public async Task<IBusinessResult> GetMedicationById(int medicationId)
-        {
-            try
-            {
-                if (medicationId <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "Invalid medication ID.");
-                }
 
-                var medication = await _unitOfWork.MedicationRepository.GetByIdAsync(medicationId);
-                if (medication == null)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "Medication not found.");
-                }
-
-                var medicationDto = _mapper.Map<MedicationModel>(medication);
-                return new BusinessResult(Const.SUCCESS_READ, "Medication retrieved successfully.", medicationDto);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> CancelPresciption(int prescriptionId)
+        public async Task<IBusinessResult> CancelPrescription(int prescriptionId)
         {
             try
             {
@@ -667,7 +629,35 @@ namespace SE.Service.Services
                             return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to create new schedules.");
                         }
                     }
-             
+                    if (existingMedications == null)
+                    {
+                        var newMedication = new Medication
+                        {
+                            Dosage = medicationReq.Dosage,
+                            CreatedDate = DateTime.UtcNow.AddHours(7),
+                            EndDate = medicationReq.EndDate,
+                            FrequencyType = medicationReq.FrequencyType,
+                            StartDate = medicationReq.StartDate,
+                            Shape = medicationReq.Shape,
+                            Status = medicationReq.Status,
+                            MedicationName = medicationReq.MedicationName,
+                            Remaining = medicationReq.Remaining,
+                            PrescriptionId = prescriptionId,
+                            ElderlyId = existingPrescription.Elderly
+                        };
+                        var createMedicationResult = await _unitOfWork.MedicationRepository.CreateAsync(newMedication);
+                        if (createMedicationResult < 1)
+                        {
+                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to create new medication.");
+                        }
+
+                        var createScheduleResult = await GenerateMedicationSchedules(newMedication, medicationReq.Schedule, medicationReq.FrequencySelect);
+                        if (createScheduleResult < 1)
+                        {
+                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to create schedules for new medication.");
+                        }
+                    }
+
                 }
 
                 return new BusinessResult(Const.SUCCESS_UPDATE, "Medication updated successfully.", req);

@@ -13,8 +13,8 @@ namespace SE.Service.Services
 {
     public interface IActivityService
     {
-        Task<List<GetScheduleInDayResponse>> GetAllActivityForDay(int elderlyId, DateTime date);
-        Task<IBusinessResult> CreateActivityWithSchedule(CreateActivityModel model);
+        Task<List<GetScheduleInDayResponse>> GetAllActivityForDay(int elderlyId, DateOnly date);
+        Task<IBusinessResult> CreateActivity(CreateActivityModel request);
         Task<IBusinessResult> UpdateSchedule(UpdateScheduleModel model);
         Task<IBusinessResult> GetActivityById(int activityId);
 
@@ -29,17 +29,19 @@ namespace SE.Service.Services
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        public async Task<List<GetScheduleInDayResponse>> GetAllActivityForDay(int elderlyId, DateTime date)
+
+
+        public async Task<List<GetScheduleInDayResponse>> GetAllActivityForDay(int elderlyId, DateOnly date)
         {
             var activities = await _unitOfWork.ActivityRepository.GetActivitiesInclude(elderlyId);
             var medicationSchedules = await _unitOfWork.MedicationScheduleRepository.GetMedicationSchedulesForDay(elderlyId, date);
             var professorAppointments = await _unitOfWork.ProfessorAppointmentRepository.GetProfessorAppointmentsForDay(elderlyId, date);
 
+          
             var result = new List<GetScheduleInDayResponse>();
-
             var activitySchedules = activities
                 .SelectMany(a => a.ActivitySchedules
-                    .Where(s => s.StartTime?.Date == date.Date)
+                    .Where(s => s.StartTime?.ToString("yyyy-MM-dd") == date.ToString("yyyy-MM-dd"))
                     .Select(s => new GetScheduleInDayResponse
                     {
                         Title = a.ActivityName,
@@ -47,18 +49,19 @@ namespace SE.Service.Services
                         StartTime = s.StartTime?.ToString("HH:mm"),
                         EndTime = s.EndTime?.ToString("HH:mm"),
                         ElderlyId = a.ElderlyId,
-                        Type = "Activity" 
+                        Type = "Activity"
                     }))
                 .ToList();
 
+            
+
             result.AddRange(activitySchedules);
 
-            // Lấy lịch trình từ MedicationSchedule
             var medicationScheduleResponses = medicationSchedules
                 .Select(ms => new GetScheduleInDayResponse
                 {
-                    Title = ms.Medication.MedicationName, 
-                    Description ="Dùng " + ms.Dosage + " vào " + ms.DateTaken?.ToString("HH:mm"),
+                    Title = ms.Medication.MedicationName,
+                    Description = "Dùng " + ms.Dosage + " vào " + ms.DateTaken?.ToString("HH:mm"),
                     StartTime = ms.DateTaken?.ToString("HH:mm"),
                     EndTime = null,
                     ElderlyId = elderlyId,
@@ -85,37 +88,73 @@ namespace SE.Service.Services
 
             return result;
         }
-        public async Task<IBusinessResult> CreateActivityWithSchedule(CreateActivityModel model)
+
+
+        public async Task<IBusinessResult> CreateActivity(CreateActivityModel request)
         {
-            try
+            var checkElderly = _unitOfWork.ElderlyRepository.GetById(request.ElderlyId);
+            if (checkElderly == null)
             {
-                if (model == null || string.IsNullOrWhiteSpace(model.ActivityName) || model.StartTime == null || model.EndTime == null)
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid activity data.");
-                }
-
-                var activity = _mapper.Map<Activity>(model);
-                activity.Status = SD.GeneralStatus.ACTIVE;
-                await _unitOfWork.ActivityRepository.CreateAsync(activity);
-
-                var activitySchedule = new ActivitySchedule
-                {
-                    ActivityId = activity.ActivityId,
-                    StartTime = model.StartTime,
-                    EndTime = model.EndTime,
-                    Status = SD.GeneralStatus.ACTIVE
-                };
-
-                await _unitOfWork.ActivityScheduleRepository.CreateAsync(activitySchedule);
-
-                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, "Activity and schedule created successfully.");
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly not found.");
             }
-            catch (Exception ex)
+
+            var activity = new Activity
             {
-                return new BusinessResult(Const.FAIL_CREATE, ex.Message);
+                ElderlyId = request.ElderlyId,
+                ActivityName = request.ActivityName,
+                ActivityDescription = request.ActivityDescription,
+                CreatedBy = request.CreatedBy,
+                Status = SD.GeneralStatus.ACTIVE
+            };
+
+            var activityResult = await _unitOfWork.ActivityRepository.CreateAsync(activity);
+            if(activityResult < 1)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create activity.");
+
             }
+
+            var schedules = await GenerateActivitySchedules(request.Schedules, request.Duration, activity.ActivityId);
+
+            if (schedules < 1)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create activity schedule.");
+
+            }
+
+            return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
+
         }
+        private async Task<int> GenerateActivitySchedules(List<CreateActivitySchedule> schedules, int duration, int activityId)
+        {
+            var rs = 0;
+            var currentDate = DateOnly.FromDateTime(DateTime.Today);
 
+            foreach (var schedule in schedules)
+            {
+                var scheduleStartDate = currentDate;
+
+                for (int i = 0; i < duration; i++)
+                {
+                    var startDateTime = scheduleStartDate.ToDateTime(schedule.StartTime);
+                    var endDateTime = scheduleStartDate.ToDateTime(schedule.EndTime);
+
+                    var newSchedule = new ActivitySchedule
+                    {
+                        ActivityId = activityId,
+                        StartTime = startDateTime,
+                        EndTime = endDateTime,
+                        Status = SD.GeneralStatus.ACTIVE
+                    };
+
+                    rs = await _unitOfWork.ActivityScheduleRepository.CreateAsync(newSchedule);
+
+                    scheduleStartDate = scheduleStartDate.AddDays(1);
+                }
+            }
+
+            return rs;
+        }
         public async Task<IBusinessResult> UpdateSchedule(UpdateScheduleModel model)
         {
             try

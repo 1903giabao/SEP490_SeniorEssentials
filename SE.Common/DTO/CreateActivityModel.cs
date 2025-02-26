@@ -12,8 +12,17 @@ namespace SE.Common.DTO
         public string ActivityName { get; set; }
         public string ActivityDescription { get; set; }
         public string CreatedBy { get; set; }
-        public string Status { get; set; }
-        public DateTime? StartTime { get; set; }
-        public DateTime? EndTime { get; set; }
+        public int Duration { get; set; }
+        public List<CreateActivitySchedule> Schedules { get; set; }
+
+
+    }
+
+    public class CreateActivitySchedule
+    {
+        public TimeOnly StartTime { get; set; }
+        public TimeOnly EndTime { get; set; }
+
+
     }
 }
