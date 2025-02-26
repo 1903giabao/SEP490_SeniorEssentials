@@ -19,9 +19,9 @@ namespace SE.API.Controllers
         [HttpGet]
         [SwaggerOperation(Summary = "Get all activities of elderly in day")]
 
-        public async Task<IActionResult> GetAllActivities([FromQuery] DateTime day)
+        public async Task<IActionResult> GetAllActivities([FromQuery] DateTime day, int elderlyID)
         {
-            var result = await _activityService.GetAllScheduleForDay(day);
+            var result = await _activityService.GetAllActivityForDay( elderlyID, day);
             return Ok(result);
         }
 

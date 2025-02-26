@@ -36,6 +36,15 @@ namespace SE.Data.Repository
             return await _context.MedicationSchedules
                 .FirstOrDefaultAsync(ms => ms.MedicationId == medicationId && ms.DateTaken == dateTaken);
         }
+
+        public async Task<List<MedicationSchedule>> GetMedicationSchedulesForDay(int elderlyId, DateTime date)
+        {
+            var result = await _context.MedicationSchedules
+                .Include(ms => ms.Medication)
+                .Where(ms => ms.Medication.ElderlyId == elderlyId && ms.DateTaken == date.Date)
+                .ToListAsync();
+            return result;
+        }
     }
 
 

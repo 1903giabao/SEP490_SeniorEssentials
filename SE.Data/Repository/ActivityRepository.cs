@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using SE.Data.Models;
 using SE.Data.Base;
+using SE.Data.UnitOfWork;
+using Microsoft.EntityFrameworkCore;
 
 namespace SE.Data.Repository
 {
@@ -15,5 +17,11 @@ namespace SE.Data.Repository
         {
             _context = context;
         }
+        public async Task<List<Activity>> GetActivitiesInclude(int elderlyId)
+        {
+            var result = await _context.Activities.Include(a => a.ActivitySchedules).Where(a => a.ElderlyId ==elderlyId).ToListAsync();
+            return result;
+        }
+
     }
 }

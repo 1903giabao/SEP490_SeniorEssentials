@@ -15,7 +15,7 @@ namespace SE.API.Controllers
         {
             _medicationService = medicationService;
         }
-
+        
         [HttpPost("scan")]
         public async Task<IActionResult> Scan(IFormFile picture, int ElderlyId)
         {
@@ -48,6 +48,13 @@ namespace SE.API.Controllers
         public async Task<IActionResult> ConfirmMedicationDrinking( ConfirmMedicationDrinkingReq req)
         {
             var result = await _medicationService.ConfirmMedicationDrinking(req);
+            return Ok(result);
+        }
+
+        [HttpPut("cancle/{prescriptionId}")]
+        public async Task<IActionResult> CancelPrescription([FromRoute]int prescriptionId)
+        {
+            var result = await _medicationService.CancelPresciption(prescriptionId);
             return Ok(result);
         }
     }

@@ -34,6 +34,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateMedicationByManually(CreateMedicationRequest req);
 
         Task<IBusinessResult> ConfirmMedicationDrinking(ConfirmMedicationDrinkingReq request);
+        Task<IBusinessResult> CancelPresciption(int prescriptionId);
 
     }
 
@@ -526,8 +527,9 @@ namespace SE.Service.Services
                 var result = new
                 {
                     Id = elderlyId,
-                    Treatment = "viêm họng",
-                    StartDate = today.ToString("yyyy-MM-dd"),
+                    Treatment = prescription.Treatment,
+                    EndDate = prescription.EndDate.ToString("yyyy-MM-dd"),
+                    StartDate = prescription.CreatedAt.ToString("yyyy-MM-dd"),
                     Medicines = medicationDtos
                 };
 

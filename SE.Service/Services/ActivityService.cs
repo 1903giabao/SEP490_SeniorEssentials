@@ -3,6 +3,7 @@ using AutoMapper;
 using SE.Common;
 using SE.Common.DTO;
 using SE.Common.Enums;
+using SE.Common.Response;
 using SE.Data.Models;
 using SE.Data.Repository;
 using SE.Data.UnitOfWork;
@@ -12,7 +13,7 @@ namespace SE.Service.Services
 {
     public interface IActivityService
     {
-        Task<IBusinessResult> GetAllScheduleForDay(DateTime date);
+        Task<List<GetScheduleInDayResponse>> GetAllActivityForDay(int elderlyId, DateTime date);
         Task<IBusinessResult> CreateActivityWithSchedule(CreateActivityModel model);
         Task<IBusinessResult> UpdateSchedule(UpdateScheduleModel model);
         Task<IBusinessResult> GetActivityById(int activityId);
@@ -28,37 +29,62 @@ namespace SE.Service.Services
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        public async Task<IBusinessResult> GetAllScheduleForDay(DateTime date)
+        public async Task<List<GetScheduleInDayResponse>> GetAllActivityForDay(int elderlyId, DateTime date)
         {
-            try
-            {
-              /*  if (!DateTime.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate))
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid date format. Please use YYYY-MM-DD.");
-                }
+            var activities = await _unitOfWork.ActivityRepository.GetActivitiesInclude(elderlyId);
+            var medicationSchedules = await _unitOfWork.MedicationScheduleRepository.GetMedicationSchedulesForDay(elderlyId, date);
+            var professorAppointments = await _unitOfWork.ProfessorAppointmentRepository.GetProfessorAppointmentsForDay(elderlyId, date);
 
-                DateTime startOfDay = parsedDate.Date;*/
+            var result = new List<GetScheduleInDayResponse>();
 
-                  var schedules = await _unitOfWork.ActivityScheduleRepository.GetAllAsync();
-                var filteredSchedules = schedules
-                    .Where(a => a.StartTime.HasValue && a.StartTime.Value.Date >= date)
-                    .Select(a => new GetAllScheduleModel
+            var activitySchedules = activities
+                .SelectMany(a => a.ActivitySchedules
+                    .Where(s => s.StartTime?.Date == date.Date)
+                    .Select(s => new GetScheduleInDayResponse
                     {
-                        ActivityId = a.Activity.ActivityId,
-                        ElderlyId = a.Activity.ElderlyId,
-                        ActivityName = a.Activity.ActivityName,
-                        StartTime = a.StartTime,
-                        EndTime = a.EndTime
-                    })
-                    .ToList();
+                        Title = a.ActivityName,
+                        Description = a.ActivityDescription,
+                        StartTime = s.StartTime?.ToString("HH:mm"),
+                        EndTime = s.EndTime?.ToString("HH:mm"),
+                        ElderlyId = a.ElderlyId,
+                        Type = "Activity" 
+                    }))
+                .ToList();
 
-                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, filteredSchedules);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, ex.Message);
-            }
-            }
+            result.AddRange(activitySchedules);
+
+            // Lấy lịch trình từ MedicationSchedule
+            var medicationScheduleResponses = medicationSchedules
+                .Select(ms => new GetScheduleInDayResponse
+                {
+                    Title = ms.Medication.MedicationName, 
+                    Description ="Dùng " + ms.Dosage + " vào " + ms.DateTaken?.ToString("HH:mm"),
+                    StartTime = ms.DateTaken?.ToString("HH:mm"),
+                    EndTime = null,
+                    ElderlyId = elderlyId,
+                    Type = "Medication"
+                })
+                .ToList();
+
+            result.AddRange(medicationScheduleResponses);
+
+            var professorAppointmentResponses = professorAppointments
+                .Select(pa => new GetScheduleInDayResponse
+                {
+                    Title = "Tư vấn với bác sĩ",
+                    Description = "Bác sĩ " + pa.TimeSlot.ProfessorSchedule.Professor.Account.FullName,
+                    StartTime = pa.StartTime?.ToString("HH:mm"),
+                    EndTime = pa.EndTime?.ToString("HH:mm"),
+                    ElderlyId = elderlyId,
+                    Type = "Professor Appointment"
+                })
+                .ToList();
+
+            result.AddRange(professorAppointmentResponses);
+            result = result.OrderBy(r => r.StartTime).ToList();
+
+            return result;
+        }
         public async Task<IBusinessResult> CreateActivityWithSchedule(CreateActivityModel model)
         {
             try
