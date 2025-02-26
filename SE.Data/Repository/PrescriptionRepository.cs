@@ -21,7 +21,7 @@ namespace SE.Data.Repository
             var prescription = await _context.Prescriptions
                 .Include(p => p.Medications)
                     .ThenInclude(m => m.MedicationSchedules)
-                .FirstOrDefaultAsync(p => p.Elderly == elderlyID && p.CreatedAt.Date <= DateTime.UtcNow.AddHours(7));
+                .FirstOrDefaultAsync(p => p.Elderly == elderlyID && p.CreatedAt.Date <= DateTime.UtcNow.AddHours(7) && p.Status.Equals("Actives"));
             return prescription;
         }
     }
