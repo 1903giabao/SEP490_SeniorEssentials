@@ -76,6 +76,7 @@ pipeline {
                 echo 'Deploying and cleaning'
                 sh 'if [ $(docker ps -q -f name=senioressentials) ]; then docker container stop senioressentials; fi'
                 sh 'echo y | docker system prune'
+                withDockerRegistry(credentialsId: 'dockerhub', url: 'https://index.docker.io/v1/') {
                 sh 'docker container run -d --name senioressentials -p 8080:8080 -p 8081:8081 '+
                    '-e JwtSettings=${JwtSettings} ' +
                    '-e SMSApiKey=${SMSApiKey} '+
@@ -100,6 +101,7 @@ pipeline {
                    '-e Chatclient_x509_cert_url=${Chatclient_x509_cert_url} '+
                    '-e Chatuniverse_domain=${Chatuniverse_domain} '+
                    'senioressntials/senioressentials:latest'
+                }
                 
             }
         }
