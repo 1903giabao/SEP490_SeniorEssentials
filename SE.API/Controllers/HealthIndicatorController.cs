@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SE.Common.DTO;
 using SE.Common.Request;
+using SE.Common.Request.HealthIndicator;
 using SE.Service.Services;
 
 [ApiController]
@@ -14,15 +15,22 @@ public class HealthIndicatorController : ControllerBase
         _healthIndicatorService = healthIndicatorService;
     }
 
-    // Get endpoints
-    [HttpGet("weight-height/elderlyId")]
-    public async Task<IActionResult> GetWeightHeightByElderlyId(int elderlyId)
+    [HttpGet("healthIndicator/{elderlyId}")]
+    public async Task<IActionResult> GetAllHealthIndicatorsByElderlyId(int elderlyId, [FromQuery] string? filter)
     {
-        var result = await _healthIndicatorService.GetWeightHeightByElderlyId(elderlyId);
+        var result = await _healthIndicatorService.GetAllHealthIndicatorsByElderlyId(elderlyId, filter);
         return Ok(result);
     }
 
-    [HttpGet("blood-pressure/elderlyId")]
+    // Get endpoints
+    /*    [HttpGet("weight-height/elderlyId")]
+        public async Task<IActionResult> GetWeightHeightByElderlyId(int elderlyId)
+        {
+            var result = await _healthIndicatorService.GetWeightHeightByElderlyId(elderlyId);
+            return Ok(result);
+        }*/
+
+    /*[HttpGet("blood-pressure/elderlyId")]
     public async Task<IActionResult> GetBloodPressureByElderlyId(int elderlyId)
     {
         var result = await _healthIndicatorService.GetBloodPressureByElderlyId(elderlyId);
@@ -62,12 +70,19 @@ public class HealthIndicatorController : ControllerBase
     {
         var result = await _healthIndicatorService.GetKidneyFunctionByElderlyId(elderlyId);
         return Ok(result);
-    }
+    }*/
 
-    [HttpGet("weight-height/weightHeightId")]
-    public async Task<IActionResult> GetWeightHeightById(int weightHeightId)
+    [HttpGet("weight/weightId")]
+    public async Task<IActionResult> GetWeightHeightById(int weightId)
     {
-        var result = await _healthIndicatorService.GetWeightHeightById(weightHeightId);
+        var result = await _healthIndicatorService.GetWeightById(weightId);
+        return Ok(result);
+    }    
+    
+    [HttpGet("height/heightId")]
+    public async Task<IActionResult> GetHeightById(int heightId)
+    {
+        var result = await _healthIndicatorService.GetHeightById(heightId);
         return Ok(result);
     }
 
@@ -114,10 +129,17 @@ public class HealthIndicatorController : ControllerBase
     }
 
     // Create endpoints
-    [HttpPost("weight-height")]
-    public async Task<IActionResult> CreateWeightHeight([FromBody] CreateWeightHeightRequest request)
+    [HttpPost("weight")]
+    public async Task<IActionResult> CreateWeight([FromBody] CreateWeightRequest request)
     {
-        var result = await _healthIndicatorService.CreateWeightHeight(request);
+        var result = await _healthIndicatorService.CreateWeight(request);
+        return Ok(result);
+    }    
+    
+    [HttpPost("height")]
+    public async Task<IActionResult> CreateHeight([FromBody] CreateHeightRequest request)
+    {
+        var result = await _healthIndicatorService.CreateHeight(request);
         return Ok(result);
     }
 
@@ -163,10 +185,17 @@ public class HealthIndicatorController : ControllerBase
         return Ok(result);
     }
 
-    [HttpPut("update-status/weight-height/{weightHeightId}")]
-    public async Task<IActionResult> UpdateWeightHeightStatus(int weightHeightId, [FromBody] string status)
+    [HttpPut("update-status/weight/{weightId}")]
+    public async Task<IActionResult> UpdateWeightStatus(int weightId, [FromBody] string status)
     {
-        var result = await _healthIndicatorService.UpdateWeightHeightStatus(weightHeightId, status);
+        var result = await _healthIndicatorService.UpdateWeightStatus(weightId, status);
+        return Ok(result);
+    }    
+    
+    [HttpPut("update-status/height/{heightId}")]
+    public async Task<IActionResult> UpdateHeightStatus(int heightId, [FromBody] string status)
+    {
+        var result = await _healthIndicatorService.UpdateHeightStatus(heightId, status);
         return Ok(result);
     }
 

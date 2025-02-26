@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using SE.Common.DTO;
+using SE.Common.DTO.HealthIndicator;
 using SE.Common.Request;
+using SE.Common.Request.HealthIndicator;
 using SE.Common.Request.SE.Common.Request;
 using SE.Data.Models;
 using System;
@@ -65,11 +67,21 @@ namespace SE.Common.Mapper
 
             CreateMap<BloodPressure, CreateBloodPressureRequest>().ReverseMap();
             CreateMap<BloodGlucose, CreateBloodGlucoseRequest>().ReverseMap();
-            CreateMap<WeightHeight, CreateWeightHeightRequest>().ReverseMap();
+            CreateMap<Weight, CreateWeightRequest>().ReverseMap();
+            CreateMap<Height, CreateHeightRequest>().ReverseMap();
             CreateMap<HeartRate, CreateHeartRateRequest>().ReverseMap();
             CreateMap<LipidProfile, CreateLipidProfileRequest>().ReverseMap();
             CreateMap<LiverEnzyme, CreateLiverEnzymesRequest> ().ReverseMap();
             CreateMap<KidneyFunction, CreateKidneyFunctionRequest> ().ReverseMap();
+
+            CreateMap<BloodPressure, GetBloodPressureDTO>().ReverseMap();
+            CreateMap<BloodGlucose, GetBloodGlucoseDTO>().ReverseMap();
+            CreateMap<Weight, GetWeightDTO>().ReverseMap();
+            CreateMap<Height, GetHeightDTO>().ReverseMap();
+            CreateMap<HeartRate, GetHeartRateDTO>().ReverseMap();
+            CreateMap<LipidProfile, GetLipidProfileDTO>().ReverseMap();
+            CreateMap<LiverEnzyme, GetLiverEnzymesDTO>().ReverseMap();
+            CreateMap<KidneyFunction, GetKidneyFunctionDTO>().ReverseMap();
         }
     }
 }

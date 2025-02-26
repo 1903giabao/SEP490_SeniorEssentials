@@ -165,6 +165,11 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
                 }
 
+                if (userPhone.AccountId == userId)
+                {
+                    return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, new { isMe = true });
+                }
+
                 var userLink = await _unitOfWork.UserLinkRepository.GetByUserIdsAsync(userId, userPhone.AccountId);
 
                 if (userLink != null)

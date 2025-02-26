@@ -27,15 +27,29 @@ public partial class Elderly
 
     public virtual ICollection<Activity> Activities { get; set; } = new List<Activity>();
 
+    public virtual ICollection<BloodGlucose> BloodGlucoses { get; set; } = new List<BloodGlucose>();
+
+    public virtual ICollection<BloodPressure> BloodPressures { get; set; } = new List<BloodPressure>();
+
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
     public virtual ICollection<EmergencyContact> EmergencyContacts { get; set; } = new List<EmergencyContact>();
 
+    public virtual ICollection<HeartRate> HeartRates { get; set; } = new List<HeartRate>();
+
+    public virtual ICollection<Height> Heights { get; set; } = new List<Height>();
+
     public virtual ICollection<Iotdevice> Iotdevices { get; set; } = new List<Iotdevice>();
+
+    public virtual ICollection<KidneyFunction> KidneyFunctions { get; set; } = new List<KidneyFunction>();
 
     public virtual ICollection<LessonFeedback> LessonFeedbacks { get; set; } = new List<LessonFeedback>();
 
     public virtual ICollection<LessonHistory> LessonHistories { get; set; } = new List<LessonHistory>();
+
+    public virtual ICollection<LipidProfile> LipidProfiles { get; set; } = new List<LipidProfile>();
+
+    public virtual ICollection<LiverEnzyme> LiverEnzymes { get; set; } = new List<LiverEnzyme>();
 
     public virtual ICollection<Medication> Medications { get; set; } = new List<Medication>();
 
@@ -44,4 +58,6 @@ public partial class Elderly
     public virtual ICollection<ProfessorAppointment> ProfessorAppointments { get; set; } = new List<ProfessorAppointment>();
 
     public virtual ICollection<ProfessorRating> ProfessorRatings { get; set; } = new List<ProfessorRating>();
+
+    public virtual ICollection<Weight> Weights { get; set; } = new List<Weight>();
 }

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using SE.Common.Request;
+using SE.Common.Request.HealthIndicator;
 using SE.Common;
 using SE.Data.Models;
 using SE.Data.UnitOfWork;
@@ -10,13 +11,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SE.Common.Enums;
+using SE.Common.DTO.HealthIndicator;
 
 namespace SE.Service.Services
 {
     public interface IHealthIndicatorService
     {
         // Create methods
-        Task<IBusinessResult> CreateWeightHeight(CreateWeightHeightRequest request);
+        Task<IBusinessResult> CreateWeight(CreateWeightRequest request);
+        Task<IBusinessResult> CreateHeight(CreateHeightRequest request);
         Task<IBusinessResult> CreateBloodPressure(CreateBloodPressureRequest request);
         Task<IBusinessResult> CreateHeartRate(CreateHeartRateRequest request);
         Task<IBusinessResult> CreateBloodGlucose(CreateBloodGlucoseRequest request);
@@ -24,17 +27,9 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateLiverEnzymes(CreateLiverEnzymesRequest request);
         Task<IBusinessResult> CreateKidneyFunction(CreateKidneyFunctionRequest request);
 
-        // Get methods for individual health indicators
-        Task<IBusinessResult> GetWeightHeightByElderlyId(int elderlyId);
-        Task<IBusinessResult> GetBloodPressureByElderlyId(int elderlyId);
-        Task<IBusinessResult> GetHeartRateByElderlyId(int elderlyId);
-        Task<IBusinessResult> GetBloodGlucoseByElderlyId(int elderlyId);
-        Task<IBusinessResult> GetLipidProfileByElderlyId(int elderlyId);
-        Task<IBusinessResult> GetLiverEnzymesByElderlyId(int elderlyId);
-        Task<IBusinessResult> GetKidneyFunctionByElderlyId(int elderlyId);
-
         // Get methods by id
-        Task<IBusinessResult> GetWeightHeightById(int id);
+        Task<IBusinessResult> GetHeightById(int id);
+        Task<IBusinessResult> GetWeightById(int id);
         Task<IBusinessResult> GetBloodPressureById(int id);
         Task<IBusinessResult> GetHeartRateById(int id);
         Task<IBusinessResult> GetBloodGlucoseById(int id);
@@ -44,13 +39,15 @@ namespace SE.Service.Services
 
 
         // Update status methods for each health indicator
-        Task<IBusinessResult> UpdateWeightHeightStatus(int weightHeightId, string status);
+        Task<IBusinessResult> UpdateWeightStatus(int weightId, string status);
+        Task<IBusinessResult> UpdateHeightStatus(int heightId, string status);
         Task<IBusinessResult> UpdateBloodPressureStatus(int bloodPressureId, string status);
         Task<IBusinessResult> UpdateHeartRateStatus(int heartRateId, string status);
         Task<IBusinessResult> UpdateBloodGlucoseStatus(int bloodGlucoseId, string status);
         Task<IBusinessResult> UpdateLipidProfileStatus(int lipidProfileId, string status);
         Task<IBusinessResult> UpdateLiverEnzymesStatus(int liverEnzymesId, string status);
         Task<IBusinessResult> UpdateKidneyFunctionStatus(int kidneyFunctionId, string status);
+        Task<IBusinessResult> GetAllHealthIndicatorsByElderlyId(int elderlyId, string filter = null);
     }
 
     public class HealthIndicatorService : IHealthIndicatorService
@@ -63,7 +60,7 @@ namespace SE.Service.Services
             _mapper = mapper;
         }
 
-        public async Task<IBusinessResult> CreateWeightHeight(CreateWeightHeightRequest request)
+        public async Task<IBusinessResult> CreateWeight(CreateWeightRequest request)
         {
             try
             {
@@ -77,11 +74,39 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, "Invalid elderly ID.");
                 }
 
-                var weightHeight = _mapper.Map<WeightHeight>(request);
+                var weightHeight = _mapper.Map<Weight>(request);
                 weightHeight.DateRecorded = DateTime.UtcNow.AddHours(7);
                 weightHeight.Status = SD.GeneralStatus.ACTIVE;
 
-                await _unitOfWork.WeightHeightRepository.CreateAsync(weightHeight);
+                await _unitOfWork.WeightRepository.CreateAsync(weightHeight);
+
+                return new BusinessResult(Const.SUCCESS_CREATE, "Weight and Height created successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }        
+        
+        public async Task<IBusinessResult> CreateHeight(CreateHeightRequest request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, "Request cannot be null.");
+                }
+
+                if (request.ElderlyId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, "Invalid elderly ID.");
+                }
+
+                var weightHeight = _mapper.Map<Height>(request);
+                weightHeight.DateRecorded = DateTime.UtcNow.AddHours(7);
+                weightHeight.Status = SD.GeneralStatus.ACTIVE;
+
+                await _unitOfWork.HeightRepository.CreateAsync(weightHeight);
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Weight and Height created successfully.");
             }
@@ -259,162 +284,31 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> GetWeightHeightByElderlyId(int elderlyId)
+        public async Task<IBusinessResult> GetWeightById(int id)
         {
             try
             {
-                if (elderlyId <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "Invalid elderly ID.");
-                }
+                var weightHeight = _unitOfWork.WeightRepository.GetByIdAsync(id);
 
-                var weightHeights = _unitOfWork.WeightHeightRepository.FindByCondition(wh => wh.ElderlyId == elderlyId).ToList();
+                var weightHeightResult = _mapper.Map<GetWeightDTO>(weightHeight);
 
-                var weightHeightResults = _mapper.Map<List<CreateHealthIndicatorRequest>>(weightHeights);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Weight height retrieved successfully.", weightHeightResults);
+                return new BusinessResult(Const.SUCCESS_READ, "Weight retrieved successfully.", weightHeightResult);
             }
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
-        }
-
-        public async Task<IBusinessResult> GetBloodPressureByElderlyId(int elderlyId)
+        }        
+        
+        public async Task<IBusinessResult> GetHeightById(int id)
         {
             try
             {
-                if (elderlyId <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "Invalid elderly ID.");
-                }
+                var weightHeight = _unitOfWork.HeightRepository.GetByIdAsync(id);
 
-                var bloodPressures = _unitOfWork.BloodPressureRepository.FindByCondition(bp => bp.ElderlyId == elderlyId).ToList();
+                var weightHeightResult = _mapper.Map<GetHeightDTO>(weightHeight);
 
-                var bloodPressureResults = _mapper.Map<List<CreateBloodPressureRequest>>(bloodPressures);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Blood pressure retrieved successfully.", bloodPressureResults);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetHeartRateByElderlyId(int elderlyId)
-        {
-            try
-            {
-                if (elderlyId <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "Invalid elderly ID.");
-                }
-
-                var heartRates = _unitOfWork.HeartRateRepository.FindByCondition(hr => hr.ElderlyId == elderlyId).ToList();
-
-                var heartRateResults = _mapper.Map<List<CreateHeartRateRequest>>(heartRates);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Heart rate retrieved successfully.", heartRateResults);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetBloodGlucoseByElderlyId(int elderlyId)
-        {
-            try
-            {
-                if (elderlyId <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "Invalid elderly ID.");
-                }
-
-                var bloodGlucoseRecords = _unitOfWork.BloodGlucoseRepository.FindByCondition(bg => bg.ElderlyId == elderlyId).ToList();
-
-                var bloodGlucoseResults = _mapper.Map<List<CreateBloodGlucoseRequest>>(bloodGlucoseRecords);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Blood glucose retrieved successfully.", bloodGlucoseResults);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetLipidProfileByElderlyId(int elderlyId)
-        {
-            try
-            {
-                if (elderlyId <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "Invalid elderly ID.");
-                }
-
-                var lipidProfiles = _unitOfWork.LipidProfileRepository.FindByCondition(lp => lp.ElderlyId == elderlyId).ToList();
-
-                var lipidProfileResults = _mapper.Map<List<CreateLipidProfileRequest>>(lipidProfiles);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Lipid profile retrieved successfully.", lipidProfileResults);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetLiverEnzymesByElderlyId(int elderlyId)
-        {
-            try
-            {
-                if (elderlyId <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "Invalid elderly ID.");
-                }
-
-                var liverEnzymes = _unitOfWork.LiverEnzymeRepository.FindByCondition(le => le.ElderlyId == elderlyId).ToList();
-
-                var liverEnzymesResults = _mapper.Map<List<CreateLiverEnzymesRequest>>(liverEnzymes);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Liver enzymes retrieved successfully.", liverEnzymesResults);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetKidneyFunctionByElderlyId(int elderlyId)
-        {
-            try
-            {
-                if (elderlyId <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "Invalid elderly ID.");
-                }
-
-                var kidneyFunctions = _unitOfWork.KidneyFunctionRepository.FindByCondition(kf => kf.ElderlyId == elderlyId).ToList();
-
-                var kidneyFunctionResults = _mapper.Map<List<CreateKidneyFunctionRequest>>(kidneyFunctions);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Kidney function retrieved successfully.", kidneyFunctionResults);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetWeightHeightById(int id)
-        {
-            try
-            {
-                var weightHeight = _unitOfWork.WeightHeightRepository.GetByIdAsync(id);
-
-                var weightHeightResult = _mapper.Map<CreateHealthIndicatorRequest>(weightHeight);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Weight height retrieved successfully.", weightHeightResult);
+                return new BusinessResult(Const.SUCCESS_READ, "height retrieved successfully.", weightHeightResult);
             }
             catch (Exception ex)
             {
@@ -428,7 +322,7 @@ namespace SE.Service.Services
             {
                 var bloodPressure = _unitOfWork.BloodPressureRepository.GetByIdAsync(id);
 
-                var bloodPressureResult = _mapper.Map<CreateBloodPressureRequest>(bloodPressure);
+                var bloodPressureResult = _mapper.Map<GetBloodPressureDTO>(bloodPressure);
 
                 return new BusinessResult(Const.SUCCESS_READ, "Blood Pressure retrieved successfully.", bloodPressureResult);
             }
@@ -444,7 +338,7 @@ namespace SE.Service.Services
             {
                 var heartRate = _unitOfWork.HeartRateRepository.GetByIdAsync(id);
 
-                var heartRateResult = _mapper.Map<CreateHeartRateRequest>(heartRate);
+                var heartRateResult = _mapper.Map<GetHeartRateDTO>(heartRate);
 
                 return new BusinessResult(Const.SUCCESS_READ, "Heart Rate retrieved successfully.", heartRateResult);
             }
@@ -460,7 +354,7 @@ namespace SE.Service.Services
             {
                 var bloodGlucose = _unitOfWork.BloodGlucoseRepository.GetByIdAsync(id);
 
-                var bloodGlucoseResult = _mapper.Map<CreateHeartRateRequest>(bloodGlucose);
+                var bloodGlucoseResult = _mapper.Map<GetBloodGlucoseDTO>(bloodGlucose);
 
                 return new BusinessResult(Const.SUCCESS_READ, "Blood Glucose retrieved successfully.", bloodGlucoseResult);
             }
@@ -476,7 +370,7 @@ namespace SE.Service.Services
             {
                 var lipidProfile = _unitOfWork.LipidProfileRepository.GetByIdAsync(id);
 
-                var lipidProfileResult = _mapper.Map<CreateHeartRateRequest>(lipidProfile);
+                var lipidProfileResult = _mapper.Map<GetHeartRateDTO>(lipidProfile);
 
                 return new BusinessResult(Const.SUCCESS_READ, "Lipid Profile retrieved successfully.", lipidProfileResult);
             }
@@ -492,7 +386,7 @@ namespace SE.Service.Services
             {
                 var liverEnzyme = _unitOfWork.LiverEnzymeRepository.GetByIdAsync(id);
 
-                var liverEnzymeResult = _mapper.Map<CreateHeartRateRequest>(liverEnzyme);
+                var liverEnzymeResult = _mapper.Map<GetLiverEnzymesDTO>(liverEnzyme);
 
                 return new BusinessResult(Const.SUCCESS_READ, "Liver Enzyme retrieved successfully.", liverEnzymeResult);
             }
@@ -508,7 +402,7 @@ namespace SE.Service.Services
             {
                 var kidneyFunction = _unitOfWork.KidneyFunctionRepository.GetByIdAsync(id);
 
-                var kidneyFunctionResult = _mapper.Map<CreateHeartRateRequest>(kidneyFunction);
+                var kidneyFunctionResult = _mapper.Map<GetKidneyFunctionDTO>(kidneyFunction);
 
                 return new BusinessResult(Const.SUCCESS_READ, "Kidney Function retrieved successfully.", kidneyFunctionResult);
             }
@@ -518,30 +412,61 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateWeightHeightStatus(int weightHeightId, string status)
+        public async Task<IBusinessResult> UpdateWeightStatus(int weightId, string status)
         {
             try
             {
-                if (weightHeightId <= 0)
+                if (weightId <= 0)
                 {
-                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid weight/height ID.");
+                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid weight ID.");
                 }
 
-                var weightHeight = await _unitOfWork.WeightHeightRepository.GetByIdAsync(weightHeightId);
-                if (weightHeight == null)
+                var weight = await _unitOfWork.WeightRepository.GetByIdAsync(weightId);
+                if (weight == null)
                 {
-                    return new BusinessResult(Const.FAIL_UPDATE, "Weight/height record not found.");
+                    return new BusinessResult(Const.FAIL_UPDATE, "Weight record not found.");
                 }
 
-                weightHeight.Status = status;
-                var rs = await _unitOfWork.WeightHeightRepository.UpdateAsync(weightHeight);
+                weight.Status = status;
+                var rs = await _unitOfWork.WeightRepository.UpdateAsync(weight);
 
                 if (rs < 1)
                 {
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
                 }
 
-                return new BusinessResult(Const.SUCCESS_UPDATE, "Weight/height status updated successfully.");
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Weight status updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }        
+        
+        public async Task<IBusinessResult> UpdateHeightStatus(int heightId, string status)
+        {
+            try
+            {
+                if (heightId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid height ID.");
+                }
+
+                var height = await _unitOfWork.HeightRepository.GetByIdAsync(heightId);
+                if (height == null)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Height record not found.");
+                }
+
+                height.Status = status;
+                var rs = await _unitOfWork.HeightRepository.UpdateAsync(height);
+
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Height status updated successfully.");
             }
             catch (Exception ex)
             {
@@ -732,6 +657,107 @@ namespace SE.Service.Services
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetAllHealthIndicatorsByElderlyId(int elderlyId, string filter = null)
+        {
+            try
+            {
+                if (elderlyId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "Invalid elderly ID.");
+                }
+
+                // Initialize a dictionary to hold all health indicators
+                var healthIndicators = new Dictionary<string, object>();
+
+                // Fetch and map each health indicator based on the filter
+                if (filter == null || filter.Equals("Weight", StringComparison.OrdinalIgnoreCase))
+                {
+                    var weights = _unitOfWork.WeightRepository.FindByCondition(w => w.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                    var weightDTOs = _mapper.Map<List<GetWeightDTO>>(weights);
+                    FormatDateRecorded(weightDTOs);
+                    healthIndicators["Weight"] = weightDTOs;
+                }
+
+                if (filter == null || filter.Equals("Height", StringComparison.OrdinalIgnoreCase))
+                {
+                    var heights = _unitOfWork.HeightRepository.FindByCondition(h => h.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                    var heightDTOs = _mapper.Map<List<GetHeightDTO>>(heights);
+                    FormatDateRecorded(heightDTOs);
+                    healthIndicators["Height"] = heightDTOs;
+                }
+
+                if (filter == null || filter.Equals("BloodPressure", StringComparison.OrdinalIgnoreCase))
+                {
+                    var bloodPressures = _unitOfWork.BloodPressureRepository.FindByCondition(bp => bp.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                    var bloodPressureDTOs = _mapper.Map<List<GetBloodPressureDTO>>(bloodPressures);
+                    FormatDateRecorded(bloodPressureDTOs);
+                    healthIndicators["BloodPressure"] = bloodPressureDTOs;
+                }
+
+                if (filter == null || filter.Equals("HeartRate", StringComparison.OrdinalIgnoreCase))
+                {
+                    var heartRates = _unitOfWork.HeartRateRepository.FindByCondition(hr => hr.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                    var heartRateDTOs = _mapper.Map<List<GetHeartRateDTO>>(heartRates);
+                    FormatDateRecorded(heartRateDTOs);
+                    healthIndicators["HeartRate"] = heartRateDTOs;
+                }
+
+                if (filter == null || filter.Equals("BloodGlucose", StringComparison.OrdinalIgnoreCase))
+                {
+                    var bloodGlucoseRecords = _unitOfWork.BloodGlucoseRepository.FindByCondition(bg => bg.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                    var bloodGlucoseDTOs = _mapper.Map<List<GetBloodGlucoseDTO>>(bloodGlucoseRecords);
+                    FormatDateRecorded(bloodGlucoseDTOs);
+                    healthIndicators["BloodGlucose"] = bloodGlucoseDTOs;
+                }
+
+                if (filter == null || filter.Equals("LipidProfile", StringComparison.OrdinalIgnoreCase))
+                {
+                    var lipidProfiles = _unitOfWork.LipidProfileRepository.FindByCondition(lp => lp.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                    var lipidProfileDTOs = _mapper.Map<List<GetLipidProfileDTO>>(lipidProfiles);
+                    FormatDateRecorded(lipidProfileDTOs);
+                    healthIndicators["LipidProfile"] = lipidProfileDTOs;
+                }
+
+                if (filter == null || filter.Equals("LiverEnzymes", StringComparison.OrdinalIgnoreCase))
+                {
+                    var liverEnzymes = _unitOfWork.LiverEnzymeRepository.FindByCondition(le => le.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                    var liverEnzymesDTOs = _mapper.Map<List<GetLiverEnzymesDTO>>(liverEnzymes);
+                    FormatDateRecorded(liverEnzymesDTOs);
+                    healthIndicators["LiverEnzymes"] = liverEnzymesDTOs;
+                }
+
+                if (filter == null || filter.Equals("KidneyFunction", StringComparison.OrdinalIgnoreCase))
+                {
+                    var kidneyFunctions = _unitOfWork.KidneyFunctionRepository.FindByCondition(kf => kf.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                    var kidneyFunctionDTOs = _mapper.Map<List<GetKidneyFunctionDTO>>(kidneyFunctions);
+                    FormatDateRecorded(kidneyFunctionDTOs);
+                    healthIndicators["KidneyFunction"] = kidneyFunctionDTOs;
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, "Health indicators retrieved successfully.", healthIndicators);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        private void FormatDateRecorded<T>(List<T> dtos) where T : class
+        {
+            foreach (var dto in dtos)
+            {
+                var dateRecordedProperty = dto.GetType().GetProperty("DateRecorded");
+                if (dateRecordedProperty != null && dateRecordedProperty.PropertyType == typeof(string))
+                {
+                    var dateRecordedValue = dateRecordedProperty.GetValue(dto) as DateTime?;
+                    if (dateRecordedValue.HasValue)
+                    {
+                        dateRecordedProperty.SetValue(dto, dateRecordedValue.Value.ToString("dd-MM-yyyy HH:mm:ss"));
+                    }
+                }
             }
         }
     }
