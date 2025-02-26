@@ -191,7 +191,7 @@ namespace SE.Service.Services
                         { "CreatedAt", currentTime.ToString("dd-MM-yyyy HH:mm") },
                         { "IsGroupChat", true },
                         { "RoomName", groupName },
-                        { "RoomAvatar", "" },
+                        { "RoomAvatar", "https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png" },
                         { "SenderId", 0 },
                         { "LastMessage", "" },
                         { "SentDate", currentTime.ToString("dd-MM-yyyy") },

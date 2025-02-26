@@ -346,11 +346,15 @@ namespace SE.Service.Services
                     var isOnline = false;
                     List<string> memberIdsList = new List<string>();
                     var listUser = new List<UserInRoomChatDTO>();
+                    bool groupChat = false;
 
                     if (data.TryGetValue("MemberIds", out var memberIdsObj) &&
                         memberIdsObj is IDictionary<string, object> memberIds)
                     {
                         numberOfMems = memberIds.Count;
+                        bool isGroupChat = data["IsGroupChat"] as bool? ?? false;
+                        groupChat = isGroupChat;
+
                         foreach (var member in memberIds)
                         {
                             var getUser = await _unitOfWork.AccountRepository.GetByIdAsync(int.Parse(member.Key));
@@ -365,7 +369,7 @@ namespace SE.Service.Services
                                 Name = getUser.FullName
                             });
 
-                            if (numberOfMems == 2)
+                            if (!isGroupChat && numberOfMems == 2)
                             {
                                 if (!member.Key.Equals(userId.ToString()))
                                 {
@@ -379,34 +383,33 @@ namespace SE.Service.Services
                                     if (onlineData.TryGetValue("IsOnline", out var isOnlineCheck))
                                     {
                                         isOnline = (bool)isOnlineCheck;
-                                    }                            
+                                    }
                                     roomName = getUser.FullName;
                                     roomAvatar = getUser.Avatar;
                                 }
-                            }                              
+                            }
                         }
-
                     }
 
-                    chatRooms.Add(new ChatRoomDTO
-                    {
-                        RoomId = document.Id,
-                        CreatedAt = data["CreatedAt"]?.ToString(),
-                        IsOnline = isOnline,
-                        IsGroupChat = data["IsGroupChat"] as bool? ?? false,
-                        RoomName = numberOfMems == 2 ? roomName : data["RoomName"].ToString(),
-                        RoomAvatar = numberOfMems == 2 ? roomAvatar : data["RoomAvatar"].ToString(),
-                        SenderId = data["SenderId"] as long?,
-                        LastMessage = data["LastMessage"]?.ToString(),
-                        SentDate = data["SentDate"]?.ToString(),
-                        SentTime = data["SentTime"]?.ToString(),
-                        SentDateTime = data["SentDateTime"]?.ToString(),
-                        NumberOfMems = numberOfMems,
-                        Users = listUser
-                    });
-                }
+                        chatRooms.Add(new ChatRoomDTO
+                        {
+                            RoomId = document.Id,
+                            CreatedAt = data["CreatedAt"]?.ToString(),
+                            IsOnline = isOnline,
+                            IsGroupChat = data["IsGroupChat"] as bool? ?? false,
+                            RoomName = !groupChat && numberOfMems == 2 ? roomName : data["RoomName"].ToString(),
+                            RoomAvatar = !groupChat && numberOfMems == 2 ? roomAvatar : data["RoomAvatar"].ToString(),
+                            SenderId = data["SenderId"] as long?,
+                            LastMessage = data["LastMessage"]?.ToString(),
+                            SentDate = data["SentDate"]?.ToString(),
+                            SentTime = data["SentTime"]?.ToString(),
+                            SentDateTime = data["SentDateTime"]?.ToString(),
+                            NumberOfMems = numberOfMems,
+                            Users = listUser
+                        });
+                    }
 
-                var orderedChatRooms = chatRooms
+                    var orderedChatRooms = chatRooms
                             .OrderByDescending(chatRoom =>
                                 DateTime.TryParse(chatRoom.SentDateTime, out DateTime sentDateTime) ? sentDateTime : DateTime.MinValue).ToList();
 
@@ -592,7 +595,10 @@ namespace SE.Service.Services
                 {
                     var urlLink = ("", "");
 
-                    urlLink = await CloudinaryHelper.UploadImageAsync(req.GroupAvatar);
+                    if (req.GroupAvatar != null)
+                    {
+                        urlLink = await CloudinaryHelper.UploadImageAsync(req.GroupAvatar);
+                    }
 
                     var creator = req.Members.Where(m => m.IsCreator).FirstOrDefault();
 
@@ -622,7 +628,7 @@ namespace SE.Service.Services
                             { "CreatedAt", DateTime.UtcNow.AddHours(7).ToString("dd-MM-yyyy HH:mm") },
                             { "IsGroupChat", true },
                             { "RoomName", req.GroupName },
-                            { "RoomAvatar", urlLink.Item2 },
+                            { "RoomAvatar", req.GroupAvatar == null ? "https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png" : urlLink.Item2},
                             { "SenderId", 0 },
                             { "LastMessage", "" },
                             { "SentDate",  null },
@@ -796,7 +802,6 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat does not exist!");
                 }
 
-                // Get the current members of the group
                 var currentMembers = groupDoc.GetValue<Dictionary<string, object>>("MemberIds") ?? new Dictionary<string, object>();
                 var memberIdStr = memberId.ToString();
 
@@ -805,10 +810,8 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Member is not part of this group!");
                 }
 
-                // Remove the member from the group's MemberIds
                 currentMembers.Remove(memberIdStr);
 
-                // Update the group document with the new MemberIds
                 var updateData = new Dictionary<string, object>
                 {
                     { "MemberIds", currentMembers }
@@ -816,11 +819,9 @@ namespace SE.Service.Services
 
                 await groupRef.UpdateAsync(updateData);
 
-                // Remove the member from the Members subcollection
                 var membersRef = groupRef.Collection("Members").Document(memberIdStr);
                 await membersRef.DeleteAsync();
 
-                // Remove the member from the OnlineMembers collection
                 var onlineMembersRef = _firestoreDb.Collection("OnlineMembers").Document(memberIdStr);
                 await onlineMembersRef.DeleteAsync();
 
