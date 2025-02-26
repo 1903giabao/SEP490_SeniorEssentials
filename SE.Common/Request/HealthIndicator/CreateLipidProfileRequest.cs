@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SE.Common.Request
+namespace SE.Common.Request.HealthIndicator
 {
     public class CreateLipidProfileRequest
     {
@@ -14,6 +14,5 @@ namespace SE.Common.Request
         public string HDLCholesterol { get; set; }
         public string Triglycerides { get; set; }
         public string LipidProfileSource { get; set; }
-        public string Status { get; set; }
     }
 }

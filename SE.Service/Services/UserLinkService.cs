@@ -116,7 +116,24 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid status!");
                 }                
 
-                userLink.Status = req.ResponseStatus;
+                if (req.ResponseStatus.Equals(SD.UserLinkStatus.CANCELLED, StringComparison.OrdinalIgnoreCase))
+                {
+                    userLink.Status = SD.UserLinkStatus.CANCELLED;
+                }
+                else if (req.ResponseStatus.Equals(SD.UserLinkStatus.REJECTED, StringComparison.OrdinalIgnoreCase))
+                {
+                    userLink.Status = SD.UserLinkStatus.REJECTED;
+                }
+
+                else if (req.ResponseStatus.Equals(SD.UserLinkStatus.ACCEPTED, StringComparison.OrdinalIgnoreCase))
+                {
+                    userLink.Status = SD.UserLinkStatus.ACCEPTED;
+                }
+                else
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Status must be CANCELLED, REJECTED, ACCEPTED!");
+                }
+
 
                 var updateUserLink = await _unitOfWork.UserLinkRepository.UpdateAsync(userLink);
 

@@ -48,9 +48,9 @@ namespace SE.API.Controllers
             };
 
             return Ok(result);
-        }        
-        
-        [HttpGet("phoneNumber")]
+        }
+
+        [HttpGet("phoneNumber/{phoneNumber}/{userId}")]
         [SwaggerOperation(Summary = "Get detail user by phone number")]
 
         public async Task<IActionResult> GetUserByPhoneNumber(string phoneNumber, int userId)

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SE.Common.Request
+namespace SE.Common.Request.HealthIndicator
 {
     public class CreateLiverEnzymesRequest
     {
@@ -14,6 +14,5 @@ namespace SE.Common.Request
         public string ALP { get; set; }
         public string GGT { get; set; }
         public string LiverEnzymesSource { get; set; }
-        public string Status { get; set; }
     }
 }

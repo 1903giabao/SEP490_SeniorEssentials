@@ -365,7 +365,9 @@ namespace SE.Service.Services
                     var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
 
                     var groupMembers = _unitOfWork.GroupMemberRepository.GetAll()
-                        .Where(gm => gm.GroupId == groupId && gm.Status == SD.GeneralStatus.ACTIVE)
+                        .Where(gm => gm.GroupId == groupId &&
+                                     gm.Status == SD.GeneralStatus.ACTIVE &&
+                                     gm.AccountId != userId) 
                         .Select(gm => gm.AccountId)
                         .ToList();
 
