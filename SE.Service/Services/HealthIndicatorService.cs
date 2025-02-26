@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SE.Common.Enums;
 using SE.Common.DTO.HealthIndicator;
+using Firebase.Auth;
 
 namespace SE.Service.Services
 {
@@ -64,51 +65,55 @@ namespace SE.Service.Services
         {
             try
             {
-                if (request == null)
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+
+                if (isExisted == null)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Request cannot be null.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
-                if (request.ElderlyId <= 0)
+                if (request.Weight <= 0)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Invalid elderly ID.");
+                    return new BusinessResult(Const.FAIL_CREATE, "Weight must be greater than 0.");
                 }
 
-                var weightHeight = _mapper.Map<Weight>(request);
-                weightHeight.DateRecorded = DateTime.UtcNow.AddHours(7);
-                weightHeight.Status = SD.GeneralStatus.ACTIVE;
+                var weightEntity = _mapper.Map<Weight>(request);
+                weightEntity.DateRecorded = DateTime.UtcNow.AddHours(7);
+                weightEntity.Status = SD.GeneralStatus.ACTIVE;
 
-                await _unitOfWork.WeightRepository.CreateAsync(weightHeight);
+                await _unitOfWork.WeightRepository.CreateAsync(weightEntity);
 
-                return new BusinessResult(Const.SUCCESS_CREATE, "Weight and Height created successfully.");
+                return new BusinessResult(Const.SUCCESS_CREATE, "Weight created successfully.");
             }
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
             }
-        }        
-        
+        }
+
         public async Task<IBusinessResult> CreateHeight(CreateHeightRequest request)
         {
             try
             {
-                if (request == null)
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+
+                if (isExisted == null)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Request cannot be null.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
-                if (request.ElderlyId <= 0)
+                if (request.Height <= 0)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Invalid elderly ID.");
+                    return new BusinessResult(Const.FAIL_CREATE, "Height must be greater than 0.");
                 }
 
-                var weightHeight = _mapper.Map<Height>(request);
-                weightHeight.DateRecorded = DateTime.UtcNow.AddHours(7);
-                weightHeight.Status = SD.GeneralStatus.ACTIVE;
+                var heightEntity = _mapper.Map<Height>(request);
+                heightEntity.DateRecorded = DateTime.UtcNow.AddHours(7);
+                heightEntity.Status = SD.GeneralStatus.ACTIVE;
 
-                await _unitOfWork.HeightRepository.CreateAsync(weightHeight);
+                await _unitOfWork.HeightRepository.CreateAsync(heightEntity);
 
-                return new BusinessResult(Const.SUCCESS_CREATE, "Weight and Height created successfully.");
+                return new BusinessResult(Const.SUCCESS_CREATE, "Height created successfully.");
             }
             catch (Exception ex)
             {
@@ -120,14 +125,21 @@ namespace SE.Service.Services
         {
             try
             {
-                if (request == null)
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+
+                if (isExisted == null)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Request cannot be null.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
-                if (request.ElderlyId <= 0)
+                if (request.BloodPressureSystolic < 30 || request.BloodPressureSystolic > 300)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Invalid elderly ID.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Systolic blood pressure must be in 30~300!");
+                }
+
+                if (request.BloodPressureDiastolic < 20 || request.BloodPressureDiastolic > 250)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Diastolic blood pressure must be in 20~250!");
                 }
 
                 var bloodPressure = _mapper.Map<BloodPressure>(request);
@@ -148,14 +160,16 @@ namespace SE.Service.Services
         {
             try
             {
-                if (request == null)
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+
+                if (isExisted == null)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Request cannot be null.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
-                if (request.ElderlyId <= 0)
+                if (request.HeartRate < 40 || request.HeartRate > 300)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Invalid elderly ID.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Heart rate must be in 40~300!");
                 }
 
                 var heartRate = _mapper.Map<HeartRate>(request);
@@ -176,14 +190,11 @@ namespace SE.Service.Services
         {
             try
             {
-                if (request == null)
-                {
-                    return new BusinessResult(Const.FAIL_CREATE, "Request cannot be null.");
-                }
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
 
-                if (request.ElderlyId <= 0)
+                if (isExisted == null)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Invalid elderly ID.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
                 var bloodGlucose = _mapper.Map<BloodGlucose>(request);
@@ -204,14 +215,11 @@ namespace SE.Service.Services
         {
             try
             {
-                if (request == null)
-                {
-                    return new BusinessResult(Const.FAIL_CREATE, "Request cannot be null.");
-                }
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
 
-                if (request.ElderlyId <= 0)
+                if (isExisted == null)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Invalid elderly ID.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
                 var lipidProfile = _mapper.Map<LipidProfile>(request);
@@ -232,14 +240,11 @@ namespace SE.Service.Services
         {
             try
             {
-                if (request == null)
-                {
-                    return new BusinessResult(Const.FAIL_CREATE, "Request cannot be null.");
-                }
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
 
-                if (request.ElderlyId <= 0)
+                if (isExisted == null)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Invalid elderly ID.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
                 var liverEnzyme = _mapper.Map<LiverEnzyme>(request);
@@ -260,14 +265,11 @@ namespace SE.Service.Services
         {
             try
             {
-                if (request == null)
-                {
-                    return new BusinessResult(Const.FAIL_CREATE, "Request cannot be null.");
-                }
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
 
-                if (request.ElderlyId <= 0)
+                if (isExisted == null)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Invalid elderly ID.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
                 var kidneyFunction = _mapper.Map<KidneyFunction>(request);
@@ -669,10 +671,8 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "Invalid elderly ID.");
                 }
 
-                // Initialize a dictionary to hold all health indicators
                 var healthIndicators = new Dictionary<string, object>();
 
-                // Fetch and map each health indicator based on the filter
                 if (filter == null || filter.Equals("Weight", StringComparison.OrdinalIgnoreCase))
                 {
                     var weights = _unitOfWork.WeightRepository.FindByCondition(w => w.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
