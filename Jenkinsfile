@@ -76,31 +76,31 @@ pipeline {
                 echo 'Deploying and cleaning'
                 sh 'if [ $(docker ps -q -f name=senioressentials) ]; then docker container stop senioressentials; fi'
                 sh 'echo y | docker system prune'
-                docker container run -d --name senioressentials -p 8080:8080 -p 8081:8081 \
-                   -e JwtSettings=${JwtSettings} \
-                   -e SMSApiKey=${SMSApiKey} \
-                   -e SMSSecretKey=${SMSSecretKey} \
-                   -e SMSBrandName=${SMSBrandName} \
-                   -e EmailServer=${EmailServer} \
-                   -e EmailPort=${EmailPort} \
-                   -e EmailUserName=${EmailUserName} \
-                   -e EmailPassWord=${EmailPassWord} \
-                   -e EmailUseSsl=${EmailUseSsl} \
-                   -e EmailSenderEmail=${EmailSenderEmail} \
-                   -e EmailSenderName=${EmailSenderName} \
-                   -e Chattype=${Chattype} \
-                   -e Chatproject_id=${Chatproject_id} \
-                   -e Chatprivate_key_id=${Chatprivate_key_id} \
-                   -e Chatprivate_key=${Chatprivate_key} \
-                   -e Chatclient_email=${Chatclient_email} \
-                   -e Chatclient_id=${Chatclient_id} \
-                   -e Chatauth_uri=${Chatauth_uri} \
-                   -e Chattoken_uri=${Chattoken_uri} \
-                   -e Chatauth_provider_x509_cert_url=${Chatauth_provider_x509_cert_url} \
-                   -e Chatclient_x509_cert_url=${Chatclient_x509_cert_url} \
-                   -e Chatuniverse_domain=${Chatuniverse_domain} \
-                   senioressentials/senioressentials
-                '''
+                sh 'docker container run -d --name senioressentials -p 8080:8080 -p 8081:8081'+
+                   '-e JwtSettings=${JwtSettings} ' +
+                   '-e SMSApiKey=${SMSApiKey} '+
+                   '-e SMSSecretKey=${SMSSecretKey} ' +
+                   '-e SMSBrandName=${SMSBrandName} '+
+                   '-e EmailServer=${EmailServer} ' +
+                   '-e EmailPort=${EmailPort} ' +
+                   '-e EmailUserName=${EmailUserName} ' +
+                   '-e EmailPassWord=${EmailPassWord} ' +
+                   '-e EmailUseSsl=${EmailUseSsl} ' +
+                   '-e EmailSenderEmail=${EmailSenderEmail} '+
+                   '-e EmailSenderName=${EmailSenderName} ' +
+                   '-e Chattype=${Chattype} '+
+                   '-e Chatproject_id=${Chatproject_id} '+
+                   '-e Chatprivate_key_id=${Chatprivate_key_id} '+
+                   '-e Chatprivate_key=${Chatprivate_key} '+
+                   '-e Chatclient_email=${Chatclient_email} '+
+                   '-e Chatclient_id=${Chatclient_id} '+
+                   '-e Chatauth_uri=${Chatauth_uri} '+
+                   '-e Chattoken_uri=${Chattoken_uri} '+
+                   '-e Chatauth_provider_x509_cert_url=${Chatauth_provider_x509_cert_url} '+
+                   '-e Chatclient_x509_cert_url=${Chatclient_x509_cert_url} '+
+                   '-e Chatuniverse_domain=${Chatuniverse_domain} '+
+                   'senioressentials/senioressentials'
+                
             }
         }
     }
