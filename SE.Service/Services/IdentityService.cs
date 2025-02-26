@@ -200,7 +200,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Wrong email or phone number format!");
                 }
                 var user = _unitOfWork.AccountRepository.GetById(req.AccountId);
-          //      var urlLink = new 
+              
                 if (user != null && user.IsVerified == false)
                 {
                         return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Email is registered but not verified!");
@@ -211,11 +211,11 @@ namespace SE.Service.Services
                 
                 else
                 {
-                    var  urlLink1 = await CloudinaryHelper.UploadImageAsync(req.Avatar);
+                    var urlLink = await CloudinaryHelper.UploadImageAsync(req.Avatar);
+                    user.Avatar = urlLink.Url;
 
                 }
 
-             //   user.Avatar = urlLink.Url;
                 user.Email = req.Email;
                 user.PhoneNumber = req.PhoneNumber;
                 user.Status = SD.GeneralStatus.ACTIVE;
