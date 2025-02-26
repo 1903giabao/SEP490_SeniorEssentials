@@ -24,4 +24,6 @@ public partial class LiverEnzyme
     public string LiverEnzymesSource { get; set; }
 
     public string Status { get; set; }
+
+    public virtual Elderly Elderly { get; set; }
 }

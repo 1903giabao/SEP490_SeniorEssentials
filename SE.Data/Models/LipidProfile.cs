@@ -24,4 +24,6 @@ public partial class LipidProfile
     public string LipidProfileSource { get; set; }
 
     public string Status { get; set; }
+
+    public virtual Elderly Elderly { get; set; }
 }

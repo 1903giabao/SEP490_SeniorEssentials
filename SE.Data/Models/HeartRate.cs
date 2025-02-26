@@ -18,4 +18,6 @@ public partial class HeartRate
     public string HeartRateSource { get; set; }
 
     public string Status { get; set; }
+
+    public virtual Elderly Elderly { get; set; }
 }

@@ -5,17 +5,17 @@ using System.Collections.Generic;
 
 namespace SE.Data.Models;
 
-public partial class BloodGlucose
+public partial class Weight
 {
-    public int BloodGlucoseId { get; set; }
+    public int WeightId { get; set; }
 
     public int? ElderlyId { get; set; }
 
     public DateTime? DateRecorded { get; set; }
 
-    public decimal? BloodGlucose1 { get; set; }
+    public decimal? Weight1 { get; set; }
 
-    public string BloodGlucoseSource { get; set; }
+    public string WeightSource { get; set; }
 
     public string Status { get; set; }
 

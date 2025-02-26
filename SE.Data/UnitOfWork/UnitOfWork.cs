@@ -46,7 +46,8 @@ namespace SE.Data.UnitOfWork
         private KidneyFunctionRepository _kidneyFunctionRepository;
         private LipidProfileRepository _lipidProfileRepository;
         private LiverEnzymeRepository _liverEnzymeRepository;
-        private WeightHeightRepository _weightHeightRepository;
+        private WeightRepository _weightRepository;
+        private HeightRepository _heightRepository;
 
 
         public UnitOfWork()
@@ -238,11 +239,16 @@ namespace SE.Data.UnitOfWork
             get => _liverEnzymeRepository ??= new LiverEnzymeRepository(_unitOfWorkContext);
         }
 
-        public WeightHeightRepository WeightHeightRepository
+        public WeightRepository WeightRepository
         {
-            get => _weightHeightRepository ??= new WeightHeightRepository(_unitOfWorkContext);
-
+            get => _weightRepository ??= new WeightRepository(_unitOfWorkContext);
+        }        
+        
+        public HeightRepository HeightRepository
+        {
+            get => _heightRepository ??= new HeightRepository(_unitOfWorkContext);
         }
+
         public int SaveChangesWithTransaction()
         {
             int result = -1;
