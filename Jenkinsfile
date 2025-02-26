@@ -74,11 +74,8 @@ pipeline {
         stage('Deploy BE to DEV') {
             steps {
                 echo 'Deploying and cleaning'
-                sh '''#!/bin/bash
-                if [ $(docker ps -q -f name=senioressentials) ]; then
-                    docker container stop senioressentials
-                fi
-                docker container rm senioressentials || true  # Ensure removal even if the container doesn't exist
+                sh 'if [ $(docker ps -q -f name=senioressentials) ]; then docker container stop senioressentials; fi'
+                sh 'echo y | docker system prune'
                 docker container run -d --name senioressentials -p 8080:8080 -p 8081:8081 \
                    -e JwtSettings=${JwtSettings} \
                    -e SMSApiKey=${SMSApiKey} \
