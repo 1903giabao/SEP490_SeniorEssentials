@@ -31,9 +31,17 @@ namespace SE.API.Controllers
         }
 
         [HttpGet("{elderlyId}/Date")]
-        public async Task<IActionResult> GetAll([FromRoute] int elderlyId, DateTime day)
+        public async Task<IActionResult> GetAll([FromRoute] int elderlyId, DateOnly day)
         {
             var result = await _medicationService.GetMedicationsForToday(elderlyId, day);
+            return Ok(result);
+        }
+
+
+        [HttpGet("prescription/{elderlyId}")]
+        public async Task<IActionResult> GetPrescriptionOfElderly([FromRoute] int elderlyId)
+        {
+            var result = await _medicationService.GetPrescriptionOfElderly(elderlyId);
             return Ok(result);
         }
 

@@ -25,10 +25,10 @@ namespace SE.Data.Repository
             if (schedulesToDelete.Any())
             {
                 _context.MedicationSchedules.RemoveRange(schedulesToDelete);
-                return await _context.SaveChangesAsync(); // Returns the number of rows affected
+                return await _context.SaveChangesAsync();
             }
 
-            return 0; // No schedules found to delete
+            return 0; 
         }
 
         public async Task<MedicationSchedule> GetByDateAndMedicationIdAsync(DateTime dateTaken, int medicationId)

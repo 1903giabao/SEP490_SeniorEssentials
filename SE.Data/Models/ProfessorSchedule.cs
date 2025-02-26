@@ -11,11 +11,11 @@ public partial class ProfessorSchedule
 
     public int ProfessorId { get; set; }
 
-    public DateOnly DayOfWeek { get; set; }
+    public string DayOfWeek { get; set; }
 
-    public DateOnly StartDate { get; set; }
+    public DateTime? StartDate { get; set; }
 
-    public DateOnly? EndDate { get; set; }
+    public DateTime? EndDate { get; set; }
 
     public string Status { get; set; }
 

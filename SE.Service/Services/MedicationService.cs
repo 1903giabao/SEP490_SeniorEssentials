@@ -27,7 +27,7 @@ namespace SE.Service.Services
     public interface IMedicationService
     {
         Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID);
-       Task<IBusinessResult> GetMedicationsForToday(int elderlyId, System.DateTime today);
+       Task<IBusinessResult> GetMedicationsForToday(int elderlyId, System.DateOnly today);
 
         Task<IBusinessResult> UpdateMedicationInPrescription(int prescriptionId, UpdateMedicationInPrescriptionRequest req);
 
@@ -35,6 +35,9 @@ namespace SE.Service.Services
 
         Task<IBusinessResult> ConfirmMedicationDrinking(ConfirmMedicationDrinkingReq request);
         Task<IBusinessResult> CancelPresciption(int prescriptionId);
+
+        Task<IBusinessResult> GetPrescriptionOfElderly(int elderlyId);
+
 
     }
 
@@ -409,7 +412,8 @@ namespace SE.Service.Services
                     Status = SD.GeneralStatus.ACTIVE,
                     CreatedBy = req.CreatedBy,
                     Url = "Manually",
-                    Treatment = req.Treatment
+                    Treatment = req.Treatment,
+                    EndDate = req.EndDate
                 };
 
                 var rsImage = await _unitOfWork.PrescriptionRepository.CreateAsync(newPrescription);
@@ -473,7 +477,7 @@ namespace SE.Service.Services
             return dateOnly?.ToDateTime(new TimeOnly(0, 0));
         }
 
-        public async Task<IBusinessResult> GetMedicationsForToday(int elderlyId, System.DateTime today)
+        public async Task<IBusinessResult> GetMedicationsForToday(int elderlyId, DateOnly today)
         {
             try
             {
@@ -488,8 +492,8 @@ namespace SE.Service.Services
                 var medicationDtos = new List<MedicationModel>();
 
                 foreach (var medication in prescription.Medications
-                    .Where(m => ConvertToDateTime(m.StartDate) <= today &&
-                                 (m.EndDate == null || ConvertToDateTime(m.EndDate) >= today)))
+                    .Where(m => m.StartDate <= today &&
+                                 (m.EndDate == null ||m.EndDate >= today)))
                 {
                     string frequencyEvery = null;
                     var medicationSchedule = _unitOfWork.MedicationScheduleRepository.FindByCondition(ms => ms.MedicationId == medication.MedicationId).FirstOrDefault();
@@ -512,8 +516,8 @@ namespace SE.Service.Services
                         FrequencySelect = GetWeeklyMedicationScheduleForMedication(medication.MedicationId, today),
                         MealTime = medication.IsBeforeMeal == true ? "Trước ăn" : "Sau ăn",
                         FrequencyEvery = frequencyEvery,
-
                         Schedule = medication.MedicationSchedules
+                        .Where(ms=> ms.DateTaken?.ToString("yyyy-MM-dd") == today.ToString("yyyy-MM-dd"))
                             .Select(ms => new ScheduleModel
                             {
                                 Time = ms.DateTaken.HasValue ? ms.DateTaken.Value.ToString("h:mm:ss") : null,
@@ -526,7 +530,7 @@ namespace SE.Service.Services
 
                 var result = new
                 {
-                    Id = elderlyId,
+                    Id = prescription.PrescriptionId,
                     Treatment = prescription.Treatment,
                     EndDate = prescription.EndDate?.ToString("yyyy-MM-dd"),
                     StartDate = prescription.CreatedAt.ToString("yyyy-MM-dd"),
@@ -541,16 +545,16 @@ namespace SE.Service.Services
             }
         }
 
-        private List<string> GetWeeklyMedicationScheduleForMedication(int medicationId, System.DateTime today)
+        private List<string> GetWeeklyMedicationScheduleForMedication(int medicationId, System.DateOnly today)
         {
             var dayOfWeek = (int)today.DayOfWeek;
-            var mondayOfWeek = today.AddDays(-((dayOfWeek == 0 ? 7 : dayOfWeek) - 1)).Date;
+            var mondayOfWeek = today.AddDays(-((dayOfWeek == 0 ? 7 : dayOfWeek) - 1));
             var sundayOfWeek = mondayOfWeek.AddDays(6);
 
             var schedules =  _unitOfWork.MedicationScheduleRepository
                 .FindByCondition(ms => ms.MedicationId == medicationId &&
-                                       ms.DateTaken >= mondayOfWeek &&
-                                       ms.DateTaken <= sundayOfWeek)
+                                       ms.DateTaken >= ConvertToDateTime(mondayOfWeek) &&
+                                       ms.DateTaken <= ConvertToDateTime(sundayOfWeek))
                 .ToList();
 
             if (!schedules.Any())
@@ -744,6 +748,75 @@ namespace SE.Service.Services
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_UPDATE, ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetPrescriptionOfElderly(int elderlyId)
+        {
+            try
+            {
+                var prescription = await _unitOfWork.PrescriptionRepository
+                    .GetAllIncludeMedicationInElderly(elderlyId);
+
+                if (prescription == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No prescription found for the given elderly ID.");
+                }
+
+                var medicationDtos = new List<MedicationModel>();
+                var today = DateOnly.FromDateTime(System.DateTime.UtcNow.AddHours(7));
+
+                foreach (var medication in prescription.Medications)
+                {
+                    string frequencyEvery = null;
+                    var medicationSchedule = _unitOfWork.MedicationScheduleRepository.FindByCondition(ms => ms.MedicationId == medication.MedicationId).FirstOrDefault();
+                    if (medication.FrequencyType.StartsWith("Every ") && medication.FrequencyType.EndsWith(" day"))
+                    {
+                        string numberStr = medication.FrequencyType.Replace("Every ", "").Replace(" day", "").Trim();
+                        if (int.TryParse(numberStr, out int day))
+                        {
+                            frequencyEvery = day.ToString();
+                        }
+                        
+                    }
+                    var date = medication.MedicationSchedules.FirstOrDefault();
+
+                    var medicationDto = new MedicationModel
+                    {
+                        Id = medication.MedicationId,
+                        Name = medication.MedicationName,
+                        Dosage = medication.Dosage,
+                        Form = medication.Shape,
+                        Remaining = medication.Remaining.ToString(),
+                        TypeFrequency = medication.FrequencyType,
+                        FrequencySelect = GetWeeklyMedicationScheduleForMedication(medication.MedicationId, today),
+                        MealTime = medication.IsBeforeMeal == true ? "Trước ăn" : "Sau ăn",
+                        FrequencyEvery = frequencyEvery,
+                        Schedule = medication.MedicationSchedules
+                        .Where(ms => ms.DateTaken?.ToString("yyyy-MM-dd") == date.DateTaken?.ToString("yyyy-MM-dd"))
+                            .Select(ms => new ScheduleModel
+                            {
+                                Time = ms.DateTaken.HasValue ? ms.DateTaken.Value.ToString("h:mm:ss") : null
+                            }).ToList()
+                    };
+
+                    medicationDtos.Add(medicationDto);
+                }
+
+                var result = new
+                {
+                    Id = prescription.PrescriptionId,
+                    Treatment = prescription.Treatment,
+                    EndDate = prescription.EndDate?.ToString("yyyy-MM-dd"),
+                    StartDate = prescription.CreatedAt.ToString("yyyy-MM-dd"),
+                    Medicines = medicationDtos
+                };
+
+                return new BusinessResult(Const.SUCCESS_READ, "Medications retrieved successfully.", result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
         }
     }

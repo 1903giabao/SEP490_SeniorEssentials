@@ -11,7 +11,7 @@ namespace SE.Common.Request
 
         public int ElderlyId { get; set; }
         public string Treatment { get; set; }
-        public DateOnly? EndDate { get; set; }
+        public DateTime? EndDate { get; set; }
         public List<CreateMedicationModel> Medication { get; set; }
 
         public string CreatedBy {  get; set; }

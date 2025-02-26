@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AutoMapper;
 using Firebase.Auth;
+using Google.Api;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -199,15 +200,22 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Wrong email or phone number format!");
                 }
                 var user = _unitOfWork.AccountRepository.GetById(req.AccountId);
-                
+          //      var urlLink = new 
                 if (user != null && user.IsVerified == false)
                 {
                         return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Email is registered but not verified!");
                 }
+                if (req.Avatar == null) {
+                    user.Avatar = "https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png";
+                }
+                
+                else
+                {
+                    var  urlLink1 = await CloudinaryHelper.UploadImageAsync(req.Avatar);
 
-                var urlLink = await CloudinaryHelper.UploadImageAsync(req.Avatar);
+                }
 
-                user.Avatar = urlLink.Url;
+             //   user.Avatar = urlLink.Url;
                 user.Email = req.Email;
                 user.PhoneNumber = req.PhoneNumber;
                 user.Status = SD.GeneralStatus.ACTIVE;

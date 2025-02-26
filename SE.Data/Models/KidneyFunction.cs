@@ -22,4 +22,6 @@ public partial class KidneyFunction
     public string KidneyFunctionSource { get; set; }
 
     public string Status { get; set; }
+
+    public virtual Elderly Elderly { get; set; }
 }

@@ -75,6 +75,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[Height]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[IOTDevice]",
          "ObjectType": 0
       },
@@ -159,7 +163,7 @@
          "ObjectType": 0
       },
       {
-         "Name": "[dbo].[WeightHeight]",
+         "Name": "[dbo].[Weight]",
          "ObjectType": 0
       }
    ],
