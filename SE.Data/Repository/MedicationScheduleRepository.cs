@@ -37,14 +37,20 @@ namespace SE.Data.Repository
                 .FirstOrDefaultAsync(ms => ms.MedicationId == medicationId && ms.DateTaken == dateTaken);
         }
 
-        public async Task<List<MedicationSchedule>> GetMedicationSchedulesForDay(int elderlyId, DateTime date)
+        public async Task<List<MedicationSchedule>> GetMedicationSchedulesForDay(int elderlyId, DateOnly date)
         {
+            var dateTime = date.ToDateTime(TimeOnly.MinValue);
+
             var result = await _context.MedicationSchedules
-                .Include(ms => ms.Medication)
-                .Where(ms => ms.Medication.ElderlyId == elderlyId && ms.DateTaken == date.Date)
+                .Include(ms => ms.Medication) 
+                .Where(ms => ms.Medication.ElderlyId == elderlyId && 
+                             ms.DateTaken.HasValue && 
+                             ms.DateTaken.Value.Date == dateTime.Date)
                 .ToListAsync();
+
             return result;
         }
+
     }
 
 

@@ -17,15 +17,17 @@ namespace SE.Data.Repository
             _context = context;
         }
 
-        public async Task<List<ProfessorAppointment>> GetProfessorAppointmentsForDay(int elderlyId, DateTime date)
+        public async Task<List<ProfessorAppointment>> GetProfessorAppointmentsForDay(int elderlyId, DateOnly date)
         {
+            var dateTime = date.ToDateTime(TimeOnly.MinValue);
+
             var result = await _context.ProfessorAppointments
-                .Include(pa => pa.TimeSlot) 
+                .Include(pa => pa.TimeSlot)
                     .ThenInclude(ts => ts.ProfessorSchedule)
                         .ThenInclude(ps => ps.Professor)
-                            .ThenInclude(p=>p.Account)
+                            .ThenInclude(p => p.Account)
                 .Include(pa => pa.Elderly)
-                .Where(pa => pa.ElderlyId == elderlyId && pa.AppointmentTime.Date == date.Date)
+                .Where(pa => pa.ElderlyId == elderlyId && pa.AppointmentTime.Date == dateTime)
                 .ToListAsync();
 
             return result;

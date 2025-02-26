@@ -30,7 +30,7 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{elderlyId}/Date")]
+        [HttpGet("{elderlyId}/date")]
         public async Task<IActionResult> GetAll([FromRoute] int elderlyId, DateOnly day)
         {
             var result = await _medicationService.GetMedicationsForToday(elderlyId, day);
@@ -59,10 +59,10 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpPut("cancle/{prescriptionId}")]
+        [HttpPut("cancel/{prescriptionId}")]
         public async Task<IActionResult> CancelPrescription([FromRoute]int prescriptionId)
         {
-            var result = await _medicationService.CancelPresciption(prescriptionId);
+            var result = await _medicationService.CancelPrescription(prescriptionId);
             return Ok(result);
         }
     }
