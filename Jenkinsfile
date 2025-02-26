@@ -99,7 +99,7 @@ pipeline {
                    '-e Chatauth_provider_x509_cert_url=${Chatauth_provider_x509_cert_url} '+
                    '-e Chatclient_x509_cert_url=${Chatclient_x509_cert_url} '+
                    '-e Chatuniverse_domain=${Chatuniverse_domain} '+
-                   'senioressentials/senioressentials'
+                   'senioressntials/senioressentials:latest'
                 
             }
         }
