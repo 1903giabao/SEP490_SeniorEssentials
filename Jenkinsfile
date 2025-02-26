@@ -85,10 +85,10 @@ pipeline {
                        "-e EmailServer=${env.EmailServer} " +
                        "-e EmailPort=${env.EmailPort} " +
                        "-e EmailUserName=${env.EmailUserName} " +
-                       "-e EmailPassWord=${env.EmailPassWord} " +
+                       '-e EmailPassWord="${EmailPassWord}" '+
                        "-e EmailUseSsl=${env.EmailUseSsl} " +
                        "-e EmailSenderEmail=${env.EmailSenderEmail} " +
-                       "-e EmailSenderName=${env.EmailSenderName} " +
+                       '-e EmailSenderName="${env.EmailSenderName}" ' +
                        "-e Chattype=${env.Chattype} " +
                        "-e Chatproject_id=${env.Chatproject_id} " +
                        "-e Chatprivate_key_id=${env.Chatprivate_key_id} " +
