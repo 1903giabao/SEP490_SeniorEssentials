@@ -74,6 +74,21 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "A group with the same members already exists.");
                 }
 
+                var memberIds = request.Members.Select(m => m.AccountId).ToList();
+                var allPairs = GetUniquePairs(memberIds);
+
+                foreach (var pair in allPairs)
+                {
+                    var relationshipExists = _unitOfWork.UserLinkRepository.GetAll()
+                        .Any(ul => (ul.AccountId1 == pair.Item1 && ul.AccountId2 == pair.Item2 && ul.RelationshipType.Equals("Family")) ||
+                                   (ul.AccountId1 == pair.Item2 && ul.AccountId2 == pair.Item1) && ul.RelationshipType.Equals("Family"));
+
+                    if (!relationshipExists)
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Members {pair.Item1} and {pair.Item2} is not Family.");
+                    }
+                }
+
                 var group = _mapper.Map<Group>(request);
                 group.CreatedDate = DateTime.UtcNow.AddHours(7);
                 group.Status = SD.GeneralStatus.ACTIVE;
@@ -231,6 +246,19 @@ namespace SE.Service.Services
             {
                 return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
             }
+        }
+
+        private List<(int, int)> GetUniquePairs(List<int> memberIds)
+        {
+            var pairs = new List<(int, int)>();
+            for (int i = 0; i < memberIds.Count; i++)
+            {
+                for (int j = i + 1; j < memberIds.Count; j++)
+                {
+                    pairs.Add((memberIds[i], memberIds[j]));
+                }
+            }
+            return pairs;
         }
 
         public async Task<IBusinessResult> GetGroupsByAccountId(int accountId)
