@@ -306,8 +306,6 @@ namespace SE.Service.Services
             }
             return 30;
         }
-
-
         public async Task<IBusinessResult> CreateMedicationByManually(CreateMedicationRequest req)
         {
             try
@@ -568,8 +566,6 @@ namespace SE.Service.Services
 
             return daysTaken;
         }
-
-
         public async Task<IBusinessResult> CancelPrescription(int prescriptionId)
         {
             try
@@ -598,19 +594,18 @@ namespace SE.Service.Services
         {
             try
             {
-                var existingPrescription = await _unitOfWork.PrescriptionRepository.GetByIdAsync(prescriptionId);
+                var existingPrescription = _unitOfWork.PrescriptionRepository.FindByCondition(p=>p.PrescriptionId == prescriptionId && p.Status == "Active").FirstOrDefault();
                 if (existingPrescription == null)
                 {
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Prescription not found.");
                 }
+                var today = DateTime.Now;
                 existingPrescription.Treatment = req.Treatment;
-
                 var updatePrescriptionResult = await _unitOfWork.PrescriptionRepository.UpdateAsync(existingPrescription);
                 if (updatePrescriptionResult < 1)
                 {
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to update prescription.");
                 }
-
                 var existingMedications = await _unitOfWork.MedicationRepository.GetByPrescriptionIdAsync(prescriptionId);
 
                 foreach (var medicationReq in req.Medication)
@@ -629,19 +624,19 @@ namespace SE.Service.Services
                         existingMedication.Treatment = medicationReq.Treatment;
                         existingMedication.MedicationName = medicationReq.MedicationName;
                         existingMedication.Dosage = medicationReq.Dosage;
-                        existingMedication.EndDate = medicationReq.EndDate;
                         existingMedication.FrequencyType = medicationReq.FrequencyType;
-                        existingMedication.StartDate = medicationReq.StartDate;
                         existingMedication.Shape = medicationReq.Shape;
-                        existingMedication.Status = medicationReq.Status;
                         existingMedication.Remaining = medicationReq.Remaining;
+                        existingMedication.Note = medicationReq.Note;
+                        existingMedication.IsBeforeMeal = medicationReq.IsBeforeMeal;
 
                         var updateMedicationResult = await _unitOfWork.MedicationRepository.UpdateAsync(existingMedication);
                         if (updateMedicationResult < 1)
                         {
                             return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to update medication.");
                         }
-                        var deleteSchedulesResult = await _unitOfWork.MedicationScheduleRepository.DeleteByMedicationIdAsync(existingMedication.MedicationId);
+
+                        var deleteSchedulesResult = await _unitOfWork.MedicationScheduleRepository.DeleteByMedicationIdAsync(existingMedication.MedicationId, today);
                         if (deleteSchedulesResult < 0)
                         {
                             return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to delete existing schedules.");
@@ -653,22 +648,26 @@ namespace SE.Service.Services
                             return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to create new schedules.");
                         }
                     }
-                    if (existingMedications == null)
+                    else
                     {
                         var newMedication = new Medication
                         {
                             Dosage = medicationReq.Dosage,
                             CreatedDate = DateTime.UtcNow.AddHours(7),
-                            EndDate = medicationReq.EndDate,
+                            EndDate = null,
                             FrequencyType = medicationReq.FrequencyType,
-                            StartDate = medicationReq.StartDate,
+                            StartDate = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)),
                             Shape = medicationReq.Shape,
-                            Status = medicationReq.Status,
+                            Status = SD.GeneralStatus.ACTIVE,
                             MedicationName = medicationReq.MedicationName,
                             Remaining = medicationReq.Remaining,
                             PrescriptionId = prescriptionId,
-                            ElderlyId = existingPrescription.Elderly
+                            ElderlyId = existingPrescription.Elderly,
+                            Note = medicationReq.Note,
+                            IsBeforeMeal = medicationReq.IsBeforeMeal,
+                            Treatment = medicationReq.Treatment
                         };
+
                         var createMedicationResult = await _unitOfWork.MedicationRepository.CreateAsync(newMedication);
                         if (createMedicationResult < 1)
                         {
@@ -681,7 +680,6 @@ namespace SE.Service.Services
                             return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to create schedules for new medication.");
                         }
                     }
-
                 }
 
                 return new BusinessResult(Const.SUCCESS_UPDATE, "Medication updated successfully.", req);
@@ -691,7 +689,6 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_UPDATE, ex.Message);
             }
         }
-
         public async Task<IBusinessResult> ConfirmMedicationDrinking(ConfirmMedicationDrinkingReq request)
         {
             try
@@ -700,24 +697,29 @@ namespace SE.Service.Services
 
                 foreach (var confirmation in request.Confirmations)
                 {
-                    // Parse the string date into DateTime
                     if (!DateTime.TryParseExact(confirmation.DateTaken, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTaken))
                     {
-                        // Handle invalid date format
                         return new BusinessResult(Const.FAIL_UPDATE, $"Invalid date format: {confirmation.DateTaken}");
                     }
-
-                    // Use the parsed DateTime
+                    var medication =await _unitOfWork.MedicationRepository.GetByIdAsync(confirmation.MedicationId);
                     var schedule = await _unitOfWork.MedicationScheduleRepository
                         .GetByDateAndMedicationIdAsync(dateTaken, confirmation.MedicationId);
 
                     if (schedule != null)
                     {
-                        // Update the schedule
                         schedule.IsTaken = true;
                         schedule.Status = "Taken";
-
+                        
                         var updateResult = await _unitOfWork.MedicationScheduleRepository.UpdateAsync(schedule);
+
+                        if (!int.TryParse(medication.Dosage.Split(' ')[0], out int dosage))
+                        {
+                            throw new InvalidOperationException("Invalid Dosage format. Expected format like '1 Viên'.");
+                        }
+
+                        medication.Remaining = medication.Remaining - dosage;
+
+                        await _unitOfWork.MedicationRepository.UpdateAsync(medication);
                         if (updateResult > 0)
                         {
                             updatedCount++;

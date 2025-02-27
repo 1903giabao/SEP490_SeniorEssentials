@@ -16,11 +16,13 @@ namespace SE.Data.Repository
         {
             _context = context;
         }
-        public async Task<int> DeleteByMedicationIdAsync(int medicationId)
+        public async Task<int> DeleteByMedicationIdAsync(int medicationId,DateTime date)
         {
+
             var schedulesToDelete = await _context.MedicationSchedules
-                .Where(ms => ms.MedicationId == medicationId)
-                .ToListAsync();
+                            .Where(ms => ms.Medication.MedicationId == medicationId &&
+                             ms.DateTaken.HasValue &&
+                             ms.DateTaken.Value.Date >= date.Date).ToListAsync();
 
             if (schedulesToDelete.Any())
             {

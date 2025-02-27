@@ -20,7 +20,8 @@ namespace SE.Data.Repository
         public async Task<List<Medication>> GetByPrescriptionIdAsync(int prescriptionId)
         {
             return await _context.Medications
-                .Where(m => m.PrescriptionId == prescriptionId)
+                .Include(x => x.Prescription)
+                .Where(m => m.PrescriptionId == prescriptionId && m.Prescription.Status == "Active")
                 .ToListAsync();
         }
 
