@@ -491,7 +491,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "No prescription found for the given elderly ID.");
                 }
 
-                var medicationDtos = new List<MedicationModel>();
+                var medicationDtos = new List<UpdateMedicationModel>();
 
                 foreach (var medication in prescription.Medications
                     .Where(m => m.StartDate <= today &&
@@ -507,24 +507,20 @@ namespace SE.Service.Services
                             frequencyEvery = day.ToString();
                         }
                     }
-                    var medicationDto = new MedicationModel
+                    var medicationDto = new UpdateMedicationModel
                     {
-                        Id = medication.MedicationId,
-                        Name = medication.MedicationName,
+                        MedicationId = medication.MedicationId,
+                        MedicationName = medication.MedicationName,
                         Dosage = medication.Dosage,
-                        Form = medication.Shape,
-                        Remaining = medication.Remaining.ToString(),
-                        TypeFrequency = medication.FrequencyType,
+                        Shape = medication.Shape,
+                        Remaining = medication.Remaining,
+                        FrequencyType = medication.FrequencyType,
                         FrequencySelect = GetWeeklyMedicationScheduleForMedication(medication.MedicationId, today),
-                        MealTime = medication.IsBeforeMeal == true ? "Trước ăn" : "Sau ăn",
-                        FrequencyEvery = frequencyEvery,
+                        IsBeforeMeal = medication.IsBeforeMeal,
                         Schedule = medication.MedicationSchedules
-                        .Where(ms=> ms.DateTaken?.ToString("yyyy-MM-dd") == today.ToString("yyyy-MM-dd"))
-                            .Select(ms => new ScheduleModel
-                            {
-                                Time = ms.DateTaken.HasValue ? ms.DateTaken.Value.ToString("h:mm:ss") : null,
-                                Status = "unUsed"
-                            }).ToList()
+                                      .Where(ms => ms.DateTaken?.ToString("yyyy-MM-dd") == today.ToString("yyyy-MM-dd"))
+                                      .Select(ms => ms.DateTaken.HasValue ? ms.DateTaken.Value.ToString("HH:mm:ss") : null)
+                                      .ToList()
                     };
 
                     medicationDtos.Add(medicationDto);
