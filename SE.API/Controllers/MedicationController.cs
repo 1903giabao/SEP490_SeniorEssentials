@@ -17,9 +17,9 @@ namespace SE.API.Controllers
         }
         
         [HttpPost("scan")]
-        public async Task<IActionResult> Scan(IFormFile picture, int ElderlyId)
+        public async Task<IActionResult> Scan(IFormFile picture, int accountId)
         {
-            var result = await _medicationService.ScanFromPic(picture, ElderlyId);
+            var result = await _medicationService.ScanFromPic(picture, accountId);
             return Ok(result);
         }
 
@@ -30,18 +30,18 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{elderlyId}/date")]
-        public async Task<IActionResult> GetAll([FromRoute] int elderlyId, DateOnly day)
+        [HttpGet("{accountId}/date")]
+        public async Task<IActionResult> GetAll([FromRoute] int accountId, DateOnly day)
         {
-            var result = await _medicationService.GetMedicationsForToday(elderlyId, day);
+            var result = await _medicationService.GetMedicationsForToday(accountId, day);
             return Ok(result);
         }
 
 
-        [HttpGet("prescription/{elderlyId}")]
-        public async Task<IActionResult> GetPrescriptionOfElderly([FromRoute] int elderlyId)
+        [HttpGet("prescription/{accountId}")]
+        public async Task<IActionResult> GetPrescriptionOfElderly([FromRoute] int accountId)
         {
-            var result = await _medicationService.GetPrescriptionOfElderly(elderlyId);
+            var result = await _medicationService.GetPrescriptionOfElderly(accountId);
             return Ok(result);
         }
 

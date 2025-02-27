@@ -26,8 +26,8 @@ namespace SE.Service.Services
 {
     public interface IMedicationService
     {
-        Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID);
-       Task<IBusinessResult> GetMedicationsForToday(int elderlyId, System.DateOnly today);
+        Task<IBusinessResult> ScanFromPic(IFormFile file, int accountId);
+       Task<IBusinessResult> GetMedicationsForToday(int accountId, System.DateOnly today);
 
         Task<IBusinessResult> UpdateMedicationInPrescription(int prescriptionId, UpdateMedicationInPrescriptionRequest req);
 
@@ -35,7 +35,7 @@ namespace SE.Service.Services
 
         Task<IBusinessResult> ConfirmMedicationDrinking(ConfirmMedicationDrinkingReq request);
         Task<IBusinessResult> CancelPrescription(int prescriptionId);
-        Task<IBusinessResult> GetPrescriptionOfElderly(int elderlyId);
+        Task<IBusinessResult> GetPrescriptionOfElderly(int accountId);
 
 
     }
@@ -310,7 +310,8 @@ namespace SE.Service.Services
         {
             try
             {
-                var checkElderly = await _unitOfWork.ElderlyRepository.GetByIdAsync(req.ElderlyId);
+                var checkAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(req.AccountId);
+                var checkElderly = await _unitOfWork.ElderlyRepository.GetByIdAsync(checkAccount.Elderly.ElderlyId);
                 if (checkElderly == null)
                 {
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Elderly not existed.");
@@ -343,7 +344,7 @@ namespace SE.Service.Services
                         MedicationName = medication.MedicationName,
                         Remaining = medication.Remaining,
                         PrescriptionId = newPrescription.PrescriptionId,
-                        ElderlyId = req.ElderlyId,
+                        ElderlyId = checkElderly.ElderlyId,
                         Note = medication.Note,
                         IsBeforeMeal = medication.IsBeforeMeal,
                         Treatment = medication.Treatment
@@ -476,12 +477,14 @@ namespace SE.Service.Services
             return dateOnly?.ToDateTime(new TimeOnly(0, 0));
         }
 
-        public async Task<IBusinessResult> GetMedicationsForToday(int elderlyId, DateOnly today)
+        public async Task<IBusinessResult> GetMedicationsForToday(int accountId, DateOnly today)
         {
             try
             {
+                
+                var checkAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
                 var prescription = await _unitOfWork.PrescriptionRepository
-                    .GetAllIncludeMedicationInElderly(elderlyId);
+                    .GetAllIncludeMedicationInElderly(checkAccount.Elderly.ElderlyId);
 
                 if (prescription == null)
                 {
@@ -767,12 +770,14 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> GetPrescriptionOfElderly(int elderlyId)
+        public async Task<IBusinessResult> GetPrescriptionOfElderly(int accountId)
         {
             try
             {
+                var checkAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
                 var prescription = await _unitOfWork.PrescriptionRepository
-                    .GetAllIncludeMedicationInElderly(elderlyId);
+                    .GetAllIncludeMedicationInElderly(checkAccount.Elderly.ElderlyId);
 
                 if (prescription == null)
                 {

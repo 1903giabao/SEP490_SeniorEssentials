@@ -9,7 +9,7 @@ namespace SE.Common.Request
     public class CreateMedicationRequest
     {
 
-        public int ElderlyId { get; set; }
+        public int AccountId { get; set; }
         public string Treatment { get; set; }
         public DateTime? EndDate { get; set; }
         public List<CreateMedicationModel> Medication { get; set; }
