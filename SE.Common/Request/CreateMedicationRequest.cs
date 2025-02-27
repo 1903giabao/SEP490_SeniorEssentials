@@ -33,17 +33,7 @@ namespace SE.Common.Request
         public string FrequencyType { get; set; }
 
         public List<string> FrequencySelect { get; set; }
-
-        public DateOnly? StartDate { get; set; }
-
-        public DateOnly? EndDate { get; set; }
-
-        public DateTime CreatedDate { get; set; }
-
         public string Note { get; set; }
-
-        public string Status { get; set; }
-
         public int? Remaining { get; set; }
 
         public List<string> Schedule { get; set; }
