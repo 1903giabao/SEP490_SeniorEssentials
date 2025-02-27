@@ -308,32 +308,105 @@ namespace SE.Service.Services
         }
 
 
+        public async Task<IBusinessResult> CreateMedicationByManually(CreateMedicationRequest req)
+        {
+            try
+            {
+                var checkElderly = await _unitOfWork.ElderlyRepository.GetByIdAsync(req.ElderlyId);
+                if (checkElderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Elderly not existed.");
+                }
+
+                var newPrescription = new Prescription
+                {
+                    Elderly = checkElderly.ElderlyId,
+                    CreatedAt = DateTime.UtcNow.AddHours(7),
+                    Status = SD.GeneralStatus.ACTIVE,
+                    CreatedBy = req.CreatedBy,
+                    Url = "Manually",
+                    Treatment = req.Treatment,
+                    EndDate = req.EndDate
+                };
+
+                var rsImage = await _unitOfWork.PrescriptionRepository.CreateAsync(newPrescription);
+
+                foreach (var medication in req.Medication)
+                {
+                    var rs = new Medication
+                    {
+                        Dosage = medication.Dosage,
+                        CreatedDate = DateTime.UtcNow.AddHours(7),
+                        EndDate = null, // EndDate sẽ được tính toán sau
+                        FrequencyType = medication.FrequencyType,
+                        StartDate = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)), // StartDate là ngày tạo, kiểu DateOnly
+                        Shape = medication.Shape,
+                        Status = SD.GeneralStatus.ACTIVE,
+                        MedicationName = medication.MedicationName,
+                        Remaining = medication.Remaining,
+                        PrescriptionId = newPrescription.PrescriptionId,
+                        ElderlyId = req.ElderlyId,
+                        Note = medication.Note,
+                        IsBeforeMeal = medication.IsBeforeMeal,
+                        Treatment = medication.Treatment
+                    };
+
+                    var createMedication = await _unitOfWork.MedicationRepository.CreateAsync(rs);
+                    if (createMedication < 1)
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create medication.");
+                    }
+
+                    var createSchedule = await GenerateMedicationSchedules(rs, medication.Schedule, medication.FrequencySelect);
+                    if (createSchedule < 1)
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create medication schedule.");
+                    }
+                }
+
+                return new BusinessResult(Const.SUCCESS_CREATE, "Medication created successfully.", req);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, ex.Message);
+            }
+        }
+
         public async Task<int> GenerateMedicationSchedules(Medication medication, List<string> scheduleTimes, List<string> frequencySelect = null)
         {
-            if (medication.StartDate == null || medication.EndDate == null || scheduleTimes == null || !scheduleTimes.Any())
+            if (scheduleTimes == null || !scheduleTimes.Any())
             {
-                throw new InvalidOperationException("StartDate, EndDate, and scheduleTimes must be set and non-empty.");
+                throw new InvalidOperationException("scheduleTimes must be set and non-empty.");
             }
 
-            var currentDate = medication.StartDate.Value;
-            var endDate = medication.EndDate.Value;
+            var currentDate = ConvertToDateTime(medication.StartDate).Value;
+            var remaining = medication.Remaining;
             var rs = 0;
-            int frequencyEvery;
 
-            while (currentDate <= endDate)
+            if (!int.TryParse(medication.Dosage.Split(' ')[0], out int dosage))
+            {
+                throw new InvalidOperationException("Invalid Dosage format. Expected format like '1 Viên'.");
+            }
+
+            while (remaining > 0)
             {
                 if (medication.FrequencyType == "Select" && frequencySelect != null && frequencySelect.Any())
                 {
                     var dayOfWeek = GetVietnameseDayOfWeek(currentDate.DayOfWeek);
                     if (!frequencySelect.Contains(dayOfWeek))
                     {
-                        currentDate = currentDate.AddDays(1); 
+                        currentDate = currentDate.AddDays(1);
                         continue;
                     }
                 }
 
                 foreach (var time in scheduleTimes)
                 {
+                    if (remaining <= 0)
+                    {
+                        break;
+                    }
+
                     var timeOfDay = TimeSpan.Parse(time);
 
                     var schedule = new MedicationSchedule
@@ -341,16 +414,18 @@ namespace SE.Service.Services
                         MedicationId = medication.MedicationId,
                         Dosage = medication.Dosage,
                         Status = "Unused",
-                        DateTaken = new System.DateTime(currentDate.Year, currentDate.Month, currentDate.Day)
+                        DateTaken = new DateTime(currentDate.Year, currentDate.Month, currentDate.Day)
                                     .Add(timeOfDay),
                         IsTaken = false
                     };
                     var result = await _unitOfWork.MedicationScheduleRepository.CreateAsync(schedule);
                     if (result > 0)
                     {
-                        rs++; // Increment the success count
+                        rs++;
+                        remaining -= dosage;
                     }
                 }
+
                 if (medication.FrequencyType.StartsWith("Every ") && medication.FrequencyType.EndsWith(" day"))
                 {
                     string numberStr = medication.FrequencyType.Replace("Every ", "").Replace(" day", "").Trim();
@@ -361,7 +436,7 @@ namespace SE.Service.Services
                 }
                 else if (medication.FrequencyType == "Select")
                 {
-                    currentDate = currentDate.AddDays(1); 
+                    currentDate = currentDate.AddDays(1);
                 }
                 else
                 {
@@ -369,9 +444,12 @@ namespace SE.Service.Services
                 }
             }
 
+            // Cập nhật EndDate của medication dựa trên currentDate
+            medication.EndDate = DateOnly.FromDateTime(currentDate);
+            await _unitOfWork.MedicationRepository.UpdateAsync(medication);
+
             return rs; // Return the total number of schedules created
         }
-
         private string GetVietnameseDayOfWeek(System.DayOfWeek dayOfWeek)
         {
             switch (dayOfWeek)
@@ -394,69 +472,7 @@ namespace SE.Service.Services
                     throw new ArgumentOutOfRangeException(nameof(dayOfWeek), dayOfWeek, null);
             }
         }
-        public async Task<IBusinessResult> CreateMedicationByManually(CreateMedicationRequest req)
-        {
-            try
-            {
-                var checkElderly = await _unitOfWork.ElderlyRepository.GetByIdAsync(req.ElderlyId);
-                if (checkElderly == null)
-                {
-                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Elderly not existed.");
-                }
-
-                var newPrescription = new Prescription
-                {
-                    Elderly = checkElderly.ElderlyId,
-                    CreatedAt = System.DateTime.UtcNow.AddHours(7),
-                    Status = SD.GeneralStatus.ACTIVE,
-                    CreatedBy = req.CreatedBy,
-                    Url = "Manually",
-                    Treatment = req.Treatment,
-                    EndDate = req.EndDate
-                };
-
-                var rsImage = await _unitOfWork.PrescriptionRepository.CreateAsync(newPrescription);
-
-                foreach (var medication in req.Medication)
-                {
-            
-
-                    var rs = new Medication
-                    {
-                        Dosage = medication.Dosage,
-                        CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                        EndDate = medication.EndDate,
-                        FrequencyType = medication.FrequencyType,
-                        StartDate = medication.StartDate,
-                        Shape = medication.Shape,
-                        Status = SD.GeneralStatus.ACTIVE,
-                        MedicationName = medication.MedicationName,
-                        Remaining = medication.Remaining,
-                        PrescriptionId = newPrescription.PrescriptionId,
-                        ElderlyId = req.ElderlyId
-                    };
-
-                    var createMedication = await _unitOfWork.MedicationRepository.CreateAsync(rs);
-                    if (createMedication < 1)
-                    {
-                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create medication.");
-                    }
-
-                    var createSchedule = await GenerateMedicationSchedules(rs, medication.Schedule,medication.FrequencySelect);
-                    if (createSchedule < 1)
-                    {
-                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create medication schedule.");
-                    }
-                }
-
-                return new BusinessResult(Const.SUCCESS_CREATE, "Medication created successfully.", req);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_CREATE, ex.Message);
-            }
-        }
-
+   
         public static System.DateTime? ConvertToDateTime(DateOnly? dateOnly)
         {
             return dateOnly?.ToDateTime(new TimeOnly(0, 0));
