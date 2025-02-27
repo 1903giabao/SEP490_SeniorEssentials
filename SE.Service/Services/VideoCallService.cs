@@ -22,6 +22,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetAllVideoCallHistory();
         Task<IBusinessResult> GetVideoCallHistoryById(int vidCallId);
         Task<IBusinessResult> VideoCall(VideoCallRequest req);
+        Task<string> FindChatRoomContainingAllUsers(List<int> listUserInRoomChat);
     }
 
     public class VideoCallService : IVideoCallService
@@ -104,12 +105,14 @@ namespace SE.Service.Services
 
                 var messagesRef = chatRef.Collection("Messages");
 
+                var message = req.IsVideo ? $"Cuộc gọi Video - {req.Duration}" : $"Cuộc gọi thoại - {req.Duration}";
+
                 var newMessage = new
                 {
                     SenderId = req.CallerId,
                     SenderName = caller.FullName,
                     SenderAvatar = caller.Avatar,
-                    Message = req.Duration,
+                    Message = message,
                     MessageType = req.Status.ToString(),
                     SentDate = sentTime.ToString("dd-MM-yyyy"),
                     SentTime = string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes),
@@ -121,7 +124,7 @@ namespace SE.Service.Services
 
                 await chatRef.UpdateAsync(new Dictionary<string, object>
                     {
-                        { "LastMessage", "Cuộc gọi" },
+                        { "LastMessage", message },
                         { "SentDate", sentTime.ToString("dd-MM-yyyy") },
                         { "SentTime", string.Format("{0:D2}:{1:D2}", (int)sentTime.TimeOfDay.TotalHours, sentTime.TimeOfDay.Minutes) },
                         { "SentDateTime", sentTime.ToString() },
@@ -140,38 +143,30 @@ namespace SE.Service.Services
         {
             try
             {
-                // Convert the list of user IDs to a HashSet for easier comparison
                 var userSet = new HashSet<string>(listUserInRoomChat.Select(id => id.ToString()));
 
-                // Query the ChatRooms collection
                 var chatRoomsRef = _firestoreDb.Collection("ChatRooms");
                 var chatRoomsSnapshot = await chatRoomsRef.GetSnapshotAsync();
 
                 foreach (var chatRoomDoc in chatRoomsSnapshot.Documents)
                 {
-                    // Get the MemberIds dictionary from the chat room document
                     var memberIds = chatRoomDoc.GetValue<Dictionary<string, object>>("MemberIds");
 
                     if (memberIds != null)
                     {
-                        // Convert the keys of the MemberIds dictionary to a HashSet
                         var roomUserSet = new HashSet<string>(memberIds.Keys);
 
-                        // Check if the roomUserSet contains all users in the userSet
                         if (roomUserSet.IsSupersetOf(userSet))
                         {
-                            // Return the chat room ID if it contains all users
                             return chatRoomDoc.Id;
                         }
                     }
                 }
 
-                // If no chat room contains all users, return null or an empty string
                 return null;
             }
             catch (Exception ex)
             {
-                // Handle exceptions (e.g., log the error)
                 Console.WriteLine($"Error finding chat room: {ex.Message}");
                 return null;
             }

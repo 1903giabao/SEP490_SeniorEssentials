@@ -22,6 +22,7 @@ using SE.Service.Helper;
 using System.Reflection.Metadata;
 using System.Globalization;
 using Microsoft.AspNetCore.Http;
+using SE.Common.Enums;
 
 namespace SE.Service.Services
 {
@@ -37,7 +38,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateGroupChat(CreateGroupChatRequest req);
         Task<IBusinessResult> UpdateGroupName(string groupId, string newGroupName);
         Task<IBusinessResult> UpdateGroupAvatar(string groupId, IFormFile newGroupAvatar);
-        Task<IBusinessResult> RemoveMemberFromGroup(string groupId, int memberId);
+        Task<IBusinessResult> RemoveMemberFromGroup(int kickerId, string groupId, int memberId);
+        Task<IBusinessResult> GetRoomChatByRoomChatId(string roomChatId, int userId);
     }
 
     public class ChatService : IChatService
@@ -45,11 +47,14 @@ namespace SE.Service.Services
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly FirestoreDb _firestoreDb;
-        public ChatService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb)
+        private readonly IGroupService _groupService;
+
+        public ChatService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb, IGroupService groupService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _firestoreDb = firestoreDb;
+            _groupService = groupService;
         }
 
         public async Task<IBusinessResult> SendMessage(SendMessageRequest req)
@@ -559,6 +564,21 @@ namespace SE.Service.Services
             {
                 var userGroupIds = new Dictionary<int, HashSet<int>>();
 
+                var memberIds = req.Members.Select(m => m.AccountId).ToList();
+                var allPairs = _groupService.GetUniquePairs(memberIds);
+
+                foreach (var pair in allPairs)
+                {
+                    var relationshipExists = _unitOfWork.UserLinkRepository.GetAll()
+                        .Any(ul => (ul.AccountId1 == pair.Item1 && ul.AccountId2 == pair.Item2 && ul.RelationshipType.Equals("Family")) ||
+                                   (ul.AccountId1 == pair.Item2 && ul.AccountId2 == pair.Item1) && ul.RelationshipType.Equals("Family"));
+
+                    if (!relationshipExists)
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Members {pair.Item1} and {pair.Item2} is not Family.");
+                    }
+                }
+
                 foreach (var user in req.Members)
                 {
                     var isExisted = await _unitOfWork.AccountRepository.GetByIdAsync(user.AccountId);
@@ -568,7 +588,7 @@ namespace SE.Service.Services
                     }
 
                     var userGroups = _unitOfWork.GroupMemberRepository
-                        .GetAll().Where(gm => gm.AccountId == user.AccountId).ToList();
+                        .GetAll().Where(gm => gm.AccountId == user.AccountId && gm.Status.Equals(SD.GeneralStatus.ACTIVE)).ToList();
 
                     if (!userGroups.Any())
                     {
@@ -780,7 +800,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> RemoveMemberFromGroup(string groupId, int memberId)
+        public async Task<IBusinessResult> RemoveMemberFromGroup(int kickerId, string groupId, int memberId)
         {
             try
             {
@@ -802,8 +822,38 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat does not exist!");
                 }
 
-                var currentMembers = groupDoc.GetValue<Dictionary<string, object>>("MemberIds") ?? new Dictionary<string, object>();
                 var memberIdStr = memberId.ToString();
+                var membersRef = groupRef.Collection("Members").Document(memberIdStr);
+                DocumentSnapshot membersSnapshot = await membersRef.GetSnapshotAsync();
+
+                if (!membersSnapshot.Exists)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Member is not a member of the group!");
+                }
+
+                if (membersSnapshot.ToDictionary().TryGetValue("IsCreator", out var isCreatorObj1) && isCreatorObj1 is bool isCreator1 && isCreator1)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Creator cannot be kicked/out!");
+                }
+
+                if (kickerId != memberId)
+                {
+                    var kickersRef = groupRef.Collection("Members").Document(kickerId.ToString());
+
+                    DocumentSnapshot kickerSnapshot = await kickersRef.GetSnapshotAsync();
+
+                    if (!kickerSnapshot.Exists)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Kicker is not a member of the group!");
+                    }
+
+                    if (!kickerSnapshot.ToDictionary().TryGetValue("IsCreator", out var isCreatorObj) && isCreatorObj is bool isCreator && isCreator)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Only the group creator can perform this action!");
+                    }
+                }
+
+                var currentMembers = groupDoc.GetValue<Dictionary<string, object>>("MemberIds") ?? new Dictionary<string, object>();
 
                 if (!currentMembers.ContainsKey(memberIdStr))
                 {
@@ -819,17 +869,94 @@ namespace SE.Service.Services
 
                 await groupRef.UpdateAsync(updateData);
 
-                var membersRef = groupRef.Collection("Members").Document(memberIdStr);
-                await membersRef.DeleteAsync();
 
-                var onlineMembersRef = _firestoreDb.Collection("OnlineMembers").Document(memberIdStr);
-                await onlineMembersRef.DeleteAsync();
+                await membersRef.DeleteAsync();
 
                 return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
             }
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_DELETE, ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetRoomChatByRoomChatId(string roomChatId, int userId)
+        {
+            try
+            {
+                DocumentReference chatRoomRef = _firestoreDb.Collection("ChatRooms").Document(roomChatId);
+                DocumentSnapshot chatRoomSnapshot = await chatRoomRef.GetSnapshotAsync();
+
+                if (!chatRoomSnapshot.Exists)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Chat room does not exist!");
+                }
+
+                var data = chatRoomSnapshot.ToDictionary();
+
+                int numberOfMems = 0;
+                var roomName = string.Empty;
+                var roomAvatar = string.Empty;
+                var isOnline = false;
+                var listUser = new List<UserDTO>();
+                bool isGroupChat = data["IsGroupChat"] as bool? ?? false;
+
+                if (data.TryGetValue("MemberIds", out var memberIdsObj) &&
+                    memberIdsObj is IDictionary<string, object> memberIds)
+                {
+                    numberOfMems = memberIds.Count;
+
+                    foreach (var member in memberIds)
+                    {
+                        var getUser = await _unitOfWork.AccountRepository.GetByIdAsync(int.Parse(member.Key));
+                        if (getUser == null)
+                        {
+                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
+                        }
+
+                        var userMap = _mapper.Map<UserDTO>(getUser);
+
+                        listUser.Add(userMap);
+
+                        if (!isGroupChat && numberOfMems == 2)
+                        {
+                            if (!member.Key.Equals(userId.ToString()))
+                            {
+                                DocumentReference onlineRef = _firestoreDb.Collection("OnlineMembers").Document(member.Key);
+                                DocumentSnapshot onlineSnapshot = await onlineRef.GetSnapshotAsync();
+                                if (!onlineSnapshot.Exists)
+                                {
+                                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not belong to this room chat!");
+                                }
+                                var onlineData = onlineSnapshot.ToDictionary();
+                                if (onlineData.TryGetValue("IsOnline", out var isOnlineCheck))
+                                {
+                                    isOnline = (bool)isOnlineCheck;
+                                }
+                                roomName = getUser.FullName;
+                                roomAvatar = getUser.Avatar;
+                            }
+                        }
+                    }
+                }
+
+                var chatRoom = new GetChatRoomByIdDTO
+                {
+                    RoomId = chatRoomSnapshot.Id,
+                    CreatedAt = data["CreatedAt"]?.ToString(),
+                    IsOnline = isOnline,
+                    IsGroupChat = isGroupChat,
+                    RoomName = !isGroupChat && numberOfMems == 2 ? roomName : data["RoomName"].ToString(),
+                    RoomAvatar = !isGroupChat && numberOfMems == 2 ? roomAvatar : data["RoomAvatar"].ToString(),
+                    NumberOfMems = numberOfMems,
+                    Users = listUser
+                };
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, chatRoom);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
         }
     }

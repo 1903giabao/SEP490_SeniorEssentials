@@ -15,5 +15,6 @@ namespace SE.Common.Request
         public string Duration { get; set; }
 
         public bool Status { get; set; }
+        public bool IsVideo { get; set; }
     }
 }

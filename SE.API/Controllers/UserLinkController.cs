@@ -55,6 +55,16 @@ namespace SE.API.Controllers
             var result = await _userLinkService.ResponseAddFriend(req);
 
             return Ok(result);
+        }        
+        
+        [HttpDelete("remove-friend")]
+        [SwaggerOperation(Summary = "Remove friend")]
+
+        public async Task<IActionResult> RemoveFriend([FromBody] RemoveFriendRequest req)
+        {
+            var result = await _userLinkService.RemoveFriend(req);
+
+            return Ok(result);
         }
     }
 }

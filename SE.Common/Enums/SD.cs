@@ -29,7 +29,6 @@ namespace SE.Common.Enums
             public static string PENDING = "Pending";
             public static string CANCELLED = "Cancelled";
             public static string ACCEPTED = "Accepted";
-            public static string REJECTED = "Rejected";
             public static string DELETED = "Deleted";
         }
     }

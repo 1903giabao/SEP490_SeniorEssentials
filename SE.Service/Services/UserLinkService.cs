@@ -14,6 +14,7 @@ using SE.Data.Models;
 using SE.Common.Request;
 using SE.Common.Enums;
 using Org.BouncyCastle.Ocsp;
+using SE.Common.Request.SE.Common.Request;
 
 namespace SE.Service.Services
 {
@@ -23,17 +24,24 @@ namespace SE.Service.Services
         Task<IBusinessResult> ResponseAddFriend(ResponseAddFriendRequest req);
         Task<IBusinessResult> GetAllByRequestUserId(int requestUserId);
         Task<IBusinessResult> GetAllByResponseUserId(int responseUserId);
+        Task<IBusinessResult> RemoveFriend(RemoveFriendRequest req);
     }
 
     public class UserLinkService : IUserLinkService
     {
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly FirestoreDb _firestoreDb;
+        private readonly IVideoCallService _videoCallService;
+        private readonly IGroupService _groupService;
 
-        public UserLinkService(UnitOfWork unitOfWork, IMapper mapper)
+        public UserLinkService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb, IVideoCallService videoCallService, IGroupService groupService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _firestoreDb = firestoreDb;
+            _videoCallService = videoCallService;
+            _groupService = groupService;
         }
 
         public async Task<IBusinessResult> SendAddFriend(SendAddFriendRequest req)
@@ -64,6 +72,40 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid role!");
                 }
 
+                var userLinkCheck = await _unitOfWork.UserLinkRepository.GetByUserIdsAsync(requestUser.AccountId, responseUser.AccountId);
+
+                if (userLinkCheck != null)
+                {
+                    if (userLinkCheck.Status.Equals(SD.UserLinkStatus.PENDING, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Already sent request!");
+                    }
+
+                    if (userLinkCheck.Status.Equals(SD.UserLinkStatus.ACCEPTED, StringComparison.OrdinalIgnoreCase) && userLinkCheck.RelationshipType.Equals("Friend"))
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Already be Friend!");
+                    }
+                    else if (userLinkCheck.Status.Equals(SD.UserLinkStatus.ACCEPTED, StringComparison.OrdinalIgnoreCase) && userLinkCheck.RelationshipType.Equals("Family"))
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Already be Family!");
+                    }
+
+                    if (userLinkCheck.Status.Equals(SD.UserLinkStatus.DELETED) || userLinkCheck.Status.Equals(SD.UserLinkStatus.CANCELLED))
+                    {
+                        userLinkCheck.RelationshipType = req.RelationshipType;
+                        userLinkCheck.Status = SD.UserLinkStatus.PENDING;
+
+                        var updateUserLinkCheck = await _unitOfWork.UserLinkRepository.UpdateAsync(userLinkCheck);
+
+                        if (updateUserLinkCheck > 0)
+                        {
+                            return new BusinessResult(Const.SUCCESS_CREATE, "Add friend request sent.");
+                        }
+
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                    }
+                }
+
                 var userLink = new UserLink
                 {
                     AccountId1 = req.RequestUserId,
@@ -73,6 +115,7 @@ namespace SE.Service.Services
                     UpdatedAt = DateTime.UtcNow.AddHours(7),
                     Status = SD.UserLinkStatus.PENDING,
                 };
+
                 var createUserLink = await _unitOfWork.UserLinkRepository.CreateAsync(userLink);
 
                 if (createUserLink > 0)
@@ -92,26 +135,28 @@ namespace SE.Service.Services
         {
             try
             {
-/*                var responseUser = await _unitOfWork.AccountRepository.GetByIdAsync(req.ResponseUserId);
+                var requestUser = await _unitOfWork.AccountRepository.GetByIdAsync(req.RequestUserId);
+
+                if (requestUser == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Request user does not exist!");
+                }
+
+                var responseUser = await _unitOfWork.AccountRepository.GetByIdAsync(req.ResponseUserId);
 
                 if (responseUser == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Request user does not exist!");
                 }
 
-                if (responseUser.RoleId != 2 || responseUser.RoleId != 3)
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid role!");
-                }*/
-
-                var userLink = await _unitOfWork.UserLinkRepository.GetByIdAsync(req.UserLinkId);
+                var userLink = await _unitOfWork.UserLinkRepository.GetByUserIdsAsync(requestUser.AccountId, responseUser.AccountId);
 
                 if (userLink == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Request does not exist!");
                 }
 
-                if (!userLink.Status.Equals(SD.UserLinkStatus.PENDING))
+                if (!userLink.Status.Equals(SD.UserLinkStatus.PENDING, StringComparison.OrdinalIgnoreCase))
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid status!");
                 }                
@@ -120,11 +165,6 @@ namespace SE.Service.Services
                 {
                     userLink.Status = SD.UserLinkStatus.CANCELLED;
                 }
-                else if (req.ResponseStatus.Equals(SD.UserLinkStatus.REJECTED, StringComparison.OrdinalIgnoreCase))
-                {
-                    userLink.Status = SD.UserLinkStatus.REJECTED;
-                }
-
                 else if (req.ResponseStatus.Equals(SD.UserLinkStatus.ACCEPTED, StringComparison.OrdinalIgnoreCase))
                 {
                     userLink.Status = SD.UserLinkStatus.ACCEPTED;
@@ -134,12 +174,180 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Status must be CANCELLED, REJECTED, ACCEPTED!");
                 }
 
-
                 var updateUserLink = await _unitOfWork.UserLinkRepository.UpdateAsync(userLink);
 
                 if (updateUserLink > 0)
                 {
+                    if (userLink.Status.Equals(SD.UserLinkStatus.ACCEPTED, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var listGroupMembers = new List<GroupMemberRequest>
+                        {
+                            new GroupMemberRequest
+                            {
+                                AccountId = userLink.AccountId1,
+                                IsCreator = false
+                            },
+                            new GroupMemberRequest
+                            {
+                                AccountId = userLink.AccountId2,
+                                IsCreator = false
+                            }
+                        };
+
+                        var roomCreateRs = await CreatePairRoomChat(listGroupMembers);
+
+                        if (roomCreateRs.Status < 1)
+                        {
+                            return new BusinessResult(Const.FAIL_CREATE, roomCreateRs.Message);
+                        }
+
+                    }
+
                     return new BusinessResult(Const.SUCCESS_CREATE, $"Add friend request is {userLink.Status}.");
+                }
+
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> CreatePairRoomChat(List<GroupMemberRequest> groupMembers)
+        {
+            try
+            {
+                if (groupMembers.Count < 2)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, "At least two members are required to create chat rooms.");
+                }
+
+                List<Task> chatRoomTasks = new List<Task>();
+
+                var currentTime = DateTime.UtcNow.AddHours(7);
+
+                for (int i = 0; i < groupMembers.Count; i++)
+                {
+                    for (int j = i + 1; j < groupMembers.Count; j++)
+                    {
+                        var member1 = groupMembers[i];
+                        var member2 = groupMembers[j];
+
+                        var chatRoomQuery = _firestoreDb.Collection("ChatRooms")
+                            .WhereEqualTo($"MemberIds.{member1.AccountId}", true);
+
+                        var chatRoomSnapshot = await chatRoomQuery.GetSnapshotAsync();
+
+                        bool chatRoomExists = false;
+                        foreach (var doc in chatRoomSnapshot.Documents)
+                        {
+                            var memberIds = doc.GetValue<Dictionary<string, bool>>("MemberIds");
+                            if (memberIds != null && memberIds.ContainsKey(member2.AccountId.ToString()))
+                            {
+                                chatRoomExists = true;
+                                break;
+                            }
+                        }
+
+                        if (chatRoomExists)
+                        {
+                            continue;
+                        }
+
+                        DocumentReference pairChatRoomRef = _firestoreDb.Collection("ChatRooms").Document();
+
+                        var pairChatRoomData = new Dictionary<string, object>
+                        {
+                            { "CreatedAt",  currentTime.ToString("dd-MM-yyyy HH:mm") },
+                            { "IsGroupChat", false },
+                            { "RoomName", "" },
+                            { "RoomAvatar", "" },
+                            { "SenderId", 0 },
+                            { "LastMessage", "" },
+                            { "SentDate", currentTime.ToString("dd-MM-yyyy") },
+                            { "SentTime", currentTime.ToString("HH:mm") },
+                            { "SentDateTime", currentTime.ToString("dd-MM-yyyy HH:mm") },
+                            { "MemberIds", new Dictionary<string, object>
+                                {
+                                    { member1.AccountId.ToString(), true },
+                                    { member2.AccountId.ToString(), true }
+                                }
+                            },
+                        };
+
+                        await pairChatRoomRef.SetAsync(pairChatRoomData);
+
+                        await pairChatRoomRef.Collection("Members").Document(member1.AccountId.ToString()).SetAsync(new { IsCreator = false });
+                        await pairChatRoomRef.Collection("Members").Document(member2.AccountId.ToString()).SetAsync(new { IsCreator = false });
+                    }
+                }
+
+                var onlineMembersRef = _firestoreDb.Collection("OnlineMembers");
+
+                foreach (var member in groupMembers)
+                {
+                    var onlineMemberData = new Dictionary<string, object>
+                            {
+                                { "IsOnline", true }
+                            };
+
+                    await onlineMembersRef.Document(member.AccountId.ToString()).SetAsync(onlineMemberData);
+                }
+
+                return new BusinessResult(Const.SUCCESS_CREATE, "Chat rooms created successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> RemoveFriend(RemoveFriendRequest req)
+        {
+            try
+            {
+                var requestUser = await _unitOfWork.AccountRepository.GetByIdAsync(req.RequestUserId);
+                if (requestUser == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Request user does not exist!");
+                }
+
+                var responseUser = await _unitOfWork.AccountRepository.GetByIdAsync(req.ResponseUserId);
+                if (responseUser == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Response user does not exist!");
+                }
+
+                var commonGroups = _unitOfWork.GroupMemberRepository.GetAll()
+                    .Where(gm => gm.AccountId == req.RequestUserId || gm.AccountId == req.ResponseUserId)
+                    .GroupBy(gm => gm.GroupId)
+                    .Where(g => g.Count() == 2)
+                    .ToList();
+
+                if (commonGroups.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot remove friend because both users are in the same family group.");
+                }
+
+                var userLink = await _unitOfWork.UserLinkRepository.GetByUserIdsAsync(requestUser.AccountId, responseUser.AccountId);
+                if (userLink == null || !userLink.Status.Equals(SD.UserLinkStatus.ACCEPTED, StringComparison.OrdinalIgnoreCase))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid status!");
+                }
+
+                var listUserInChat = new List<int> { requestUser.AccountId, responseUser.AccountId };
+                var chatRoomId = await _videoCallService.FindChatRoomContainingAllUsers(listUserInChat);
+
+                var roomRef = _firestoreDb.Collection("ChatRooms").Document(chatRoomId);
+                await roomRef.DeleteAsync();
+
+                userLink.Status = SD.UserLinkStatus.DELETED;
+                var updateUserLink = await _unitOfWork.UserLinkRepository.UpdateAsync(userLink);
+
+                if (updateUserLink > 0)
+                {
+                    return new BusinessResult(Const.SUCCESS_CREATE, $"Friend relationship is {userLink.Status}.");
                 }
 
                 return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);

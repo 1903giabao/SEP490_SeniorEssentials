@@ -37,6 +37,6 @@ namespace SE.Data.Repository
                 .FirstOrDefaultAsync(u => (u.AccountId1 == userId1 && u.AccountId2 == userId2) ||
                                            (u.AccountId1 == userId2 && u.AccountId2 == userId1));
             return result;
-        }
+        }               
     }
 }

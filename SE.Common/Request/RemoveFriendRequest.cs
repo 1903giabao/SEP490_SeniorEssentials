@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 namespace SE.Common.Request
 {
-    public class ResponseAddFriendRequest
+    public class RemoveFriendRequest
     {
         public int RequestUserId { get; set; }
         public int ResponseUserId { get; set; }
-        public string ResponseStatus { get; set; }
     }
 }

@@ -11,6 +11,7 @@ using System.Web;
 using SE.Common.Request;
 using SE.Service.Base;
 using SE.Service.Helper;
+using Firebase.Auth;
 
 namespace SE.API.Controllers
 {
@@ -97,9 +98,16 @@ namespace SE.API.Controllers
         }        
         
         [HttpPut("kick-member")]
-        public async Task<IActionResult> RemoveMemberFromGroup([FromQuery] string groupId, [FromQuery] int userId)
+        public async Task<IActionResult> RemoveMemberFromGroup([FromQuery] int kickerId, [FromQuery] string groupId, [FromQuery] int userId)
         {
-            var result = await _chatService.RemoveMemberFromGroup(groupId, userId);
+            var result = await _chatService.RemoveMemberFromGroup(kickerId, groupId, userId);
+            return Ok(result);
+        }        
+        
+        [HttpGet("room-chat/{roomChatId}/{userId}")]
+        public async Task<IActionResult> GetRoomChatByRoomChatId(string roomChatId, int userId)
+        {
+            var result = await _chatService.GetRoomChatByRoomChatId(roomChatId, userId);
             return Ok(result);
         }
     }
