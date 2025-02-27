@@ -28,5 +28,10 @@ namespace SE.Data.Repository
             var result = await _context.Accounts.Include(a => a.Role).FirstOrDefaultAsync(e => e.PhoneNumber == phoneNumber);
             return result;
         }
+        public async Task<Account> GetElderlyByAccountIDAsync(int accID)
+        {
+            var result = await _context.Accounts.Include(a => a.Elderly).FirstOrDefaultAsync(e => e.AccountId == accID);
+            return result;
+        }
     }
 }
