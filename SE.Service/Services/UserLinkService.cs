@@ -89,21 +89,6 @@ namespace SE.Service.Services
                     {
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Already be Family!");
                     }
-
-                    if (userLinkCheck.Status.Equals(SD.UserLinkStatus.DELETED) || userLinkCheck.Status.Equals(SD.UserLinkStatus.CANCELLED))
-                    {
-                        userLinkCheck.RelationshipType = req.RelationshipType;
-                        userLinkCheck.Status = SD.UserLinkStatus.PENDING;
-
-                        var updateUserLinkCheck = await _unitOfWork.UserLinkRepository.UpdateAsync(userLinkCheck);
-
-                        if (updateUserLinkCheck > 0)
-                        {
-                            return new BusinessResult(Const.SUCCESS_CREATE, "Add friend request sent.");
-                        }
-
-                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
-                    }
                 }
 
                 var userLink = new UserLink
@@ -163,7 +148,12 @@ namespace SE.Service.Services
 
                 if (req.ResponseStatus.Equals(SD.UserLinkStatus.CANCELLED, StringComparison.OrdinalIgnoreCase))
                 {
-                    userLink.Status = SD.UserLinkStatus.CANCELLED;
+                    var removeUserLink = await _unitOfWork.UserLinkRepository.RemoveAsync(userLink);
+
+                    if (removeUserLink)
+                    {
+                        return new BusinessResult(Const.SUCCESS_CREATE, $"Friend relationship is {userLink.Status}.");
+                    }
                 }
                 else if (req.ResponseStatus.Equals(SD.UserLinkStatus.ACCEPTED, StringComparison.OrdinalIgnoreCase))
                 {
@@ -342,10 +332,9 @@ namespace SE.Service.Services
                 var roomRef = _firestoreDb.Collection("ChatRooms").Document(chatRoomId);
                 await roomRef.DeleteAsync();
 
-                userLink.Status = SD.UserLinkStatus.DELETED;
-                var updateUserLink = await _unitOfWork.UserLinkRepository.UpdateAsync(userLink);
+                var removeUserLink = await _unitOfWork.UserLinkRepository.RemoveAsync(userLink);
 
-                if (updateUserLink > 0)
+                if (removeUserLink)
                 {
                     return new BusinessResult(Const.SUCCESS_CREATE, $"Friend relationship is {userLink.Status}.");
                 }
