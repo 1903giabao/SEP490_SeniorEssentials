@@ -615,7 +615,15 @@ namespace SE.Service.Services
 
                 foreach (var medicationReq in req.Medication)
                 {
-                    var existingMedication = existingMedications.FirstOrDefault(m => m.MedicationId == medicationReq.MedicationId);
+                    var existingMedication = new Medication();
+                    if (medicationReq.MedicationId == null)
+                    {
+                        existingMedication = null;
+                    }
+                    else
+                    {
+                        existingMedication = existingMedications.FirstOrDefault(m => medicationReq.MedicationId != null && m.MedicationName == medicationReq.MedicationName && m.PrescriptionId == prescriptionId && m.Status == "Active");
+                    }
                     if (existingMedication != null)
                     {
                         existingMedication.Treatment = medicationReq.Treatment;
