@@ -23,6 +23,13 @@ namespace SE.API.Controllers
         {
             var result = await _groupService.CreateGroup(request);
             return Ok(result);
+        }        
+        
+        [HttpPut("add-member")]
+        public async Task<IActionResult> AddMemberToGroup([FromBody] AddMemberToGroupRequest req)
+        {
+            var result = await _groupService.AddMemberToGroup(req);
+            return Ok(result);
         }
 
         [HttpGet("account/{accountId}")]
@@ -32,10 +39,10 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("{groupId}/members/{accountId}")]
-        public async Task<IActionResult> RemoveMemberFromGroup(int groupId, int accountId)
+        [HttpDelete("{groupId}/members/{kickerId}/{accountId}")]
+        public async Task<IActionResult> RemoveMemberFromGroup(int kickerId, int groupId, int accountId)
         {
-            var result = await _groupService.RemoveMemberFromGroup(groupId, accountId);
+            var result = await _groupService.RemoveMemberFromGroup(kickerId, groupId, accountId);
             return Ok(result);
         }
 
