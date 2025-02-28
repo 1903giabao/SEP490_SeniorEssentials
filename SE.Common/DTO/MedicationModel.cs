@@ -8,15 +8,24 @@ namespace SE.Common.DTO
 {
     public class MedicationModel
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
+        public int MedicationId { get; set; }
+        public string MedicationName { get; set; }
+
+        public string Treatment { get; set; }
+
+        public string Shape { get; set; }
+
         public string Dosage { get; set; }
-        public string Form { get; set; }
-        public string Remaining { get; set; } 
-        public string TypeFrequency { get; set; }
-        public string FrequencyEvery { get; set; }
-        public List<string> FrequencySelect { get; set; } 
-        public string MealTime { get; set; }
+
+        public bool? IsBeforeMeal { get; set; }
+
+        public string FrequencyType { get; set; }
+
+        public List<string> FrequencySelect { get; set; }
+
+        public string Note { get; set; }
+
+        public int? Remaining { get; set; }
         public List<ScheduleModel> Schedule { get; set; } 
     }
 
