@@ -290,7 +290,7 @@ namespace SE.Service.Services
             {
                 CollectionReference messagesRef = _firestoreDb.Collection("ChatRooms").Document(roomId).Collection("Messages");
 
-                QuerySnapshot snapshot = await messagesRef.OrderByDescending("SentDateTime").GetSnapshotAsync();
+                QuerySnapshot snapshot = await messagesRef.OrderBy("SentDateTime").GetSnapshotAsync();
 
                 List<MessageDTO> messages = new List<MessageDTO>();
 
