@@ -710,7 +710,7 @@ namespace SE.Service.Services
                     if (schedule != null)
                     {
                         schedule.IsTaken = true;
-                        schedule.Status = "Taken";
+                        schedule.Status = schedule.Status;
                         
                         var updateResult = await _unitOfWork.MedicationScheduleRepository.UpdateAsync(schedule);
 
