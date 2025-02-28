@@ -898,7 +898,7 @@ namespace SE.Service.Services
                 var roomName = string.Empty;
                 var roomAvatar = string.Empty;
                 var isOnline = false;
-                var listUser = new List<UserDTO>();
+                var listUser = new List<GetUserInRoomChatDetailDTO>();
                 bool isGroupChat = data["IsGroupChat"] as bool? ?? false;
 
                 if (data.TryGetValue("MemberIds", out var memberIdsObj) &&
@@ -914,7 +914,17 @@ namespace SE.Service.Services
                             return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
                         }
 
-                        var userMap = _mapper.Map<UserDTO>(getUser);
+                        var membersRef = chatRoomRef.Collection("Members").Document(getUser.AccountId.ToString());
+
+                        DocumentSnapshot membersSnapshot = await membersRef.GetSnapshotAsync();
+
+                        var memberData = membersSnapshot.ToDictionary();
+
+                        var isCreator = memberData["IsCreator"] as bool? ?? false;
+
+                        var userMap = _mapper.Map<GetUserInRoomChatDetailDTO>(getUser);
+
+                        userMap.IsCreator = isCreator;
 
                         listUser.Add(userMap);
 

@@ -18,6 +18,7 @@ namespace SE.Common.Mapper
         public ApplicationMapper() 
         {
             CreateMap<UserModel, Account>().ReverseMap();
+            CreateMap<GetUserInRoomChatDetailDTO, Account>().ReverseMap();
 
             CreateMap<GameModel, Game>().ReverseMap();
             CreateMap<CreateGameRequest, Game>().ReverseMap();
