@@ -16,17 +16,6 @@ namespace SE.Service.Helper
         public string UserName { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
 
-        public EmailSettings()
-        {
-            Server = Environment.GetEnvironmentVariable("EmailServer");
-            Port = Environment.GetEnvironmentVariable("EmailPort");
-            UseSsl = true;
-            SenderName = Environment.GetEnvironmentVariable("EmailSenderName");
-            SenderEmail = Environment.GetEnvironmentVariable("EmailSenderEmail");
-            UserName = Environment.GetEnvironmentVariable("EmailUserName");
-            Password = Environment.GetEnvironmentVariable("EmailPassWord");
-
-        }
-
+      
     }
 }

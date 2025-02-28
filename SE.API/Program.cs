@@ -33,10 +33,7 @@ builder.Services.AddCors(options =>
         });
 });
 
-var emailConfig = new EmailSettings();
-
-
-// Email configuration
+var emailConfig = builder.Configuration.GetSection("EmailConfiguration").Get<EmailSettings>();
 builder.Services.AddSingleton(emailConfig);
 builder.Services.AddTransient<EmailService>();
 

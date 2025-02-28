@@ -15,5 +15,7 @@ namespace SE.Common.Request
     {
         public string DateTaken { get; set; }
         public int MedicationId { get; set; }
+
+        public string Status { get; set; }
     }
 }

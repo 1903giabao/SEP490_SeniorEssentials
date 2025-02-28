@@ -13,7 +13,7 @@ namespace SE.Service.Services
 {
     public interface IActivityService
     {
-        Task<List<GetScheduleInDayResponse>> GetAllActivityForDay(int elderlyId, DateOnly date);
+        Task<IBusinessResult> GetAllActivityForDay(int elderlyId, DateOnly date);
         Task<IBusinessResult> CreateActivity(CreateActivityModel request);
         Task<IBusinessResult> UpdateSchedule(UpdateScheduleModel model);
         Task<IBusinessResult> GetActivityById(int activityId);
@@ -31,7 +31,7 @@ namespace SE.Service.Services
         }
 
 
-        public async Task<List<GetScheduleInDayResponse>> GetAllActivityForDay(int elderlyId, DateOnly date)
+        public async Task<IBusinessResult> GetAllActivityForDay(int elderlyId, DateOnly date)
         {
             var activities = await _unitOfWork.ActivityRepository.GetActivitiesInclude(elderlyId);
             var medicationSchedules = await _unitOfWork.MedicationScheduleRepository.GetMedicationSchedulesForDay(elderlyId, date);
@@ -86,7 +86,7 @@ namespace SE.Service.Services
             result.AddRange(professorAppointmentResponses);
             result = result.OrderBy(r => r.StartTime).ToList();
 
-            return result;
+            return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG,result);
         }
 
 
