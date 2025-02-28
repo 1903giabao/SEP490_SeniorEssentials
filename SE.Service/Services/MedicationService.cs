@@ -521,8 +521,8 @@ namespace SE.Service.Services
                             .Where(ms => ms.DateTaken?.ToString("yyyy-MM-dd") == today.ToString("yyyy-MM-dd"))
                             .Select(ms => new ScheduleModel
                             {
-                                Time = ms.DateTaken.HasValue ? ms.DateTaken.Value.ToString("h:mm:ss") : null,
-                                Status = "unUsed"
+                                Time = ms.DateTaken.HasValue ? ms.DateTaken.Value.ToString("HH:mm:ss") : null,
+                                Status = ms.Status
                             }).ToList()
                     };
 
