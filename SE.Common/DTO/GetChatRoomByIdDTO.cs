@@ -15,6 +15,6 @@ namespace SE.Common.DTO
         public bool? IsOnline { get; set; }
         public bool? IsGroupChat { get; set; }
         public int? NumberOfMems { get; set; }
-        public List<UserDTO> Users { get; set; }
+        public List<GetUserInRoomChatDetailDTO> Users { get; set; }
     }
 }
