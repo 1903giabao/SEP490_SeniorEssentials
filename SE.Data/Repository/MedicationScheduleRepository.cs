@@ -36,7 +36,8 @@ namespace SE.Data.Repository
         public async Task<MedicationSchedule> GetByDateAndMedicationIdAsync(DateTime dateTaken, int medicationId)
         {
             return await _context.MedicationSchedules
-                .FirstOrDefaultAsync(ms => ms.MedicationId == medicationId && ms.DateTaken == dateTaken );
+                .FirstOrDefaultAsync(ms => ms.MedicationId == medicationId && ms.DateTaken == dateTaken &&
+                             ms.Status != "Inactive");
         }
 
         public async Task<List<MedicationSchedule>> GetMedicationSchedulesForDay(int elderlyId, DateOnly date)
