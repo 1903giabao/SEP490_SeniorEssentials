@@ -619,7 +619,7 @@ namespace SE.Service.Services
                     }
                     else
                     {
-                        existingMedication = existingMedications.FirstOrDefault(m => medicationReq.MedicationId != null && m.MedicationName == medicationReq.MedicationName && m.PrescriptionId == prescriptionId && m.Status == "Active");
+                        existingMedication = existingMedications.FirstOrDefault(m => medicationReq.MedicationId != null && m.MedicationId == medicationReq.MedicationId && m.PrescriptionId == prescriptionId && m.Status == "Active");
                     }
                     if (existingMedication != null)
                     {
