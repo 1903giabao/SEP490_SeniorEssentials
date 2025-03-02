@@ -45,12 +45,12 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpPut("update/status/{activityID}")]
+        [HttpPut("update/status")]
         [SwaggerOperation(Summary = "Update an activity status")]
 
-        public async Task<IActionResult> UpdateActivity([FromRoute] int activityID)
+        public async Task<IActionResult> UpdateActivity([FromQuery] int activityID, DateOnly date)
         {
-            var result = await _activityService.UpdateStatusActivity(activityID);
+            var result = await _activityService.UpdateStatusActivity(activityID, date);
             return Ok(result);
         }
 

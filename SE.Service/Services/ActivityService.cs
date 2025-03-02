@@ -17,7 +17,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetAllActivityForDay(int elderlyId, DateOnly date);
         Task<IBusinessResult> CreateActivityWithSchedules(CreateActivityModel model);
         Task<IBusinessResult> UpdateActivityWithSchedules(UpdateScheduleModel model);
-        Task<IBusinessResult> UpdateStatusActivity(int activityId);
+        Task<IBusinessResult> UpdateStatusActivity(int activityId, DateOnly date);
 
     }
 
@@ -163,7 +163,7 @@ namespace SE.Service.Services
                 existingActivity.ActivityDescription = model.Description;
                 existingActivity.CreatedBy = model.CreatedBy;
 
-                var today = DateOnly.FromDateTime(DateTime.Now);
+                var today = model.Date;
                 var schedulesToDelete = existingActivity.ActivitySchedules
                                         .Where(s => s.StartTime.HasValue && DateOnly.FromDateTime(s.StartTime.Value) >= today)
                                         .ToList();
@@ -178,10 +178,9 @@ namespace SE.Service.Services
                         _unitOfWork.ActivityScheduleRepository.Remove(schedule);
                     }
                 }
-                var startDate = model.Date;
                 for (int i = 0; i < model.Duration; i++)
                 {
-                    var scheduleDate = startDate.AddDays(i);
+                    var scheduleDate = today.AddDays(i);
                     foreach (var schedule in model.Schedules)
                     {
                         var newSchedule = new ActivitySchedule
@@ -212,7 +211,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateStatusActivity(int activityId)
+        public async Task<IBusinessResult> UpdateStatusActivity(int activityId, DateOnly date)
         {
             try
             {
@@ -225,7 +224,7 @@ namespace SE.Service.Services
                 checkActivity.Status = SD.GeneralStatus.INACTIVE;
                 var rs = await _unitOfWork.ActivityRepository.UpdateAsync(checkActivity);
 
-                var today = DateOnly.FromDateTime(DateTime.Now);
+                var today = date;
                 var schedulesToDelete = checkActivity.ActivitySchedules
                                         .Where(s => s.StartTime.HasValue && DateOnly.FromDateTime(s.StartTime.Value) >= today)
                                         .ToList();
