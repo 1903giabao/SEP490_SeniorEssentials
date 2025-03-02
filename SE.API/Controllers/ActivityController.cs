@@ -19,9 +19,9 @@ namespace SE.API.Controllers
         [HttpGet]
         [SwaggerOperation(Summary = "Get all activities of elderly in day")]
 
-        public async Task<IActionResult> GetAllActivities([FromQuery] DateOnly day, int elderlyID)
+        public async Task<IActionResult> GetAllActivities([FromQuery] DateOnly day, int AccountId)
         {
-            var result = await _activityService.GetAllActivityForDay( elderlyID, day);
+            var result = await _activityService.GetAllActivityForDay(AccountId, day);
             return Ok(result);
         }
 
@@ -32,7 +32,7 @@ namespace SE.API.Controllers
 
         public async Task<IActionResult> CreateActivityWithSchedule([FromBody] CreateActivityModel model)
         {
-            var result = await _activityService.CreateActivity(model);
+            var result = await _activityService.CreateActivityWithSchedules(model);
             return Ok(result);
         }
 
@@ -41,15 +41,18 @@ namespace SE.API.Controllers
 
         public async Task<IActionResult> UpdateActivity([FromBody] UpdateScheduleModel model)
         {
-            var result = await _activityService.UpdateSchedule(model);
+            var result = await _activityService.UpdateActivityWithSchedules(model);
             return Ok(result);
         }
 
-        [HttpGet("{activityId}")]
-        public async Task<IActionResult> GetActivityById(int activityId)
+        [HttpPut("update/status/{activityID}")]
+        [SwaggerOperation(Summary = "Update an activity status")]
+
+        public async Task<IActionResult> UpdateActivity([FromRoute] int activityID)
         {
-            var result = await _activityService.GetActivityById(activityId);
+            var result = await _activityService.UpdateStatusActivity(activityID);
             return Ok(result);
         }
+
     }
 }
