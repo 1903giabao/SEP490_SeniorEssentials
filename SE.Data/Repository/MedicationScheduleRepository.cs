@@ -36,7 +36,8 @@ namespace SE.Data.Repository
         public async Task<MedicationSchedule> GetByDateAndMedicationIdAsync(DateTime dateTaken, int medicationId)
         {
             return await _context.MedicationSchedules
-                .FirstOrDefaultAsync(ms => ms.MedicationId == medicationId && ms.DateTaken == dateTaken);
+                .FirstOrDefaultAsync(ms => ms.MedicationId == medicationId && ms.DateTaken == dateTaken &&
+                             ms.Status == "Active");
         }
 
         public async Task<List<MedicationSchedule>> GetMedicationSchedulesForDay(int elderlyId, DateOnly date)
@@ -47,7 +48,8 @@ namespace SE.Data.Repository
                 .Include(ms => ms.Medication) 
                 .Where(ms => ms.Medication.ElderlyId == elderlyId && 
                              ms.DateTaken.HasValue && 
-                             ms.DateTaken.Value.Date == dateTime.Date)
+                             ms.DateTaken.Value.Date == dateTime.Date &&
+                             ms.Status == "Active")
                 .ToListAsync();
 
             return result;

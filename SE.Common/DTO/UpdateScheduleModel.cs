@@ -9,10 +9,14 @@ namespace SE.Common.DTO
     public class UpdateScheduleModel
     {
         public int ActivityId { get; set; }
-        public int ActivityScheduleId { get; set; }
-        public string ActivityName { get; set; }
-        public string ActivityDescription { get; set; }
-        public DateTime? StartTime { get; set; }
-        public DateTime? EndTime { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string CreatedBy { get; set; }
+
+        public DateOnly Date {  get; set; }
+        public int Duration { get; set; }
+
+        public List<CreateActivitySchedule> Schedules { get; set; }
+
     }
 }
