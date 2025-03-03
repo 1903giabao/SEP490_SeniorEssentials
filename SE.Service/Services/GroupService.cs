@@ -110,7 +110,6 @@ namespace SE.Service.Services
                         IsCreator = member.IsCreator,
                         Status = SD.GeneralStatus.ACTIVE
                     };
-
                     var createRs = await _unitOfWork.GroupMemberRepository.CreateAsync(groupMember);
 
                     if (createRs < 1)

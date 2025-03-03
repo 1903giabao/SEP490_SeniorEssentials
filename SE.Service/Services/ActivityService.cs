@@ -104,21 +104,18 @@ namespace SE.Service.Services
         {
             try
             {
-
-
                 var elderlyAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(model.AccountId);
                 if (elderlyAccount == null || elderlyAccount.Elderly == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, "Elderly account not found.");
                 }
-
                 var newActivity = new Activity
                 {
                     ElderlyId = elderlyAccount.Elderly.ElderlyId,
                     ActivityName = model.Title,
                     ActivityDescription = model.Description,
                     CreatedBy = model.CreatedBy,
-                    Status = "Active"
+                    Status = SD.GeneralStatus.ACTIVE
                 };
                 await _unitOfWork.ActivityRepository.CreateAsync(newActivity);
 
@@ -133,13 +130,11 @@ namespace SE.Service.Services
                             ActivityId = newActivity.ActivityId,
                             StartTime = new DateTime(scheduleDate.Year, scheduleDate.Month, scheduleDate.Day, schedule.StartTime.Hour, schedule.StartTime.Minute, 0),
                             EndTime = new DateTime(scheduleDate.Year, scheduleDate.Month, scheduleDate.Day, schedule.EndTime.Hour, schedule.EndTime.Minute, 0),
-                            Status = "Active"
+                            Status = SD.GeneralStatus.ACTIVE
                         };
                         await _unitOfWork.ActivityScheduleRepository.CreateAsync(newSchedule);
                     }
                 }
-
-
                 return new BusinessResult(Const.SUCCESS_CREATE, "Activity and schedules created successfully.");
             }
             catch (Exception ex)

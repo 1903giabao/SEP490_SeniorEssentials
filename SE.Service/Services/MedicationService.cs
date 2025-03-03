@@ -70,7 +70,7 @@ namespace SE.Service.Services
                                 };
 
                                 var rsImage = await _unitOfWork.PrescriptionRepository.CreateAsync(newImage);*/
-
+                    
                 List<string> medicines = ParseMedicineDetails(extractedText);
 
                 var listMediFromPic = CreateMedicationRequests(medicines);
@@ -125,12 +125,10 @@ namespace SE.Service.Services
                 };
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Medication scan successfully.", result);
-
-
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_CREATE, ex.Message);
+                return new BusinessResult(Const.FAIL_CREATE, ex.InnerException.Message);
             }
         }
 
