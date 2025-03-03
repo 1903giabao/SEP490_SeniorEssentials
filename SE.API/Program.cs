@@ -64,6 +64,36 @@ builder.Services.AddScoped<ISmsService, SmsService>();
 
 
 DotEnv.Load();
+
+var fcmConfig = new FCMConfigModel();
+
+var fcmCredential = GoogleCredential.FromJson($@"
+    {{
+        ""type"": ""{fcmConfig.Type}"",
+        ""project_id"": ""{fcmConfig.ProjectId}"",
+        ""private_key_id"": ""{fcmConfig.PrivateKeyId}"",
+        ""private_key"": ""{fcmConfig.PrivateKey}"",
+        ""client_email"": ""{fcmConfig.ClientEmail}"",
+        ""client_id"": ""{fcmConfig.ClientId}"",
+        ""auth_uri"": ""{fcmConfig.AuthUri}"",
+        ""token_uri"": ""{fcmConfig.TokenUri}"",
+        ""auth_provider_x509_cert_url"": ""{fcmConfig.AuthProviderx509CertUrl}"",
+        ""client_x509_cert_url"": ""{fcmConfig.Clientx509CertUrl}"",
+        ""universe_domain"": ""{fcmConfig.UniverseDomain}""
+    }}");
+
+var fcmClient = new FirestoreClientBuilder
+{
+    GoogleCredential = fcmCredential
+}.Build();
+
+FirebaseApp.Create(new AppOptions()
+{
+    Credential = fcmCredential,
+    ProjectId = fcmConfig.ProjectId
+});
+builder.Services.AddSingleton(FirestoreDb.Create(fcmConfig.ProjectId, fcmClient));
+
 var firebase = new FirebaseConfigModel();
 
 var tmp2 = GoogleCredential.FromJson($@"
@@ -84,23 +114,6 @@ var channel = tmp2.ToChannelCredentials();
 var client = new FirestoreClientBuilder{
     GoogleCredential= tmp2
     }.Build();
-FirebaseApp.Create(new AppOptions()
-{
-    Credential = GoogleCredential.FromJson($@"
-                    {{
-                        ""type"": ""service_account"",
-                        ""project_id"": ""{firebase.ProjectId}"",
-                        ""private_key_id"": ""{firebase.PrivateKeyId}"",
-                        ""private_key"": ""{firebase.PrivateKey}"",
-                        ""client_email"": ""{firebase.ClientEmail}"",
-                        ""client_id"": ""{firebase.ClientId}"",
-                        ""auth_uri"": ""{firebase.AuthUri}"",
-                        ""token_uri"": ""{firebase.TokenUri}"",
-                        ""auth_provider_x509_cert_url"": ""{firebase.AuthProviderx509CertUrl}"",
-                        ""client_x509_cert_url"": ""{firebase.Clientx509CertUrl}"",
-                        ""universe_domain"": ""{firebase.UniverseDomain}""
-                    }}")
-});
 
 builder.Services.AddSingleton(FirestoreDb.Create(firebase.ProjectId, client));
 

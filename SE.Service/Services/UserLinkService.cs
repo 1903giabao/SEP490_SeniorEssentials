@@ -191,6 +191,76 @@ namespace SE.Service.Services
                             return new BusinessResult(Const.FAIL_CREATE, roomCreateRs.Message);
                         }
 
+                        if (userLink.RelationshipType.Equals("Family"))
+                        {
+                            if (requestUser.RoleId == 2 && responseUser.DateOfBirth.HasValue)
+                            {
+                                var elderlyAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(requestUser.AccountId);
+
+                                var newActivity = new Activity
+                                {
+                                    ElderlyId = elderlyAccount.Elderly.ElderlyId,
+                                    ActivityName = $"Sinh Nhật Của {responseUser.FullName}",
+                                    ActivityDescription = $"Sinh nhật của {responseUser.FullName} là vào ngày {responseUser.DateOfBirth.Value.ToShortDateString()}",
+                                    CreatedBy = "System",
+                                    Status = SD.GeneralStatus.ACTIVE
+                                };
+                                await _unitOfWork.ActivityRepository.CreateAsync(newActivity);
+
+                                var startDate = responseUser.DateOfBirth.HasValue
+                                    ? DateOnly.FromDateTime(responseUser.DateOfBirth.Value)
+                                    : DateOnly.FromDateTime(DateTime.MinValue);
+                                var year = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+                                int count = 0;
+                                while (count < 5)
+                                {
+                                    year = year.AddYears(1);
+                                    var newSchedule = new ActivitySchedule
+                                    {
+                                        ActivityId = newActivity.ActivityId,
+                                        StartTime = new DateTime(year.Year, startDate.Month, startDate.Day, 09, 00, 0),
+                                        EndTime = new DateTime(year.Year, startDate.Month, startDate.Day, 10, 00, 0),
+                                        Status = SD.GeneralStatus.ACTIVE
+                                    };
+                                    await _unitOfWork.ActivityScheduleRepository.CreateAsync(newSchedule);
+                                    count++;
+                                }
+                            }
+
+                            if (responseUser.RoleId == 2 && requestUser.DateOfBirth.HasValue)
+                            {
+                                var elderlyAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(responseUser.AccountId);
+
+                                var newActivity = new Activity
+                                {
+                                    ElderlyId = elderlyAccount.Elderly.ElderlyId,
+                                    ActivityName = $"Sinh Nhật Của {requestUser.FullName}",
+                                    ActivityDescription = $"Sinh nhật của {requestUser.FullName} là vào ngày {requestUser.DateOfBirth.Value.ToShortDateString()}",
+                                    CreatedBy = "System",
+                                    Status = SD.GeneralStatus.ACTIVE
+                                };
+                                await _unitOfWork.ActivityRepository.CreateAsync(newActivity);
+
+                                var startDate = requestUser.DateOfBirth.HasValue
+                                    ? DateOnly.FromDateTime(requestUser.DateOfBirth.Value)
+                                    : DateOnly.FromDateTime(DateTime.MinValue);
+                                var year = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+                                int count = 0;
+                                while (count < 5)
+                                {
+                                    year = year.AddYears(1);
+                                    var newSchedule = new ActivitySchedule
+                                    {
+                                        ActivityId = newActivity.ActivityId,
+                                        StartTime = new DateTime(year.Year, startDate.Month, startDate.Day, 09, 00, 0),
+                                        EndTime = new DateTime(year.Year, startDate.Month, startDate.Day, 10, 00, 0),
+                                        Status = SD.GeneralStatus.ACTIVE
+                                    };
+                                    await _unitOfWork.ActivityScheduleRepository.CreateAsync(newSchedule);
+                                    count++;
+                                }
+                            }
+                        }
                     }
 
                     return new BusinessResult(Const.SUCCESS_CREATE, $"Add friend request is {userLink.Status}.");
@@ -336,7 +406,47 @@ namespace SE.Service.Services
 
                 if (removeUserLink)
                 {
-                    return new BusinessResult(Const.SUCCESS_CREATE, $"Friend relationship is {userLink.Status}.");
+                    if (requestUser.RoleId == 2)
+                    {
+                        var elderlyAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(requestUser.AccountId);
+
+                        var activityDOB = _unitOfWork.ActivityRepository.FindByCondition(a => a.ElderlyId == elderlyAccount.Elderly.ElderlyId).FirstOrDefault();
+
+                        if (activityDOB != null)
+                        {
+                            var deleteResult = await _unitOfWork.ActivityScheduleRepository.DeleteActivitySchedulesByActivityIdAsync(activityDOB.ActivityId);
+
+                            if (deleteResult < 1)
+                            {
+                                return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
+                            }
+
+                            activityDOB.Status = SD.GeneralStatus.INACTIVE;
+                            await _unitOfWork.ActivityRepository.UpdateAsync(activityDOB);
+                        }
+                    }
+
+                    if (responseUser.RoleId == 2)
+                    {
+                        var elderlyAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(responseUser.AccountId);
+
+                        var activityDOB = _unitOfWork.ActivityRepository.FindByCondition(a => a.ElderlyId == elderlyAccount.Elderly.ElderlyId).FirstOrDefault();
+
+                        if (activityDOB != null)
+                        {
+                            var deleteResult = await _unitOfWork.ActivityScheduleRepository.DeleteActivitySchedulesByActivityIdAsync(activityDOB.ActivityId);
+
+                            if (deleteResult < 1)
+                            {
+                                return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
+                            }
+
+                            activityDOB.Status = SD.GeneralStatus.INACTIVE;
+                            await _unitOfWork.ActivityRepository.UpdateAsync(activityDOB);
+                        }
+                    }
+
+                    return new BusinessResult(Const.SUCCESS_CREATE, $"Relationship is removed.");
                 }
 
                 return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
