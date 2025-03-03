@@ -137,7 +137,7 @@ namespace SE.Service.Services
             if (file == null || file.Length == 0)
                 return "Invalid file";
 
-            string tempFilePath = Path.GetTempFileName(); // Temporary file path
+            string tempFilePath = Path.GetTempFileName();
 
             try
             {
@@ -158,9 +158,29 @@ namespace SE.Service.Services
                     }
                 }
             }
+            catch (FileNotFoundException ex)
+            {
+                return $"Error: File not found - {ex.Message} - Inner Exception: {ex.InnerException.Message}";
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                return $"Error: Directory not found - {ex.Message} - Inner Exception: {ex.InnerException.Message}";
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return $"Error: Unauthorized access - {ex.Message} - Inner Exception: {ex.InnerException.Message}";
+            }
+            catch (IOException ex)
+            {
+                return $"Error: I/O error - {ex.Message} - Inner Exception: {ex.InnerException.Message}";
+            }
+            catch (TesseractException ex)
+            {
+                return $"Error: Tesseract processing error - {ex.Message} - Inner Exception: {ex.InnerException.Message}";
+            }
             catch (Exception ex)
             {
-                return $"Error: {ex.Message}";
+                return $"Error: An unexpected error occurred - {ex.Message} - Inner Exception: {ex.InnerException.Message}";
             }
             finally
             {
