@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using FirebaseAdmin.Messaging;
 using SE.Data.UnitOfWork;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace SE.Service.Services
 {
     public interface INotificationService
     {
-
+        Task<string> SendNotification(string token, string title, string body);
     }
 
     public class NotificationService : INotificationService
@@ -21,6 +22,25 @@ namespace SE.Service.Services
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+        }
+
+        public async Task<string> SendNotification(string token, string title, string body)
+        {
+            var message = new Message()
+            {
+                Token = token,
+                Notification = new Notification()
+                {
+                    Title = title,
+                    Body = body
+                },
+                Data = new Dictionary<string, string>()
+                {
+                    { "key1", "value1" }
+                }
+            };
+            string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+            return response;
         }
     }
 }

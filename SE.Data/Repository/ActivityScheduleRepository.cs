@@ -22,5 +22,21 @@ namespace SE.Data.Repository
             var rs = await _context.ActivitySchedules.Include(a=>a.Activity).ToListAsync();
             return rs;
         }
+
+        public async Task<int> DeleteActivitySchedulesByActivityIdAsync(int activityId)
+        {
+            var schedulesToDelete = await _context.ActivitySchedules
+                                                 .Where(s => s.ActivityId == activityId)
+                                                 .ToListAsync();
+
+            if (schedulesToDelete.Any())
+            {
+                _context.ActivitySchedules.RemoveRange(schedulesToDelete);
+
+                return await _context.SaveChangesAsync();
+            }
+
+            return 0;
+        }
     }
 }

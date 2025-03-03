@@ -21,7 +21,7 @@ namespace SE.Data.Repository
         {
             var result = await _context.Activities.Include(a => a.ActivitySchedules).Where(a => a.ElderlyId ==elderlyId).ToListAsync();
             return result;
-        }
+        }        
 
         public async Task<Activity> GetActivitiesByIdInclude(int activityId)
         {
