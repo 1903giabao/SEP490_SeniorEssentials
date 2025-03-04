@@ -20,6 +20,9 @@ using System.Text.RegularExpressions;
 using Tesseract;
 using static SE.Common.DTO.GetPresciptionFromScan;
 using static System.Net.Mime.MediaTypeNames;
+using Google.Cloud.Vision.V1;
+using Google.Apis.Auth.OAuth2;
+
 
 
 namespace SE.Service.Services
@@ -36,6 +39,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> ConfirmMedicationDrinking(ConfirmMedicationDrinkingReq request);
         Task<IBusinessResult> CancelPrescription(int prescriptionId);
         Task<IBusinessResult> GetPrescriptionOfElderly(int accountId);
+        Task<IBusinessResult> ScanByGoogle(IFormFile file);
 
 
     }
@@ -44,13 +48,85 @@ namespace SE.Service.Services
     {
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly GoogleCredential _googleCredential;
 
-        public MedicationService(UnitOfWork unitOfWork, IMapper mapper)
+        public MedicationService(UnitOfWork unitOfWork, IMapper mapper, GoogleCredential googleCredential)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _googleCredential = googleCredential;
         }
 
+
+
+        public async Task<IBusinessResult> ScanByGoogle(IFormFile file)
+        {
+            // Create the scoped credential using the injected GoogleCredential
+            var scopedCredential = _googleCredential.CreateScoped(ImageAnnotatorClient.DefaultScopes);
+
+            // Create the ImageAnnotatorClient using the Builder pattern
+            var client = await new ImageAnnotatorClientBuilder
+            {
+                Credential = scopedCredential
+            }.BuildAsync(); // Use BuildAsync() for async
+
+            // Check if the file is not null and has content
+            if (file == null || file.Length == 0)
+            {
+                return new BusinessResult(Const.ERROR_EXEPTION, "No file uploaded", null);
+            }
+
+            // Convert the uploaded file to a byte array
+            using var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream);
+
+            // Load the image from the byte array
+            var image = Google.Cloud.Vision.V1.Image.FromBytes(memoryStream.ToArray());
+
+            // Call the API to detect text
+            var response = client.DetectText(image);
+
+            // Create a List to store the unique text
+            List<string> uniqueTextList = new List<string>();
+
+            // Use a HashSet to track already added lines to avoid duplicates
+            var uniqueLines = new HashSet<string>();
+
+            // StringBuilder to concatenate detected words into sentences
+            StringBuilder sb = new StringBuilder();
+
+            // Iterate over each text annotation in the response
+            foreach (var annotation in response)
+            {
+                // Avoid adding duplicates using HashSet
+                if (!uniqueLines.Contains(annotation.Description))
+                {
+                    uniqueLines.Add(annotation.Description);
+
+                    // Append detected text to StringBuilder (concatenating adjacent words into sentences)
+                    sb.Append(annotation.Description.Trim() + " ");
+                }
+            }
+
+            // Split concatenated text into individual lines
+            var resultText = sb.ToString().Trim();
+            var lines = resultText.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+
+            // Add the lines to the List
+            foreach (var line in lines)
+            {
+                uniqueTextList.Add(line);
+            }
+
+            // Output the detected text saved in the List
+            Console.WriteLine("Detected unique text:");
+            foreach (var text in uniqueTextList)
+            {
+                Console.WriteLine(text);
+            }
+
+            return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, uniqueTextList);
+        }
 
         public async Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID)
         {
