@@ -48,5 +48,5 @@ namespace SE.Service.Services
                 }
             }
         }
-        }
+    }
 }

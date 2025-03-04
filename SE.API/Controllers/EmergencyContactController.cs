@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Google.Type;
+using Microsoft.AspNetCore.Mvc;
 using SE.Common.DTO;
 using SE.Common.Request;
 using SE.Service.Services;
@@ -15,6 +16,13 @@ namespace SE.API.Controllers
         public EmergencyContactController(IEmergencyContactService emergencyContactService)
         {
             _emergencyContactService = emergencyContactService;
+        }
+
+        [HttpGet("emergency-call/{phoneNumber}")]
+        public async Task<IActionResult> ExecuteEmergencyCall(string phoneNumber)
+        {
+            var result = await _emergencyContactService.ExecuteEmergencyCall(new List<string>(), phoneNumber);
+            return Ok(result);
         }
 
         // POST: emergency-contacts

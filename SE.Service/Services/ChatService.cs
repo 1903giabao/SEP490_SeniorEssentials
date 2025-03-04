@@ -592,7 +592,7 @@ namespace SE.Service.Services
 
                     if (!userGroups.Any())
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, $"User {user.AccountId} is not in any group!");
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, $"User {user.AccountId} is not in any family group!");
                     }
 
                     userGroupIds[user.AccountId] = new HashSet<int>(userGroups.Select(gm => gm.GroupId));
@@ -606,7 +606,7 @@ namespace SE.Service.Services
                     {
                         if (!firstUserGroupIds.Overlaps(groupIds))
                         {
-                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Not all users are in the same group!");
+                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Not all users are in the same family group!");
                         }
                     }
                 }
@@ -831,7 +831,12 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Member is not a member of the group!");
                 }
 
-                if (membersSnapshot.ToDictionary().TryGetValue("IsCreator", out var isCreatorObj1) && isCreatorObj1 is bool isCreator1 && isCreator1)
+                if (!membersSnapshot.ToDictionary().TryGetValue("IsCreator", out var isCreatorObj1))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "The 'IsCreator' field is missing!");
+                }
+
+                if (!(isCreatorObj1 is bool isCreator1) || isCreator1)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Creator cannot be kicked/out!");
                 }
@@ -847,7 +852,12 @@ namespace SE.Service.Services
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Kicker is not a member of the group!");
                     }
 
-                    if (!kickerSnapshot.ToDictionary().TryGetValue("IsCreator", out var isCreatorObj) && isCreatorObj is bool isCreator && isCreator)
+                    if (!kickerSnapshot.ToDictionary().TryGetValue("IsCreator", out var isCreatorObj))
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "The 'IsCreator' field is missing!");
+                    }
+
+                    if (!(isCreatorObj is bool isCreator) || !isCreator)
                     {
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Only the group creator can perform this action!");
                     }
