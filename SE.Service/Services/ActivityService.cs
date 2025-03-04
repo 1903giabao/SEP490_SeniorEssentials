@@ -107,7 +107,7 @@ namespace SE.Service.Services
                 var elderlyAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(model.AccountId);
                 if (elderlyAccount == null || elderlyAccount.Elderly == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "Elderly account not found.");
+                    return new BusinessResult(Const.FAIL_READ, "Không thể tìm thấy người già");
                 }
                 var newActivity = new Activity
                 {
@@ -135,7 +135,7 @@ namespace SE.Service.Services
                         await _unitOfWork.ActivityScheduleRepository.CreateAsync(newSchedule);
                     }
                 }
-                return new BusinessResult(Const.SUCCESS_CREATE, "Activity and schedules created successfully.");
+                return new BusinessResult(Const.SUCCESS_CREATE, "Tạo mới hoạt động và lịch trình thành công");
             }
             catch (Exception ex)
             {
@@ -151,7 +151,7 @@ namespace SE.Service.Services
                 var existingActivity = await _unitOfWork.ActivityRepository.GetActivitiesByIdInclude(model.ActivityId);
                 if (existingActivity == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "Activity not found.");
+                    return new BusinessResult(Const.FAIL_READ, "Không thể tìm thấy hoạt động");
                 }
 
                 existingActivity.ActivityName = model.Title;
@@ -164,7 +164,7 @@ namespace SE.Service.Services
                                         .ToList();
                 if (schedulesToDelete == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "Activity schedule not found.");
+                    return new BusinessResult(Const.FAIL_READ, "Lịch trình không tìm thấy");
                 }
                 if (schedulesToDelete.Any())
                 {
@@ -188,7 +188,7 @@ namespace SE.Service.Services
                         var acShe = await _unitOfWork.ActivityScheduleRepository.CreateAsync(newSchedule);
                         if (acShe < 1)
                         {
-                            return new BusinessResult(Const.FAIL_UPDATE, "Activity schedules updated unsuccessfully.");
+                            return new BusinessResult(Const.FAIL_UPDATE, "Cập nhật hoạt động thành công");
                         }
                     }
                 }
@@ -196,9 +196,9 @@ namespace SE.Service.Services
                 var rs = await _unitOfWork.ActivityRepository.UpdateAsync(existingActivity);
                 if (rs < 1)
                 {
-                    return new BusinessResult(Const.FAIL_UPDATE, "Activity schedules updated unsuccessfully.");
+                    return new BusinessResult(Const.FAIL_UPDATE, "Cập nhật hoạt động và lịch trình không thành công.");
                 }
-                return new BusinessResult(Const.SUCCESS_UPDATE, "Activity and schedules updated successfully.");
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Cập nhật hoạt động và lịch trình thành công.");
             }
             catch (Exception ex)
             {
@@ -213,7 +213,7 @@ namespace SE.Service.Services
                 var checkActivity = await _unitOfWork.ActivityRepository.GetActivitiesByIdInclude(activityId);
                 if (checkActivity == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "Activity not found.");
+                    return new BusinessResult(Const.FAIL_READ, "Không thể tìm thấy hoạt động");
                 }
                 
                 checkActivity.Status = SD.GeneralStatus.INACTIVE;
@@ -225,7 +225,7 @@ namespace SE.Service.Services
                                         .ToList();
                 if (schedulesToDelete == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "Activity schedule not found.");
+                    return new BusinessResult(Const.FAIL_READ, "Không thể tìm thấy lịch trình.");
                 }
                 if (schedulesToDelete.Any())
                 {
@@ -237,9 +237,9 @@ namespace SE.Service.Services
 
                 if (rs < 1)
                 {
-                    return new BusinessResult(Const.FAIL_UPDATE, "Update status activity unsuccessfully.");
+                    return new BusinessResult(Const.FAIL_UPDATE, "Cập nhật trạng thái không thành công.");
                 }
-                return new BusinessResult(Const.SUCCESS_UPDATE, "Update status activity successfully.");
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Cập nhật trạng thái thành công.");
             }
             catch (Exception ex)
             {

@@ -74,7 +74,7 @@ namespace SE.Service.Services
             // Check if the file is not null and has content
             if (file == null || file.Length == 0)
             {
-                return new BusinessResult(Const.ERROR_EXEPTION, "No file uploaded", null);
+                return new BusinessResult(Const.ERROR_EXEPTION, "Không nhận được hình ảnh", null);
             }
 
             // Convert the uploaded file to a byte array
@@ -371,7 +371,7 @@ namespace SE.Service.Services
                 var checkElderly = await _unitOfWork.ElderlyRepository.GetByIdAsync(checkAccount.Elderly.ElderlyId);
                 if (checkElderly == null)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Elderly not existed.");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "ID người già không tồn tại");
                 }
 
                 var newPrescription = new Prescription
@@ -410,17 +410,17 @@ namespace SE.Service.Services
                     var createMedication = await _unitOfWork.MedicationRepository.CreateAsync(rs);
                     if (createMedication < 1)
                     {
-                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create medication.");
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Không thể tạo đơn thuốc có tên là {medication.MedicationName}");
                     }
 
                     var createSchedule = await GenerateMedicationSchedules(rs, medication.Schedule, medication.FrequencySelect);
                     if (createSchedule < 1)
                     {
-                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create medication schedule.");
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Không thể tạo lịch cho {medication.MedicationName}");
                     }
                 }
 
-                return new BusinessResult(Const.SUCCESS_CREATE, "Medication created successfully.", req);
+                return new BusinessResult(Const.SUCCESS_CREATE, "Tạo thành công", req);
             }
             catch (Exception ex)
             {
@@ -432,7 +432,7 @@ namespace SE.Service.Services
         {
             if (scheduleTimes == null || !scheduleTimes.Any())
             {
-                throw new InvalidOperationException("scheduleTimes must be set and non-empty.");
+                throw new InvalidOperationException("Lịch uống thuốc không thể trống");
             }
 
             var currentDate = ConvertToDateTime(medication.StartDate).Value;
@@ -441,7 +441,7 @@ namespace SE.Service.Services
 
             if (!int.TryParse(medication.Dosage.Split(' ')[0], out int dosage))
             {
-                throw new InvalidOperationException("Invalid Dosage format. Expected format like '1 Viên'.");
+                throw new InvalidOperationException("Sai format của liều lượng, ví dụ '1 Viên'.");
             }
 
             while (remaining > 0)
@@ -496,7 +496,7 @@ namespace SE.Service.Services
                 }
                 else
                 {
-                    throw new InvalidOperationException("Invalid FrequencyType or missing DateFrequency.");
+                    throw new InvalidOperationException("Sai FrequencyType or thiếu DateFrequency.");
                 }
             }
 
@@ -545,7 +545,7 @@ namespace SE.Service.Services
 
                 if (prescription == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "No prescription found for the given elderly ID.");
+                    return new BusinessResult(Const.FAIL_READ, "Không thể tìm thấy đơn thuốc");
                 }
 
                 var medicationDtos = new List<MedicationModel>();
@@ -595,7 +595,7 @@ namespace SE.Service.Services
                     Medicines = medicationDtos
                 };
 
-                return new BusinessResult(Const.SUCCESS_READ, "Medications retrieved successfully.", result);
+                return new BusinessResult(Const.SUCCESS_READ, "Truy xuất dữ liệu thành công", result);
             }
             catch (Exception ex)
             {
@@ -632,7 +632,7 @@ namespace SE.Service.Services
                 var checkPrescription = _unitOfWork.PrescriptionRepository.GetById(prescriptionId);
                 if (checkPrescription == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "Prescription ID does not existed.");
+                    return new BusinessResult(Const.FAIL_READ, "Đơn thuốc không tồn tại.");
                 }
                 checkPrescription.Status = SD.GeneralStatus.INACTIVE;
                 var rs = await _unitOfWork.PrescriptionRepository.UpdateAsync(checkPrescription);
@@ -656,14 +656,14 @@ namespace SE.Service.Services
                 var existingPrescription = _unitOfWork.PrescriptionRepository.FindByCondition(p => p.PrescriptionId == prescriptionId && p.Status == "Active").FirstOrDefault();
                 if (existingPrescription == null)
                 {
-                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Prescription not found.");
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Đơn thuốc không tồn tại.");
                 }
                 var today = DateTime.Now;
                 existingPrescription.Treatment = req.Treatment;
                 var updatePrescriptionResult = await _unitOfWork.PrescriptionRepository.UpdateAsync(existingPrescription);
                 if (updatePrescriptionResult < 1)
                 {
-                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to update prescription.");
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Cập nhật không thành công");
                 }
                 var existingMedications = await _unitOfWork.MedicationRepository.GetByPrescriptionIdAsync(prescriptionId);
 
@@ -692,19 +692,19 @@ namespace SE.Service.Services
                         var updateMedicationResult = await _unitOfWork.MedicationRepository.UpdateAsync(existingMedication);
                         if (updateMedicationResult < 1)
                         {
-                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to update medication.");
+                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Cập nhật không thành công");
                         }
 
                         var deleteSchedulesResult = await _unitOfWork.MedicationScheduleRepository.DeleteByMedicationIdAsync(existingMedication.MedicationId, today);
                         if (deleteSchedulesResult < 0)
                         {
-                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to delete existing schedules.");
+                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Xóa lịch thuốc không thành công");
                         }
 
                         var createScheduleResult = await GenerateMedicationSchedules(existingMedication, medicationReq.Schedule, medicationReq.FrequencySelect);
                         if (createScheduleResult < 1)
                         {
-                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to create new schedules.");
+                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Tạo mới lịch trình không thành công.");
                         }
                     }
                     else
@@ -730,18 +730,18 @@ namespace SE.Service.Services
                         var createMedicationResult = await _unitOfWork.MedicationRepository.CreateAsync(newMedication);
                         if (createMedicationResult < 1)
                         {
-                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to create new medication.");
+                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Tạo thuốc không thành công.");
                         }
 
                         var createScheduleResult = await GenerateMedicationSchedules(newMedication, medicationReq.Schedule, medicationReq.FrequencySelect);
                         if (createScheduleResult < 1)
                         {
-                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Failed to create schedules for new medication.");
+                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Tạo lịch cho đơn thuốc không thành công.");
                         }
                     }
                 }
 
-                return new BusinessResult(Const.SUCCESS_UPDATE, "Medication updated successfully.", req);
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Cập nhật thuốc thành công.", req);
             }
             catch (Exception ex)
             {
@@ -758,7 +758,7 @@ namespace SE.Service.Services
                 {
                     if (!DateTime.TryParseExact(confirmation.DateTaken, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTaken))
                     {
-                        return new BusinessResult(Const.FAIL_UPDATE, $"Invalid date format: {confirmation.DateTaken}");
+                        return new BusinessResult(Const.FAIL_UPDATE, $"Sai format ngày: {confirmation.DateTaken}");
                     }
                     var medication = await _unitOfWork.MedicationRepository.GetByIdAsync(confirmation.MedicationId);
                     var schedule = await _unitOfWork.MedicationScheduleRepository
@@ -773,7 +773,7 @@ namespace SE.Service.Services
 
                         if (!int.TryParse(medication.Dosage.Split(' ')[0], out int dosage))
                         {
-                            throw new InvalidOperationException("Invalid Dosage format. Expected format like '1 Viên'.");
+                            throw new InvalidOperationException("Sai format của liều lượng, ví dụ như '1 Viên'.");
                         }
 
                         medication.Remaining = medication.Remaining - dosage;
@@ -788,7 +788,7 @@ namespace SE.Service.Services
 
                 if (updatedCount == request.Confirmations.Count)
                 {
-                    return new BusinessResult(Const.SUCCESS_UPDATE, "All medication schedules confirmed successfully.");
+                    return new BusinessResult(Const.SUCCESS_UPDATE, "Xác nhận uống thuốc thành công");
                 }
                 else
                 {
@@ -807,7 +807,7 @@ namespace SE.Service.Services
                 var medication = await _unitOfWork.MedicationRepository.GetByIdAsync(medicationId);
                 if (medication == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "Medication not found.");
+                    return new BusinessResult(Const.FAIL_READ, "Không thể tìm thấy thuốc");
                 }
 
                 medication.Status = status;
@@ -815,10 +815,10 @@ namespace SE.Service.Services
                 var result = await _unitOfWork.MedicationRepository.UpdateAsync(medication);
                 if (result > 0)
                 {
-                    return new BusinessResult(Const.SUCCESS_UPDATE, "Medication status updated successfully.");
+                    return new BusinessResult(Const.SUCCESS_UPDATE, "Cập nhật trạng thái thuốc thành công");
                 }
 
-                return new BusinessResult(Const.FAIL_UPDATE, "Failed to update medication status.");
+                return new BusinessResult(Const.FAIL_UPDATE, "Không thể cập nhật trạng thái uống thuốc");
             }
             catch (Exception ex)
             {
@@ -837,7 +837,7 @@ namespace SE.Service.Services
 
                 if (prescription == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "No prescription found for the given elderly ID.");
+                    return new BusinessResult(Const.FAIL_READ, "Không thể tìm thấy hóa đơn thuốc");
                 }
 
                 var medicationDtos = new List<UpdateMedicationModel>();
@@ -886,7 +886,7 @@ namespace SE.Service.Services
                     Medicines = medicationDtos
                 };
 
-                return new BusinessResult(Const.SUCCESS_READ, "Medications retrieved successfully.", result);
+                return new BusinessResult(Const.SUCCESS_READ, "Truy xuất thuốc thành công", result);
             }
             catch (Exception ex)
             {
