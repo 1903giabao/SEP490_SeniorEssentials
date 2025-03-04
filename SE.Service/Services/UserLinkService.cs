@@ -33,15 +33,13 @@ namespace SE.Service.Services
         private readonly IMapper _mapper;
         private readonly FirestoreDb _firestoreDb;
         private readonly IVideoCallService _videoCallService;
-        private readonly IGroupService _groupService;
 
-        public UserLinkService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb, IVideoCallService videoCallService, IGroupService groupService)
+        public UserLinkService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb, IVideoCallService videoCallService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _firestoreDb = firestoreDb;
             _videoCallService = videoCallService;
-            _groupService = groupService;
         }
 
         public async Task<IBusinessResult> SendAddFriend(SendAddFriendRequest req)
@@ -468,19 +466,19 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot find request of user!");
                 }
 
-                var userLink = await _unitOfWork.UserLinkRepository.GetByAccount1Async(requestUserId);
+                var userLinks = await _unitOfWork.UserLinkRepository.GetByAccount1Async(requestUserId, SD.UserLinkStatus.PENDING);
 
-                var result = new UserLinkDTO
+                var result = userLinks.Select(ul => new UserLinkDTO
                 {
-                    RequestUserId = userLink.AccountId1,
-                    RequestUserName = userLink.AccountId1Navigation.FullName,
-                    RequestUserAvatar = userLink.AccountId1Navigation.Avatar,
-                    ResponseUserId = userLink.AccountId2,
-                    ResponseUserName = userLink.AccountId2Navigation.FullName,
-                    ResponseUserAvatar = userLink.AccountId2Navigation.Avatar,
-                    CreatedAt = (DateTime)userLink.CreatedAt,
-                    Status = userLink.Status,
-                };
+                    RequestUserId = ul.AccountId1,
+                    RequestUserName = ul.AccountId1Navigation?.FullName,
+                    RequestUserAvatar = ul.AccountId1Navigation?.Avatar,
+                    ResponseUserId = ul.AccountId2,
+                    ResponseUserName = ul.AccountId2Navigation?.FullName,
+                    ResponseUserAvatar = ul.AccountId2Navigation?.Avatar,
+                    CreatedAt = (DateTime)ul.CreatedAt,
+                    User = _mapper.Map<UserDTO>(ul.AccountId2Navigation)
+                }).ToList();
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
             }
@@ -501,52 +499,20 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot find request of user!");
                 }
 
-                var userLink = await _unitOfWork.UserLinkRepository.GetByAccount2Async(responseUserId);
 
-                var result = new UserLinkDTO
+                var userLinks = await _unitOfWork.UserLinkRepository.GetByAccount2Async(responseUserId, SD.UserLinkStatus.PENDING);
+
+                var result = userLinks.Select(ul => new UserLinkDTO
                 {
-                    RequestUserId = userLink.AccountId1,
-                    RequestUserName = userLink.AccountId1Navigation.FullName,
-                    RequestUserAvatar = userLink.AccountId1Navigation.Avatar,
-                    ResponseUserId = userLink.AccountId2,
-                    ResponseUserName = userLink.AccountId2Navigation.FullName,
-                    ResponseUserAvatar = userLink.AccountId2Navigation.Avatar,
-                    CreatedAt = (DateTime)userLink.CreatedAt,
-                    Status = userLink.Status,
-                };
-
-                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetAllFamilyMember(int userId)
-        {
-            try
-            {
-                var requestUser = _unitOfWork.UserLinkRepository.GetAll().Where(u => u.AccountId2 == userId).FirstOrDefault();
-
-                if (requestUser == null)
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot find request of user!");
-                }
-
-                var userLink = await _unitOfWork.UserLinkRepository.GetByAccount2Async(userId);
-
-                var result = new UserLinkDTO
-                {
-                    RequestUserId = userLink.AccountId1,
-                    RequestUserName = userLink.AccountId1Navigation.FullName,
-                    RequestUserAvatar = userLink.AccountId1Navigation.Avatar,
-                    ResponseUserId = userLink.AccountId2,
-                    ResponseUserName = userLink.AccountId2Navigation.FullName,
-                    ResponseUserAvatar = userLink.AccountId2Navigation.Avatar,
-                    CreatedAt = (DateTime)userLink.CreatedAt,
-                    Status = userLink.Status,
-                };
+                    RequestUserId = ul.AccountId1,
+                    RequestUserName = ul.AccountId1Navigation?.FullName,
+                    RequestUserAvatar = ul.AccountId1Navigation?.Avatar,
+                    ResponseUserId = ul.AccountId2,
+                    ResponseUserName = ul.AccountId2Navigation?.FullName,
+                    ResponseUserAvatar = ul.AccountId2Navigation?.Avatar,
+                    CreatedAt = (DateTime)ul.CreatedAt,
+                    User = _mapper.Map<UserDTO>(ul.AccountId1Navigation)
+                }).ToList();
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
             }

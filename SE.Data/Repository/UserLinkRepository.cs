@@ -17,15 +17,15 @@ namespace SE.Data.Repository
             _context = context;
         }
 
-        public async Task<UserLink> GetByAccount1Async(int accountId)
+        public async Task<List<UserLink>> GetByAccount1Async(int accountId, string status)
         {
-            var result = await _context.UserLinks.Include(u => u.AccountId1Navigation).Include(u => u.AccountId2Navigation).FirstOrDefaultAsync(u => u.AccountId1 == accountId);
+            var result = await _context.UserLinks.Include(u => u.AccountId1Navigation).Include(u => u.AccountId2Navigation).Where(ul => ul.AccountId1 == accountId && ul.Status.Equals(status)).ToListAsync();
             return result;
         }        
         
-        public async Task<UserLink> GetByAccount2Async(int accountId)
+        public async Task<List<UserLink>> GetByAccount2Async(int accountId, string status)
         {
-            var result = await _context.UserLinks.Include(u => u.AccountId1Navigation).Include(u => u.AccountId2Navigation).FirstOrDefaultAsync(u => u.AccountId2 == accountId);
+            var result = await _context.UserLinks.Include(u => u.AccountId1Navigation).Include(u => u.AccountId2Navigation).Where(u => u.AccountId2 == accountId && u.Status.Equals(status)).ToListAsync();
             return result;
         }
 

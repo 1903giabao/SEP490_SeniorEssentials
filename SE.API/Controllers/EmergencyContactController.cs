@@ -18,10 +18,17 @@ namespace SE.API.Controllers
             _emergencyContactService = emergencyContactService;
         }
 
-        [HttpGet("emergency-call/{phoneNumber}")]
-        public async Task<IActionResult> ExecuteEmergencyCall(string phoneNumber)
+        [HttpPost("emergency-call")]
+        public async Task<IActionResult> FamilyEmergencyCall([FromQuery] int elderlyId)
         {
-            var result = await _emergencyContactService.ExecuteEmergencyCall(new List<string>(), phoneNumber);
+            var result = await _emergencyContactService.FamilyEmergencyCall(elderlyId);
+            return Ok(result);
+        }        
+        
+        [HttpGet("emergency-call-status/{callId}")]
+        public async Task<IActionResult> GetCallStatus(string callId)
+        {
+            var result = await _emergencyContactService.GetCallStatus(callId);
             return Ok(result);
         }
 

@@ -82,6 +82,22 @@ namespace SE.Service.Services
                 }
 
                 var memberIds = request.Members.Select(m => m.AccountId).ToList();
+
+                foreach (var memberId  in memberIds)
+                {
+                    var elderlyCheck = await _unitOfWork.AccountRepository.GetByIdAsync(memberId);
+
+                    if (elderlyCheck.RoleId == 2) 
+                    {
+                        var elderly = _unitOfWork.GroupMemberRepository.FindByCondition(gm => gm.AccountId == elderlyCheck.AccountId).FirstOrDefault();
+
+                        if (elderly != null)
+                        {
+                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Người già đã ở trong nhóm gia đình khác!");
+                        }
+                    }
+                }
+
                 var allPairs = GetUniquePairs(memberIds);
 
                 foreach (var pair in allPairs)
@@ -227,6 +243,21 @@ namespace SE.Service.Services
                 if (group == null)
                 {
                     return new BusinessResult(Const.FAIL_CREATE, "Group does not exist.");
+                }
+
+                foreach (var memberId in req.MemberIds)
+                {
+                    var elderlyCheck = await _unitOfWork.AccountRepository.GetByIdAsync(memberId);
+
+                    if (elderlyCheck.RoleId == 2)
+                    {
+                        var elderly = _unitOfWork.GroupMemberRepository.FindByCondition(gm => gm.AccountId == elderlyCheck.AccountId).FirstOrDefault();
+
+                        if (elderly != null)
+                        {
+                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Người già đã ở trong nhóm gia đình khác!");
+                        }
+                    }
                 }
 
                 var existingMembers = _unitOfWork.GroupMemberRepository.GetAll()

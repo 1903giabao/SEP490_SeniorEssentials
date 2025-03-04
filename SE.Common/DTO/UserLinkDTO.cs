@@ -15,6 +15,6 @@ namespace SE.Common.DTO
         public string ResponseUserName { get; set; }
         public string ResponseUserAvatar { get; set; }
         public DateTime CreatedAt { get; set; }
-        public string Status { get; set; }
+        public UserDTO User { get; set; }
     }
 }
