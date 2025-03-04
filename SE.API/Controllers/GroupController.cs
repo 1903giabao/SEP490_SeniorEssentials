@@ -65,6 +65,13 @@ namespace SE.API.Controllers
         {
             var result = await _groupService.GetAllGroupMembersByUserId(userId);
             return Ok(result);
+        }        
+        
+        [HttpGet("members-to-add/{groupChatId}")]
+        public async Task<IActionResult> GetMembersNotInGroupChat(string groupChatId)
+        {
+            var result = await _groupService.GetMembersNotInGroupChat(groupChatId);
+            return Ok(result);
         }
     }
 }

@@ -24,6 +24,7 @@ namespace SE.Service.Services
         List<(int, int)> GetUniquePairs(List<int> memberIds);
         Task<IBusinessResult> CreateRoomChat(List<GroupMemberRequest> groupMembers, string groupName);
         Task<IBusinessResult> AddMemberToGroup(AddMemberToGroupRequest req);
+        Task<IBusinessResult> GetMembersNotInGroupChat(string groupChatId);
     }
 
     public class GroupService : IGroupService
@@ -443,6 +444,81 @@ namespace SE.Service.Services
                 var rs = _mapper.Map<List<GroupMemberDTO>>(groupMembers);
 
                 return new BusinessResult(Const.SUCCESS_READ, "Group members retrieved successfully.", rs);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetMembersNotInGroupChat(string groupChatId)
+        {
+            try
+            {
+                DocumentReference roomChatRef = _firestoreDb.Collection("ChatRooms").Document(groupChatId);
+                DocumentSnapshot documentSnapshot = await roomChatRef.GetSnapshotAsync();
+
+                if (!documentSnapshot.Exists)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat does not exist.");
+                }
+
+                var memberIds = documentSnapshot.GetValue<Dictionary<string, object>>("MemberIds")?.Keys
+                    .Select(int.Parse)
+                    .ToList();
+
+                if (memberIds == null || !memberIds.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "No members found in the group chat.");
+                }
+
+                var familyGroups = _unitOfWork.GroupMemberRepository.GetAll()
+                    .Where(gm => gm.Status == SD.GeneralStatus.ACTIVE)
+                    .GroupBy(gm => gm.GroupId)
+                    .Where(g => memberIds.All(id => g.Any(gm => gm.AccountId == id)))
+                    .Select(g => g.Key)
+                    .ToList();
+
+                if (!familyGroups.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "No valid family groups found where all group chat members are present.");
+                }
+
+                var result = new List<GetAllGroupMembersDTO>();
+
+                foreach (var groupId in familyGroups)
+                {
+                    var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
+
+                    var groupMembers = _unitOfWork.GroupMemberRepository.GetAll()
+                        .Where(gm => gm.GroupId == groupId &&
+                                     gm.Status == SD.GeneralStatus.ACTIVE)
+                    .Select(gm => gm.AccountId)
+                    .Distinct()
+                    .ToList();
+
+                    if (groupMembers.Any())
+                    {
+
+                        var membersNotInGroupChat = groupMembers
+                            .Where(memberId => !memberIds.Contains(memberId))
+                            .ToList();
+
+                        var users = _unitOfWork.AccountRepository.GetAll()
+                            .Where(a => membersNotInGroupChat.Contains(a.AccountId))
+                            .Select(a => _mapper.Map<UserDTO>(a))
+                            .ToList();
+
+                        result.Add(new GetAllGroupMembersDTO
+                        {
+                            GroupId = groupId,
+                            GroupName = group.GroupName,
+                            Members = users
+                        });
+                    }
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
             }
             catch (Exception ex)
             {

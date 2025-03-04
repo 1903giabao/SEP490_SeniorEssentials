@@ -11,6 +11,8 @@ using SE.Data.UnitOfWork;
 using SE.Service.Base;
 using SE.Common.Request;
 using SE.Common.DTO;
+using SE.Service.Helper;
+using CloudinaryDotNet;
 
 namespace SE.Service.Services
 {
@@ -20,17 +22,81 @@ namespace SE.Service.Services
         Task<IBusinessResult> UpdateEmergencyContact(UpdateEmergencyContactRequest request);
         Task<IBusinessResult> GetEmergencyContactsByElderlyId(int elderlyId);
         Task<IBusinessResult> UpdateEmergencyContactStatus(int emergencyContactId);
-
+        Task<string> ExecuteEmergencyCall(List<string> phoneNums, string doctorNumber);
     }
 
     public class EmergencyContactService : IEmergencyContactService
     {
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly string _apiKey;
+        private readonly string _secretKey;
+
         public EmergencyContactService(UnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _apiKey = Environment.GetEnvironmentVariable("VoiceCallApiKey");
+            _secretKey = Environment.GetEnvironmentVariable("VoiceCallSecretKey");
+        }
+
+        public async Task<string> ExecuteEmergencyCall(List<string> phoneNums, string doctorNumber)
+        {
+            try
+            {
+
+                foreach (var phone in phoneNums)
+                {
+                    if (!FunctionCommon.IsValidPhoneNumber(phone))
+                    {
+                        return $"Invalid phone number: {phone}.";
+                    }
+                }
+
+                if (!FunctionCommon.IsValidPhoneNumber(doctorNumber))
+                {
+                    return $"Invalid doctor phone number: {doctorNumber}.";
+                }
+
+                var callTasks = phoneNums.Select(phone => MakeCallAsync(phone)).ToList();
+                await Task.WhenAll(callTasks);
+
+                await Task.Delay(TimeSpan.FromMinutes(1));
+
+                var doctorCallResult = await MakeCallAsync(doctorNumber);
+
+                return "Emergency calls completed successfully.";
+            }
+            catch (Exception ex)
+            {
+                return $"An error occurred: {ex.Message}";
+            }
+        }
+
+        private async Task<string> MakeCallAsync(string phone)
+        {
+            try
+            {
+                var callUrl = $"https://voiceapi.esms.vn/MainService.svc/json/MakeCallRecord_V2?ApiKey={_apiKey}&SecretKey={_secretKey}&TemplateId={115714}&Phone={phone}&MaxRetry={2}&WaitRetry={15}";
+
+                using (var httpClient = new HttpClient())
+                {
+                    var response = await httpClient.GetAsync(callUrl);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var result = await response.Content.ReadAsStringAsync();
+                        return result;
+                    }
+                    else
+                    {
+                        throw new Exception($"Failed to call {phone}.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error calling {phone}: {ex.Message}");
+            }
         }
 
         public async Task<IBusinessResult> CreateEmergencyContact(CreateEmergencyContactRequest request)
