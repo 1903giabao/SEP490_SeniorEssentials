@@ -13,6 +13,9 @@ using SE.Common.Request;
 using SE.Common.DTO;
 using SE.Service.Helper;
 using CloudinaryDotNet;
+using System.Numerics;
+using Newtonsoft.Json;
+using Firebase.Auth;
 
 namespace SE.Service.Services
 {
@@ -22,7 +25,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> UpdateEmergencyContact(UpdateEmergencyContactRequest request);
         Task<IBusinessResult> GetEmergencyContactsByElderlyId(int elderlyId);
         Task<IBusinessResult> UpdateEmergencyContactStatus(int emergencyContactId);
-        Task<string> ExecuteEmergencyCall(List<string> phoneNums, string doctorNumber);
+        Task<IBusinessResult> FamilyEmergencyCall(int accountId);
+        Task<IBusinessResult> GetCallStatus(string callId);
     }
 
     public class EmergencyContactService : IEmergencyContactService
@@ -40,44 +44,117 @@ namespace SE.Service.Services
             _secretKey = Environment.GetEnvironmentVariable("VoiceCallSecretKey");
         }
 
-        public async Task<string> ExecuteEmergencyCall(List<string> phoneNums, string doctorNumber)
+        public async Task<IBusinessResult> GetCallStatus(string callId)
         {
             try
             {
+                var url = $"https://voiceapi.esms.vn/MainService.svc/json/GetSendStatus?ApiKey={_apiKey}&SecretKey={_secretKey}&ReferenceId={callId}";
 
-                foreach (var phone in phoneNums)
+                using (var httpClient = new HttpClient())
                 {
-                    if (!FunctionCommon.IsValidPhoneNumber(phone))
+                    var response = await httpClient.GetAsync(url);
+                    if (response.IsSuccessStatusCode)
                     {
-                        return $"Invalid phone number: {phone}.";
+                        var result = await response.Content.ReadAsStringAsync();
+                        var jsonResponse = JsonConvert.DeserializeObject<GetCallStatusDTO>(result);
+                        return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, jsonResponse);
+                    }
+                    else
+                    {
+                        throw new Exception($"Failed to get status.");
                     }
                 }
-
-                if (!FunctionCommon.IsValidPhoneNumber(doctorNumber))
-                {
-                    return $"Invalid doctor phone number: {doctorNumber}.";
-                }
-
-                var callTasks = phoneNums.Select(phone => MakeCallAsync(phone)).ToList();
-                await Task.WhenAll(callTasks);
-
-                await Task.Delay(TimeSpan.FromMinutes(1));
-
-                var doctorCallResult = await MakeCallAsync(doctorNumber);
-
-                return "Emergency calls completed successfully.";
             }
             catch (Exception ex)
             {
-                return $"An error occurred: {ex.Message}";
+                return new BusinessResult(Const.FAIL_READ, $"An unexpected error occurred: {ex.Message}");
             }
         }
 
-        private async Task<string> MakeCallAsync(string phone)
+        public async Task<IBusinessResult> FamilyEmergencyCall(int accountId)
         {
             try
             {
-                var callUrl = $"https://voiceapi.esms.vn/MainService.svc/json/MakeCallRecord_V2?ApiKey={_apiKey}&SecretKey={_secretKey}&TemplateId={115714}&Phone={phone}&MaxRetry={2}&WaitRetry={15}";
+                var account = await _unitOfWork.AccountRepository.GetByIdAsync(accountId);
+
+                if (account == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Account does not exist!");
+                }
+
+                var groupMember = _unitOfWork.GroupMemberRepository.GetAll()
+                    .FirstOrDefault(gm => gm.AccountId == accountId && gm.Status == SD.GeneralStatus.ACTIVE);
+
+                if (groupMember == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Account is not in any group.");
+                }
+
+                var groupId = groupMember.GroupId;
+
+                var groupMembers = _unitOfWork.GroupMemberRepository.GetAll()
+                    .Where(gm => gm.GroupId == groupId && gm.Status == SD.GeneralStatus.ACTIVE)
+                    .Select(gm => gm.AccountId)
+                    .Distinct()
+                    .ToList();
+
+                var otherMembers = groupMembers
+                    .Where(id => id != accountId)
+                    .ToList();
+
+                if (!otherMembers.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "No other members found in the same group.");
+                }
+
+                var phoneNums = new List<string>();
+
+                foreach (var member in otherMembers)
+                {
+                    var accountPhone = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+
+                    if (accountPhone != null)
+                    {
+                        phoneNums.Add(accountPhone.PhoneNumber);
+                    }
+
+                }
+
+                var callTasks = phoneNums.Select<string, Task<dynamic>>(async phone =>
+                {
+                    try
+                    {
+                        var result = await MakeCallAsync(phone);
+                        return new { Phone = phone, Result = result, Success = true };
+                    }
+                    catch (Exception ex)
+                    {
+                        return new { Phone = phone, Result = ex.Message, Success = false };
+                    }
+                }).ToList();
+
+                var callResults = await Task.WhenAll(callTasks);
+
+                var response = callResults.Select(cr => new
+                {
+                    Phone = cr.Phone,
+                    Status = cr.Success ? "Success" : "Failed",
+                    Message = cr.Result
+                }).ToList();
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, response);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, $"An unexpected error occurred: {ex.Message}");
+            }
+        }
+
+        private async Task<MakeCallResponseDTO> MakeCallAsync(string phone)
+        {
+            try
+            {
+                var callUrl = $"https://voiceapi.esms.vn/MainService.svc/json/MakeCallRecord_V2?ApiKey={_apiKey}&SecretKey={_secretKey}&TemplateId={115723}&Phone={phone}&MaxRepeat={2}&MaxRetry={2}&WaitRetry={10}";
 
                 using (var httpClient = new HttpClient())
                 {
@@ -85,7 +162,8 @@ namespace SE.Service.Services
                     if (response.IsSuccessStatusCode)
                     {
                         var result = await response.Content.ReadAsStringAsync();
-                        return result;
+                        var jsonResponse = JsonConvert.DeserializeObject<MakeCallResponseDTO>(result);
+                        return jsonResponse;
                     }
                     else
                     {
