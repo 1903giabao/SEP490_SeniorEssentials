@@ -17,9 +17,9 @@ namespace SE.API.Controllers
         }
         
         [HttpPost("scan")]
-        public async Task<IActionResult> Scan(IFormFile file)
+        public async Task<IActionResult> Scan(IFormFile file, int accountID)
         {
-            var result = await _medicationService.ScanByGoogle(file);
+            var result = await _medicationService.ScanByGoogle(file, accountID);
             return Ok(result);
         }
 
