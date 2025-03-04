@@ -22,6 +22,8 @@ using static SE.Common.DTO.GetPresciptionFromScan;
 using static System.Net.Mime.MediaTypeNames;
 using Google.Cloud.Vision.V1;
 using Google.Apis.Auth.OAuth2;
+using static Google.Cloud.Vision.V1.ProductSearchResults.Types;
+using Google.Api.Gax;
 
 
 
@@ -29,8 +31,7 @@ namespace SE.Service.Services
 {
     public interface IMedicationService
     {
-        Task<IBusinessResult> ScanFromPic(IFormFile file, int accountId);
-       Task<IBusinessResult> GetMedicationsForToday(int accountId, System.DateOnly today);
+        Task<IBusinessResult> GetMedicationsForToday(int accountId, System.DateOnly today);
 
         Task<IBusinessResult> UpdateMedicationInPrescription(int prescriptionId, UpdateMedicationInPrescriptionRequest req);
 
@@ -39,7 +40,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> ConfirmMedicationDrinking(ConfirmMedicationDrinkingReq request);
         Task<IBusinessResult> CancelPrescription(int prescriptionId);
         Task<IBusinessResult> GetPrescriptionOfElderly(int accountId);
-        Task<IBusinessResult> ScanByGoogle(IFormFile file);
+        Task<IBusinessResult> ScanByGoogle(IFormFile file, int accountId);
 
 
     }
@@ -59,7 +60,7 @@ namespace SE.Service.Services
 
 
 
-        public async Task<IBusinessResult> ScanByGoogle(IFormFile file)
+        public async Task<IBusinessResult> ScanByGoogle(IFormFile file, int accountId)
         {
             // Create the scoped credential using the injected GoogleCredential
             var scopedCredential = _googleCredential.CreateScoped(ImageAnnotatorClient.DefaultScopes);
@@ -103,302 +104,264 @@ namespace SE.Service.Services
                 {
                     uniqueLines.Add(annotation.Description);
 
-                    // Append detected text to StringBuilder (concatenating adjacent words into sentences)
                     sb.Append(annotation.Description.Trim() + " ");
                 }
             }
 
-            // Split concatenated text into individual lines
             var resultText = sb.ToString().Trim();
             var lines = resultText.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
-            // Add the lines to the List
             foreach (var line in lines)
             {
                 uniqueTextList.Add(line);
             }
 
-            // Output the detected text saved in the List
-            Console.WriteLine("Detected unique text:");
-            foreach (var text in uniqueTextList)
-            {
-                Console.WriteLine(text);
-            }
+            int numberDate = ExtractReExaminationDate(uniqueTextList);
 
-            return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, uniqueTextList);
+            uniqueTextList.RemoveAt(uniqueTextList.Count - 1);
+
+            Parallel.ForEach(uniqueTextList, (item, state, index) =>
+            {
+                uniqueTextList[(int)index] = item.Replace("Viện", "Viên");
+            });
+
+            var treatment = ParseDiagnosis(uniqueTextList);
+            var checkAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+
+            var imagePrescription = await CloudinaryHelper.UploadImageAsync(file);
+            var newImage = new Prescription
+            {
+                Elderly = checkAccount.Elderly.ElderlyId,
+                CreatedAt = System.DateTime.UtcNow.AddHours(7),
+                Status = SD.GeneralStatus.ACTIVE,
+                Url = imagePrescription.Url,
+                Treatment = treatment
+            };
+
+            var rsImage = await _unitOfWork.PrescriptionRepository.CreateAsync(newImage);
+
+
+            var groupData = GetData(GroupData(uniqueTextList));
+
+
+            var hehe = new List<MedicationModel>();
+
+            var medicationList = ConvertToMedicationModels(groupData);
+
+            var result = new
+            {
+                Treatment = ParseDiagnosis(uniqueTextList),
+                EndDate = DateTime.UtcNow.AddHours(7).AddDays(numberDate).ToString("yyyy-MM-dd"),
+                Medicines = medicationList
+            };
+
+            return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
         }
 
-        public async Task<IBusinessResult> ScanFromPic(IFormFile file, int ElderlyID)
+        public List<List<string>> GroupData(List<string> data)
         {
-            try
+            string diagnosis = string.Empty;
+            var result = new ScanMediModel();
+            List<List<string>> groupedMedications = new List<List<string>>();
+
+            foreach (var line1 in data)
             {
-
-                var extractedText = ExtractTextFromImage(file);
-                /*
-                                var image = await CloudinaryHelper.UploadImageAsync(file);
-                                var newImage = new Prescription
-                                {
-                                    Elderly = ElderlyID,
-                                    CreatedAt = System.DateTime.UtcNow.AddHours(7),
-                                    Status = SD.GeneralStatus.ACTIVE,
-                                     Url = image.Url,
-                                     Treatment = ParseDiagnosis(extractedText)
-                                };
-
-                                var rsImage = await _unitOfWork.PrescriptionRepository.CreateAsync(newImage);*/
-                    
-                List<string> medicines = ParseMedicineDetails(extractedText);
-
-                var listMediFromPic = CreateMedicationRequests(medicines);
-
-                var medications = new List<GetMedicationFromScanDTO>();
-
-                foreach (var medicine in listMediFromPic)
+                if (line1.Contains("Chẩn đoán"))
                 {
-                    DetermineFrequencyType(medicine);
-                    var rs = new GetMedicationFromScanDTO
-                    {
-                        Dosage = (medicine.Dosage == "I Viên") ? "1 Viên" : medicine.Dosage,
-                        CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                        DateFrequency = medicine.DateFrequency,
-                        EndDate = DateOnly.FromDateTime(medicine.EndDate ?? System.DateTime.MinValue),
-                        FrequencyType = medicine.FrequencyType,
-                        TimeFrequency = medicine.TimeFrequency,
-                        StartDate = DateOnly.FromDateTime(medicine.StartDate ?? System.DateTime.MinValue),
-                        Shape = medicine.Shape,
-                        Status = SD.GeneralStatus.ACTIVE,
-                        MedicationName = medicine.MedicationName,
-                        Remaining = medicine.Quantity
-
-                    };
-                    /*  var rs1 =await _unitOfWork.MedicationRepository.CreateAsync(rs);
-
-
-                      var newSchedule = new MedicationSchedule
-                      {
-                          MedicationId = rs.MedicationId,
-                          Dosage = (medicine.Dosage == "I Viên") ? "1 Viên" : medicine.Dosage,
-                         DateTaken = (rs.TimeFrequency == "Sáng") ? new TimeOnly(7, 0) :
-                                      (rs.TimeFrequency == "Trưa") ? new TimeOnly(11, 0) :
-                                      (rs.TimeFrequency == "Chiều") ? new TimeOnly(17, 0) :
-                                      (rs.TimeFrequency == "Tối") ? new TimeOnly(20, 0) : TimeOnly.MinValue,
-
-
-
-                          Status = SD.GeneralStatus.ACTIVE
-                      };
-
-                      var rs2 = await _unitOfWork.MedicationScheduleRepository.CreateAsync(newSchedule);*/
-
-                    medications.Add(rs);
+                    diagnosis = line1.Split(':')[1].Trim();
+                    result.Treatment = diagnosis;
+                    break;
                 }
-
-                var result = new GetPresciptionFromScan
-                {
-                    Treatment = ParseDiagnosis(extractedText),
-                    Medication = medications,
-                    tmp = extractedText
-                };
-
-                return new BusinessResult(Const.SUCCESS_CREATE, "Medication scan successfully.", result);
             }
-            catch (Exception ex)
+
+            List<string> currentMedicationGroup = new List<string>();
+            bool isInMedicationGroup = false;
+
+            for (int i = 0; i < data.Count; i++)
             {
-                return new BusinessResult(Const.FAIL_CREATE, ex.InnerException.Message);
+                string line = data[i];
+
+                // Kiểm tra nếu dòng bắt đầu với một số và dấu chấm (ví dụ: "1.", "2.", "3.")
+                if (line.Length > 0 && Char.IsDigit(line[0]) && line.Contains("."))
+                {
+                    // Nếu đang trong một nhóm thuốc, kết thúc nhóm cũ và lưu vào danh sách
+                    if (isInMedicationGroup)
+                    {
+                        groupedMedications.Add(new List<string>(currentMedicationGroup));
+                    }
+
+                    currentMedicationGroup.Clear();
+                    currentMedicationGroup.Add(line);
+                    isInMedicationGroup = true;
+                }
+                else if (isInMedicationGroup)
+                {
+                    // Thêm dòng vào nhóm thuốc hiện tại
+                    currentMedicationGroup.Add(line);
+
+                    // Kiểm tra nếu dòng tiếp theo bắt đầu với số tiếp theo, kết thúc nhóm thuốc hiện tại
+                    if (i + 1 < data.Count && data[i + 1].Length > 0 && Char.IsDigit(data[i + 1][0]) && data[i + 1].Contains("."))
+                    {
+                        groupedMedications.Add(new List<string>(currentMedicationGroup));
+                        currentMedicationGroup.Clear();
+                        isInMedicationGroup = false;
+                    }
+                }
             }
+
+            // Lưu nhóm thuốc cuối cùng nếu có
+            if (currentMedicationGroup.Count > 0)
+            {
+                groupedMedications.Add(new List<string>(currentMedicationGroup));
+
+            }
+
+            return groupedMedications;
         }
 
-        public static string ExtractTextFromImage(IFormFile file)
+        static string ParseDiagnosis(List<string> data)
         {
-            if (file == null || file.Length == 0)
-                return "Invalid file";
-
-            string tempFilePath = Path.GetTempFileName();
-
-            try
+            foreach (var line1 in data)
             {
-                using (var stream = new FileStream(tempFilePath, FileMode.Create))
+                if (line1.Contains("Chẩn đoán"))
                 {
-                    file.CopyTo(stream);
+                    var diagnosis = line1.Split(':')[1].Trim();
+                    return diagnosis;
                 }
-                var credentialPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tessdata");
+            }
+            return "";
+        }
 
-                using (var engine = new TesseractEngine(credentialPath, "vie", EngineMode.Default))
+        public ScanMediModel GetData(List<List<string>> data)
+        {
+            var rs = new ScanMediModel();
+            var medications = new List<MediModel>();
+            for (int i = 0; i < data.Count; i++)
+            {
+                var medi = new MediModel();
+                for (int j = 0; j < data[i].Count; j++)
                 {
-                    using (var img = Pix.LoadFromFile(tempFilePath))
+                    if (data[i][j].Contains("SL"))
                     {
-                        using (var page = engine.Process(img))
+                        medi.Quantity = ExtractQuantity(data[i][j]);
+                    }
+                    else if (data[i][j].Contains("Sáng") || data[i][j].Contains("Tối") || data[i][j].Contains("Chiều"))
+                    {
+                        var timeDosageParts = data[i][j].Split(',');
+
+                        foreach (var part in timeDosageParts)
                         {
-                            return page.GetText().Trim();
+                            string time = string.Empty;
+                            if (part.Contains("Sáng")) time = "Sáng";
+                            else if (part.Contains("Tối")) time = "Tối";
+                            else if (part.Contains("Chiều")) time = "Chiều";
+
+                            string dosage = ExtractDosage(part);
+
+                            if (!string.IsNullOrEmpty(time))
+                            {
+                                if (string.IsNullOrEmpty(medi.Time))
+                                {
+                                    medi.Time = time;
+                                }
+                                else
+                                {
+                                    medi.Time += ", " + time;
+                                }
+                            }
+
+                            if (!string.IsNullOrEmpty(dosage))
+                            {
+                                medi.Dosage = dosage;
+                            }
                         }
                     }
-                }
-            }
-            catch (FileNotFoundException ex)
-            {
-                return $"Error: File not found - {ex.Message} - Inner Exception: {ex.InnerException.Message}";
-            }
-            catch (DirectoryNotFoundException ex)
-            {
-                return $"Error: Directory not found - {ex.Message} - Inner Exception: {ex.InnerException.Message}";
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return $"Error: Unauthorized access - {ex.Message} - Inner Exception: {ex.InnerException.Message}";
-            }
-            catch (IOException ex)
-            {
-                return $"Error: I/O error - {ex.Message} - Inner Exception: {ex.InnerException.Message}";
-            }
-            catch (TesseractException ex)
-            {
-                return $"Error: Tesseract processing error - {ex.Message} - Inner Exception: {ex.InnerException.Message}";
-            }
-            catch (Exception ex)
-            {
-                return $"Error: An unexpected error occurred - {ex.Message} - Inner Exception: {ex.InnerException.Message}";
-            }
-            finally
-            {
-                if (File.Exists(tempFilePath))
-                {
-                    File.Delete(tempFilePath);
-                }
-            }
-        }
-        static string ParseDiagnosis(string text)
-        {
-            string pattern = @"(Chuẩn đoán|Chvẩn đoán):.*?(?=\n\d+\.\.|$)";
-            Match match = Regex.Match(text, pattern, RegexOptions.Singleline);
 
+                    medi.Name = RemoveNumberFromName(data[i][0]);
+
+                }
+                medications.Add(medi);
+            }
+            rs.mediModels = medications;
+            return rs;
+        }
+
+        // Cắt bỏ số trong tên thuốc (ví dụ: "4. Paracetamol" -> "Paracetamol")
+        static string RemoveNumberFromName(string name)
+        {
+            return Regex.Replace(name, @"^\d+\.\s*", "").Trim();
+        }
+
+        // Lấy số lượng thuốc từ chuỗi "SL: 10 Viên"
+        static int ExtractQuantity(string line)
+        {
+            var match = Regex.Match(line, @"SL:\s(\d+)\sViên");
+            return match.Success ? int.Parse(match.Groups[1].Value) : 0;
+        }
+
+        // Phân tách thời gian và liều lượng từ chuỗi "Tối 1 Viên"
+        static string ExtractDosage(string line)
+        {
+            // Regex to find the number followed by "Viên" or "Viện"
+            var match = Regex.Match(line, @"(\d+)\sVi[êeệ]n");  // Matches "Viên" or "Viện"
             if (match.Success)
             {
-                string result = match.Value.Split(new[] { ':' }, 2).Last().Trim();
-                return result;
+                return match.Groups[0].Value;  // Return the matched dosage (e.g., "1 Viên" or "1 Viện")
             }
-
-            return "Diagnosis not found.";
-        }
-        static List<string> ParseMedicineDetails(string text)
-        {
-            string corrected = Regex.Replace(text, @"\bUông\b", "Uống");
-            string textFormat = corrected.Replace("I", "1");
-
-            string pattern = @"(\d+\.\.\s.*?Uống\s*:\s*.*?)(?=\n\s*\d+\.\.|$)"; MatchCollection matches = Regex.Matches(textFormat, pattern, RegexOptions.Singleline);
-
-            List<string> medications = new List<string>();
-
-            foreach (Match match in matches)
-            {
-                medications.Add(match.Value.Trim());
-            }
-
-            string formattedText = string.Join(Environment.NewLine, medications).Replace(Environment.NewLine + Environment.NewLine, Environment.NewLine).Trim();
-
-
-            string[] lines = formattedText.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
-
-            bool inMedicationSection = true;
-            List<string> medication2s = new List<string>();
-
-            foreach (string line in lines)
-            {
-                if (line.StartsWith("-L") || line.StartsWith("Ngày") || line.StartsWith("Bác s?") || line.StartsWith("-Khám")/* || line.StartsWith("- Tên")*/)
-                {
-                    inMedicationSection = false;
-                    continue;
-                }
-
-                if (line.StartsWith("H"))
-                {
-                    medication2s.Add(line.Trim());
-                }
-                if (inMedicationSection)
-                {
-                    medication2s.Add(line.Trim());
-                }
-            }
-
-            return medication2s;
-
-
+            return string.Empty;  // Return empty if no match is found
         }
 
-        public void DetermineFrequencyType(NewMedicationFromPicDTO medication)
+
+        static List<UpdateMedicationModel> ConvertToMedicationModels(ScanMediModel mediModels)
         {
-            if (medication.Instruction.Contains("Uống : Sáng") || medication.Instruction.Contains("Uống : Chiều") || medication.Instruction.Contains("Uống : Tối"))
+            var rs = new List<UpdateMedicationModel>();
+            var timeMapping = new Dictionary<string, string>
+        {
+            { "Sáng", "07:00" },
+            { "Trưa", "11:00" },
+            { "Chiều", "15:00" },
+            { "Tối", "20:00" }
+        };
+
+            foreach (var model in mediModels.mediModels)
             {
-                medication.FrequencyType = "Daily";
+                var temp = new UpdateMedicationModel();
+                temp.MedicationName = model.Name;
+                temp.Dosage = model.Dosage;
+                temp.Remaining = model.Quantity;
+                temp.Shape = ExtractUnit(model.Dosage);
+                temp.FrequencyType = "Every 1 day";
+                temp.IsBeforeMeal = true;
+                temp.FrequencySelect = null;
+                temp.Schedule = ((string)model.Time).Split(", ").Select(t => timeMapping[t]).ToList();
+                rs.Add(temp);
             }
-            else if (medication.Instruction.Contains("Uống: Cách ngày"))
-            {
-                medication.FrequencyType = "Every X days"; // Uống cách ngày
-            }
-            else if (medication.Instruction.Contains("Uống: Mỗi tuần"))
-            {
-                medication.FrequencyType = "Weekly"; // Uống hàng tuần
-            }
-            else
-            {
-                medication.FrequencyType = "Unknown"; // Không xác định
-            }
+
+            return rs;
+
         }
-        static List<NewMedicationFromPicDTO> CreateMedicationRequests(List<string> medicines)
+        static int ExtractReExaminationDate(List<string> data)
         {
-            List<NewMedicationFromPicDTO> requests = new List<NewMedicationFromPicDTO>();
-            int daysToAdd = ExtractDays(medicines);
-            string name = "Unknow";
-            string quantity = "0";
-            foreach (var medicine in medicines)
+            foreach (string line in data)
             {
-                if (char.IsDigit(medicine[0]))
+                if (line.Contains("Hẹn tái khám sau"))
                 {
-                    var match = Regex.Match(medicine, @"^(\d+\.\.\s+|\d+\.\s+)?(.+?)\s+(\d+mg)?.*SL:\s*(\d+) Viên", RegexOptions.IgnoreCase);
-                    if (!match.Success) return null;
-
-                    name = match.Groups[2].Value.Trim();
-                    quantity = match.Groups[4].Value;
-
-                }
-
-                else if (Regex.IsMatch(medicine, @"U[oôố]ng\s*[:\-]?\s*(Sáng|Chiều|Tối)\s*([1I\d]+)\s*Viên", RegexOptions.IgnoreCase))
-                {
-                    var doseMatch = Regex.Match(medicine, @"U[ôốo]ng\s*[:\-]?\s*(Sáng|Chiều|Tối)\s*([1I\d]+)\s*Viên", RegexOptions.IgnoreCase);
-                    if (doseMatch.Success)
+                    Match match = Regex.Match(line, @"Hẹn tái khám sau (\d+) ngày");
+                    if (match.Success)
                     {
-                        string timeToTake = doseMatch.Groups[1].Value;
-                        string dosage = doseMatch.Groups[2].Value + " Viên";
-                        var rs = new NewMedicationFromPicDTO
-                        {
-                            Shape = "Viên",
-                            StartDate = System.DateTime.UtcNow.AddHours(7),
-                            EndDate = System.DateTime.UtcNow.AddHours(7).AddDays(double.Parse(quantity)),
-                            Dosage = dosage,
-                            MedicationName = name,
-                            TimeFrequency = timeToTake,
-                            DateFrequency = 1,
-                            Quantity = int.Parse(quantity),
-                            Instruction = medicine
-                        };
-                        requests.Add(rs);
+                        int soNgayTaiKham = int.Parse(match.Groups[1].Value);
+                        return soNgayTaiKham;
                     }
                 }
             }
-
-            return requests;
+            return 0;
         }
 
-        static int ExtractDays(List<string> lines)
+        static string ExtractUnit(string input)
         {
-            foreach (var line in lines)
-            {
-                var match = Regex.Match(line, @"(\d+)\s*ngày", RegexOptions.IgnoreCase);
-                if (match.Success)
-                {
-                    return int.Parse(match.Groups[1].Value);
-                }
-            }
-            return 30;
+            Match match = Regex.Match(input, @"^\d+\s+(.+)$");
+            return match.Success ? match.Groups[1].Value : string.Empty;
         }
         public async Task<IBusinessResult> CreateMedicationByManually(CreateMedicationRequest req)
         {
@@ -430,9 +393,9 @@ namespace SE.Service.Services
                     {
                         Dosage = medication.Dosage,
                         CreatedDate = DateTime.UtcNow.AddHours(7),
-                        EndDate = null, // EndDate sẽ được tính toán sau
+                        EndDate = null,
                         FrequencyType = medication.FrequencyType,
-                        StartDate = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)), // StartDate là ngày tạo, kiểu DateOnly
+                        StartDate = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)),
                         Shape = medication.Shape,
                         Status = SD.GeneralStatus.ACTIVE,
                         MedicationName = medication.MedicationName,
@@ -565,7 +528,7 @@ namespace SE.Service.Services
                     throw new ArgumentOutOfRangeException(nameof(dayOfWeek), dayOfWeek, null);
             }
         }
-   
+
         public static System.DateTime? ConvertToDateTime(DateOnly? dateOnly)
         {
             return dateOnly?.ToDateTime(new TimeOnly(0, 0));
@@ -575,7 +538,7 @@ namespace SE.Service.Services
         {
             try
             {
-                
+
                 var checkAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
                 var prescription = await _unitOfWork.PrescriptionRepository
                     .GetAllIncludeMedicationInElderly(checkAccount.Elderly.ElderlyId);
@@ -589,7 +552,7 @@ namespace SE.Service.Services
 
                 foreach (var medication in prescription.Medications
                     .Where(m => m.StartDate <= today &&
-                                 (m.EndDate == null ||m.EndDate >= today)))
+                                 (m.EndDate == null || m.EndDate >= today)))
                 {
                     string frequencyEvery = null;
                     var medicationSchedule = _unitOfWork.MedicationScheduleRepository.FindByCondition(ms => ms.MedicationId == medication.MedicationId).FirstOrDefault();
@@ -646,7 +609,7 @@ namespace SE.Service.Services
             var mondayOfWeek = today.AddDays(-((dayOfWeek == 0 ? 7 : dayOfWeek) - 1));
             var sundayOfWeek = mondayOfWeek.AddDays(6);
 
-            var schedules =  _unitOfWork.MedicationScheduleRepository
+            var schedules = _unitOfWork.MedicationScheduleRepository
                 .FindByCondition(ms => ms.MedicationId == medicationId &&
                                        ms.DateTaken >= ConvertToDateTime(mondayOfWeek) &&
                                        ms.DateTaken <= ConvertToDateTime(sundayOfWeek))
@@ -690,7 +653,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var existingPrescription = _unitOfWork.PrescriptionRepository.FindByCondition(p=>p.PrescriptionId == prescriptionId && p.Status == "Active").FirstOrDefault();
+                var existingPrescription = _unitOfWork.PrescriptionRepository.FindByCondition(p => p.PrescriptionId == prescriptionId && p.Status == "Active").FirstOrDefault();
                 if (existingPrescription == null)
                 {
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Prescription not found.");
@@ -797,7 +760,7 @@ namespace SE.Service.Services
                     {
                         return new BusinessResult(Const.FAIL_UPDATE, $"Invalid date format: {confirmation.DateTaken}");
                     }
-                    var medication =await _unitOfWork.MedicationRepository.GetByIdAsync(confirmation.MedicationId);
+                    var medication = await _unitOfWork.MedicationRepository.GetByIdAsync(confirmation.MedicationId);
                     var schedule = await _unitOfWork.MedicationScheduleRepository
                         .GetByDateAndMedicationIdAsync(dateTaken, confirmation.MedicationId);
 
@@ -805,7 +768,7 @@ namespace SE.Service.Services
                     {
                         schedule.IsTaken = true;
                         schedule.Status = confirmation.Status;
-                        
+
                         var updateResult = await _unitOfWork.MedicationScheduleRepository.UpdateAsync(schedule);
 
                         if (!int.TryParse(medication.Dosage.Split(' ')[0], out int dosage))
@@ -891,7 +854,7 @@ namespace SE.Service.Services
                         {
                             frequencyEvery = day.ToString();
                         }
-                        
+
                     }
                     var date = medication.MedicationSchedules.FirstOrDefault();
 
