@@ -30,6 +30,13 @@ namespace SE.Common.Enums
             public static string CANCELLED = "Cancelled";
             public static string ACCEPTED = "Accepted";
             public static string DELETED = "Deleted";
+        }       
+        
+        public class BookingStatus
+        {
+            public static string PENDING = "Pending";
+            public static string CANCELLED = "Cancelled";
+            public static string PAID = "Paid";
         }
     }
 }
