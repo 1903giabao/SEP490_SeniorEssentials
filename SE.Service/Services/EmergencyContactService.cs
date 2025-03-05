@@ -27,6 +27,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> UpdateEmergencyContactStatus(int emergencyContactId);
         Task<IBusinessResult> FamilyEmergencyCall(int accountId);
         Task<IBusinessResult> GetCallStatus(string callId);
+        Task<IBusinessResult> DoctorEmergencyCall(int accountId);
     }
 
     public class EmergencyContactService : IEmergencyContactService
@@ -125,11 +126,11 @@ namespace SE.Service.Services
                     try
                     {
                         var result = await MakeCallAsync(phone);
-                        return new { Phone = phone, Result = result, Success = true };
+                        return new { Phone = phone, Result = result};
                     }
                     catch (Exception ex)
                     {
-                        return new { Phone = phone, Result = ex.Message, Success = false };
+                        return new { Phone = phone, Result = ex.Message};
                     }
                 }).ToList();
 
@@ -138,9 +139,52 @@ namespace SE.Service.Services
                 var response = callResults.Select(cr => new
                 {
                     Phone = cr.Phone,
-                    Status = cr.Success ? "Success" : "Failed",
                     Message = cr.Result
                 }).ToList();
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, response);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, $"An unexpected error occurred: {ex.Message}");
+            }
+        }
+
+        public async Task<IBusinessResult> DoctorEmergencyCall(int accountId)
+        {
+            try
+            {
+                var account = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+                if (account == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Account does not exist!");
+                }
+
+                var bookings = _unitOfWork.BookingRepository.FindByCondition(b => b.ElderlyId == account.Elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                                                           .Select(b => b.BookingId).ToList();
+
+                var doctor = await _unitOfWork.UserServiceRepository.GetProfessorByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
+
+                if (doctor == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không tìm thấy bác sĩ cho người già này.");
+                }
+
+                var phone = doctor.Account.PhoneNumber;
+
+                if (!FunctionCommon.IsValidPhoneNumber(phone))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Số điện thoại của bác sĩ không hợp lệ hoặc không tìm thấy.");
+                }
+
+                var callResults = await MakeCallAsync(phone);
+
+                var response = new
+                {
+                    Phone = phone,
+                    Message = callResults
+                };
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, response);
             }
