@@ -11,7 +11,7 @@ namespace SE.Common.Request
     {
 
         public int AccountId { get; set; }
-        public IFormFile? Image {  get; set; } 
+        public IFormFile? MedicationImage {  get; set; } 
         public string Treatment { get; set; }
         public DateTime? EndDate { get; set; }
         public List<CreateMedicationModel> Medication { get; set; }
