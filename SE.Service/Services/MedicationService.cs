@@ -363,9 +363,9 @@ namespace SE.Service.Services
 
 
                 string imageUrl;
-                if (req.Image != null)
+                if (req.MedicationImage != null)
                 {
-                    var imagePrescription = await CloudinaryHelper.UploadImageAsync(req.Image);
+                    var imagePrescription = await CloudinaryHelper.UploadImageAsync(req.MedicationImage);
                     imageUrl = imagePrescription.Url;
                 }
                 else
