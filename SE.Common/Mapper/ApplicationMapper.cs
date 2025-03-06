@@ -20,8 +20,6 @@ namespace SE.Common.Mapper
             CreateMap<UserModel, Account>().ReverseMap();
             CreateMap<GetUserInRoomChatDetailDTO, Account>().ReverseMap();
 
-            CreateMap<GameModel, Game>().ReverseMap();
-            CreateMap<CreateGameRequest, Game>().ReverseMap();
 
             CreateMap<LessonModel, Lesson>().ReverseMap();
             CreateMap<CreateLessonRequest, Lesson>().ReverseMap();
