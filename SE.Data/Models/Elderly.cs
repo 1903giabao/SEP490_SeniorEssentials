@@ -33,7 +33,7 @@ public partial class Elderly
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
-    public virtual ICollection<EmergencyContact> EmergencyContacts { get; set; } = new List<EmergencyContact>();
+    public virtual ICollection<EmergencyInformation> EmergencyInformations { get; set; } = new List<EmergencyInformation>();
 
     public virtual ICollection<HeartRate> HeartRates { get; set; } = new List<HeartRate>();
 

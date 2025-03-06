@@ -19,8 +19,6 @@ namespace SE.Service.Services
 {
     public interface IVideoCallService
     {
-        Task<IBusinessResult> GetAllVideoCallHistory();
-        Task<IBusinessResult> GetVideoCallHistoryById(int vidCallId);
         Task<IBusinessResult> VideoCall(VideoCallRequest req);
         Task<string> FindChatRoomContainingAllUsers(List<int> listUserInRoomChat);
     }
@@ -37,38 +35,6 @@ namespace SE.Service.Services
             _mapper = mapper;
             _firestoreDb = firestoreDb;
             _firestoreDb = firestoreDb;
-        }
-
-        public async Task<IBusinessResult> GetAllVideoCallHistory()
-        {
-            try
-            {
-                var vidCallHistory = await _unitOfWork.VideoCallRepository.GetAllIncluding();
-
-                var vidCallModel = _mapper.Map<List<VideoCallModel>>(vidCallHistory);
-
-                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, vidCallModel);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetVideoCallHistoryById(int vidCallId)
-        {
-            try
-            {
-                var vidCallHistory = await _unitOfWork.VideoCallRepository.GetByIdIncluding(vidCallId);
-
-                var vidCallModel = _mapper.Map<VideoCallModel>(vidCallHistory);
-
-                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, vidCallModel);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
         }
 
         public async Task<IBusinessResult> VideoCall(VideoCallRequest req)

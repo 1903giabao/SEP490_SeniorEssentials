@@ -32,19 +32,11 @@ namespace SE.Common.Mapper
                 .ReverseMap()
                 .ForPath(dest => dest.Elderly.Account.FullName, opt => opt.MapFrom(src => src.ELderlyName));
             CreateMap<LessonFeedbackRequest, LessonFeedback>().ReverseMap();
-
-            CreateMap<VideoCall, VideoCallModel>()
-                .ForMember(dest => dest.CallerName, opt => opt.MapFrom(src => src.Caller.FullName))
-                .ForMember(dest => dest.ReceiverName, opt => opt.MapFrom(src => src.Receiver.FullName))
-                .ReverseMap();
                 
             CreateMap<CreateComboModel, Combo>().ReverseMap();
             CreateMap<CreateActivityModel, Activity>().ReverseMap();
 
             CreateMap<Combo, ComboDto>().ReverseMap();
-
-
-            CreateMap<GetEmergencyContactDTO,EmergencyContact>().ReverseMap();
             
             CreateMap<CreateGroupRequest, Group>().ReverseMap();
 

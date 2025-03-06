@@ -16,7 +16,7 @@ namespace SE.Data.UnitOfWork
         private BookingRepository _bookingRepository;
         private ComboRepository _comboRepository;
         private ContentProviderRepository _contentProviderRepository;
-        private EmergencyContactRepository _emergencyContactRepository;
+        private EmergencyInformationRepository _emergencyInformationRepository;
         private ElderlyRepository _elderlyRepository;
         private FamilyMemberRepository _familyMemberRepository;
         private GameRepository _gameRepository;
@@ -37,7 +37,6 @@ namespace SE.Data.UnitOfWork
         private TimeSlotRepository _timeSlotRepository;
         private TransactionRepository _transactionRepository;
         private UserServiceRepository _userServiceRepository;
-        private VideoCallRepository _videoCallRepository;
         private PrescriptionRepository _prescriptionRepository;
         private UserLinkRepository _userLinkRepository;
         private BloodPressureRepository _bloodPressureRepository;
@@ -100,9 +99,9 @@ namespace SE.Data.UnitOfWork
             get => _contentProviderRepository ??= new ContentProviderRepository(_unitOfWorkContext);
         }
 
-        public EmergencyContactRepository EmergencyContactRepository
+        public EmergencyInformationRepository EmergencyInformationRepository
         {
-            get => _emergencyContactRepository ??= new EmergencyContactRepository(_unitOfWorkContext);
+            get => _emergencyInformationRepository ??= new EmergencyInformationRepository(_unitOfWorkContext);
         }
 
         public ElderlyRepository ElderlyRepository
@@ -202,11 +201,6 @@ namespace SE.Data.UnitOfWork
         public UserLinkRepository UserLinkRepository
         {
             get => _userLinkRepository ??= new UserLinkRepository(_unitOfWorkContext);
-        }
-
-        public VideoCallRepository VideoCallRepository
-        {
-            get => _videoCallRepository ??= new VideoCallRepository(_unitOfWorkContext);
         }
 
         public BloodGlucoseRepository BloodGlucoseRepository

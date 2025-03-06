@@ -40,7 +40,7 @@ namespace SE.API.Controllers
         }
 
         // POST: emergency-contacts
-        [HttpPost]
+/*        [HttpPost]
         public async Task<IActionResult> CreateEmergencyContact([FromBody] CreateEmergencyContactRequest request)
         {
             var result = await _emergencyContactService.CreateEmergencyContact(request);
@@ -69,6 +69,6 @@ namespace SE.API.Controllers
         {
             var result = await _emergencyContactService.UpdateEmergencyContactStatus(emergencyContactId);
             return Ok(result);
-        }
+        }*/
     }
 }   

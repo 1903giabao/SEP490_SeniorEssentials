@@ -15,20 +15,6 @@ namespace SE.API.Controllers
             _videoCallService = videoCallService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllVideoCallHistory()
-        {
-            var result = await _videoCallService.GetAllVideoCallHistory();
-            return Ok(result);
-        }
-
-        [HttpGet("video-call/{videoCallId}")]
-        public async Task<IActionResult> GetVideoCallHistoryById([FromRoute] int videoCallId)
-        {
-            var result = await _videoCallService.GetVideoCallHistoryById(videoCallId);
-            return Ok(result);
-        }
-
         [HttpPost]
         public async Task<IActionResult> MakeAVideoCall([FromBody] VideoCallRequest req)
         {
