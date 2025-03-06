@@ -59,7 +59,7 @@ namespace SE.Service.Services
             _firebaseService = firebaseService;
             _emailService = emailService;
             _accountService = accountService;
-                _mapper = mapper;
+            _mapper = mapper;
             _smsService = smsService;
         }
 

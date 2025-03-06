@@ -46,19 +46,20 @@ namespace SE.Service.Services
 
                 var result = new List<GetScheduleInDayResponse>();
                 var activitySchedules = activities
-                    .SelectMany(a => a.ActivitySchedules
-                        .Where(s => s.StartTime?.ToString("yyyy-MM-dd") == date.ToString("yyyy-MM-dd"))
-                        .Select(s => new GetScheduleInDayResponse
-                        {
-                            ActivityId = a.ActivityId,
-                            Title = a.ActivityName,
-                            Description = a.ActivityDescription,
-                            StartTime = s.StartTime?.ToString("HH:mm"),
-                            EndTime = s.EndTime?.ToString("HH:mm"),
-                            Type = "Activity",
-                            CreatedBy = createBy
-                        }))
-                    .ToList();
+    .SelectMany(a => a.ActivitySchedules
+        .Where(s => s.StartTime?.ToString("yyyy-MM-dd") == date.ToString("yyyy-MM-dd"))
+        .Select(s => new GetScheduleInDayResponse
+        {
+            ActivityId = a.ActivityId,
+            Title = a.ActivityName,
+            Description = a.ActivityDescription,
+            StartTime = s.StartTime?.ToString("HH:mm"),
+            EndTime = s.EndTime?.ToString("HH:mm"),
+            Type = "Activity",
+            CreatedBy = createBy,
+            Duration = CalculateDuration(date, s.ActivityScheduleId, a.ActivitySchedules) 
+        }))
+    .ToList();
 
 
 
@@ -99,7 +100,27 @@ namespace SE.Service.Services
             }
         }
 
+        public static System.DateTime ConvertToDateTime(DateOnly dateOnly)
+        {
+            return dateOnly.ToDateTime(new TimeOnly(0, 0));
+        }
 
+        private static int CalculateDuration(DateOnly specificDate, int activityScheduleId, ICollection<ActivitySchedule> activitySchedules)
+        {
+            // Tìm ActivitySchedule dựa trên ActivityScheduleId
+            var currentSchedule = activitySchedules.FirstOrDefault(s => s.ActivityScheduleId == activityScheduleId);
+            if (currentSchedule == null)
+            {
+                return 0; // Trả về 0 nếu không tìm thấy ActivitySchedule
+            }
+
+            // Tìm ngày kết thúc của hoạt động (ngày StartTime của bản ghi cuối cùng)
+            DateTime endDate = activitySchedules.Max(s => s.StartTime)?.Date ?? DateTime.MinValue;
+
+            // Tính số ngày từ ngày hiện tại (specificDate) đến ngày kết thúc (endDate)
+            TimeSpan duration = endDate - ConvertToDateTime(specificDate);
+            return duration.Days + 1; // Bao gồm cả ngày hiện tại và ngày kết thúc
+        }
         public async Task<IBusinessResult> CreateActivityWithSchedules(CreateActivityModel model)
         {
             try
@@ -215,7 +236,7 @@ namespace SE.Service.Services
                 {
                     return new BusinessResult(Const.FAIL_READ, "Không thể tìm thấy hoạt động");
                 }
-                
+
                 checkActivity.Status = SD.GeneralStatus.INACTIVE;
                 var rs = await _unitOfWork.ActivityRepository.UpdateAsync(checkActivity);
 

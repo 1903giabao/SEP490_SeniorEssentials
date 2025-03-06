@@ -17,14 +17,14 @@ namespace SE.API.Controllers
         }
         
         [HttpPost("scan")]
-        public async Task<IActionResult> Scan(IFormFile file, int accountID)
+        public async Task<IActionResult> Scan(IFormFile file)
         {
-            var result = await _medicationService.ScanByGoogle(file, accountID);
+            var result = await _medicationService.ScanByGoogle(file);
             return Ok(result);
         }
 
         [HttpPost()]
-        public async Task<IActionResult> CreateNewMedicationByManually([FromBody] CreateMedicationRequest medicationRequest)
+        public async Task<IActionResult> CreateNewMedicationByManually([FromForm] CreateMedicationRequest medicationRequest)
         {
             var result = await _medicationService.CreateMedicationByManually(medicationRequest);
             return Ok(result);
