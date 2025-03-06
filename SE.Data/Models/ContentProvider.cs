@@ -17,7 +17,5 @@ public partial class ContentProvider
 
     public virtual Account Account { get; set; }
 
-    public virtual ICollection<Game> Games { get; set; } = new List<Game>();
-
     public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
 }

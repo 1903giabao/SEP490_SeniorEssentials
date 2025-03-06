@@ -53,8 +53,6 @@ public partial class SeniorEssentialsContext : DbContext
 
     public virtual DbSet<FamilyMember> FamilyMembers { get; set; }
 
-    public virtual DbSet<Game> Games { get; set; }
-
     public virtual DbSet<Group> Groups { get; set; }
 
     public virtual DbSet<GroupMember> GroupMembers { get; set; }
@@ -337,26 +335,6 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Account).WithOne(p => p.FamilyMember)
                 .HasForeignKey<FamilyMember>(d => d.AccountId)
                 .HasConstraintName("FK__FamilyMem__Accou__07C12930");
-        });
-
-        modelBuilder.Entity<Game>(entity =>
-        {
-            entity.HasKey(e => e.GameId).HasName("PK__Game__2AB897FDF5785108");
-
-            entity.ToTable("Game");
-
-            entity.Property(e => e.GameDescription).HasMaxLength(100);
-            entity.Property(e => e.GameName)
-                .IsRequired()
-                .HasMaxLength(50);
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasMaxLength(20);
-
-            entity.HasOne(d => d.ContentProvider).WithMany(p => p.Games)
-                .HasForeignKey(d => d.ContentProviderId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Game__ContentPro__0A9D95DB");
         });
 
         modelBuilder.Entity<Group>(entity =>

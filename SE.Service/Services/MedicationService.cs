@@ -359,9 +359,6 @@ namespace SE.Service.Services
                 {
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "ID người già không tồn tại");
                 }
-
-
-
                 string imageUrl;
                 if (req.MedicationImage != null)
                 {
@@ -881,6 +878,8 @@ namespace SE.Service.Services
                 var result = new
                 {
                     Id = prescription.PrescriptionId,
+                    MedicationImage = prescription.Url,
+                    CreatedBy = prescription.CreatedBy,
                     Treatment = prescription.Treatment,
                     EndDate = prescription.EndDate?.ToString("yyyy-MM-dd"),
                     StartDate = prescription.CreatedAt.ToString("yyyy-MM-dd"),
