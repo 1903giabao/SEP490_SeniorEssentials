@@ -19,7 +19,6 @@ namespace SE.Data.UnitOfWork
         private EmergencyInformationRepository _emergencyInformationRepository;
         private ElderlyRepository _elderlyRepository;
         private FamilyMemberRepository _familyMemberRepository;
-        private GameRepository _gameRepository;
         private GroupRepository _groupRepository;
         private GroupMemberRepository _groupMemberRepository;
         private IotdeviceRepository _idoeviceRepository;
@@ -112,11 +111,6 @@ namespace SE.Data.UnitOfWork
         public FamilyMemberRepository FamilyMemberRepository
         {
             get => _familyMemberRepository ??= new FamilyMemberRepository(_unitOfWorkContext);
-        }
-
-        public GameRepository GameRepository
-        {
-            get => _gameRepository ??= new GameRepository(_unitOfWorkContext);
         }
 
         public GroupRepository GroupRepository
