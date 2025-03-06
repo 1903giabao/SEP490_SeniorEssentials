@@ -21,10 +21,10 @@ namespace SE.Service.Services
 {
     public interface IEmergencyContactService
     {
-        Task<IBusinessResult> CreateEmergencyContact(CreateEmergencyContactRequest request);
+/*        Task<IBusinessResult> CreateEmergencyContact(CreateEmergencyContactRequest request);
         Task<IBusinessResult> UpdateEmergencyContact(UpdateEmergencyContactRequest request);
         Task<IBusinessResult> GetEmergencyContactsByElderlyId(int elderlyId);
-        Task<IBusinessResult> UpdateEmergencyContactStatus(int emergencyContactId);
+        Task<IBusinessResult> UpdateEmergencyContactStatus(int emergencyContactId);*/
         Task<IBusinessResult> FamilyEmergencyCall(int accountId);
         Task<IBusinessResult> GetCallStatus(string callId);
         Task<IBusinessResult> DoctorEmergencyCall(int accountId);
@@ -221,7 +221,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> CreateEmergencyContact(CreateEmergencyContactRequest request)
+        /*public async Task<IBusinessResult> CreateEmergencyContact(CreateEmergencyContactRequest request)
         {
             try
             {
@@ -342,7 +342,7 @@ namespace SE.Service.Services
             {
                 return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
             }
-        }
+        }*/
 
 
     }

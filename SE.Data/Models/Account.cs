@@ -39,8 +39,6 @@ public partial class Account
 
     public virtual Elderly Elderly { get; set; }
 
-    public virtual ICollection<EmergencyContact> EmergencyContacts { get; set; } = new List<EmergencyContact>();
-
     public virtual FamilyMember FamilyMember { get; set; }
 
     public virtual ICollection<GroupMember> GroupMembers { get; set; } = new List<GroupMember>();
@@ -56,8 +54,4 @@ public partial class Account
     public virtual ICollection<UserLink> UserLinkAccountId1Navigations { get; set; } = new List<UserLink>();
 
     public virtual ICollection<UserLink> UserLinkAccountId2Navigations { get; set; } = new List<UserLink>();
-
-    public virtual ICollection<VideoCall> VideoCallCallers { get; set; } = new List<VideoCall>();
-
-    public virtual ICollection<VideoCall> VideoCallReceivers { get; set; } = new List<VideoCall>();
 }
