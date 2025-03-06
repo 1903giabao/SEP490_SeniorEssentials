@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace SE.Common.Request
 {
@@ -10,6 +11,7 @@ namespace SE.Common.Request
     {
 
         public int AccountId { get; set; }
+        public IFormFile? Image {  get; set; } 
         public string Treatment { get; set; }
         public DateTime? EndDate { get; set; }
         public List<CreateMedicationModel> Medication { get; set; }

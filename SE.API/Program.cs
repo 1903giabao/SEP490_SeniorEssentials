@@ -8,17 +8,16 @@ using Google.Cloud.Firestore.V1;
 using Google.Cloud.Vision.V1;
 using Grpc.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Newtonsoft.Json;
 using SE.API.ConfigModel;
-using SE.Common.DTO;
 using SE.Common.Mapper;
 using SE.Common.Setting;
 using SE.Data.UnitOfWork;
+using SE.Service.BackgroundWorkers;
 using SE.Service.Helper;
 using SE.Service.Services;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,7 +62,14 @@ builder.Services.AddScoped<IVideoCallService, VideoCallService>();
 builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddScoped<ISmsService, SmsService>();
 
+Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console() // Log to console
+            .WriteTo.File(@"E:\SEP490\worker_logs.txt", rollingInterval: RollingInterval.Day) // Log to file
+            .CreateLogger();
 
+builder.Host.UseSerilog(); 
+
+builder.Services.AddHostedService<Worker>();
 
 
 

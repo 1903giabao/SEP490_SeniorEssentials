@@ -40,7 +40,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> ConfirmMedicationDrinking(ConfirmMedicationDrinkingReq request);
         Task<IBusinessResult> CancelPrescription(int prescriptionId);
         Task<IBusinessResult> GetPrescriptionOfElderly(int accountId);
-        Task<IBusinessResult> ScanByGoogle(IFormFile file, int accountId);
+        Task<IBusinessResult> ScanByGoogle(IFormFile file);
 
 
     }
@@ -60,7 +60,7 @@ namespace SE.Service.Services
 
 
 
-        public async Task<IBusinessResult> ScanByGoogle(IFormFile file, int accountId)
+        public async Task<IBusinessResult> ScanByGoogle(IFormFile file)
         {
             // Create the scoped credential using the injected GoogleCredential
             var scopedCredential = _googleCredential.CreateScoped(ImageAnnotatorClient.DefaultScopes);
@@ -126,20 +126,6 @@ namespace SE.Service.Services
             });
 
             var treatment = ParseDiagnosis(uniqueTextList);
-            var checkAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
-
-
-            var imagePrescription = await CloudinaryHelper.UploadImageAsync(file);
-            var newImage = new Prescription
-            {
-                Elderly = checkAccount.Elderly.ElderlyId,
-                CreatedAt = System.DateTime.UtcNow.AddHours(7),
-                Status = SD.GeneralStatus.ACTIVE,
-                Url = imagePrescription.Url,
-                Treatment = treatment
-            };
-
-            var rsImage = await _unitOfWork.PrescriptionRepository.CreateAsync(newImage);
 
 
             var groupData = GetData(GroupData(uniqueTextList));
@@ -374,16 +360,31 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "ID người già không tồn tại");
                 }
 
+
+
+                string imageUrl;
+                if (req.Image != null)
+                {
+                    var imagePrescription = await CloudinaryHelper.UploadImageAsync(req.Image);
+                    imageUrl = imagePrescription.Url;
+                }
+                else
+                {
+                    imageUrl = "Manually";
+                }
+
                 var newPrescription = new Prescription
                 {
                     Elderly = checkElderly.ElderlyId,
                     CreatedAt = DateTime.UtcNow.AddHours(7),
                     Status = SD.GeneralStatus.ACTIVE,
                     CreatedBy = req.CreatedBy,
-                    Url = "Manually",
                     Treatment = req.Treatment,
-                    EndDate = req.EndDate
+                    EndDate = req.EndDate,
+                    Url = imageUrl
                 };
+
+                
 
                 var rsImage = await _unitOfWork.PrescriptionRepository.CreateAsync(newPrescription);
 
