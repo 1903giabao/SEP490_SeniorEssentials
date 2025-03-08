@@ -131,7 +131,7 @@ namespace SE.Service.Services
                         RoleId = role
                     };
                     var createUserResponse = await _accountService.CreateNewTempAccount(newAccount);
-                    var user = (Account)createUserResponse;
+                    var user = (Account)createUserResponse.Data;
                     rs = new
                     {
                         Message = "Send OTP successfully!",
