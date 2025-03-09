@@ -11,6 +11,8 @@ namespace SE.Common.DTO
         public int AccountId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
+
+        public DateOnly StartDate { get; set; }
         public string CreatedBy { get; set; }
         public int Duration { get; set; }
         public List<CreateActivitySchedule> Schedules { get; set; }

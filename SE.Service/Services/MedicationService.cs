@@ -17,7 +17,6 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Tesseract;
 using static SE.Common.DTO.GetPresciptionFromScan;
 using static System.Net.Mime.MediaTypeNames;
 using Google.Cloud.Vision.V1;
