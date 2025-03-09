@@ -140,7 +140,7 @@ namespace SE.Service.Services
                 };
                 await _unitOfWork.ActivityRepository.CreateAsync(newActivity);
 
-                var startDate = DateOnly.FromDateTime(DateTime.Now);
+                var startDate = model.StartDate;
                 for (int i = 0; i < model.Duration; i++)
                 {
                     var scheduleDate = startDate.AddDays(i);
