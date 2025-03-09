@@ -477,7 +477,21 @@ namespace SE.Service.Services
                     ResponseUserName = ul.AccountId2Navigation?.FullName,
                     ResponseUserAvatar = ul.AccountId2Navigation?.Avatar,
                     CreatedAt = (DateTime)ul.CreatedAt,
-                    User = _mapper.Map<UserDTO>(ul.AccountId2Navigation)
+                    User = new UserInUserLinkDTO
+                    {
+                        RequestUserId = ul.AccountId1,
+                        AccountId = ul.AccountId2Navigation.AccountId,
+                        RoleId = ul.AccountId2Navigation.RoleId,
+                        Email = ul.AccountId2Navigation.Email,
+                        Password = ul.AccountId2Navigation.Password,
+                        FullName = ul.AccountId2Navigation.FullName,
+                        Avatar = ul.AccountId2Navigation.Avatar,
+                        Gender = ul.AccountId2Navigation.Gender,
+                        PhoneNumber = ul.AccountId2Navigation.PhoneNumber,
+                        DateOfBirth = ul.AccountId2Navigation.DateOfBirth,
+                        CreatedDate = ul.AccountId2Navigation.CreatedDate,
+                        Status = ul.AccountId2Navigation.Status,
+                    }
                 }).ToList();
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
@@ -511,7 +525,21 @@ namespace SE.Service.Services
                     ResponseUserName = ul.AccountId2Navigation?.FullName,
                     ResponseUserAvatar = ul.AccountId2Navigation?.Avatar,
                     CreatedAt = (DateTime)ul.CreatedAt,
-                    User = _mapper.Map<UserDTO>(ul.AccountId1Navigation)
+                    User = new UserInUserLinkDTO
+                    {
+                        RequestUserId = ul.AccountId1,
+                        AccountId = ul.AccountId1Navigation.AccountId,
+                        RoleId = ul.AccountId1Navigation.RoleId,
+                        Email = ul.AccountId1Navigation.Email,
+                        Password = ul.AccountId1Navigation.Password,
+                        FullName = ul.AccountId1Navigation.FullName,
+                        Avatar = ul.AccountId1Navigation.Avatar,
+                        Gender = ul.AccountId1Navigation.Gender,
+                        PhoneNumber = ul.AccountId1Navigation.PhoneNumber,
+                        DateOfBirth = ul.AccountId1Navigation.DateOfBirth,
+                        CreatedDate = ul.AccountId1Navigation.CreatedDate,
+                        Status = ul.AccountId1Navigation.Status,
+                    }
                 }).ToList();
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
