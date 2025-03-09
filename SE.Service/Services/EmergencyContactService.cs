@@ -114,7 +114,7 @@ namespace SE.Service.Services
                 {
                     var accountPhone = await _unitOfWork.AccountRepository.GetByIdAsync(member);
 
-                    if (accountPhone != null)
+                    if (accountPhone != null && accountPhone.RoleId == 3)
                     {
                         phoneNums.Add(accountPhone.PhoneNumber);
                     }
