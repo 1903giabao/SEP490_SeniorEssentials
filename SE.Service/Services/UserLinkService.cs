@@ -323,9 +323,9 @@ namespace SE.Service.Services
                             { "RoomAvatar", "" },
                             { "SenderId", 0 },
                             { "LastMessage", "" },
-                            { "SentDate", currentTime.ToString("dd-MM-yyyy") },
-                            { "SentTime", currentTime.ToString("HH:mm") },
-                            { "SentDateTime", currentTime.ToString("dd-MM-yyyy HH:mm") },
+                            { "SentDate", "" },
+                            { "SentTime", "" },
+                            { "SentDateTime", "" },
                             { "MemberIds", new Dictionary<string, object>
                                 {
                                     { member1.AccountId.ToString(), true },
