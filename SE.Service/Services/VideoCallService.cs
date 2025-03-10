@@ -122,7 +122,7 @@ namespace SE.Service.Services
                     {
                         var roomUserSet = new HashSet<string>(memberIds.Keys);
 
-                        if (roomUserSet.IsSupersetOf(userSet))
+                        if (roomUserSet.SetEquals(userSet))
                         {
                             return chatRoomDoc.Id;
                         }
