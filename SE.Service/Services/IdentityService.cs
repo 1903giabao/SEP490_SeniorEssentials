@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Firebase.Auth;
 using Google.Api;
+using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -49,10 +50,11 @@ namespace SE.Service.Services
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
         private readonly ISmsService _smsService;
+        private readonly FirestoreDb _firestoreDb;
 
         private readonly IAccountService _accountService;
 
-        public IdentityService(IMapper mapper, UnitOfWork unitOfWork, IOptions<JwtSettings> jwtSettingsOptions, IFirebaseService firebaseService, IEmailService emailService, IAccountService accountService, ISmsService smsService)
+        public IdentityService(IMapper mapper, UnitOfWork unitOfWork, IOptions<JwtSettings> jwtSettingsOptions, IFirebaseService firebaseService, IEmailService emailService, IAccountService accountService, ISmsService smsService, FirestoreDb firestoreDb)
         {
             _unitOfWork = unitOfWork;
             _jwtSettings = jwtSettingsOptions.Value;
@@ -61,6 +63,7 @@ namespace SE.Service.Services
             _accountService = accountService;
             _mapper = mapper;
             _smsService = smsService;
+            _firestoreDb = firestoreDb;
         }
 
         public async Task<IBusinessResult> SendOtpToUser(string account, string password, int role)
@@ -242,7 +245,14 @@ namespace SE.Service.Services
                     var rsE = _unitOfWork.ElderlyRepository.CreateAsync(newElderly);
                 }
 
-              
+                var onlineMembersRef = _firestoreDb.Collection("OnlineMembers");
+
+                var onlineMemberData = new Dictionary<string, object>
+                            {
+                                { "IsOnline", true }
+                            };
+
+                await onlineMembersRef.Document(user.AccountId.ToString()).SetAsync(onlineMemberData);
 
                 if (res < 0)
                 {
