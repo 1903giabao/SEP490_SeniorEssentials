@@ -48,13 +48,15 @@ namespace SE.Service.Services
         private readonly IMapper _mapper;
         private readonly FirestoreDb _firestoreDb;
         private readonly IGroupService _groupService;
+        private readonly IVideoCallService _videoCallService;
 
-        public ChatService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb, IGroupService groupService)
+        public ChatService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb, IGroupService groupService, IVideoCallService videoCallService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _firestoreDb = firestoreDb;
             _groupService = groupService;
+            _videoCallService = videoCallService;
         }
 
         public async Task<IBusinessResult> SendMessage(SendMessageRequest req)
@@ -598,6 +600,8 @@ namespace SE.Service.Services
                     userGroupIds[user.AccountId] = new HashSet<int>(userGroups.Select(gm => gm.GroupId));
                 }
 
+                var newMembers = userGroupIds.Keys.ToList();
+
                 if (userGroupIds.Count > 0)
                 {
                     var firstUserGroupIds = userGroupIds.Values.First();
@@ -613,6 +617,13 @@ namespace SE.Service.Services
 
                 if (string.IsNullOrEmpty(req.GroupId))
                 {
+                    var findRoomChat = await _videoCallService.FindChatRoomContainingAllUsers(newMembers);
+
+                    if (findRoomChat != null)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat already exist!");
+                    }
+
                     var urlLink = ("", "");
 
                     if (req.GroupAvatar != null)
@@ -661,10 +672,32 @@ namespace SE.Service.Services
                 }
                 else
                 {
+                    var existingGroupRef = _firestoreDb.Collection("ChatRooms").Document(req.GroupId);
+                    var existingGroupDoc = await existingGroupRef.GetSnapshotAsync();
+                    if (existingGroupDoc.Exists)
+                    {
+                        var currentMembers = existingGroupDoc.GetValue<Dictionary<string, object>>("MemberIds") ?? new Dictionary<string, object>();
+                        var currentMembersList = currentMembers.Keys.Select(x => int.Parse(x)).ToList();
+
+                        var memberIdsList = currentMembersList.Concat(newMembers).ToList();
+
+                        var findRoomChat = await _videoCallService.FindChatRoomContainingAllUsers(memberIdsList);
+
+                        if (findRoomChat != null)
+                        {
+                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat already exist!");
+                        }
+                    }
+                    else
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat does not exist!");
+                    }
+
                     foreach (var member in req.Members)
                     {
                         member.IsCreator = false;
                     }
+                    
                 }
 
                 var groupRef = _firestoreDb.Collection("ChatRooms").Document(req.GroupId);
@@ -672,9 +705,7 @@ namespace SE.Service.Services
                 if (groupDoc.Exists)
                 {
                     var currentMembers = groupDoc.GetValue<Dictionary<string, object>>("MemberIds") ?? new Dictionary<string, object>();
-                    var currentMembersList = currentMembers.Keys.ToList(); 
-                    
-                    var memberIdsList = new List<string>();
+                    var currentMembersList = currentMembers.Keys.ToList();                    
 
                     var membersRef = groupRef.Collection("Members");
 

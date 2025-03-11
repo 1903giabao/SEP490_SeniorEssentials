@@ -10,6 +10,7 @@ using Google.Cloud.Firestore;
 using Firebase.Auth;
 using SE.Common.DTO;
 using AutoMapper.Execution;
+using Org.BouncyCastle.Ocsp;
 
 namespace SE.Service.Services
 {
@@ -251,7 +252,7 @@ namespace SE.Service.Services
 
                     if (elderlyCheck.RoleId == 2)
                     {
-                        var elderly = _unitOfWork.GroupMemberRepository.FindByCondition(gm => gm.AccountId == elderlyCheck.AccountId).FirstOrDefault();
+                        var elderly = _unitOfWork.GroupMemberRepository.FindByCondition(gm => gm.AccountId == elderlyCheck.AccountId && gm.Status.Equals(SD.GeneralStatus.ACTIVE)).FirstOrDefault();
 
                         if (elderly != null)
                         {
@@ -297,7 +298,22 @@ namespace SE.Service.Services
 
                     if (!relationshipExists)
                     {
-                        return new BusinessResult(Const.FAIL_CREATE, $"Members {pair.Item1} and {pair.Item2} are not family.");
+                        var userLink = new UserLink
+                        {
+                            AccountId1 = pair.Item1,
+                            AccountId2 = pair.Item2,
+                            CreatedAt = DateTime.UtcNow.AddHours(7),
+                            UpdatedAt = DateTime.UtcNow.AddHours(7),
+                            Status = SD.GeneralStatus.ACTIVE,
+                            RelationshipType = "Family"
+                        };
+
+                        var createRs = await _unitOfWork.UserLinkRepository.CreateAsync(userLink);
+
+                        if (createRs < 1)
+                        {
+                            return new BusinessResult(Const.FAIL_CREATE, $"Failed to create user link.");
+                        }
                     }
                 }
 
@@ -376,9 +392,9 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_UPDATE, "Group member not found.");
                 }
 
-                var isMemberCreator = _unitOfWork.GroupMemberRepository.FindByCondition(gm => gm.AccountId == accountId).Select(gm => gm.IsCreator).FirstOrDefault();
+                var isMemberCreator = _unitOfWork.GroupMemberRepository.FindByCondition(gm => gm.AccountId == accountId && gm.GroupId == groupId).Select(gm => gm.IsCreator).FirstOrDefault();
 
-                if (!isMemberCreator)
+                if (isMemberCreator)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Creator cannot be kicked/out!");
                 }
@@ -387,7 +403,7 @@ namespace SE.Service.Services
 
                 if (kickerId != accountId)
                 {
-                    var isKickerCreator = _unitOfWork.GroupMemberRepository.FindByCondition(gm => gm.AccountId == kickerId).Select(gm => gm.IsCreator).FirstOrDefault();
+                    var isKickerCreator = _unitOfWork.GroupMemberRepository.FindByCondition(gm => gm.AccountId == kickerId && gm.GroupId == groupId).Select(gm => gm.IsCreator).FirstOrDefault();
 
                     if (!isKickerCreator)
                     {
@@ -399,33 +415,58 @@ namespace SE.Service.Services
 
                 var roomChatId = await _videoCallService.FindChatRoomContainingAllUsers(allGroupMembers);
 
-                var groupRef = _firestoreDb.Collection("ChatRooms").Document(roomChatId);
-                var groupDoc = await groupRef.GetSnapshotAsync();
-
-                if (!groupDoc.Exists)
+                if (roomChatId != null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat does not exist!");
+                    var groupRef = _firestoreDb.Collection("ChatRooms").Document(roomChatId);
+                    var groupDoc = await groupRef.GetSnapshotAsync();
+
+                    if (!groupDoc.Exists)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat does not exist!");
+                    }
+
+                    var currentMembers = groupDoc.GetValue<Dictionary<string, object>>("MemberIds") ?? new Dictionary<string, object>();
+                    var memberIdStr = accountId.ToString();
+
+                    if (!currentMembers.ContainsKey(memberIdStr))
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Member is not part of this group!");
+                    }
+
+                    currentMembers.Remove(memberIdStr);
+
+                    var updateData = new Dictionary<string, object>
+                    {
+                        { "MemberIds", currentMembers }
+                    };
+
+                    await groupRef.UpdateAsync(updateData);
+
+                    var membersRef = groupRef.Collection("Members").Document(memberIdStr);
+                    await membersRef.DeleteAsync();
                 }
 
-                var currentMembers = groupDoc.GetValue<Dictionary<string, object>>("MemberIds") ?? new Dictionary<string, object>();
-                var memberIdStr = accountId.ToString();
+                var existingMembers = _unitOfWork.GroupMemberRepository.GetAll()
+                            .Where(gm => gm.GroupId == groupId && gm.Status.Equals(SD.GeneralStatus.ACTIVE) && gm.AccountId != accountId && gm.AccountId != kickerId)
+                            .Select(gm => gm.AccountId)
+                            .ToList();
 
-                if (!currentMembers.ContainsKey(memberIdStr))
+                foreach (var familyMember in existingMembers)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Member is not part of this group!");
+                    var relationshipExists = _unitOfWork.UserLinkRepository.GetAll()
+                        .Where(ul => (ul.AccountId1 == familyMember && ul.AccountId2 == accountId && ul.RelationshipType.Equals("Family")) ||
+                                   (ul.AccountId1 == accountId && ul.AccountId2 == familyMember && ul.RelationshipType.Equals("Family"))).FirstOrDefault();
+
+                    if (relationshipExists != null)
+                    {
+                        var deleteRs = await _unitOfWork.UserLinkRepository.RemoveAsync(relationshipExists);
+
+                        if (!deleteRs)
+                        {
+                            return new BusinessResult(Const.FAIL_CREATE, $"Failed to delete user link.");
+                        }
+                    }
                 }
-
-                currentMembers.Remove(memberIdStr);
-
-                var updateData = new Dictionary<string, object>
-                {
-                    { "MemberIds", currentMembers }
-                };
-
-                await groupRef.UpdateAsync(updateData);
-
-                var membersRef = groupRef.Collection("Members").Document(memberIdStr);
-                await membersRef.DeleteAsync();
 
                 await _unitOfWork.GroupMemberRepository.UpdateAsync(groupMember);
 
