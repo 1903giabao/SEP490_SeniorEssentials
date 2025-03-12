@@ -222,7 +222,7 @@ namespace SE.Service.Services
                 user.Email = req.Email;
                 user.PhoneNumber = req.PhoneNumber;
                 user.Status = SD.GeneralStatus.ACTIVE;
-                user.RoleId = 2;
+                user.RoleId = req.RoleId;
                 user.FullName = req.FullName;
                 user.Gender = req.Gender;
                 user.DateOfBirth = DateTime.Parse(req.DateOfBirth);
