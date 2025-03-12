@@ -9,13 +9,14 @@ using SE.Common;
 using SE.Data.Models;
 using SE.Data.UnitOfWork;
 using SE.Service.Base;
-using SE.Common.Request;
 using SE.Common.DTO;
 using SE.Service.Helper;
 using CloudinaryDotNet;
 using System.Numerics;
 using Newtonsoft.Json;
 using Firebase.Auth;
+using SE.Common.Request.Emergency;
+using Org.BouncyCastle.Ocsp;
 
 namespace SE.Service.Services
 {
@@ -221,30 +222,55 @@ namespace SE.Service.Services
             }
         }
 
-        /*public async Task<IBusinessResult> CreateEmergencyContact(CreateEmergencyContactRequest request)
+        public async Task<IBusinessResult> CreateEmergencyInformation(CreateEmergencyInformationRequest request)
         {
             try
             {
-                if (request == null || request.ElderlyId <= 0 || request.AccountIds == null || request.ContactNames == null ||
-                    request.AccountIds.Count != request.ContactNames.Count)
+                if (request == null || request.ElderlyId <= 0)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Invalid emergency contact data.");
+                    return new BusinessResult(Const.FAIL_READ, "Invalid emergency data.");
                 }
 
-                var emergencyContacts = request.AccountIds
-                    .Select((accountId, index) => new EmergencyContact
-                    {
-                        ElderlyId = request.ElderlyId,
-                        AccountId = accountId,
-                        ContactName = request.ContactNames[index],
-                        Priority = request.Priorities[index],
-                        Status = SD.GeneralStatus.ACTIVE 
-                    })
-                    .ToList();
+                var elderly = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
 
-                await _unitOfWork.EmergencyContactRepository.CreateRangeAsync(emergencyContacts);
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "Elderly does not exist.");
+                }
 
-                return new BusinessResult(Const.SUCCESS_CREATE, "Emergency contacts created successfully.");
+                var frontCameraImageLink = ("", "");
+
+                if (request.FrontCameraImage != null)
+                {
+                    frontCameraImageLink = await CloudinaryHelper.UploadImageAsync(request.FrontCameraImage);
+                }     
+                
+                var rearCameraImageLink = ("", "");
+
+                if (request.RearCameraImage != null)
+                {
+                    rearCameraImageLink = await CloudinaryHelper.UploadImageAsync(request.RearCameraImage);
+                }
+
+                var emergencyInformation = new EmergencyInformation
+                {
+                    ElderlyId = request.ElderlyId,
+                    FrontCameraImage = frontCameraImageLink.Item2,
+                    RearCameraImage = rearCameraImageLink.Item2,
+                    DateTime = DateTime.UtcNow.AddHours(7),
+                    Latitude = request.Latitude,
+                    Longitude = request.Longitude,
+                    Status = SD.GeneralStatus.ACTIVE,
+                };
+
+                var createRs = await _unitOfWork.EmergencyInformationRepository.CreateAsync(emergencyInformation);
+
+                if (createRs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, emergencyInformation);
             }
             catch (Exception ex)
             {
@@ -252,7 +278,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateEmergencyContact(UpdateEmergencyContactRequest request)
+        /*public async Task<IBusinessResult> UpdateEmergencyContact(UpdateEmergencyContactRequest request)
         {
             try
             {
