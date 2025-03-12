@@ -28,4 +28,6 @@ public partial class Transaction
     public virtual Account Account { get; set; }
 
     public virtual Booking Booking { get; set; }
+
+    public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 }

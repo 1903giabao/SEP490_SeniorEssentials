@@ -5,17 +5,17 @@ using System.Collections.Generic;
 
 namespace SE.Data.Models;
 
-public partial class UserService
+public partial class UserSubscription
 {
-    public int UserServiceId { get; set; }
+    public int UserSubscriptionId { get; set; }
 
-    public int BookingId { get; set; }
+    public int? BookingId { get; set; }
 
     public int? ProfessorId { get; set; }
 
-    public DateTime ValidityDateLeft { get; set; }
+    public DateTime? StartDate { get; set; }
 
-    public int? NumberOfMeetingLeft { get; set; }
+    public DateTime? EndDate { get; set; }
 
     public string Status { get; set; }
 

@@ -5,9 +5,9 @@ using System.Collections.Generic;
 
 namespace SE.Data.Models;
 
-public partial class Combo
+public partial class Subscription
 {
-    public int ComboId { get; set; }
+    public int SubscriptionId { get; set; }
 
     public string Name { get; set; }
 
@@ -17,15 +17,15 @@ public partial class Combo
 
     public DateTime ValidityPeriod { get; set; }
 
-    public int NumberOfMeeting { get; set; }
-
-    public int DurationPerMeeting { get; set; }
-
     public DateTime CreatedDate { get; set; }
 
     public DateTime UpdatedDate { get; set; }
 
     public string Status { get; set; }
+
+    public int? AccountId { get; set; }
+
+    public virtual Account Account { get; set; }
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 }

@@ -14,9 +14,10 @@ namespace SE.Data.UnitOfWork
         private ActivityRepository _activityRepository;
         private ActivityScheduleRepository _activityScheduleRepository;
         private BookingRepository _bookingRepository;
-        private ComboRepository _comboRepository;
+        private SubscriptionRepository _comboRepository;
         private ContentProviderRepository _contentProviderRepository;
         private EmergencyInformationRepository _emergencyInformationRepository;
+        private EmergencyConfirmationRepository _emergencyConfirmationRepository;
         private ElderlyRepository _elderlyRepository;
         private FamilyMemberRepository _familyMemberRepository;
         private GroupRepository _groupRepository;
@@ -35,7 +36,7 @@ namespace SE.Data.UnitOfWork
         private RoleRepository _roleRepository;
         private TimeSlotRepository _timeSlotRepository;
         private TransactionRepository _transactionRepository;
-        private UserServiceRepository _userServiceRepository;
+        private UserSubscriptionRepository _userServiceRepository;
         private PrescriptionRepository _prescriptionRepository;
         private UserLinkRepository _userLinkRepository;
         private BloodPressureRepository _bloodPressureRepository;
@@ -88,9 +89,9 @@ namespace SE.Data.UnitOfWork
             get => _bookingRepository ??= new BookingRepository(_unitOfWorkContext);
         }
 
-        public ComboRepository ComboRepository
+        public SubscriptionRepository ComboRepository
         {
-            get => _comboRepository ??= new ComboRepository(_unitOfWorkContext);
+            get => _comboRepository ??= new SubscriptionRepository(_unitOfWorkContext);
         }
 
         public ContentProviderRepository ContentProviderRepository
@@ -101,6 +102,11 @@ namespace SE.Data.UnitOfWork
         public EmergencyInformationRepository EmergencyInformationRepository
         {
             get => _emergencyInformationRepository ??= new EmergencyInformationRepository(_unitOfWorkContext);
+        }       
+        
+        public EmergencyConfirmationRepository EmergencyConfirmationRepository
+        {
+            get => _emergencyConfirmationRepository ??= new EmergencyConfirmationRepository(_unitOfWorkContext);
         }
 
         public ElderlyRepository ElderlyRepository
@@ -187,9 +193,9 @@ namespace SE.Data.UnitOfWork
         {
             get => _transactionRepository ??= new TransactionRepository(_unitOfWorkContext);
         }
-        public UserServiceRepository UserServiceRepository
+        public UserSubscriptionRepository UserServiceRepository
         {
-            get => _userServiceRepository ??= new UserServiceRepository(_unitOfWorkContext);
+            get => _userServiceRepository ??= new UserSubscriptionRepository(_unitOfWorkContext);
         }
 
         public UserLinkRepository UserLinkRepository

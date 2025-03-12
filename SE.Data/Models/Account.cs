@@ -49,6 +49,8 @@ public partial class Account
 
     public virtual Role Role { get; set; }
 
+    public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
+
     public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 
     public virtual ICollection<UserLink> UserLinkAccountId1Navigations { get; set; } = new List<UserLink>();

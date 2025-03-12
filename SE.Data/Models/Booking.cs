@@ -13,7 +13,7 @@ public partial class Booking
 
     public int ElderlyId { get; set; }
 
-    public int? ComboId { get; set; }
+    public int? SubscriptionId { get; set; }
 
     public string Type { get; set; }
 
@@ -27,7 +27,7 @@ public partial class Booking
 
     public string Status { get; set; }
 
-    public virtual Combo Combo { get; set; }
+    public int? TransactionId { get; set; }
 
     public virtual Elderly Elderly { get; set; }
 
@@ -35,7 +35,11 @@ public partial class Booking
 
     public virtual ICollection<ProfessorAppointment> ProfessorAppointments { get; set; } = new List<ProfessorAppointment>();
 
-    public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
+    public virtual Subscription Subscription { get; set; }
 
-    public virtual ICollection<UserService> UserServices { get; set; } = new List<UserService>();
+    public virtual Transaction Transaction { get; set; }
+
+    public virtual Transaction TransactionNavigation { get; set; }
+
+    public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
 }
