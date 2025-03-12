@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using SE.Common.DTO;
 using SE.Common.Request;
 using SE.Common.Request.HealthIndicator;
+using SE.Data.Models;
 using SE.Service.Services;
 
 [ApiController]
@@ -15,10 +16,10 @@ public class HealthIndicatorController : ControllerBase
         _healthIndicatorService = healthIndicatorService;
     }
 
-    [HttpGet("healthIndicator/{elderlyId}")]
-    public async Task<IActionResult> GetAllHealthIndicatorsByElderlyId(int elderlyId, [FromQuery] string? filter)
+    [HttpGet("healthIndicator/weight/detail/{accountId}")]
+    public async Task<IActionResult> GetAllHealthIndicatorsByElderlyId(int accountId)
     {
-        var result = await _healthIndicatorService.GetAllHealthIndicatorsByElderlyId(elderlyId, filter);
+        var result = await _healthIndicatorService.GetWeightDetail(accountId);
         return Ok(result);
     }
 
