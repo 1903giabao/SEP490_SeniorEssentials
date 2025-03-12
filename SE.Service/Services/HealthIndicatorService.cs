@@ -13,6 +13,11 @@ using System.Threading.Tasks;
 using SE.Common.Enums;
 using SE.Common.DTO.HealthIndicator;
 using Firebase.Auth;
+using Microsoft.Identity.Client;
+using SE.Common.Response;
+using System.Globalization;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using Google.Type;
 
 namespace SE.Service.Services
 {
@@ -48,7 +53,10 @@ namespace SE.Service.Services
         Task<IBusinessResult> UpdateLipidProfileStatus(int lipidProfileId, string status);
         Task<IBusinessResult> UpdateLiverEnzymesStatus(int liverEnzymesId, string status);
         Task<IBusinessResult> UpdateKidneyFunctionStatus(int kidneyFunctionId, string status);
-        Task<IBusinessResult> GetAllHealthIndicatorsByElderlyId(int elderlyId, string filter = null);
+
+        Task<IBusinessResult> GetWeightDetail(int accountId);
+
+        //     Task<IBusinessResult> GetAllHealthIndicatorsByElderlyId(int elderlyId, string filter = null);
     }
 
     public class HealthIndicatorService : IHealthIndicatorService
@@ -78,7 +86,7 @@ namespace SE.Service.Services
                 }
 
                 var weightEntity = _mapper.Map<Weight>(request);
-                weightEntity.DateRecorded = DateTime.UtcNow.AddHours(7);
+                weightEntity.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 weightEntity.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.WeightRepository.CreateAsync(weightEntity);
@@ -108,7 +116,7 @@ namespace SE.Service.Services
                 }
 
                 var heightEntity = _mapper.Map<Height>(request);
-                heightEntity.DateRecorded = DateTime.UtcNow.AddHours(7);
+                heightEntity.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 heightEntity.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.HeightRepository.CreateAsync(heightEntity);
@@ -143,7 +151,7 @@ namespace SE.Service.Services
                 }
 
                 var bloodPressure = _mapper.Map<BloodPressure>(request);
-                bloodPressure.DateRecorded = DateTime.UtcNow.AddHours(7);
+                bloodPressure.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 bloodPressure.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.BloodPressureRepository.CreateAsync(bloodPressure);
@@ -173,7 +181,7 @@ namespace SE.Service.Services
                 }
 
                 var heartRate = _mapper.Map<HeartRate>(request);
-                heartRate.DateRecorded = DateTime.UtcNow.AddHours(7);
+                heartRate.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 heartRate.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.HeartRateRepository.CreateAsync(heartRate);
@@ -198,7 +206,7 @@ namespace SE.Service.Services
                 }
 
                 var bloodGlucose = _mapper.Map<BloodGlucose>(request);
-                bloodGlucose.DateRecorded = DateTime.UtcNow.AddHours(7);
+                bloodGlucose.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 bloodGlucose.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.BloodGlucoseRepository.CreateAsync(bloodGlucose);
@@ -223,7 +231,7 @@ namespace SE.Service.Services
                 }
 
                 var lipidProfile = _mapper.Map<LipidProfile>(request);
-                lipidProfile.DateRecorded = DateTime.UtcNow.AddHours(7);
+                lipidProfile.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 lipidProfile.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.LipidProfileRepository.CreateAsync(lipidProfile);
@@ -248,7 +256,7 @@ namespace SE.Service.Services
                 }
 
                 var liverEnzyme = _mapper.Map<LiverEnzyme>(request);
-                liverEnzyme.DateRecorded = DateTime.UtcNow.AddHours(7);
+                liverEnzyme.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 liverEnzyme.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.LiverEnzymeRepository.CreateAsync(liverEnzyme);
@@ -273,7 +281,7 @@ namespace SE.Service.Services
                 }
 
                 var kidneyFunction = _mapper.Map<KidneyFunction>(request);
-                kidneyFunction.DateRecorded = DateTime.UtcNow.AddHours(7);
+                kidneyFunction.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 kidneyFunction.Status = SD.GeneralStatus.ACTIVE;
 
                 await _unitOfWork.KidneyFunctionRepository.CreateAsync(kidneyFunction);
@@ -300,8 +308,8 @@ namespace SE.Service.Services
             {
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
-        }        
-        
+        }
+
         public async Task<IBusinessResult> GetHeightById(int id)
         {
             try
@@ -443,8 +451,8 @@ namespace SE.Service.Services
             {
                 return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
             }
-        }        
-        
+        }
+
         public async Task<IBusinessResult> UpdateHeightStatus(int heightId, string status)
         {
             try
@@ -662,103 +670,332 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> GetAllHealthIndicatorsByElderlyId(int elderlyId, string filter = null)
+        /*  public async Task<IBusinessResult> GetAllHealthIndicatorsByElderlyId(int elderlyId, string filter = null)
+          {
+              try
+              {
+                  if (elderlyId <= 0)
+                  {
+                      return new BusinessResult(Const.FAIL_READ, "Invalid elderly ID.");
+                  }
+
+                  var healthIndicators = new Dictionary<string, object>();
+
+                  if (filter == null || filter.Equals("Weight", StringComparison.OrdinalIgnoreCase))
+                  {
+                      var weights = _unitOfWork.WeightRepository.FindByCondition(w => w.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                      var weightDTOs = _mapper.Map<List<GetWeightDTO>>(weights);
+                      FormatDateRecorded(weightDTOs);
+                      healthIndicators["Weight"] = weightDTOs;
+                  }
+
+                  if (filter == null || filter.Equals("Height", StringComparison.OrdinalIgnoreCase))
+                  {
+                      var heights = _unitOfWork.HeightRepository.FindByCondition(h => h.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                      var heightDTOs = _mapper.Map<List<GetHeightDTO>>(heights);
+                      FormatDateRecorded(heightDTOs);
+                      healthIndicators["Height"] = heightDTOs;
+                  }
+
+                  if (filter == null || filter.Equals("BloodPressure", StringComparison.OrdinalIgnoreCase))
+                  {
+                      var bloodPressures = _unitOfWork.BloodPressureRepository.FindByCondition(bp => bp.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                      var bloodPressureDTOs = _mapper.Map<List<GetBloodPressureDTO>>(bloodPressures);
+                      FormatDateRecorded(bloodPressureDTOs);
+                      healthIndicators["BloodPressure"] = bloodPressureDTOs;
+                  }
+
+                  if (filter == null || filter.Equals("HeartRate", StringComparison.OrdinalIgnoreCase))
+                  {
+                      var heartRates = _unitOfWork.HeartRateRepository.FindByCondition(hr => hr.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                      var heartRateDTOs = _mapper.Map<List<GetHeartRateDTO>>(heartRates);
+                      FormatDateRecorded(heartRateDTOs);
+                      healthIndicators["HeartRate"] = heartRateDTOs;
+                  }
+
+                  if (filter == null || filter.Equals("BloodGlucose", StringComparison.OrdinalIgnoreCase))
+                  {
+                      var bloodGlucoseRecords = _unitOfWork.BloodGlucoseRepository.FindByCondition(bg => bg.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                      var bloodGlucoseDTOs = _mapper.Map<List<GetBloodGlucoseDTO>>(bloodGlucoseRecords);
+                      FormatDateRecorded(bloodGlucoseDTOs);
+                      healthIndicators["BloodGlucose"] = bloodGlucoseDTOs;
+                  }
+
+                  if (filter == null || filter.Equals("LipidProfile", StringComparison.OrdinalIgnoreCase))
+                  {
+                      var lipidProfiles = _unitOfWork.LipidProfileRepository.FindByCondition(lp => lp.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                      var lipidProfileDTOs = _mapper.Map<List<GetLipidProfileDTO>>(lipidProfiles);
+                      FormatDateRecorded(lipidProfileDTOs);
+                      healthIndicators["LipidProfile"] = lipidProfileDTOs;
+                  }
+
+                  if (filter == null || filter.Equals("LiverEnzymes", StringComparison.OrdinalIgnoreCase))
+                  {
+                      var liverEnzymes = _unitOfWork.LiverEnzymeRepository.FindByCondition(le => le.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                      var liverEnzymesDTOs = _mapper.Map<List<GetLiverEnzymesDTO>>(liverEnzymes);
+                      FormatDateRecorded(liverEnzymesDTOs);
+                      healthIndicators["LiverEnzymes"] = liverEnzymesDTOs;
+                  }
+
+                  if (filter == null || filter.Equals("KidneyFunction", StringComparison.OrdinalIgnoreCase))
+                  {
+                      var kidneyFunctions = _unitOfWork.KidneyFunctionRepository.FindByCondition(kf => kf.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
+                      var kidneyFunctionDTOs = _mapper.Map<List<GetKidneyFunctionDTO>>(kidneyFunctions);
+                      FormatDateRecorded(kidneyFunctionDTOs);
+                      healthIndicators["KidneyFunction"] = kidneyFunctionDTOs;
+                  }
+
+                  return new BusinessResult(Const.SUCCESS_READ, "Health indicators retrieved successfully.", healthIndicators);
+              }
+              catch (Exception ex)
+              {
+                  return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+              }
+          }
+  */
+        /* private void FormatDateRecorded<T>(List<T> dtos) where T : class
+         {
+             foreach (var dto in dtos)
+             {
+                 var dateRecordedProperty = dto.GetType().GetProperty("DateRecorded");
+                 if (dateRecordedProperty != null && dateRecordedProperty.PropertyType == typeof(string))
+                 {
+                     var dateRecordedValue = dateRecordedProperty.GetValue(dto) as DateTime?;
+                     if (dateRecordedValue.HasValue)
+                     {
+                         dateRecordedProperty.SetValue(dto, dateRecordedValue.Value.ToString("dd-MM-yyyy HH:mm:ss"));
+                     }
+                 }
+             }
+         }*/
+
+        public async Task<IBusinessResult> GetWeightDetail(int accountId)
         {
             try
             {
-                if (elderlyId <= 0)
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+                if (elderly == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "Invalid elderly ID.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
-                var healthIndicators = new Dictionary<string, object>();
+                // Get the newest height record for the elderly
+                var newestHeightRecord = _unitOfWork.HeightRepository
+                    .FindByCondition(h => h.ElderlyId == elderly.Elderly.ElderlyId && h.Status == SD.GeneralStatus.ACTIVE)
+                    .OrderByDescending(h => h.DateRecorded)
+                    .FirstOrDefault();
 
-                if (filter == null || filter.Equals("Weight", StringComparison.OrdinalIgnoreCase))
+                if (newestHeightRecord == null || newestHeightRecord.Height1 == null)
                 {
-                    var weights = _unitOfWork.WeightRepository.FindByCondition(w => w.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                    var weightDTOs = _mapper.Map<List<GetWeightDTO>>(weights);
-                    FormatDateRecorded(weightDTOs);
-                    healthIndicators["Weight"] = weightDTOs;
+                    return new BusinessResult(Const.FAIL_READ, "No valid height record found for the elderly.");
                 }
 
-                if (filter == null || filter.Equals("Height", StringComparison.OrdinalIgnoreCase))
+                // Convert height from cm to meters for BMI calculation
+                var heightInMeters = newestHeightRecord.Height1.Value / 100;
+
+                // Fetch all active weight records for the elderly
+                var weightRecords = await _unitOfWork.WeightRepository
+                    .FindByConditionAsync(w => w.ElderlyId == elderly.Elderly.ElderlyId
+                                    && w.Status == SD.GeneralStatus.ACTIVE);
+
+                if (!weightRecords.Any())
                 {
-                    var heights = _unitOfWork.HeightRepository.FindByCondition(h => h.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                    var heightDTOs = _mapper.Map<List<GetHeightDTO>>(heights);
-                    FormatDateRecorded(heightDTOs);
-                    healthIndicators["Height"] = heightDTOs;
+                    return new BusinessResult(Const.FAIL_READ, "No weight records found for the elderly.");
                 }
 
-                if (filter == null || filter.Equals("BloodPressure", StringComparison.OrdinalIgnoreCase))
-                {
-                    var bloodPressures = _unitOfWork.BloodPressureRepository.FindByCondition(bp => bp.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                    var bloodPressureDTOs = _mapper.Map<List<GetBloodPressureDTO>>(bloodPressures);
-                    FormatDateRecorded(bloodPressureDTOs);
-                    healthIndicators["BloodPressure"] = bloodPressureDTOs;
-                }
+                // Get current date and time
+                var today = System.DateTime.UtcNow.AddHours(7); // Adjust for your timezone if needed
 
-                if (filter == null || filter.Equals("HeartRate", StringComparison.OrdinalIgnoreCase))
-                {
-                    var heartRates = _unitOfWork.HeartRateRepository.FindByCondition(hr => hr.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                    var heartRateDTOs = _mapper.Map<List<GetHeartRateDTO>>(heartRates);
-                    FormatDateRecorded(heartRateDTOs);
-                    healthIndicators["HeartRate"] = heartRateDTOs;
-                }
+                // Generate dates for the last 7 days (current date and 6 days before)
+                var last7Days = Enumerable.Range(0, 7)
+                    .Select(offset => today.AddDays(-offset).Date)
+                    .OrderBy(date => date) // Sort dates in ascending order
+                    .ToList();
 
-                if (filter == null || filter.Equals("BloodGlucose", StringComparison.OrdinalIgnoreCase))
-                {
-                    var bloodGlucoseRecords = _unitOfWork.BloodGlucoseRepository.FindByCondition(bg => bg.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                    var bloodGlucoseDTOs = _mapper.Map<List<GetBloodGlucoseDTO>>(bloodGlucoseRecords);
-                    FormatDateRecorded(bloodGlucoseDTOs);
-                    healthIndicators["BloodGlucose"] = bloodGlucoseDTOs;
-                }
+                // Generate weeks for the last 6 weeks (current week and 5 weeks before)
+                var last6Weeks = Enumerable.Range(0, 6)
+                    .Select(offset => today.AddDays(-(offset * 7)))
+                    .OrderBy(date => date) // Sort weeks in ascending order
+                    .Select(date => new
+                    {
+                        StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday), // Start of the week (Monday)
+                        EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6), // End of the week (Sunday)
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                    })
+                    .ToList();
 
-                if (filter == null || filter.Equals("LipidProfile", StringComparison.OrdinalIgnoreCase))
-                {
-                    var lipidProfiles = _unitOfWork.LipidProfileRepository.FindByCondition(lp => lp.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                    var lipidProfileDTOs = _mapper.Map<List<GetLipidProfileDTO>>(lipidProfiles);
-                    FormatDateRecorded(lipidProfileDTOs);
-                    healthIndicators["LipidProfile"] = lipidProfileDTOs;
-                }
+                // Generate months for the last 4 months (current month and 3 months before)
+                var last4Months = Enumerable.Range(0, 4)
+                    .Select(offset => today.AddMonths(-offset))
+                    .OrderBy(date => date) // Sort months in ascending order
+                    .Select(date => new
+                    {
+                        StartOfMonth = new System.DateTime(date.Year, date.Month, 1), // Start of the month
+                        EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)), // End of the month
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                    })
+                    .ToList();
 
-                if (filter == null || filter.Equals("LiverEnzymes", StringComparison.OrdinalIgnoreCase))
-                {
-                    var liverEnzymes = _unitOfWork.LiverEnzymeRepository.FindByCondition(le => le.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                    var liverEnzymesDTOs = _mapper.Map<List<GetLiverEnzymesDTO>>(liverEnzymes);
-                    FormatDateRecorded(liverEnzymesDTOs);
-                    healthIndicators["LiverEnzymes"] = liverEnzymesDTOs;
-                }
+                // Group weight records by day for the last 7 days
+                var dailyRecords = last7Days
+                    .Select(date => new
+                    {
+                        Date = date,
+                        Records = weightRecords
+                            .Where(record => record.DateRecorded.HasValue && record.DateRecorded.Value.Date == date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDatModel
+                    {
+                        Type = x.Date.DayOfWeek.ToString(), // Format: "Monday", "Tuesday", etc.
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(w => w.Weight1.Value), 2) : null
+                    })
+                    .ToList(); // No need to reorder since last7Days is already in the correct order
 
-                if (filter == null || filter.Equals("KidneyFunction", StringComparison.OrdinalIgnoreCase))
-                {
-                    var kidneyFunctions = _unitOfWork.KidneyFunctionRepository.FindByCondition(kf => kf.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                    var kidneyFunctionDTOs = _mapper.Map<List<GetKidneyFunctionDTO>>(kidneyFunctions);
-                    FormatDateRecorded(kidneyFunctionDTOs);
-                    healthIndicators["KidneyFunction"] = kidneyFunctionDTOs;
-                }
+                // Group weight records by week for the last 6 weeks
+                var weeklyRecords = last6Weeks
+                    .Select(week => new
+                    {
+                        Week = week,
+                        Records = weightRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDatModel
+                    {
+                        Type = x.Week.WeekLabel, // Format: "Week X, YYYY"
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(w => w.Weight1.Value), 2) : null
+                    })
+                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0'))) // Sort by week in ascending order
+                    .ToList();
 
-                return new BusinessResult(Const.SUCCESS_READ, "Health indicators retrieved successfully.", healthIndicators);
+                // Group weight records by month for the last 4 months
+                var monthlyRecords = last4Months
+                    .Select(month => new
+                    {
+                        Month = month,
+                        Records = weightRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDatModel
+                    {
+                        Type = x.Month.MonthLabel, // Format: "Month YYYY"
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(w => w.Weight1.Value), 2) : null
+                    })
+                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture)) // Sort by month in ascending order
+                    .ToList();
+
+                // Group weight records by year
+                var yearlyRecords = weightRecords
+                    .GroupBy(w => w.DateRecorded.Value.Year)
+                    .Select(g => new ChartDatModel
+                    {
+                        Type = g.Key.ToString(), // Format: "YYYY"
+                        Indicator = (double?)Math.Round(g.Average(w => w.Weight1.Value), 2) // Use weight, not BMI
+                    })
+                    .OrderBy(record => int.Parse(record.Type)) // Sort by year in ascending order
+                    .ToList();
+
+                // Calculate BMI for the current period (current day, current week, current month, current year)
+                var currentDay = today.Date; // Current day
+                var currentWeek = new
+                {
+                    StartOfWeek = today.AddDays(-(int)today.DayOfWeek + (int)System.DayOfWeek.Monday), // Start of the week (Monday)
+                    EndOfWeek = today.AddDays(-(int)today.DayOfWeek + (int)System.DayOfWeek.Monday + 6), // End of the week (Sunday)
+                    WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(today, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {today.Year}"
+                };
+                var currentMonth = new
+                {
+                    StartOfMonth = new System.DateTime(today.Year, today.Month, 1), // Start of the month
+                    EndOfMonth = new System.DateTime(today.Year, today.Month, System.DateTime.DaysInMonth(today.Year, today.Month)), // End of the month
+                    MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(today.Month)} {today.Year}"
+                };
+                var currentYear = today.Year; // Current year
+
+                var currentDayWeight = weightRecords
+                    .Where(w => w.DateRecorded.Value.Date == currentDay)
+                    .DefaultIfEmpty() // Handle empty collection
+                    .Average(w => w?.Weight1 ?? 0); // Use null-coalescing operator to handle null values
+
+                var currentWeekWeight = currentWeek != null
+                    ? weightRecords
+                        .Where(w => w.DateRecorded.Value.Date >= currentWeek.StartOfWeek && w.DateRecorded.Value.Date <= currentWeek.EndOfWeek)
+                        .DefaultIfEmpty()
+                        .Average(w => w?.Weight1 ?? 0)
+                    : 0;
+
+                var currentMonthWeight = currentMonth != null
+                    ? weightRecords
+                        .Where(w => w.DateRecorded.Value.Date >= currentMonth.StartOfMonth && w.DateRecorded.Value.Date <= currentMonth.EndOfMonth)
+                        .DefaultIfEmpty()
+                        .Average(w => w?.Weight1 ?? 0)
+                    : 0; // Handle case where currentMonth is null
+
+                var currentYearWeight = weightRecords
+                    .Where(w => w.DateRecorded.Value.Year == currentYear)
+                    .DefaultIfEmpty()
+                    .Average(w => w?.Weight1 ?? 0);
+
+                var bmiForCurrentDay = CalculateBMI(currentDayWeight, heightInMeters);
+                var bmiForCurrentWeek = CalculateBMI(currentWeekWeight, heightInMeters);
+                var bmiForCurrentMonth = CalculateBMI(currentMonthWeight, heightInMeters);
+                var bmiForCurrentYear = CalculateBMI(currentYearWeight, heightInMeters);
+
+                // Create a list of responses for each tab
+                var responseList = new List<GetWeightDetailReponse>
+        {
+            new GetWeightDetailReponse
+            {
+                Tabs = "Ngày",
+                BMI = bmiForCurrentDay, // BMI for the current day
+                ChartDatabase = dailyRecords
+            },
+            new GetWeightDetailReponse
+            {
+                Tabs = "Tuần",
+                BMI = bmiForCurrentWeek, // BMI for the current week
+                ChartDatabase = weeklyRecords
+            },
+            new GetWeightDetailReponse
+            {
+                Tabs = "Tháng",
+                BMI = bmiForCurrentMonth, // BMI for the current month
+                ChartDatabase = monthlyRecords
+            },
+            new GetWeightDetailReponse
+            {
+                Tabs = "Năm",
+                BMI = bmiForCurrentYear, // BMI for the current year
+                ChartDatabase = yearlyRecords
+            }
+        };
+
+                return new BusinessResult(Const.SUCCESS_READ, "Weight details retrieved successfully.", responseList);
             }
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
         }
-
-        private void FormatDateRecorded<T>(List<T> dtos) where T : class
+        private double CalculateBMI(decimal weight, decimal heightInMeters)
         {
-            foreach (var dto in dtos)
+            if (heightInMeters <= 0)
             {
-                var dateRecordedProperty = dto.GetType().GetProperty("DateRecorded");
-                if (dateRecordedProperty != null && dateRecordedProperty.PropertyType == typeof(string))
-                {
-                    var dateRecordedValue = dateRecordedProperty.GetValue(dto) as DateTime?;
-                    if (dateRecordedValue.HasValue)
-                    {
-                        dateRecordedProperty.SetValue(dto, dateRecordedValue.Value.ToString("dd-MM-yyyy HH:mm:ss"));
-                    }
-                }
+                throw new ArgumentException("Height must be greater than 0.");
             }
+
+            // BMI formula: weight (kg) / (height (m))^2
+            var result = (double)(weight / (heightInMeters * heightInMeters));
+            return Math.Floor(result * 100) / 100;
         }
+
+
+
     }
 }
