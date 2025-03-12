@@ -43,11 +43,11 @@ public partial class SeniorEssentialsContext : DbContext
 
     public virtual DbSet<Booking> Bookings { get; set; }
 
-    public virtual DbSet<Combo> Combos { get; set; }
-
     public virtual DbSet<ContentProvider> ContentProviders { get; set; }
 
     public virtual DbSet<Elderly> Elderlies { get; set; }
+
+    public virtual DbSet<EmergencyConfirmation> EmergencyConfirmations { get; set; }
 
     public virtual DbSet<EmergencyInformation> EmergencyInformations { get; set; }
 
@@ -93,13 +93,15 @@ public partial class SeniorEssentialsContext : DbContext
 
     public virtual DbSet<Role> Roles { get; set; }
 
+    public virtual DbSet<Subscription> Subscriptions { get; set; }
+
     public virtual DbSet<TimeSlot> TimeSlots { get; set; }
 
     public virtual DbSet<Transaction> Transactions { get; set; }
 
     public virtual DbSet<UserLink> UserLinks { get; set; }
 
-    public virtual DbSet<UserService> UserServices { get; set; }
+    public virtual DbSet<UserSubscription> UserSubscriptions { get; set; }
 
     public virtual DbSet<Weight> Weights { get; set; }
 
@@ -180,6 +182,7 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasColumnType("decimal(5, 2)")
                 .HasColumnName("BloodGlucose");
             entity.Property(e => e.BloodGlucoseSource).HasMaxLength(255);
+            entity.Property(e => e.CreatedBy).HasMaxLength(55);
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
             entity.Property(e => e.Status).HasMaxLength(50);
 
@@ -194,6 +197,7 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.ToTable("BloodPressure");
 
+            entity.Property(e => e.CreatedBy).HasMaxLength(55);
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
             entity.Property(e => e.DiastolicSource).HasMaxLength(255);
             entity.Property(e => e.Status).HasMaxLength(50);
@@ -225,10 +229,6 @@ public partial class SeniorEssentialsContext : DbContext
                 .IsRequired()
                 .HasMaxLength(20);
 
-            entity.HasOne(d => d.Combo).WithMany(p => p.Bookings)
-                .HasForeignKey(d => d.ComboId)
-                .HasConstraintName("FK__Booking__ComboId__00200768");
-
             entity.HasOne(d => d.Elderly).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.ElderlyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -238,27 +238,14 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasForeignKey(d => d.FamilyMemberId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Booking__FamilyM__02084FDA");
-        });
 
-        modelBuilder.Entity<Combo>(entity =>
-        {
-            entity.HasKey(e => e.ComboId).HasName("PK__Combo__DD42582E2711938B");
+            entity.HasOne(d => d.Subscription).WithMany(p => p.Bookings)
+                .HasForeignKey(d => d.SubscriptionId)
+                .HasConstraintName("FK__Booking__SubscriptionId__00200768");
 
-            entity.ToTable("Combo");
-
-            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
-            entity.Property(e => e.Description)
-                .IsRequired()
-                .HasMaxLength(50);
-            entity.Property(e => e.Fee).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.Name)
-                .IsRequired()
-                .HasMaxLength(20);
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasMaxLength(20);
-            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
-            entity.Property(e => e.ValidityPeriod).HasColumnType("datetime");
+            entity.HasOne(d => d.Transaction).WithMany(p => p.Bookings)
+                .HasForeignKey(d => d.TransactionId)
+                .HasConstraintName("FK__Booking__Transac__11158940");
         });
 
         modelBuilder.Entity<ContentProvider>(entity =>
@@ -301,6 +288,25 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Account).WithOne(p => p.Elderly)
                 .HasForeignKey<Elderly>(d => d.AccountId)
                 .HasConstraintName("FK__Elderly__Account__04E4BC85");
+        });
+
+        modelBuilder.Entity<EmergencyConfirmation>(entity =>
+        {
+            entity.HasKey(e => e.EmergencyConfirmationId).HasName("PK__Emergenc__FE2C2E44FDDDA900");
+
+            entity.ToTable("EmergencyConfirmation");
+
+            entity.Property(e => e.EmergencyConfirmationId).ValueGeneratedNever();
+            entity.Property(e => e.DateTime).HasColumnType("datetime");
+            entity.Property(e => e.Status).HasMaxLength(10);
+
+            entity.HasOne(d => d.Elderly).WithMany(p => p.EmergencyConfirmations)
+                .HasForeignKey(d => d.ElderlyId)
+                .HasConstraintName("FK__Emergency__Elder__0B5CAFEA");
+
+            entity.HasOne(d => d.FamilyMember).WithMany(p => p.EmergencyConfirmations)
+                .HasForeignKey(d => d.FamilyMemberId)
+                .HasConstraintName("FK__Emergency__Famil__0A688BB1");
         });
 
         modelBuilder.Entity<EmergencyInformation>(entity =>
@@ -381,6 +387,7 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.ToTable("HeartRate");
 
+            entity.Property(e => e.CreatedBy).HasMaxLength(55);
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
             entity.Property(e => e.HeartRate1).HasColumnName("HeartRate");
             entity.Property(e => e.HeartRateSource).HasMaxLength(255);
@@ -397,6 +404,7 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.ToTable("Height");
 
+            entity.Property(e => e.CreatedBy).HasMaxLength(55);
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
             entity.Property(e => e.Height1)
                 .HasColumnType("decimal(5, 2)")
@@ -440,6 +448,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.Property(e => e.Bun)
                 .HasColumnType("decimal(5, 2)")
                 .HasColumnName("BUN");
+            entity.Property(e => e.CreatedBy).HasMaxLength(55);
             entity.Property(e => e.Creatinine).HasColumnType("decimal(5, 2)");
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
             entity.Property(e => e.EGfr)
@@ -523,6 +532,7 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.ToTable("LipidProfile");
 
+            entity.Property(e => e.CreatedBy).HasMaxLength(55);
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
             entity.Property(e => e.Hdlcholesterol)
                 .HasColumnType("decimal(5, 2)")
@@ -553,6 +563,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.Property(e => e.Ast)
                 .HasColumnType("decimal(5, 2)")
                 .HasColumnName("AST");
+            entity.Property(e => e.CreatedBy).HasMaxLength(55);
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
             entity.Property(e => e.Ggt)
                 .HasColumnType("decimal(5, 2)")
@@ -763,6 +774,31 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasMaxLength(20);
         });
 
+        modelBuilder.Entity<Subscription>(entity =>
+        {
+            entity.HasKey(e => e.SubscriptionId).HasName("PK__Subscription__DD42582E2711938B");
+
+            entity.ToTable("Subscription");
+
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.Description)
+                .IsRequired()
+                .HasMaxLength(50);
+            entity.Property(e => e.Fee).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(20);
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasMaxLength(20);
+            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+            entity.Property(e => e.ValidityPeriod).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Account).WithMany(p => p.Subscriptions)
+                .HasForeignKey(d => d.AccountId)
+                .HasConstraintName("FK__Subscript__Accou__0C50D423");
+        });
+
         modelBuilder.Entity<TimeSlot>(entity =>
         {
             entity.HasKey(e => e.TimeSlotId).HasName("PK__TimeSlot__41CC1F32052FCAA7");
@@ -786,6 +822,8 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.ToTable("Transaction");
 
+            entity.HasIndex(e => e.BookingId, "UQ_Transaction_BookingId").IsUnique();
+
             entity.Property(e => e.PaymentCode)
                 .IsRequired()
                 .HasMaxLength(50);
@@ -806,8 +844,8 @@ public partial class SeniorEssentialsContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Transacti__Accou__22751F6C");
 
-            entity.HasOne(d => d.Booking).WithMany(p => p.Transactions)
-                .HasForeignKey(d => d.BookingId)
+            entity.HasOne(d => d.Booking).WithOne(p => p.TransactionNavigation)
+                .HasForeignKey<Transaction>(d => d.BookingId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Transacti__Booki__236943A5");
         });
@@ -840,25 +878,24 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasConstraintName("FK_Relationship_Account2");
         });
 
-        modelBuilder.Entity<UserService>(entity =>
+        modelBuilder.Entity<UserSubscription>(entity =>
         {
-            entity.HasKey(e => e.UserServiceId).HasName("PK__UserServ__C737CA99D793242D");
+            entity.HasKey(e => e.UserSubscriptionId).HasName("PK__UserSubs__D1FD777C9B007DED");
 
-            entity.ToTable("UserService");
+            entity.ToTable("UserSubscription");
 
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasMaxLength(20);
-            entity.Property(e => e.ValidityDateLeft).HasColumnType("datetime");
+            entity.Property(e => e.UserSubscriptionId).ValueGeneratedNever();
+            entity.Property(e => e.EndDate).HasColumnType("datetime");
+            entity.Property(e => e.StartDate).HasColumnType("datetime");
+            entity.Property(e => e.Status).HasMaxLength(10);
 
-            entity.HasOne(d => d.Booking).WithMany(p => p.UserServices)
+            entity.HasOne(d => d.Booking).WithMany(p => p.UserSubscriptions)
                 .HasForeignKey(d => d.BookingId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__UserServi__Booki__245D67DE");
+                .HasConstraintName("FK__UserSubsc__Booki__0F2D40CE");
 
-            entity.HasOne(d => d.Professor).WithMany(p => p.UserServices)
+            entity.HasOne(d => d.Professor).WithMany(p => p.UserSubscriptions)
                 .HasForeignKey(d => d.ProfessorId)
-                .HasConstraintName("FK__UserServi__Profe__25518C17");
+                .HasConstraintName("FK__UserSubsc__Profe__10216507");
         });
 
         modelBuilder.Entity<Weight>(entity =>
@@ -867,6 +904,7 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.ToTable("Weight");
 
+            entity.Property(e => e.CreatedBy).HasMaxLength(55);
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
             entity.Property(e => e.Status).HasMaxLength(50);
             entity.Property(e => e.Weight1)

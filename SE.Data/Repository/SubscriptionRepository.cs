@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 
 namespace SE.Data.Repository
 {
-    public class ComboRepository : GenericRepository<Combo>
+    public class SubscriptionRepository : GenericRepository<Combo>
     {
-        public ComboRepository() { }
-        public ComboRepository(SeniorEssentialsContext context)
+        public SubscriptionRepository() { }
+        public SubscriptionRepository(SeniorEssentialsContext context)
         {
             _context = context;
         }

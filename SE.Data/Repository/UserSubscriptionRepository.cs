@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 
 namespace SE.Data.Repository
 {
-    public class UserServiceRepository : GenericRepository<UserService>
+    public class UserSubscriptionRepository : GenericRepository<UserService>
     {
-        public UserServiceRepository() { }
-        public UserServiceRepository(SeniorEssentialsContext context)
+        public UserSubscriptionRepository() { }
+        public UserSubscriptionRepository(SeniorEssentialsContext context)
         {
             _context = context;
         }

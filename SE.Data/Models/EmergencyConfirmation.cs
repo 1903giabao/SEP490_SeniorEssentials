@@ -5,21 +5,19 @@ using System.Collections.Generic;
 
 namespace SE.Data.Models;
 
-public partial class Weight
+public partial class EmergencyConfirmation
 {
-    public int WeightId { get; set; }
+    public int EmergencyConfirmationId { get; set; }
+
+    public int? FamilyMemberId { get; set; }
 
     public int? ElderlyId { get; set; }
 
-    public DateTime? DateRecorded { get; set; }
-
-    public decimal? Weight1 { get; set; }
-
-    public string WeightSource { get; set; }
+    public DateTime? DateTime { get; set; }
 
     public string Status { get; set; }
 
-    public string CreatedBy { get; set; }
-
     public virtual Elderly Elderly { get; set; }
+
+    public virtual FamilyMember FamilyMember { get; set; }
 }

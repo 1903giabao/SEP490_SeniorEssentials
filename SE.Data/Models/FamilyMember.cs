@@ -16,4 +16,6 @@ public partial class FamilyMember
     public virtual Account Account { get; set; }
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+
+    public virtual ICollection<EmergencyConfirmation> EmergencyConfirmations { get; set; } = new List<EmergencyConfirmation>();
 }
