@@ -18,6 +18,7 @@ using SE.Common.Response;
 using System.Globalization;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using Google.Type;
+using static Google.Cloud.Vision.V1.ProductSearchResults.Types;
 
 namespace SE.Service.Services
 {
@@ -33,17 +34,6 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateLiverEnzymes(CreateLiverEnzymesRequest request);
         Task<IBusinessResult> CreateKidneyFunction(CreateKidneyFunctionRequest request);
 
-        // Get methods by id
-        Task<IBusinessResult> GetHeightById(int id);
-        Task<IBusinessResult> GetWeightById(int id);
-        Task<IBusinessResult> GetBloodPressureById(int id);
-        Task<IBusinessResult> GetHeartRateById(int id);
-        Task<IBusinessResult> GetBloodGlucoseById(int id);
-        Task<IBusinessResult> GetLipidProfileById(int id);
-        Task<IBusinessResult> GetLiverEnzymesById(int id);
-        Task<IBusinessResult> GetKidneyFunctionById(int id);
-
-
         // Update status methods for each health indicator
         Task<IBusinessResult> UpdateWeightStatus(int weightId, string status);
         Task<IBusinessResult> UpdateHeightStatus(int heightId, string status);
@@ -53,10 +43,20 @@ namespace SE.Service.Services
         Task<IBusinessResult> UpdateLipidProfileStatus(int lipidProfileId, string status);
         Task<IBusinessResult> UpdateLiverEnzymesStatus(int liverEnzymesId, string status);
         Task<IBusinessResult> UpdateKidneyFunctionStatus(int kidneyFunctionId, string status);
-
+        //tivo
         Task<IBusinessResult> GetWeightDetail(int accountId);
+        Task<IBusinessResult> GetHeightDetail(int accountId);
+        Task<IBusinessResult> GetHeartRateDetail(int accountId);
+        Task<IBusinessResult> GetBloodPressureDetail(int accountId);
 
-        //     Task<IBusinessResult> GetAllHealthIndicatorsByElderlyId(int elderlyId, string filter = null);
+        Task<IBusinessResult> GetBloodGlucoseDetail(int accountId);
+        Task<IBusinessResult> GetLipidProfileDetail(int accountId);
+        Task<IBusinessResult> GetLiverEnzymesDetail(int accountId);
+
+        Task<IBusinessResult> GetKidneyFunctionDetail(int accountId);
+
+
+
     }
 
     public class HealthIndicatorService : IHealthIndicatorService
@@ -291,134 +291,6 @@ namespace SE.Service.Services
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetWeightById(int id)
-        {
-            try
-            {
-                var weightHeight = _unitOfWork.WeightRepository.GetByIdAsync(id);
-
-                var weightHeightResult = _mapper.Map<GetWeightDTO>(weightHeight);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Weight retrieved successfully.", weightHeightResult);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetHeightById(int id)
-        {
-            try
-            {
-                var weightHeight = _unitOfWork.HeightRepository.GetByIdAsync(id);
-
-                var weightHeightResult = _mapper.Map<GetHeightDTO>(weightHeight);
-
-                return new BusinessResult(Const.SUCCESS_READ, "height retrieved successfully.", weightHeightResult);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetBloodPressureById(int id)
-        {
-            try
-            {
-                var bloodPressure = _unitOfWork.BloodPressureRepository.GetByIdAsync(id);
-
-                var bloodPressureResult = _mapper.Map<GetBloodPressureDTO>(bloodPressure);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Blood Pressure retrieved successfully.", bloodPressureResult);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetHeartRateById(int id)
-        {
-            try
-            {
-                var heartRate = _unitOfWork.HeartRateRepository.GetByIdAsync(id);
-
-                var heartRateResult = _mapper.Map<GetHeartRateDTO>(heartRate);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Heart Rate retrieved successfully.", heartRateResult);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetBloodGlucoseById(int id)
-        {
-            try
-            {
-                var bloodGlucose = _unitOfWork.BloodGlucoseRepository.GetByIdAsync(id);
-
-                var bloodGlucoseResult = _mapper.Map<GetBloodGlucoseDTO>(bloodGlucose);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Blood Glucose retrieved successfully.", bloodGlucoseResult);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetLipidProfileById(int id)
-        {
-            try
-            {
-                var lipidProfile = _unitOfWork.LipidProfileRepository.GetByIdAsync(id);
-
-                var lipidProfileResult = _mapper.Map<GetHeartRateDTO>(lipidProfile);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Lipid Profile retrieved successfully.", lipidProfileResult);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetLiverEnzymesById(int id)
-        {
-            try
-            {
-                var liverEnzyme = _unitOfWork.LiverEnzymeRepository.GetByIdAsync(id);
-
-                var liverEnzymeResult = _mapper.Map<GetLiverEnzymesDTO>(liverEnzyme);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Liver Enzyme retrieved successfully.", liverEnzymeResult);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> GetKidneyFunctionById(int id)
-        {
-            try
-            {
-                var kidneyFunction = _unitOfWork.KidneyFunctionRepository.GetByIdAsync(id);
-
-                var kidneyFunctionResult = _mapper.Map<GetKidneyFunctionDTO>(kidneyFunction);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Kidney Function retrieved successfully.", kidneyFunctionResult);
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
         }
 
@@ -670,105 +542,7 @@ namespace SE.Service.Services
             }
         }
 
-        /*  public async Task<IBusinessResult> GetAllHealthIndicatorsByElderlyId(int elderlyId, string filter = null)
-          {
-              try
-              {
-                  if (elderlyId <= 0)
-                  {
-                      return new BusinessResult(Const.FAIL_READ, "Invalid elderly ID.");
-                  }
-
-                  var healthIndicators = new Dictionary<string, object>();
-
-                  if (filter == null || filter.Equals("Weight", StringComparison.OrdinalIgnoreCase))
-                  {
-                      var weights = _unitOfWork.WeightRepository.FindByCondition(w => w.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                      var weightDTOs = _mapper.Map<List<GetWeightDTO>>(weights);
-                      FormatDateRecorded(weightDTOs);
-                      healthIndicators["Weight"] = weightDTOs;
-                  }
-
-                  if (filter == null || filter.Equals("Height", StringComparison.OrdinalIgnoreCase))
-                  {
-                      var heights = _unitOfWork.HeightRepository.FindByCondition(h => h.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                      var heightDTOs = _mapper.Map<List<GetHeightDTO>>(heights);
-                      FormatDateRecorded(heightDTOs);
-                      healthIndicators["Height"] = heightDTOs;
-                  }
-
-                  if (filter == null || filter.Equals("BloodPressure", StringComparison.OrdinalIgnoreCase))
-                  {
-                      var bloodPressures = _unitOfWork.BloodPressureRepository.FindByCondition(bp => bp.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                      var bloodPressureDTOs = _mapper.Map<List<GetBloodPressureDTO>>(bloodPressures);
-                      FormatDateRecorded(bloodPressureDTOs);
-                      healthIndicators["BloodPressure"] = bloodPressureDTOs;
-                  }
-
-                  if (filter == null || filter.Equals("HeartRate", StringComparison.OrdinalIgnoreCase))
-                  {
-                      var heartRates = _unitOfWork.HeartRateRepository.FindByCondition(hr => hr.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                      var heartRateDTOs = _mapper.Map<List<GetHeartRateDTO>>(heartRates);
-                      FormatDateRecorded(heartRateDTOs);
-                      healthIndicators["HeartRate"] = heartRateDTOs;
-                  }
-
-                  if (filter == null || filter.Equals("BloodGlucose", StringComparison.OrdinalIgnoreCase))
-                  {
-                      var bloodGlucoseRecords = _unitOfWork.BloodGlucoseRepository.FindByCondition(bg => bg.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                      var bloodGlucoseDTOs = _mapper.Map<List<GetBloodGlucoseDTO>>(bloodGlucoseRecords);
-                      FormatDateRecorded(bloodGlucoseDTOs);
-                      healthIndicators["BloodGlucose"] = bloodGlucoseDTOs;
-                  }
-
-                  if (filter == null || filter.Equals("LipidProfile", StringComparison.OrdinalIgnoreCase))
-                  {
-                      var lipidProfiles = _unitOfWork.LipidProfileRepository.FindByCondition(lp => lp.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                      var lipidProfileDTOs = _mapper.Map<List<GetLipidProfileDTO>>(lipidProfiles);
-                      FormatDateRecorded(lipidProfileDTOs);
-                      healthIndicators["LipidProfile"] = lipidProfileDTOs;
-                  }
-
-                  if (filter == null || filter.Equals("LiverEnzymes", StringComparison.OrdinalIgnoreCase))
-                  {
-                      var liverEnzymes = _unitOfWork.LiverEnzymeRepository.FindByCondition(le => le.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                      var liverEnzymesDTOs = _mapper.Map<List<GetLiverEnzymesDTO>>(liverEnzymes);
-                      FormatDateRecorded(liverEnzymesDTOs);
-                      healthIndicators["LiverEnzymes"] = liverEnzymesDTOs;
-                  }
-
-                  if (filter == null || filter.Equals("KidneyFunction", StringComparison.OrdinalIgnoreCase))
-                  {
-                      var kidneyFunctions = _unitOfWork.KidneyFunctionRepository.FindByCondition(kf => kf.ElderlyId == elderlyId).OrderByDescending(kf => kf.DateRecorded).ToList();
-                      var kidneyFunctionDTOs = _mapper.Map<List<GetKidneyFunctionDTO>>(kidneyFunctions);
-                      FormatDateRecorded(kidneyFunctionDTOs);
-                      healthIndicators["KidneyFunction"] = kidneyFunctionDTOs;
-                  }
-
-                  return new BusinessResult(Const.SUCCESS_READ, "Health indicators retrieved successfully.", healthIndicators);
-              }
-              catch (Exception ex)
-              {
-                  return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-              }
-          }
-  */
-        /* private void FormatDateRecorded<T>(List<T> dtos) where T : class
-         {
-             foreach (var dto in dtos)
-             {
-                 var dateRecordedProperty = dto.GetType().GetProperty("DateRecorded");
-                 if (dateRecordedProperty != null && dateRecordedProperty.PropertyType == typeof(string))
-                 {
-                     var dateRecordedValue = dateRecordedProperty.GetValue(dto) as DateTime?;
-                     if (dateRecordedValue.HasValue)
-                     {
-                         dateRecordedProperty.SetValue(dto, dateRecordedValue.Value.ToString("dd-MM-yyyy HH:mm:ss"));
-                     }
-                 }
-             }
-         }*/
-
+        //tivo
         public async Task<IBusinessResult> GetWeightDetail(int accountId)
         {
             try
@@ -780,7 +554,6 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
-                // Get the newest height record for the elderly
                 var newestHeightRecord = _unitOfWork.HeightRepository
                     .FindByCondition(h => h.ElderlyId == elderly.Elderly.ElderlyId && h.Status == SD.GeneralStatus.ACTIVE)
                     .OrderByDescending(h => h.DateRecorded)
@@ -791,10 +564,17 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "No valid height record found for the elderly.");
                 }
 
-                // Convert height from cm to meters for BMI calculation
                 var heightInMeters = newestHeightRecord.Height1.Value / 100;
 
-                // Fetch all active weight records for the elderly
+                var newestWeightRecord = _unitOfWork.WeightRepository
+                    .FindByCondition(h => h.ElderlyId == elderly.Elderly.ElderlyId && h.Status == SD.GeneralStatus.ACTIVE)
+                    .OrderByDescending(h => h.DateRecorded)
+                    .FirstOrDefault();
+
+                var BMIToday = newestWeightRecord != null && newestWeightRecord.Weight1.HasValue
+                    ? CalculateBMI(newestWeightRecord.Weight1.Value, heightInMeters)
+                    : 0;
+
                 var weightRecords = await _unitOfWork.WeightRepository
                     .FindByConditionAsync(w => w.ElderlyId == elderly.Elderly.ElderlyId
                                     && w.Status == SD.GeneralStatus.ACTIVE);
@@ -804,40 +584,36 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "No weight records found for the elderly.");
                 }
 
-                // Get current date and time
-                var today = System.DateTime.UtcNow.AddHours(7); // Adjust for your timezone if needed
+                var today = System.DateTime.UtcNow.AddHours(7);
 
-                // Generate dates for the last 7 days (current date and 6 days before)
                 var last7Days = Enumerable.Range(0, 7)
                     .Select(offset => today.AddDays(-offset).Date)
-                    .OrderBy(date => date) // Sort dates in ascending order
+                    .OrderBy(date => date)
                     .ToList();
 
-                // Generate weeks for the last 6 weeks (current week and 5 weeks before)
                 var last6Weeks = Enumerable.Range(0, 6)
                     .Select(offset => today.AddDays(-(offset * 7)))
-                    .OrderBy(date => date) // Sort weeks in ascending order
+                    .OrderBy(date => date)
                     .Select(date => new
                     {
-                        StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday), // Start of the week (Monday)
-                        EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6), // End of the week (Sunday)
+                        StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
+                        EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
                         WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
                     })
                     .ToList();
 
-                // Generate months for the last 4 months (current month and 3 months before)
                 var last4Months = Enumerable.Range(0, 4)
                     .Select(offset => today.AddMonths(-offset))
-                    .OrderBy(date => date) // Sort months in ascending order
+                    .OrderBy(date => date)
                     .Select(date => new
                     {
-                        StartOfMonth = new System.DateTime(date.Year, date.Month, 1), // Start of the month
-                        EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)), // End of the month
+                        StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
+                        EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
                         MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
                     })
                     .ToList();
 
-                // Group weight records by day for the last 7 days
+                // Calculate dailyRecords with non-null Indicator values
                 var dailyRecords = last7Days
                     .Select(date => new
                     {
@@ -846,14 +622,14 @@ namespace SE.Service.Services
                             .Where(record => record.DateRecorded.HasValue && record.DateRecorded.Value.Date == date)
                             .ToList()
                     })
-                    .Select(x => new ChartDatModel
+                    .Select(x => new ChartDataModel
                     {
-                        Type = x.Date.DayOfWeek.ToString(), // Format: "Monday", "Tuesday", etc.
-                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(w => w.Weight1.Value), 2) : null
+                        Type = x.Date.DayOfWeek.ToString(),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(w => w.Weight1 ?? 0), 2) : null
                     })
-                    .ToList(); // No need to reorder since last7Days is already in the correct order
+                    .ToList();
 
-                // Group weight records by week for the last 6 weeks
+                // Calculate weeklyRecords with non-null Indicator values
                 var weeklyRecords = last6Weeks
                     .Select(week => new
                     {
@@ -864,15 +640,15 @@ namespace SE.Service.Services
                                              record.DateRecorded.Value.Date <= week.EndOfWeek)
                             .ToList()
                     })
-                    .Select(x => new ChartDatModel
+                    .Select(x => new ChartDataModel
                     {
-                        Type = x.Week.WeekLabel, // Format: "Week X, YYYY"
-                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(w => w.Weight1.Value), 2) : null
+                        Type = x.Week.WeekLabel,
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(w => w.Weight1 ?? 0), 2) : null
                     })
-                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0'))) // Sort by week in ascending order
+                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
                     .ToList();
 
-                // Group weight records by month for the last 4 months
+                // Calculate monthlyRecords with non-null Indicator values
                 var monthlyRecords = last4Months
                     .Select(month => new
                     {
@@ -883,106 +659,98 @@ namespace SE.Service.Services
                                              record.DateRecorded.Value.Date <= month.EndOfMonth)
                             .ToList()
                     })
-                    .Select(x => new ChartDatModel
+                    .Select(x => new ChartDataModel
                     {
-                        Type = x.Month.MonthLabel, // Format: "Month YYYY"
-                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(w => w.Weight1.Value), 2) : null
+                        Type = x.Month.MonthLabel,
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(w => w.Weight1 ?? 0), 2) : null
                     })
-                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture)) // Sort by month in ascending order
+                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
                     .ToList();
 
-                // Group weight records by year
+                // Calculate yearlyRecords with non-null Indicator values
                 var yearlyRecords = weightRecords
                     .GroupBy(w => w.DateRecorded.Value.Year)
-                    .Select(g => new ChartDatModel
+                    .Select(g => new ChartDataModel
                     {
-                        Type = g.Key.ToString(), // Format: "YYYY"
-                        Indicator = (double?)Math.Round(g.Average(w => w.Weight1.Value), 2) // Use weight, not BMI
+                        Type = g.Key.ToString(),
+                        Indicator = (double?)Math.Round(g.Average(w => w.Weight1 ?? 0), 2)
                     })
-                    .OrderBy(record => int.Parse(record.Type)) // Sort by year in ascending order
+                    .OrderBy(record => int.Parse(record.Type))
                     .ToList();
 
-                // Calculate BMI for the current period (current day, current week, current month, current year)
-                var currentDay = today.Date; // Current day
-                var currentWeek = new
-                {
-                    StartOfWeek = today.AddDays(-(int)today.DayOfWeek + (int)System.DayOfWeek.Monday), // Start of the week (Monday)
-                    EndOfWeek = today.AddDays(-(int)today.DayOfWeek + (int)System.DayOfWeek.Monday + 6), // End of the week (Sunday)
-                    WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(today, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {today.Year}"
-                };
-                var currentMonth = new
-                {
-                    StartOfMonth = new System.DateTime(today.Year, today.Month, 1), // Start of the month
-                    EndOfMonth = new System.DateTime(today.Year, today.Month, System.DateTime.DaysInMonth(today.Year, today.Month)), // End of the month
-                    MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(today.Month)} {today.Year}"
-                };
-                var currentYear = today.Year; // Current year
+                // Calculate averages for each tab (only non-null Indicators)
+                var dailyAverage = dailyRecords
+                    .Where(d => d.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(d => d.Indicator.Value);
 
-                var currentDayWeight = weightRecords
-                    .Where(w => w.DateRecorded.Value.Date == currentDay)
-                    .DefaultIfEmpty() // Handle empty collection
-                    .Average(w => w?.Weight1 ?? 0); // Use null-coalescing operator to handle null values
+                var weeklyAverage = weeklyRecords
+                    .Where(w => w.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(w => w.Indicator.Value);
 
-                var currentWeekWeight = currentWeek != null
-                    ? weightRecords
-                        .Where(w => w.DateRecorded.Value.Date >= currentWeek.StartOfWeek && w.DateRecorded.Value.Date <= currentWeek.EndOfWeek)
-                        .DefaultIfEmpty()
-                        .Average(w => w?.Weight1 ?? 0)
-                    : 0;
+                var monthlyAverage = monthlyRecords
+                    .Where(m => m.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(m => m.Indicator.Value);
 
-                var currentMonthWeight = currentMonth != null
-                    ? weightRecords
-                        .Where(w => w.DateRecorded.Value.Date >= currentMonth.StartOfMonth && w.DateRecorded.Value.Date <= currentMonth.EndOfMonth)
-                        .DefaultIfEmpty()
-                        .Average(w => w?.Weight1 ?? 0)
-                    : 0; // Handle case where currentMonth is null
+                var yearlyAverage = yearlyRecords
+                    .Where(y => y.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(y => y.Indicator.Value);
 
-                var currentYearWeight = weightRecords
-                    .Where(w => w.DateRecorded.Value.Year == currentYear)
-                    .DefaultIfEmpty()
-                    .Average(w => w?.Weight1 ?? 0);
+                // Calculate BMI for each period using the height
+                var bmiForCurrentDay = CalculateBMI((decimal)dailyAverage, heightInMeters);
+                var bmiForCurrentWeek = CalculateBMI((decimal)weeklyAverage, heightInMeters);
+                var bmiForCurrentMonth = CalculateBMI((decimal)monthlyAverage, heightInMeters);
+                var bmiForCurrentYear = CalculateBMI((decimal)yearlyAverage, heightInMeters);
 
-                var bmiForCurrentDay = CalculateBMI(currentDayWeight, heightInMeters);
-                var bmiForCurrentWeek = CalculateBMI(currentWeekWeight, heightInMeters);
-                var bmiForCurrentMonth = CalculateBMI(currentMonthWeight, heightInMeters);
-                var bmiForCurrentYear = CalculateBMI(currentYearWeight, heightInMeters);
-
-                // Create a list of responses for each tab
-                var responseList = new List<GetWeightDetailReponse>
+                var responseList = new List<GetHealthIndicatorDetailReponse>
         {
-            new GetWeightDetailReponse
+            new GetHealthIndicatorDetailReponse
             {
                 Tabs = "Ngày",
-                BMI = bmiForCurrentDay, // BMI for the current day
+                Average = dailyAverage,
+                Evaluation = bmiForCurrentDay.ToString(),
                 ChartDatabase = dailyRecords
             },
-            new GetWeightDetailReponse
+            new GetHealthIndicatorDetailReponse
             {
                 Tabs = "Tuần",
-                BMI = bmiForCurrentWeek, // BMI for the current week
+                Average = weeklyAverage,
+                Evaluation = bmiForCurrentWeek.ToString(),
                 ChartDatabase = weeklyRecords
             },
-            new GetWeightDetailReponse
+            new GetHealthIndicatorDetailReponse
             {
                 Tabs = "Tháng",
-                BMI = bmiForCurrentMonth, // BMI for the current month
+                Average = monthlyAverage,
+                Evaluation = bmiForCurrentMonth.ToString(),
                 ChartDatabase = monthlyRecords
             },
-            new GetWeightDetailReponse
+            new GetHealthIndicatorDetailReponse
             {
                 Tabs = "Năm",
-                BMI = bmiForCurrentYear, // BMI for the current year
+                Average = yearlyAverage,
+                Evaluation = bmiForCurrentYear.ToString(),
                 ChartDatabase = yearlyRecords
             }
         };
 
-                return new BusinessResult(Const.SUCCESS_READ, "Weight details retrieved successfully.", responseList);
+                var result = new
+                {
+                    BMIToday = BMIToday,
+                    responseList
+                };
+
+                return new BusinessResult(Const.SUCCESS_READ, "Weight details retrieved successfully.", result);
             }
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
         }
+
         private double CalculateBMI(decimal weight, decimal heightInMeters)
         {
             if (heightInMeters <= 0)
@@ -990,12 +758,1883 @@ namespace SE.Service.Services
                 throw new ArgumentException("Height must be greater than 0.");
             }
 
-            // BMI formula: weight (kg) / (height (m))^2
             var result = (double)(weight / (heightInMeters * heightInMeters));
-            return Math.Floor(result * 100) / 100;
+            return Math.Round(result, 2); // Round to 2 decimal places
+        }
+        public async Task<IBusinessResult> GetHeightDetail(int accountId)
+        {
+            try
+            {
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                // Fetch height records
+                var heightRecords = await _unitOfWork.HeightRepository
+                    .FindByConditionAsync(h => h.ElderlyId == elderly.Elderly.ElderlyId && h.Status == SD.GeneralStatus.ACTIVE);
+
+                if (!heightRecords.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No height records found for the elderly.");
+                }
+
+                // Fetch the newest weight record
+                var newestWeightRecord =  _unitOfWork.WeightRepository
+                    .FindByCondition(w => w.ElderlyId == elderly.Elderly.ElderlyId && w.Status == SD.GeneralStatus.ACTIVE)
+                    .OrderByDescending(w => w.DateRecorded)
+                    .FirstOrDefault();
+
+                if (newestWeightRecord == null || newestWeightRecord.Weight1 == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No valid weight record found for the elderly.");
+                }
+
+                var newestWeight = newestWeightRecord.Weight1.Value;
+
+                var today = System.DateTime.UtcNow.AddHours(7);
+
+                var last7Days = Enumerable.Range(0, 7)
+                    .Select(offset => today.AddDays(-offset).Date)
+                    .OrderBy(date => date)
+                    .ToList();
+
+                var last6Weeks = Enumerable.Range(0, 6)
+                    .Select(offset => today.AddDays(-(offset * 7)))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
+                        EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                    })
+                    .ToList();
+
+                var last4Months = Enumerable.Range(0, 4)
+                    .Select(offset => today.AddMonths(-offset))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
+                        EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                    })
+                    .ToList();
+
+                // Calculate dailyRecords with non-null Indicator values
+                var dailyRecords = last7Days
+                    .Select(date => new
+                    {
+                        Date = date,
+                        Records = heightRecords
+                            .Where(record => record.DateRecorded.HasValue && record.DateRecorded.Value.Date == date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = x.Date.DayOfWeek.ToString(),
+                        Indicator = x.Records.Any() ? (double?)x.Records.Average(h => h.Height1) : null // Keep null if no valid records
+                    })
+                    .ToList();
+
+                // Calculate weeklyRecords with non-null Indicator values
+                var weeklyRecords = last6Weeks
+                    .Select(week => new
+                    {
+                        Week = week,
+                        Records = heightRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = x.Week.WeekLabel,
+                        Indicator = x.Records.Any() ? (double?)x.Records.Average(h => h.Height1) : null // Keep null if no valid records
+                    })
+                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
+                    .ToList();
+
+                // Calculate monthlyRecords with non-null Indicator values
+                var monthlyRecords = last4Months
+                    .Select(month => new
+                    {
+                        Month = month,
+                        Records = heightRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = x.Month.MonthLabel,
+                        Indicator = x.Records.Any() ? (double?)x.Records.Average(h => h.Height1) : null // Keep null if no valid records
+                    })
+                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
+                    .ToList();
+
+                // Calculate yearlyRecords with non-null Indicator values
+                var yearlyRecords = heightRecords
+                    .GroupBy(h => h.DateRecorded.Value.Year)
+                    .Select(g => new ChartDataModel
+                    {
+                        Type = g.Key.ToString(),
+                        Indicator = g.Any() ? (double?)g.Average(h => h.Height1) : null // Keep null if no valid records
+                    })
+                    .OrderBy(record => int.Parse(record.Type))
+                    .ToList();
+
+                // Calculate averages for each tab (only non-null Indicators)
+                var dailyAverage = dailyRecords
+                    .Where(d => d.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 }) // Default to 0 if all are null
+                    .Average(d => d.Indicator.Value);
+
+                var weeklyAverage = weeklyRecords
+                    .Where(w => w.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 }) // Default to 0 if all are null
+                    .Average(w => w.Indicator.Value);
+
+                var monthlyAverage = monthlyRecords
+                    .Where(m => m.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 }) // Default to 0 if all are null
+                    .Average(m => m.Indicator.Value);
+
+                var yearlyAverage = yearlyRecords
+                    .Where(y => y.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 }) // Default to 0 if all are null
+                    .Average(y => y.Indicator.Value);
+
+                // Calculate BMI for each period using the newest weight
+                var bmiForCurrentDay = CalculateBMI(newestWeight, (decimal)dailyRecords
+                    .Where(d => d.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(d => d.Indicator.Value) / 100);
+
+                var bmiForCurrentWeek = CalculateBMI(newestWeight, (decimal)weeklyRecords
+                    .Where(w => w.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(w => w.Indicator.Value) / 100);
+
+                var bmiForCurrentMonth = CalculateBMI(newestWeight, (decimal)monthlyRecords
+                    .Where(m => m.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(m => m.Indicator.Value) / 100);
+
+                var bmiForCurrentYear = CalculateBMI(newestWeight, (decimal)yearlyRecords
+                    .Where(y => y.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(y => y.Indicator.Value) / 100);
+
+                var responseList = new List<GetHealthIndicatorDetailReponse>
+        {
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Ngày",
+                Average = dailyAverage,
+                Evaluation = bmiForCurrentDay.ToString(),
+                ChartDatabase = dailyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Tuần",
+                Average = weeklyAverage,
+                Evaluation = bmiForCurrentWeek.ToString(),
+                ChartDatabase = weeklyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Tháng",
+                Average = monthlyAverage,
+                Evaluation = bmiForCurrentMonth.ToString(),
+                ChartDatabase = monthlyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Năm",
+                Average = yearlyAverage,
+                Evaluation = bmiForCurrentYear.ToString(),
+                ChartDatabase = yearlyRecords
+            }
+        };
+
+                return new BusinessResult(Const.SUCCESS_READ, "Height details retrieved successfully.", responseList);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetHeartRateDetail(int accountId)
+        {
+            try
+            {
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                var heartRateRecords = await _unitOfWork.HeartRateRepository
+                    .FindByConditionAsync(h => h.ElderlyId == elderly.Elderly.ElderlyId && h.Status == SD.GeneralStatus.ACTIVE);
+
+                if (!heartRateRecords.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No heart rate records found for the elderly.");
+                }
+
+                var today = System.DateTime.UtcNow.AddHours(7);
+
+                var last7Days = Enumerable.Range(0, 7)
+                    .Select(offset => today.AddDays(-offset).Date)
+                    .OrderBy(date => date)
+                    .ToList();
+
+                var last6Weeks = Enumerable.Range(0, 6)
+                    .Select(offset => today.AddDays(-(offset * 7)))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
+                        EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                    })
+                    .ToList();
+
+                var last4Months = Enumerable.Range(0, 4)
+                    .Select(offset => today.AddMonths(-offset))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
+                        EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                    })
+                    .ToList();
+
+                var dailyRecords = last7Days
+                    .Select(date => new
+                    {
+                        Date = date,
+                        Records = heartRateRecords
+                            .Where(record => record.DateRecorded.HasValue && record.DateRecorded.Value.Date == date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = x.Date.DayOfWeek.ToString(),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.HeartRate1 ?? 0)) : null
+                    })
+                    .ToList();
+
+                var weeklyRecords = last6Weeks
+                    .Select(week => new
+                    {
+                        Week = week,
+                        Records = heartRateRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = x.Week.WeekLabel,
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.HeartRate1 ?? 0),2) : null
+                    })
+                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
+                    .ToList();
+
+                var monthlyRecords = last4Months
+                    .Select(month => new
+                    {
+                        Month = month,
+                        Records = heartRateRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = x.Month.MonthLabel,
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.HeartRate1 ?? 0),2) : null
+                    })
+                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
+                    .ToList();
+
+                var yearlyRecords = heartRateRecords
+                    .GroupBy(h => h.DateRecorded.Value.Year)
+                    .Select(g => new ChartDataModel
+                    {
+                        Type = g.Key.ToString(),
+                        Indicator = (double?)Math.Round(g.Average(h => h.HeartRate1 ?? 0),2)
+                    })
+                    .OrderBy(record => int.Parse(record.Type))
+                    .ToList();
+
+                var dailyAverage = dailyRecords
+                    .Where(d => d.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(d => d.Indicator.Value);
+
+                var weeklyAverage = weeklyRecords
+                    .Where(w => w.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(w => w.Indicator.Value);
+
+                var monthlyAverage = monthlyRecords
+                    .Where(m => m.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(m => m.Indicator.Value);
+
+                var yearlyAverage = yearlyRecords
+                    .Where(y => y.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(y => y.Indicator.Value);
+
+                var dailyEvaluation = GetHeartRateEvaluation(dailyAverage);
+                var weeklyEvaluation = GetHeartRateEvaluation(weeklyAverage);
+                var monthlyEvaluation = GetHeartRateEvaluation(monthlyAverage);
+                var yearlyEvaluation = GetHeartRateEvaluation(yearlyAverage);
+
+                var responseList = new List<GetHealthIndicatorDetailReponse>
+        {
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Ngày",
+                Average = Math.Round(dailyAverage, 2),
+                Evaluation = dailyEvaluation,
+                ChartDatabase = dailyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Tuần",
+                Average = Math.Round(weeklyAverage, 2),
+                Evaluation = weeklyEvaluation,
+                ChartDatabase = weeklyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Tháng",
+                Average = Math.Round(monthlyAverage, 2),
+                Evaluation = monthlyEvaluation,
+                ChartDatabase = monthlyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Năm",
+                Average = Math.Round(yearlyAverage, 2),
+                Evaluation = yearlyEvaluation,
+                ChartDatabase = yearlyRecords
+            }
+        };
+
+                return new BusinessResult(Const.SUCCESS_READ, "Heart rate details retrieved successfully.", responseList);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        private string GetHeartRateEvaluation(double averageHeartRate)
+        {
+            if (averageHeartRate < 60)
+            {
+                return "Thấp";
+            }
+            else if (averageHeartRate >= 60 && averageHeartRate <= 100)
+            {
+                return "Trung bình";
+            }
+            else
+            {
+                return "Cao";
+            }
+        }
+
+        public async Task<IBusinessResult> GetBloodPressureDetail(int accountId)
+        {
+            try
+            {
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                var bloodPressureRecords = await _unitOfWork.BloodPressureRepository
+                    .FindByConditionAsync(b => b.ElderlyId == elderly.Elderly.ElderlyId && b.Status == SD.GeneralStatus.ACTIVE);
+
+                if (!bloodPressureRecords.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No blood pressure records found for the elderly.");
+                }
+
+                var today = System.DateTime.UtcNow.AddHours(7);
+
+                var last7Days = Enumerable.Range(0, 7)
+                    .Select(offset => today.AddDays(-offset).Date)
+                    .OrderBy(date => date)
+                    .ToList();
+
+                var last6Weeks = Enumerable.Range(0, 6)
+                    .Select(offset => today.AddDays(-(offset * 7)))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
+                        EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                    })
+                    .ToList();
+
+                var last4Months = Enumerable.Range(0, 4)
+                    .Select(offset => today.AddMonths(-offset))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
+                        EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                    })
+                    .ToList();
+
+                // Calculate dailyRecords with non-null Indicator values
+                var dailyRecords = last7Days
+                    .Select(date => new
+                    {
+                        Date = date,
+                        Records = bloodPressureRecords
+                            .Where(record => record.DateRecorded.HasValue && record.DateRecorded.Value.Date == date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartBloodPressureModel
+                    {
+                        Type = x.Date.DayOfWeek.ToString(),
+                        Indicator = x.Records.Any() ? $"{Math.Round(x.Records.Average(b => b.Systolic ?? 0), MidpointRounding.AwayFromZero)}/{Math.Round(x.Records.Average(b => b.Diastolic ?? 0), MidpointRounding.AwayFromZero)}" : null
+                    })
+                    .ToList();
+
+                // Calculate weeklyRecords with non-null Indicator values
+                var weeklyRecords = last6Weeks
+                    .Select(week => new
+                    {
+                        Week = week,
+                        Records = bloodPressureRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                            .ToList()
+                    })
+                    .Select(x => new ChartBloodPressureModel
+                    {
+                        Type = x.Week.WeekLabel,
+                        Indicator = x.Records.Any() ? $"{Math.Round(x.Records.Average(b => b.Systolic ?? 0), MidpointRounding.AwayFromZero)}/{Math.Round(x.Records.Average(b => b.Diastolic ?? 0), MidpointRounding.AwayFromZero)}" : null
+                    })
+                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
+                    .ToList();
+
+                // Calculate monthlyRecords with non-null Indicator values
+                var monthlyRecords = last4Months
+                    .Select(month => new
+                    {
+                        Month = month,
+                        Records = bloodPressureRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                            .ToList()
+                    })
+                    .Select(x => new ChartBloodPressureModel
+                    {
+                        Type = x.Month.MonthLabel,
+                        Indicator = x.Records.Any() ? $"{Math.Round(x.Records.Average(b => b.Systolic ?? 0), MidpointRounding.AwayFromZero)}/{Math.Round(x.Records.Average(b => b.Diastolic ?? 0), MidpointRounding.AwayFromZero)}" : null
+                    })
+                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
+                    .ToList();
+
+                // Calculate yearlyRecords with non-null Indicator values
+                var yearlyRecords = bloodPressureRecords
+                    .GroupBy(b => b.DateRecorded.Value.Year)
+                    .Select(g => new ChartBloodPressureModel
+                    {
+                        Type = g.Key.ToString(),
+                        Indicator = $"{Math.Round(g.Average(b => b.Systolic ?? 0), MidpointRounding.AwayFromZero)}/{Math.Round(g.Average(b => b.Diastolic ?? 0), MidpointRounding.AwayFromZero)}"
+                    })
+                    .OrderBy(record => int.Parse(record.Type))
+                    .ToList();
+
+                // Calculate averages for each tab (only non-null Indicators)
+                var dailyAverageSystolic = dailyRecords
+                    .Where(d => d.Indicator != null)
+                    .DefaultIfEmpty(new ChartBloodPressureModel { Indicator = "0/0" })
+                    .Average(d => double.Parse(d.Indicator.Split('/')[0]));
+
+                var dailyAverageDiastolic = dailyRecords
+                    .Where(d => d.Indicator != null)
+                    .DefaultIfEmpty(new ChartBloodPressureModel { Indicator = "0/0" })
+                    .Average(d => double.Parse(d.Indicator.Split('/')[1]));
+
+                var weeklyAverageSystolic = weeklyRecords
+                    .Where(w => w.Indicator != null)
+                    .DefaultIfEmpty(new ChartBloodPressureModel { Indicator = "0/0" })
+                    .Average(w => double.Parse(w.Indicator.Split('/')[0]));
+
+                var weeklyAverageDiastolic = weeklyRecords
+                    .Where(w => w.Indicator != null)
+                    .DefaultIfEmpty(new ChartBloodPressureModel { Indicator = "0/0" })
+                    .Average(w => double.Parse(w.Indicator.Split('/')[1]));
+
+                var monthlyAverageSystolic = monthlyRecords
+                    .Where(m => m.Indicator != null)
+                    .DefaultIfEmpty(new ChartBloodPressureModel { Indicator = "0/0" })
+                    .Average(m => double.Parse(m.Indicator.Split('/')[0]));
+
+                var monthlyAverageDiastolic = monthlyRecords
+                    .Where(m => m.Indicator != null)
+                    .DefaultIfEmpty(new ChartBloodPressureModel { Indicator = "0/0" })
+                    .Average(m => double.Parse(m.Indicator.Split('/')[1]));
+
+                var yearlyAverageSystolic = yearlyRecords
+                    .Where(y => y.Indicator != null)
+                    .DefaultIfEmpty(new ChartBloodPressureModel { Indicator = "0/0" })
+                    .Average(y => double.Parse(y.Indicator.Split('/')[0]));
+
+                var yearlyAverageDiastolic = yearlyRecords
+                    .Where(y => y.Indicator != null)
+                    .DefaultIfEmpty(new ChartBloodPressureModel { Indicator = "0/0" })
+                    .Average(y => double.Parse(y.Indicator.Split('/')[1]));
+
+                // Format averages as "Systolic/Diastolic" with whole numbers
+                var dailyAverage = $"{Math.Round(dailyAverageSystolic, MidpointRounding.AwayFromZero)}/{Math.Round(dailyAverageDiastolic, MidpointRounding.AwayFromZero)}";
+                var weeklyAverage = $"{Math.Round(weeklyAverageSystolic, MidpointRounding.AwayFromZero)}/{Math.Round(weeklyAverageDiastolic, MidpointRounding.AwayFromZero)}";
+                var monthlyAverage = $"{Math.Round(monthlyAverageSystolic, MidpointRounding.AwayFromZero)}/{Math.Round(monthlyAverageDiastolic, MidpointRounding.AwayFromZero)}";
+                var yearlyAverage = $"{Math.Round(yearlyAverageSystolic, MidpointRounding.AwayFromZero)}/{Math.Round(yearlyAverageDiastolic, MidpointRounding.AwayFromZero)}";
+
+                // Calculate Evaluation for each tab
+                var dailyEvaluation = GetBloodPressureEvaluation(dailyAverageSystolic, dailyAverageDiastolic);
+                var weeklyEvaluation = GetBloodPressureEvaluation(weeklyAverageSystolic, weeklyAverageDiastolic);
+                var monthlyEvaluation = GetBloodPressureEvaluation(monthlyAverageSystolic, monthlyAverageDiastolic);
+                var yearlyEvaluation = GetBloodPressureEvaluation(yearlyAverageSystolic, yearlyAverageDiastolic);
+
+                var responseList = new List<GetBloodPressureDetail>
+        {
+            new GetBloodPressureDetail
+            {
+                Tabs = "Ngày",
+                Average = dailyAverage,
+                Evaluation = dailyEvaluation,
+                ChartDatabase = dailyRecords
+            },
+            new GetBloodPressureDetail
+            {
+                Tabs = "Tuần",
+                Average = weeklyAverage,
+                Evaluation = weeklyEvaluation,
+                ChartDatabase = weeklyRecords
+            },
+            new GetBloodPressureDetail
+            {
+                Tabs = "Tháng",
+                Average = monthlyAverage,
+                Evaluation = monthlyEvaluation,
+                ChartDatabase = monthlyRecords
+            },
+            new GetBloodPressureDetail
+            {
+                Tabs = "Năm",
+                Average = yearlyAverage,
+                Evaluation = yearlyEvaluation,
+                ChartDatabase = yearlyRecords
+            }
+        };
+
+                return new BusinessResult(Const.SUCCESS_READ, "Blood pressure details retrieved successfully.", responseList);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        private string GetBloodPressureEvaluation(double averageSystolic, double averageDiastolic)
+        {
+            if (averageSystolic < 90 && averageDiastolic < 60)
+            {
+                return "Thấp";
+            }
+            else if (averageSystolic < 120 && averageDiastolic < 80)
+            {
+                return "Bình thường";
+            }
+            else if (averageSystolic >= 130 || averageDiastolic >= 80)
+            {
+                return "Cao";
+            }
+            else
+            {
+                return "Không xác định";
+            }
+        }
+
+        public async Task<IBusinessResult> GetBloodGlucoseDetail(int accountId)
+        {
+            try
+            {
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                var bloodGlucoseRecords = await _unitOfWork.BloodGlucoseRepository
+                    .FindByConditionAsync(b => b.ElderlyId == elderly.Elderly.ElderlyId && b.Status == SD.GeneralStatus.ACTIVE);
+
+                if (!bloodGlucoseRecords.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No blood glucose records found for the elderly.");
+                }
+
+                var today = System.DateTime.UtcNow.AddHours(7);
+
+                var last7Days = Enumerable.Range(0, 7)
+                    .Select(offset => today.AddDays(-offset).Date)
+                    .OrderBy(date => date)
+                    .ToList();
+
+                var last6Weeks = Enumerable.Range(0, 6)
+                    .Select(offset => today.AddDays(-(offset * 7)))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
+                        EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                    })
+                    .ToList();
+
+                var last4Months = Enumerable.Range(0, 4)
+                    .Select(offset => today.AddMonths(-offset))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
+                        EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                    })
+                    .ToList();
+
+                // Calculate dailyRecords with non-null Indicator values
+                var dailyRecords = last7Days
+                    .Select(date => new
+                    {
+                        Date = date,
+                        Records = bloodGlucoseRecords
+                            .Where(record => record.DateRecorded.HasValue && record.DateRecorded.Value.Date == date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = x.Date.DayOfWeek.ToString(),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(b => b.BloodGlucose1 ?? 0), MidpointRounding.AwayFromZero) : null
+                    })
+                    .ToList();
+
+                // Calculate weeklyRecords with non-null Indicator values
+                var weeklyRecords = last6Weeks
+                    .Select(week => new
+                    {
+                        Week = week,
+                        Records = bloodGlucoseRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = x.Week.WeekLabel,
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(b => b.BloodGlucose1 ?? 0), MidpointRounding.AwayFromZero) : null
+                    })
+                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
+                    .ToList();
+
+                // Calculate monthlyRecords with non-null Indicator values
+                var monthlyRecords = last4Months
+                    .Select(month => new
+                    {
+                        Month = month,
+                        Records = bloodGlucoseRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = x.Month.MonthLabel,
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(b => b.BloodGlucose1 ?? 0), MidpointRounding.AwayFromZero) : null
+                    })
+                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
+                    .ToList();
+
+                // Calculate yearlyRecords with non-null Indicator values
+                var yearlyRecords = bloodGlucoseRecords
+                    .GroupBy(b => b.DateRecorded.Value.Year)
+                    .Select(g => new ChartDataModel
+                    {
+                        Type = g.Key.ToString(),
+                        Indicator = (double?)Math.Round(g.Average(b => b.BloodGlucose1 ?? 0), MidpointRounding.AwayFromZero)
+                    })
+                    .OrderBy(record => int.Parse(record.Type))
+                    .ToList();
+
+                // Calculate averages for each tab (only non-null Indicators)
+                var dailyAverage = dailyRecords
+                    .Where(d => d.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(d => d.Indicator.Value);
+
+                var weeklyAverage = weeklyRecords
+                    .Where(w => w.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(w => w.Indicator.Value);
+
+                var monthlyAverage = monthlyRecords
+                    .Where(m => m.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(m => m.Indicator.Value);
+
+                var yearlyAverage = yearlyRecords
+                    .Where(y => y.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(y => y.Indicator.Value);
+
+                // Calculate Evaluation for each tab
+                var dailyEvaluation = GetBloodGlucoseEvaluation(dailyAverage);
+                var weeklyEvaluation = GetBloodGlucoseEvaluation(weeklyAverage);
+                var monthlyEvaluation = GetBloodGlucoseEvaluation(monthlyAverage);
+                var yearlyEvaluation = GetBloodGlucoseEvaluation(yearlyAverage);
+
+                var responseList = new List<GetHealthIndicatorDetailReponse>
+        {
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Ngày",
+                Average = dailyAverage,
+                Evaluation = dailyEvaluation,
+                ChartDatabase = dailyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Tuần",
+                Average = weeklyAverage,
+                Evaluation = weeklyEvaluation,
+                ChartDatabase = weeklyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Tháng",
+                Average = monthlyAverage,
+                Evaluation = monthlyEvaluation,
+                ChartDatabase = monthlyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Năm",
+                Average = yearlyAverage,
+                Evaluation = yearlyEvaluation,
+                ChartDatabase = yearlyRecords
+            }
+        };
+
+                return new BusinessResult(Const.SUCCESS_READ, "Blood glucose details retrieved successfully.", responseList);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        private string GetBloodGlucoseEvaluation(double averageBloodGlucose)
+        {
+            if (averageBloodGlucose < 70)
+            {
+                return "Thấp";
+            }
+            else if (averageBloodGlucose >= 70 && averageBloodGlucose <= 140)
+            {
+                return "Bình thường";
+            }
+            else if (averageBloodGlucose > 140)
+            {
+                return "Cao";
+            }
+            else
+            {
+                return "Không xác định";
+            }
+        }
+
+        public async Task<IBusinessResult> GetLipidProfileDetail(int accountId)
+        {
+            try
+            {
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                var lipidProfileRecords = await _unitOfWork.LipidProfileRepository
+                    .FindByConditionAsync(l => l.ElderlyId == elderly.Elderly.ElderlyId && l.Status == SD.GeneralStatus.ACTIVE);
+
+                if (!lipidProfileRecords.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No lipid profile records found for the elderly.");
+                }
+
+                var today = System.DateTime.UtcNow.AddHours(7);
+
+                var last7Days = Enumerable.Range(0, 7)
+                    .Select(offset => today.AddDays(-offset).Date)
+                    .OrderBy(date => date)
+                    .ToList();
+
+                var last6Weeks = Enumerable.Range(0, 6)
+                    .Select(offset => today.AddDays(-(offset * 7)))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
+                        EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                    })
+                    .ToList();
+
+                var last4Months = Enumerable.Range(0, 4)
+                    .Select(offset => today.AddMonths(-offset))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
+                        EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                    })
+                    .ToList();
+
+                // Calculate dailyRecords with non-null Indicator values
+                var dailyRecords = last7Days
+                    .Select(date => new
+                    {
+                        Date = date,
+                        Records = lipidProfileRecords
+                            .Where(record => record.DateRecorded.HasValue && record.DateRecorded.Value.Date == date)
+                            .ToList()
+                    })
+                    .Select(x => new CharLipidProfileModel
+                    {
+                        Type = x.Date.DayOfWeek.ToString(),
+                        TotalCholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.TotalCholesterol ?? 0), 2) : null,
+                        Ldlcholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ldlcholesterol ?? 0), 2) : null,
+                        Hdlcholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Hdlcholesterol ?? 0),2) : null,
+                        Triglycerides = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Triglycerides ?? 0), 2) : null
+                    })
+                    .ToList();
+
+                // Calculate weeklyRecords with non-null Indicator values
+                var weeklyRecords = last6Weeks
+                    .Select(week => new
+                    {
+                        Week = week,
+                        Records = lipidProfileRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                            .ToList()
+                    })
+                    .Select(x => new CharLipidProfileModel
+                    {
+                        Type = x.Week.WeekLabel,
+                        TotalCholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.TotalCholesterol ?? 0), 2) : null,
+                        Ldlcholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ldlcholesterol ?? 0), 2) : null,
+                        Hdlcholesterol = x.Records.Any() ? (decimal?)x.Records.Average(l => l.Hdlcholesterol ?? 0) : null,
+                        Triglycerides = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Triglycerides ?? 0), 2) : null
+                    })
+                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
+                    .ToList();
+
+                // Calculate monthlyRecords with non-null Indicator values
+                var monthlyRecords = last4Months
+                    .Select(month => new
+                    {
+                        Month = month,
+                        Records = lipidProfileRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                            .ToList()
+                    })
+                    .Select(x => new CharLipidProfileModel
+                    {
+                        Type = x.Month.MonthLabel,
+                        TotalCholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.TotalCholesterol ?? 0), 2) : null,
+                        Ldlcholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ldlcholesterol ?? 0), 2) : null,
+                        Hdlcholesterol = x.Records.Any() ? (decimal?)x.Records.Average(l => l.Hdlcholesterol ?? 0) : null,
+                        Triglycerides = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Triglycerides ?? 0), 2) : null
+                    })
+                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
+                    .ToList();
+
+                // Calculate yearlyRecords with non-null Indicator values
+                var yearlyRecords = lipidProfileRecords
+                    .GroupBy(l => l.DateRecorded.Value.Year)
+                    .Select(g => new CharLipidProfileModel
+                    {
+                        Type = g.Key.ToString(),
+                        TotalCholesterol = (decimal?)Math.Round(g.Average(l => l.TotalCholesterol ?? 0), 2),
+                        Ldlcholesterol = (decimal?)Math.Round(g.Average(l => l.Ldlcholesterol ?? 0), 2),
+                        Hdlcholesterol = (decimal?)g.Average(l => l.Hdlcholesterol ?? 0),
+                        Triglycerides = (decimal?)Math.Round(g.Average(l => l.Triglycerides ?? 0), 2)
+                    })
+                    .OrderBy(record => int.Parse(record.Type))
+                    .ToList();
+
+                // Calculate averages for each tab (only non-null Indicators)
+                var dailyTotalCholesterolAverage = dailyRecords
+                    .Where(d => d.TotalCholesterol.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { TotalCholesterol = 0 })
+                    .Average(d => d.TotalCholesterol.Value);
+
+                var dailyLdlcholesterolAverage = dailyRecords
+                    .Where(d => d.Ldlcholesterol.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { Ldlcholesterol = 0 })
+                    .Average(d => d.Ldlcholesterol.Value);
+
+                var dailyHdlcholesterolAverage = dailyRecords
+                    .Where(d => d.Hdlcholesterol.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { Hdlcholesterol = 0 })
+                    .Average(d => d.Hdlcholesterol.Value);
+
+                var dailyTriglyceridesAverage = dailyRecords
+                    .Where(d => d.Triglycerides.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { Triglycerides = 0 })
+                    .Average(d => d.Triglycerides.Value);
+
+                var weeklyTotalCholesterolAverage = weeklyRecords
+                    .Where(w => w.TotalCholesterol.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { TotalCholesterol = 0 })
+                    .Average(w => w.TotalCholesterol.Value);
+
+                var weeklyLdlcholesterolAverage = weeklyRecords
+                    .Where(w => w.Ldlcholesterol.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { Ldlcholesterol = 0 })
+                    .Average(w => w.Ldlcholesterol.Value);
+
+                var weeklyHdlcholesterolAverage = weeklyRecords
+                    .Where(w => w.Hdlcholesterol.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { Hdlcholesterol = 0 })
+                    .Average(w => w.Hdlcholesterol.Value);
+
+                var weeklyTriglyceridesAverage = weeklyRecords
+                    .Where(w => w.Triglycerides.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { Triglycerides = 0 })
+                    .Average(w => w.Triglycerides.Value);
+
+                var monthlyTotalCholesterolAverage = monthlyRecords
+                    .Where(m => m.TotalCholesterol.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { TotalCholesterol = 0 })
+                    .Average(m => m.TotalCholesterol.Value);
+
+                var monthlyLdlcholesterolAverage = monthlyRecords
+                    .Where(m => m.Ldlcholesterol.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { Ldlcholesterol = 0 })
+                    .Average(m => m.Ldlcholesterol.Value);
+
+                var monthlyHdlcholesterolAverage = monthlyRecords
+                    .Where(m => m.Hdlcholesterol.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { Hdlcholesterol = 0 })
+                    .Average(m => m.Hdlcholesterol.Value);
+
+                var monthlyTriglyceridesAverage = monthlyRecords
+                    .Where(m => m.Triglycerides.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { Triglycerides = 0 })
+                    .Average(m => m.Triglycerides.Value);
+
+                var yearlyTotalCholesterolAverage = yearlyRecords
+                    .Where(y => y.TotalCholesterol.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { TotalCholesterol = 0 })
+                    .Average(y => y.TotalCholesterol.Value);
+
+                var yearlyLdlcholesterolAverage = yearlyRecords
+                    .Where(y => y.Ldlcholesterol.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { Ldlcholesterol = 0 })
+                    .Average(y => y.Ldlcholesterol.Value);
+
+                var yearlyHdlcholesterolAverage = yearlyRecords
+                    .Where(y => y.Hdlcholesterol.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { Hdlcholesterol = 0 })
+                    .Average(y => y.Hdlcholesterol.Value);
+
+                var yearlyTriglyceridesAverage = yearlyRecords
+                    .Where(y => y.Triglycerides.HasValue)
+                    .DefaultIfEmpty(new CharLipidProfileModel { Triglycerides = 0 })
+                    .Average(y => y.Triglycerides.Value);
+
+                // Calculate Evaluation for each tab
+                var dailyTotalCholesterolEvaluation = GetTotalCholesterolEvaluation(dailyTotalCholesterolAverage);
+                var dailyLdlcholesterolEvaluation = GetLdlcholesterolEvaluation(dailyLdlcholesterolAverage);
+                var dailyHdlcholesterolEvaluation = GetHdlcholesterolEvaluation(dailyHdlcholesterolAverage);
+                var dailyTriglyceridesEvaluation = GetTriglyceridesEvaluation(dailyTriglyceridesAverage);
+
+                var weeklyTotalCholesterolEvaluation = GetTotalCholesterolEvaluation(weeklyTotalCholesterolAverage);
+                var weeklyLdlcholesterolEvaluation = GetLdlcholesterolEvaluation(weeklyLdlcholesterolAverage);
+                var weeklyHdlcholesterolEvaluation = GetHdlcholesterolEvaluation(weeklyHdlcholesterolAverage);
+                var weeklyTriglyceridesEvaluation = GetTriglyceridesEvaluation(weeklyTriglyceridesAverage);
+
+                var monthlyTotalCholesterolEvaluation = GetTotalCholesterolEvaluation(monthlyTotalCholesterolAverage);
+                var monthlyLdlcholesterolEvaluation = GetLdlcholesterolEvaluation(monthlyLdlcholesterolAverage);
+                var monthlyHdlcholesterolEvaluation = GetHdlcholesterolEvaluation(monthlyHdlcholesterolAverage);
+                var monthlyTriglyceridesEvaluation = GetTriglyceridesEvaluation(monthlyTriglyceridesAverage);
+
+                var yearlyTotalCholesterolEvaluation = GetTotalCholesterolEvaluation(yearlyTotalCholesterolAverage);
+                var yearlyLdlcholesterolEvaluation = GetLdlcholesterolEvaluation(yearlyLdlcholesterolAverage);
+                var yearlyHdlcholesterolEvaluation = GetHdlcholesterolEvaluation(yearlyHdlcholesterolAverage);
+                var yearlyTriglyceridesEvaluation = GetTriglyceridesEvaluation(yearlyTriglyceridesAverage);
+
+                var responseList = new List<GetLipidProfileDetail>
+        {
+            new GetLipidProfileDetail
+            {
+                Tabs = "Ngày",
+                TotalCholesterolAverage = dailyTotalCholesterolAverage,
+                LdlcholesterolAverage = dailyLdlcholesterolAverage,
+                HdlcholesterolAverage = dailyHdlcholesterolAverage,
+                TriglyceridesAverage = dailyTriglyceridesAverage,
+                TotalCholesterolEvaluation = dailyTotalCholesterolEvaluation,
+                LdlcholesteroEvaluation = dailyLdlcholesterolEvaluation,
+                HdlcholesterolEvaluation = dailyHdlcholesterolEvaluation,
+                TriglyceridesEvaluation = dailyTriglyceridesEvaluation,
+                ChartDatabase = dailyRecords
+            },
+            new GetLipidProfileDetail
+            {
+                Tabs = "Tuần",
+                TotalCholesterolAverage = weeklyTotalCholesterolAverage,
+                LdlcholesterolAverage = weeklyLdlcholesterolAverage,
+                HdlcholesterolAverage = weeklyHdlcholesterolAverage,
+                TriglyceridesAverage = weeklyTriglyceridesAverage,
+                TotalCholesterolEvaluation = weeklyTotalCholesterolEvaluation,
+                LdlcholesteroEvaluation = weeklyLdlcholesterolEvaluation,
+                HdlcholesterolEvaluation = weeklyHdlcholesterolEvaluation,
+                TriglyceridesEvaluation = weeklyTriglyceridesEvaluation,
+                ChartDatabase = weeklyRecords
+            },
+            new GetLipidProfileDetail
+            {
+                Tabs = "Tháng",
+                TotalCholesterolAverage = monthlyTotalCholesterolAverage,
+                LdlcholesterolAverage = monthlyLdlcholesterolAverage,
+                HdlcholesterolAverage = monthlyHdlcholesterolAverage,
+                TriglyceridesAverage = monthlyTriglyceridesAverage,
+                TotalCholesterolEvaluation = monthlyTotalCholesterolEvaluation,
+                LdlcholesteroEvaluation = monthlyLdlcholesterolEvaluation,
+                HdlcholesterolEvaluation = monthlyHdlcholesterolEvaluation,
+                TriglyceridesEvaluation = monthlyTriglyceridesEvaluation,
+                ChartDatabase = monthlyRecords
+            },
+            new GetLipidProfileDetail
+            {
+                Tabs = "Năm",
+                TotalCholesterolAverage = yearlyTotalCholesterolAverage,
+                LdlcholesterolAverage = yearlyLdlcholesterolAverage,
+                HdlcholesterolAverage = yearlyHdlcholesterolAverage,
+                TriglyceridesAverage = yearlyTriglyceridesAverage,
+                TotalCholesterolEvaluation = yearlyTotalCholesterolEvaluation,
+                LdlcholesteroEvaluation = yearlyLdlcholesterolEvaluation,
+                HdlcholesterolEvaluation = yearlyHdlcholesterolEvaluation,
+                TriglyceridesEvaluation = yearlyTriglyceridesEvaluation,
+                ChartDatabase = yearlyRecords
+            }
+        };
+
+                return new BusinessResult(Const.SUCCESS_READ, "Lipid profile details retrieved successfully.", responseList);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        private string GetTotalCholesterolEvaluation(decimal averageTotalCholesterol)
+        {
+            if (averageTotalCholesterol < 160)
+            {
+                return "Thấp";
+            }
+            else if (averageTotalCholesterol >= 160 && averageTotalCholesterol < 180)
+            {
+                return "Bình thường";
+            }
+            else if (averageTotalCholesterol >= 180 && averageTotalCholesterol < 220)
+            {
+                return "Cao";
+            }
+            else if (averageTotalCholesterol >= 220)
+            {
+                return "Rất cao";
+            }
+            else
+            {
+                return "Không xác định";
+            }
+        }
+
+        private string GetLdlcholesterolEvaluation(decimal averageLdlcholesterol)
+        {
+            if (averageLdlcholesterol < 40)
+            {
+                return "Thấp";
+            }
+            else if (averageLdlcholesterol >= 40 && averageLdlcholesterol < 120)
+            {
+                return "Bình thường";
+            }
+            else if (averageLdlcholesterol >= 120 && averageLdlcholesterol < 170)
+            {
+                return "Cao";
+            }
+            else if (averageLdlcholesterol >= 170)
+            {
+                return "Rất cao";
+            }
+            else
+            {
+                return "Không xác định";
+            }
+        }
+
+        private string GetHdlcholesterolEvaluation(decimal averageHdlcholesterol)
+        {
+            if (averageHdlcholesterol < 40)
+            {
+                return "Thấp";
+            }
+            else if (averageHdlcholesterol >= 40 && averageHdlcholesterol < 65)
+            {
+                return "Bình thường";
+            }
+            else if (averageHdlcholesterol >= 65)
+            {
+                return "Cao tốt";
+            }
+            else
+            {
+                return "Không xác định";
+            }
+        }
+
+        private string GetTriglyceridesEvaluation(decimal averageTriglycerides)
+        {
+            if (averageTriglycerides < 50)
+            {
+                return "Thấp";
+            }
+            else if (averageTriglycerides >= 50 && averageTriglycerides < 170)
+            {
+                return "Bình thường";
+            }
+            else if (averageTriglycerides >= 170)
+            {
+                return "Hơi cao";
+            }
+            else
+            {
+                return "Không xác định";
+            }
+        }
+
+        public async Task<IBusinessResult> GetLiverEnzymesDetail(int accountId)
+        {
+            try
+            {
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                var liverEnzymeRecords = await _unitOfWork.LiverEnzymeRepository
+                    .FindByConditionAsync(l => l.ElderlyId == elderly.Elderly.ElderlyId && l.Status == SD.GeneralStatus.ACTIVE);
+
+                if (!liverEnzymeRecords.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No liver enzyme records found for the elderly.");
+                }
+
+                var today = System.DateTime.UtcNow.AddHours(7);
+
+                var last7Days = Enumerable.Range(0, 7)
+                    .Select(offset => today.AddDays(-offset).Date)
+                    .OrderBy(date => date)
+                    .ToList();
+
+                var last6Weeks = Enumerable.Range(0, 6)
+                    .Select(offset => today.AddDays(-(offset * 7)))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
+                        EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                    })
+                    .ToList();
+
+                var last4Months = Enumerable.Range(0, 4)
+                    .Select(offset => today.AddMonths(-offset))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
+                        EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                    })
+                    .ToList();
+
+                // Calculate dailyRecords with non-null Indicator values
+                var dailyRecords = last7Days
+                    .Select(date => new
+                    {
+                        Date = date,
+                        Records = liverEnzymeRecords
+                            .Where(record => record.DateRecorded.HasValue && record.DateRecorded.Value.Date == date)
+                            .ToList()
+                    })
+                    .Select(x => new CharLiverEnzymesModel
+                    {
+                        Type = x.Date.DayOfWeek.ToString(),
+                        Alt = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alt ?? 0), 2) : null,
+                        Ast = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ast ?? 0), 2) : null,
+                        Alp = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alp ?? 0), 2) : null,
+                        Ggt = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ggt ?? 0), 2) : null
+                    })
+                    .ToList();
+
+                // Calculate weeklyRecords with non-null Indicator values
+                var weeklyRecords = last6Weeks
+                    .Select(week => new
+                    {
+                        Week = week,
+                        Records = liverEnzymeRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                            .ToList()
+                    })
+                    .Select(x => new CharLiverEnzymesModel
+                    {
+                        Type = x.Week.WeekLabel,
+                        Alt = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alt ?? 0), 2) : null,
+                        Ast = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ast ?? 0), 2) : null,
+                        Alp = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alp ?? 0), 2) : null,
+                        Ggt = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ggt ?? 0), 2) : null
+                    })
+                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
+                    .ToList();
+
+                // Calculate monthlyRecords with non-null Indicator values
+                var monthlyRecords = last4Months
+                    .Select(month => new
+                    {
+                        Month = month,
+                        Records = liverEnzymeRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                            .ToList()
+                    })
+                    .Select(x => new CharLiverEnzymesModel
+                    {
+                        Type = x.Month.MonthLabel,
+                        Alt = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alt ?? 0), 2) : null,
+                        Ast = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ast ?? 0), 2) : null,
+                        Alp = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alp ?? 0), 2) : null,
+                        Ggt = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ggt ?? 0), 2) : null
+                    })
+                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
+                    .ToList();
+
+                // Calculate yearlyRecords with non-null Indicator values
+                var yearlyRecords = liverEnzymeRecords
+                    .GroupBy(l => l.DateRecorded.Value.Year)
+                    .Select(g => new CharLiverEnzymesModel
+                    {
+                        Type = g.Key.ToString(),
+                        Alt = (decimal?)Math.Round(g.Average(l => l.Alt ?? 0), 2),
+                        Ast = (decimal?)Math.Round(g.Average(l => l.Ast ?? 0), 2),
+                        Alp = (decimal?)Math.Round(g.Average(l => l.Alp ?? 0), 2),
+                        Ggt = (decimal?)Math.Round(g.Average(l => l.Ggt ?? 0), 2)
+                    })
+                    .OrderBy(record => int.Parse(record.Type))
+                    .ToList();
+
+                // Calculate averages for each tab (only non-null Indicators)
+                var dailyAltAverage = dailyRecords
+                    .Where(d => d.Alt.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alt = 0 })
+                    .Average(d => d.Alt.Value);
+
+                var dailyAstAverage = dailyRecords
+                    .Where(d => d.Ast.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ast = 0 })
+                    .Average(d => d.Ast.Value);
+
+                var dailyAlpAverage = dailyRecords
+                    .Where(d => d.Alp.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alp = 0 })
+                    .Average(d => d.Alp.Value);
+
+                var dailyGgtAverage = dailyRecords
+                    .Where(d => d.Ggt.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ggt = 0 })
+                    .Average(d => d.Ggt.Value);
+
+                var weeklyAltAverage = weeklyRecords
+                    .Where(w => w.Alt.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alt = 0 })
+                    .Average(w => w.Alt.Value);
+
+                var weeklyAstAverage = weeklyRecords
+                    .Where(w => w.Ast.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ast = 0 })
+                    .Average(w => w.Ast.Value);
+
+                var weeklyAlpAverage = weeklyRecords
+                    .Where(w => w.Alp.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alp = 0 })
+                    .Average(w => w.Alp.Value);
+
+                var weeklyGgtAverage = weeklyRecords
+                    .Where(w => w.Ggt.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ggt = 0 })
+                    .Average(w => w.Ggt.Value);
+
+                var monthlyAltAverage = monthlyRecords
+                    .Where(m => m.Alt.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alt = 0 })
+                    .Average(m => m.Alt.Value);
+
+                var monthlyAstAverage = monthlyRecords
+                    .Where(m => m.Ast.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ast = 0 })
+                    .Average(m => m.Ast.Value);
+
+                var monthlyAlpAverage = monthlyRecords
+                    .Where(m => m.Alp.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alp = 0 })
+                    .Average(m => m.Alp.Value);
+
+                var monthlyGgtAverage = monthlyRecords
+                    .Where(m => m.Ggt.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ggt = 0 })
+                    .Average(m => m.Ggt.Value);
+
+                var yearlyAltAverage = yearlyRecords
+                    .Where(y => y.Alt.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alt = 0 })
+                    .Average(y => y.Alt.Value);
+
+                var yearlyAstAverage = yearlyRecords
+                    .Where(y => y.Ast.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ast = 0 })
+                    .Average(y => y.Ast.Value);
+
+                var yearlyAlpAverage = yearlyRecords
+                    .Where(y => y.Alp.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alp = 0 })
+                    .Average(y => y.Alp.Value);
+
+                var yearlyGgtAverage = yearlyRecords
+                    .Where(y => y.Ggt.HasValue)
+                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ggt = 0 })
+                    .Average(y => y.Ggt.Value);
+
+                // Calculate Evaluation for each tab
+                var dailyAltEvaluation = GetAltEvaluation(dailyAltAverage);
+                var dailyAstEvaluation = GetAstEvaluation(dailyAstAverage);
+                var dailyAlpEvaluation = GetAlpEvaluation(dailyAlpAverage);
+                var dailyGgtEvaluation = GetGgtEvaluation(dailyGgtAverage);
+
+                var weeklyAltEvaluation = GetAltEvaluation(weeklyAltAverage);
+                var weeklyAstEvaluation = GetAstEvaluation(weeklyAstAverage);
+                var weeklyAlpEvaluation = GetAlpEvaluation(weeklyAlpAverage);
+                var weeklyGgtEvaluation = GetGgtEvaluation(weeklyGgtAverage);
+
+                var monthlyAltEvaluation = GetAltEvaluation(monthlyAltAverage);
+                var monthlyAstEvaluation = GetAstEvaluation(monthlyAstAverage);
+                var monthlyAlpEvaluation = GetAlpEvaluation(monthlyAlpAverage);
+                var monthlyGgtEvaluation = GetGgtEvaluation(monthlyGgtAverage);
+
+                var yearlyAltEvaluation = GetAltEvaluation(yearlyAltAverage);
+                var yearlyAstEvaluation = GetAstEvaluation(yearlyAstAverage);
+                var yearlyAlpEvaluation = GetAlpEvaluation(yearlyAlpAverage);
+                var yearlyGgtEvaluation = GetGgtEvaluation(yearlyGgtAverage);
+
+                var responseList = new List<GetLiverEnzymesDetail>
+        {
+            new GetLiverEnzymesDetail
+            {
+                Tabs = "Ngày",
+                AltAverage = dailyAltAverage,
+                AstAverage = dailyAstAverage,
+                AlpAverage = dailyAlpAverage,
+                GgtAverage = dailyGgtAverage,
+                AltEvaluation = dailyAltEvaluation,
+                AstEvaluation = dailyAstEvaluation,
+                AlpEvaluation = dailyAlpEvaluation,
+                GgtEvaluation = dailyGgtEvaluation,
+                ChartDatabase = dailyRecords
+            },
+            new GetLiverEnzymesDetail
+            {
+                Tabs = "Tuần",
+                AltAverage = weeklyAltAverage,
+                AstAverage = weeklyAstAverage,
+                AlpAverage = weeklyAlpAverage,
+                GgtAverage = weeklyGgtAverage,
+                AltEvaluation = weeklyAltEvaluation,
+                AstEvaluation = weeklyAstEvaluation,
+                AlpEvaluation = weeklyAlpEvaluation,
+                GgtEvaluation = weeklyGgtEvaluation,
+                ChartDatabase = weeklyRecords
+            },
+            new GetLiverEnzymesDetail
+            {
+                Tabs = "Tháng",
+                AltAverage = monthlyAltAverage,
+                AstAverage = monthlyAstAverage,
+                AlpAverage = monthlyAlpAverage,
+                GgtAverage = monthlyGgtAverage,
+                AltEvaluation = monthlyAltEvaluation,
+                AstEvaluation = monthlyAstEvaluation,
+                AlpEvaluation = monthlyAlpEvaluation,
+                GgtEvaluation = monthlyGgtEvaluation,
+                ChartDatabase = monthlyRecords
+            },
+            new GetLiverEnzymesDetail
+            {
+                Tabs = "Năm",
+                AltAverage = yearlyAltAverage,
+                AstAverage = yearlyAstAverage,
+                AlpAverage = yearlyAlpAverage,
+                GgtAverage = yearlyGgtAverage,
+                AltEvaluation = yearlyAltEvaluation,
+                AstEvaluation = yearlyAstEvaluation,
+                AlpEvaluation = yearlyAlpEvaluation,
+                GgtEvaluation = yearlyGgtEvaluation,
+                ChartDatabase = yearlyRecords
+            }
+        };
+
+                return new BusinessResult(Const.SUCCESS_READ, "Liver enzymes details retrieved successfully.", responseList);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        private string GetAltEvaluation(decimal averageAlt)
+        {
+            if (averageAlt >= 7 && averageAlt <= 56)
+            {
+                return "Bình thường";
+            }
+            else if (averageAlt > 56)
+            {
+                return "Cao";
+            }
+            else
+            {
+                return "Không xác định";
+            }
+        }
+
+        private string GetAstEvaluation(decimal averageAst)
+        {
+            if (averageAst >= 10 && averageAst <= 40)
+            {
+                return "Bình thường";
+            }
+            else if (averageAst > 40)
+            {
+                return "Cao";
+            }
+            else
+            {
+                return "Không xác định";
+            }
+        }
+
+        private string GetAlpEvaluation(decimal averageAlp)
+        {
+            if (averageAlp >= 44 && averageAlp <= 147)
+            {
+                return "Bình thường";
+            }
+            else if (averageAlp > 147)
+            {
+                return "Cao";
+            }
+            else
+            {
+                return "Không xác định";
+            }
+        }
+
+        private string GetGgtEvaluation(decimal averageGgt)
+        {
+            if (averageGgt >= 8 && averageGgt <= 50)
+            {
+                return "Bình thường";
+            }
+            else if (averageGgt > 50)
+            {
+                return "Cao";
+            }
+            else
+            {
+                return "Không xác định";
+            }
         }
 
 
+        public async Task<IBusinessResult> GetKidneyFunctionDetail(int accountId)
+        {
+            try
+            {
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                var kidneyFunctionRecords = await _unitOfWork.KidneyFunctionRepository
+                    .FindByConditionAsync(k => k.ElderlyId == elderly.Elderly.ElderlyId && k.Status == SD.GeneralStatus.ACTIVE);
+
+                if (!kidneyFunctionRecords.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No kidney function records found for the elderly.");
+                }
+
+                var today = System.DateTime.UtcNow.AddHours(7);
+
+                var last7Days = Enumerable.Range(0, 7)
+                    .Select(offset => today.AddDays(-offset).Date)
+                    .OrderBy(date => date)
+                    .ToList();
+
+                var last6Weeks = Enumerable.Range(0, 6)
+                    .Select(offset => today.AddDays(-(offset * 7)))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
+                        EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                    })
+                    .ToList();
+
+                var last4Months = Enumerable.Range(0, 4)
+                    .Select(offset => today.AddMonths(-offset))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
+                        EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                    })
+                    .ToList();
+
+                // Calculate dailyRecords with non-null Indicator values
+                var dailyRecords = last7Days
+                    .Select(date => new
+                    {
+                        Date = date,
+                        Records = kidneyFunctionRecords
+                            .Where(record => record.DateRecorded.HasValue && record.DateRecorded.Value.Date == date)
+                            .ToList()
+                    })
+                    .Select(x => new CharKidneyFunctionModel
+                    {
+                        Type = x.Date.DayOfWeek.ToString(),
+                        Creatinine = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Creatinine ?? 0), 2) : null,
+                        Bun = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Bun ?? 0), 2) : null,
+                        EGfr = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.EGfr ?? 0), 2) : null
+                    })
+                    .ToList();
+
+                // Calculate weeklyRecords with non-null Indicator values
+                var weeklyRecords = last6Weeks
+                    .Select(week => new
+                    {
+                        Week = week,
+                        Records = kidneyFunctionRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                            .ToList()
+                    })
+                    .Select(x => new CharKidneyFunctionModel
+                    {
+                        Type = x.Week.WeekLabel,
+                        Creatinine = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Creatinine ?? 0), 2) : null,
+                        Bun = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Bun ?? 0), 2) : null,
+                        EGfr = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.EGfr ?? 0), 2) : null
+                    })
+                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
+                    .ToList();
+
+                // Calculate monthlyRecords with non-null Indicator values
+                var monthlyRecords = last4Months
+                    .Select(month => new
+                    {
+                        Month = month,
+                        Records = kidneyFunctionRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                            .ToList()
+                    })
+                    .Select(x => new CharKidneyFunctionModel
+                    {
+                        Type = x.Month.MonthLabel,
+                        Creatinine = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Creatinine ?? 0), 2) : null,
+                        Bun = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Bun ?? 0), 2) : null,
+                        EGfr = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.EGfr ?? 0), 2) : null
+                    })
+                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
+                    .ToList();
+
+                // Calculate yearlyRecords with non-null Indicator values
+                var yearlyRecords = kidneyFunctionRecords
+                    .GroupBy(k => k.DateRecorded.Value.Year)
+                    .Select(g => new CharKidneyFunctionModel
+                    {
+                        Type = g.Key.ToString(),
+                        Creatinine = (decimal?)Math.Round(g.Average(k => k.Creatinine ?? 0), 2),
+                        Bun = (decimal?)Math.Round(g.Average(k => k.Bun ?? 0), 2),
+                        EGfr = (decimal?)Math.Round(g.Average(k => k.EGfr ?? 0), 2)
+                    })
+                    .OrderBy(record => int.Parse(record.Type))
+                    .ToList();
+
+                // Calculate averages for each tab (only non-null Indicators)
+                var dailyCreatinineAverage = dailyRecords
+                    .Where(d => d.Creatinine.HasValue)
+                    .DefaultIfEmpty(new CharKidneyFunctionModel { Creatinine = 0 })
+                    .Average(d => d.Creatinine.Value);
+
+                var dailyBunAverage = dailyRecords
+                    .Where(d => d.Bun.HasValue)
+                    .DefaultIfEmpty(new CharKidneyFunctionModel { Bun = 0 })
+                    .Average(d => d.Bun.Value);
+
+                var dailyEGfrAverage = dailyRecords
+                    .Where(d => d.EGfr.HasValue)
+                    .DefaultIfEmpty(new CharKidneyFunctionModel { EGfr = 0 })
+                    .Average(d => d.EGfr.Value);
+
+                var weeklyCreatinineAverage = weeklyRecords
+                    .Where(w => w.Creatinine.HasValue)
+                    .DefaultIfEmpty(new CharKidneyFunctionModel { Creatinine = 0 })
+                    .Average(w => w.Creatinine.Value);
+
+                var weeklyBunAverage = weeklyRecords
+                    .Where(w => w.Bun.HasValue)
+                    .DefaultIfEmpty(new CharKidneyFunctionModel { Bun = 0 })
+                    .Average(w => w.Bun.Value);
+
+                var weeklyEGfrAverage = weeklyRecords
+                    .Where(w => w.EGfr.HasValue)
+                    .DefaultIfEmpty(new CharKidneyFunctionModel { EGfr = 0 })
+                    .Average(w => w.EGfr.Value);
+
+                var monthlyCreatinineAverage = monthlyRecords
+                    .Where(m => m.Creatinine.HasValue)
+                    .DefaultIfEmpty(new CharKidneyFunctionModel { Creatinine = 0 })
+                    .Average(m => m.Creatinine.Value);
+
+                var monthlyBunAverage = monthlyRecords
+                    .Where(m => m.Bun.HasValue)
+                    .DefaultIfEmpty(new CharKidneyFunctionModel { Bun = 0 })
+                    .Average(m => m.Bun.Value);
+
+                var monthlyEGfrAverage = monthlyRecords
+                    .Where(m => m.EGfr.HasValue)
+                    .DefaultIfEmpty(new CharKidneyFunctionModel { EGfr = 0 })
+                    .Average(m => m.EGfr.Value);
+
+                var yearlyCreatinineAverage = yearlyRecords
+                    .Where(y => y.Creatinine.HasValue)
+                    .DefaultIfEmpty(new CharKidneyFunctionModel { Creatinine = 0 })
+                    .Average(y => y.Creatinine.Value);
+
+                var yearlyBunAverage = yearlyRecords
+                    .Where(y => y.Bun.HasValue)
+                    .DefaultIfEmpty(new CharKidneyFunctionModel { Bun = 0 })
+                    .Average(y => y.Bun.Value);
+
+                var yearlyEGfrAverage = yearlyRecords
+                    .Where(y => y.EGfr.HasValue)
+                    .DefaultIfEmpty(new CharKidneyFunctionModel { EGfr = 0 })
+                    .Average(y => y.EGfr.Value);
+
+                // Calculate Evaluation for each tab
+                var dailyCreatinineEvaluation = GetCreatinineEvaluation(dailyCreatinineAverage);
+                var dailyBunEvaluation = GetBunEvaluation(dailyBunAverage);
+                var dailyEGfrEvaluation = GetEGfrEvaluation(dailyEGfrAverage);
+
+                var weeklyCreatinineEvaluation = GetCreatinineEvaluation(weeklyCreatinineAverage);
+                var weeklyBunEvaluation = GetBunEvaluation(weeklyBunAverage);
+                var weeklyEGfrEvaluation = GetEGfrEvaluation(weeklyEGfrAverage);
+
+                var monthlyCreatinineEvaluation = GetCreatinineEvaluation(monthlyCreatinineAverage);
+                var monthlyBunEvaluation = GetBunEvaluation(monthlyBunAverage);
+                var monthlyEGfrEvaluation = GetEGfrEvaluation(monthlyEGfrAverage);
+
+                var yearlyCreatinineEvaluation = GetCreatinineEvaluation(yearlyCreatinineAverage);
+                var yearlyBunEvaluation = GetBunEvaluation(yearlyBunAverage);
+                var yearlyEGfrEvaluation = GetEGfrEvaluation(yearlyEGfrAverage);
+
+                var responseList = new List<GetKidneyFunctionDetail>
+        {
+            new GetKidneyFunctionDetail
+            {
+                Tabs = "Ngày",
+                CreatinineAverage = dailyCreatinineAverage,
+                BunAverage = dailyBunAverage,
+                EGfrAverage = dailyEGfrAverage,
+                CreatinineEvaluation = dailyCreatinineEvaluation,
+                BunEvaluation = dailyBunEvaluation,
+                EGfrEvaluation = dailyEGfrEvaluation,
+                ChartDatabase = dailyRecords
+            },
+            new GetKidneyFunctionDetail
+            {
+                Tabs = "Tuần",
+                CreatinineAverage = weeklyCreatinineAverage,
+                BunAverage = weeklyBunAverage,
+                EGfrAverage = weeklyEGfrAverage,
+                CreatinineEvaluation = weeklyCreatinineEvaluation,
+                BunEvaluation = weeklyBunEvaluation,
+                EGfrEvaluation = weeklyEGfrEvaluation,
+                ChartDatabase = weeklyRecords
+            },
+            new GetKidneyFunctionDetail
+            {
+                Tabs = "Tháng",
+                CreatinineAverage = monthlyCreatinineAverage,
+                BunAverage = monthlyBunAverage,
+                EGfrAverage = monthlyEGfrAverage,
+                CreatinineEvaluation = monthlyCreatinineEvaluation,
+                BunEvaluation = monthlyBunEvaluation,
+                EGfrEvaluation = monthlyEGfrEvaluation,
+                ChartDatabase = monthlyRecords
+            },
+            new GetKidneyFunctionDetail
+            {
+                Tabs = "Năm",
+                CreatinineAverage = yearlyCreatinineAverage,
+                BunAverage = yearlyBunAverage,
+                EGfrAverage = yearlyEGfrAverage,
+                CreatinineEvaluation = yearlyCreatinineEvaluation,
+                BunEvaluation = yearlyBunEvaluation,
+                EGfrEvaluation = yearlyEGfrEvaluation,
+                ChartDatabase = yearlyRecords
+            }
+        };
+
+                return new BusinessResult(Const.SUCCESS_READ, "Kidney function details retrieved successfully.", responseList);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        private string GetCreatinineEvaluation(decimal averageCreatinine)
+        {
+            if (averageCreatinine >= 0.6m && averageCreatinine <= 1.2m)
+            {
+                return "Bình thường";
+            }
+            else if (averageCreatinine < 0.6m)
+            {
+                return "Thấp";
+            }
+            else if (averageCreatinine > 1.2m)
+            {
+                return "Cao";
+            }
+            else
+            {
+                return "Không xác định";
+            }
+        }
+
+        private string GetBunEvaluation(decimal averageBun)
+        {
+            if (averageBun >= 7 && averageBun <= 20)
+            {
+                return "Bình thường";
+            }
+            else if (averageBun < 7)
+            {
+                return "Thấp";
+            }
+            else if (averageBun > 20)
+            {
+                return "Cao";
+            }
+            else
+            {
+                return "Không xác định";
+            }
+        }
+
+        private string GetEGfrEvaluation(decimal averageEGfr)
+        {
+            if (averageEGfr >= 90 && averageEGfr <= 120)
+            {
+                return "Bình thường";
+            }
+            else if (averageEGfr < 60)
+            {
+                return "Thấp";
+            }
+            else if (averageEGfr < 15)
+            {
+                return "Rất thấp";
+            }
+            else
+            {
+                return "Không xác định";
+            }
+        }
 
     }
 }
