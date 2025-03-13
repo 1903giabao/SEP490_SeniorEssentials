@@ -33,10 +33,10 @@ namespace SE.Common.Mapper
                 .ForPath(dest => dest.Elderly.Account.FullName, opt => opt.MapFrom(src => src.ELderlyName));
             CreateMap<LessonFeedbackRequest, LessonFeedback>().ReverseMap();
                 
-            CreateMap<CreateComboModel, Combo>().ReverseMap();
+            CreateMap<CreateComboModel, Subscription>().ReverseMap();
             CreateMap<CreateActivityModel, Activity>().ReverseMap();
 
-            CreateMap<Combo, ComboDto>().ReverseMap();
+            CreateMap<Subscription, ComboDto>().ReverseMap();
             
             CreateMap<CreateGroupRequest, Group>().ReverseMap();
 
@@ -53,7 +53,7 @@ namespace SE.Common.Mapper
             CreateMap<CreateIotDeviceRequest, Iotdevice>();
             CreateMap<IotDeviceDto, Iotdevice>();
 
-            CreateMap<Combo, ComboDto>();
+            CreateMap<Subscription, ComboDto>();
 
             CreateMap<Account, UserDTO>().ReverseMap();
             CreateMap<Account, GetUserPhoneNumberDTO>().ReverseMap();

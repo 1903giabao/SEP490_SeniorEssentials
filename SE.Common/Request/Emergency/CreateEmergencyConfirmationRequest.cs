@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 namespace SE.Common.Request.Emergency
 {
-    public class CreateEmergencyHistoryRequest
+    public class CreateEmergencyConfirmationRequest
     {
         public int ElderlyId { get; set; }
-        public int AccountId { get; set; }
-        public bool IsConfirmed { get; set; }
+        public int FamilyMemberId { get; set; }
     }
 }

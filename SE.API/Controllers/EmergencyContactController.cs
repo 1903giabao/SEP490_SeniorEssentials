@@ -43,7 +43,7 @@ namespace SE.API.Controllers
             CallCancellations[accountId] = cts;
             CallStatuses[accountId] = "Running";
 
-            await Task.WhenAny(Task.Delay(5000));
+            await Task.Delay(5000);
 
             var cancelTask = WaitForUserCancellation(accountId, cts.Token);
 
@@ -52,7 +52,7 @@ namespace SE.API.Controllers
             {
                 cts.Cancel();
                 CallStatuses[accountId] = "Cancelled";
-                Ok(new { Status = 1, Message = "Emergency call cancelled by user." });
+                return Ok(new { Status = 1, Message = "Emergency call cancelled by user." });
             }
 
             var callTask = RunEmergencyCall(accountId, callType, cts.Token);
@@ -80,7 +80,7 @@ namespace SE.API.Controllers
                 {
                     return true;
                 }
-                await Task.Delay(1000, token);
+                await Task.Delay(500, token);
             }
             return false;
         }

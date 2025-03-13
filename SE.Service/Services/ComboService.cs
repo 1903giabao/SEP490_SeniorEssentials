@@ -48,16 +48,6 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "VALIDITY PERIOD MUST BE IN THE FUTURE");
                 }
 
-                if (req.NumberOfMeeting <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "NUMBER OF MEETINGS MUST BE > 0");
-                }
-
-                if (req.DurationPerMeeting <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "DURATION PER MEETING MUST BE > 0");
-                }
-
                 if (string.IsNullOrWhiteSpace(req.Name))
                 {
                     return new BusinessResult(Const.FAIL_READ, "NAME MUST NOT BE EMPTY");
@@ -68,7 +58,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "DESCRIPTION MUST NOT BE EMPTY");
                 }
 
-                var combo = _mapper.Map<Combo>(req);
+                var combo = _mapper.Map<Subscription>(req);
 
                 combo.CreatedDate = DateTime.UtcNow;
                 combo.UpdatedDate = DateTime.UtcNow;
@@ -102,16 +92,6 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "VALIDITY PERIOD MUST BE IN THE FUTURE");
                 }
 
-                if (req.NumberOfMeeting <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "NUMBER OF MEETINGS MUST BE > 0");
-                }
-
-                if (req.DurationPerMeeting <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "DURATION PER MEETING MUST BE > 0");
-                }
-
                 if (string.IsNullOrWhiteSpace(req.Name))
                 {
                     return new BusinessResult(Const.FAIL_READ, "NAME MUST NOT BE EMPTY");
@@ -133,8 +113,6 @@ namespace SE.Service.Services
                 combo.Description = req.Description;
                 combo.Fee = req.Fee;
                 combo.ValidityPeriod = req.ValidityPeriod;
-                combo.NumberOfMeeting = req.NumberOfMeeting;
-                combo.DurationPerMeeting = req.DurationPerMeeting;
                 combo.UpdatedDate = DateTime.UtcNow;
 
                 var result = await _unitOfWork.ComboRepository.UpdateAsync(combo);
@@ -197,7 +175,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var checkComboExisted = _unitOfWork.ComboRepository.FindByCondition(c => c.ComboId == comboId).FirstOrDefault();
+                var checkComboExisted = _unitOfWork.ComboRepository.FindByCondition(c => c.SubscriptionId == comboId).FirstOrDefault();
 
                 if (checkComboExisted == null)
                 {

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SE.Data.Repository
 {
-    public class SubscriptionRepository : GenericRepository<Combo>
+    public class SubscriptionRepository : GenericRepository<Subscription>
     {
         public SubscriptionRepository() { }
         public SubscriptionRepository(SeniorEssentialsContext context)
