@@ -57,6 +57,8 @@ public partial class SeniorEssentialsContext : DbContext
 
     public virtual DbSet<GroupMember> GroupMembers { get; set; }
 
+    public virtual DbSet<HealthIndicatorsBase> HealthIndicatorsBases { get; set; }
+
     public virtual DbSet<HeartRate> HeartRates { get; set; }
 
     public virtual DbSet<Height> Heights { get; set; }
@@ -229,15 +231,15 @@ public partial class SeniorEssentialsContext : DbContext
                 .IsRequired()
                 .HasMaxLength(20);
 
+            entity.HasOne(d => d.Account).WithMany(p => p.Bookings)
+                .HasForeignKey(d => d.AccountId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Booking__Account__02084FDA");
+
             entity.HasOne(d => d.Elderly).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.ElderlyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Booking__Elderly__01142BA1");
-
-            entity.HasOne(d => d.FamilyMember).WithMany(p => p.Bookings)
-                .HasForeignKey(d => d.FamilyMemberId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Booking__FamilyM__02084FDA");
 
             entity.HasOne(d => d.Subscription).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.SubscriptionId)
@@ -292,26 +294,26 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<EmergencyConfirmation>(entity =>
         {
-            entity.HasKey(e => e.EmergencyConfirmationId).HasName("PK__Emergenc__FE2C2E44FDDDA900");
+            entity.HasKey(e => e.EmergencyConfirmationId).HasName("PK__Emergenc__FE2C2E4480AAD319");
 
             entity.ToTable("EmergencyConfirmation");
 
-            entity.Property(e => e.EmergencyConfirmationId).ValueGeneratedNever();
-            entity.Property(e => e.DateTime).HasColumnType("datetime");
-            entity.Property(e => e.Status).HasMaxLength(10);
+            entity.Property(e => e.ConfirmationDate).HasColumnType("datetime");
+            entity.Property(e => e.EmergencyDate).HasColumnType("datetime");
+            entity.Property(e => e.Status).HasMaxLength(20);
+
+            entity.HasOne(d => d.ConfirmationAccount).WithMany(p => p.EmergencyConfirmations)
+                .HasForeignKey(d => d.ConfirmationAccountId)
+                .HasConstraintName("FK__Emergency__Confi__28ED12D1");
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.EmergencyConfirmations)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__Emergency__Elder__0B5CAFEA");
-
-            entity.HasOne(d => d.FamilyMember).WithMany(p => p.EmergencyConfirmations)
-                .HasForeignKey(d => d.FamilyMemberId)
-                .HasConstraintName("FK__Emergency__Famil__0A688BB1");
+                .HasConstraintName("FK__Emergency__Elder__27F8EE98");
         });
 
         modelBuilder.Entity<EmergencyInformation>(entity =>
         {
-            entity.HasKey(e => e.EmergencyInformationId).HasName("PK__Emergenc__56930A9BD2467F9E");
+            entity.HasKey(e => e.EmergencyInformationId).HasName("PK__Emergenc__56930A9B442C835A");
 
             entity.ToTable("EmergencyInformation");
 
@@ -320,10 +322,9 @@ public partial class SeniorEssentialsContext : DbContext
             entity.Property(e => e.Longitude).HasMaxLength(50);
             entity.Property(e => e.Status).HasMaxLength(20);
 
-            entity.HasOne(d => d.Elderly).WithMany(p => p.EmergencyInformations)
-                .HasForeignKey(d => d.ElderlyId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Emergency__Elder__0697FACD");
+            entity.HasOne(d => d.EmergencyConfirmation).WithMany(p => p.EmergencyInformations)
+                .HasForeignKey(d => d.EmergencyConfirmationId)
+                .HasConstraintName("FK__Emergency__Emerg__2BC97F7C");
         });
 
         modelBuilder.Entity<FamilyMember>(entity =>
@@ -379,6 +380,70 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasForeignKey(d => d.GroupId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__GroupMemb__Group__0C85DE4D");
+        });
+
+        modelBuilder.Entity<HealthIndicatorsBase>(entity =>
+        {
+            entity.HasKey(e => e.HealthIndicatorsBaseId).HasName("PK__HealthIn__B69B687788A900DD");
+
+            entity.ToTable("HealthIndicatorsBase");
+
+            entity.Property(e => e.Alpmax)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("ALPMax");
+            entity.Property(e => e.Alpmin)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("ALPMin");
+            entity.Property(e => e.Altmax)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("ALTMax");
+            entity.Property(e => e.Altmin)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("ALTMin");
+            entity.Property(e => e.Astmax)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("ASTMax");
+            entity.Property(e => e.Astmin)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("ASTMin");
+            entity.Property(e => e.BloodGlucoseMax).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.BloodGlucoseMin).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.Bunmax)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("BUNMax");
+            entity.Property(e => e.Bunmin)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("BUNMin");
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.EGfrmax)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("eGFRMax");
+            entity.Property(e => e.EGfrmin)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("eGFRMin");
+            entity.Property(e => e.Ggtmax)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("GGTMax");
+            entity.Property(e => e.Ggtmin)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("GGTMin");
+            entity.Property(e => e.HdlcholesterolMax)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("HDLCholesterolMax");
+            entity.Property(e => e.HdlcholesterolMin)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("HDLCholesterolMin");
+            entity.Property(e => e.LdlcholesterolMax)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("LDLCholesterolMax");
+            entity.Property(e => e.LdlcholesterolMin)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("LDLCholesterolMin");
+            entity.Property(e => e.Status).HasMaxLength(20);
+            entity.Property(e => e.TotalCholesterolMax).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.TotalCholesterolMin).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.TriglyceridesMax).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.TriglyceridesMin).HasColumnType("decimal(5, 2)");
         });
 
         modelBuilder.Entity<HeartRate>(entity =>

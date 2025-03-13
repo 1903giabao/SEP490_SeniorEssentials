@@ -9,7 +9,7 @@ public partial class Booking
 {
     public int BookingId { get; set; }
 
-    public int FamilyMemberId { get; set; }
+    public int AccountId { get; set; }
 
     public int ElderlyId { get; set; }
 
@@ -29,9 +29,9 @@ public partial class Booking
 
     public int? TransactionId { get; set; }
 
-    public virtual Elderly Elderly { get; set; }
+    public virtual FamilyMember Account { get; set; }
 
-    public virtual FamilyMember FamilyMember { get; set; }
+    public virtual Elderly Elderly { get; set; }
 
     public virtual ICollection<ProfessorAppointment> ProfessorAppointments { get; set; } = new List<ProfessorAppointment>();
 

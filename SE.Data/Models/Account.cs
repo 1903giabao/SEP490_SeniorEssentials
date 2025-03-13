@@ -39,6 +39,8 @@ public partial class Account
 
     public virtual Elderly Elderly { get; set; }
 
+    public virtual ICollection<EmergencyConfirmation> EmergencyConfirmations { get; set; } = new List<EmergencyConfirmation>();
+
     public virtual FamilyMember FamilyMember { get; set; }
 
     public virtual ICollection<GroupMember> GroupMembers { get; set; } = new List<GroupMember>();
