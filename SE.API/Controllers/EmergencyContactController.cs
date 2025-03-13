@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SE.Common.DTO;
 using SE.Common.Request;
+using SE.Common.Request.Emergency;
+using SE.Service.Base;
 using SE.Service.Services;
 using System.Threading.Tasks;
 
@@ -20,6 +22,55 @@ namespace SE.API.Controllers
             _emergencyContactService = emergencyContactService;
         }
 
+        [HttpGet("list-emergency-information/{emergencyId}")]
+        public async Task<IActionResult> GetListEmergencyInformation(int emergencyId)
+        {
+            var result = await _emergencyContactService.GetListEmergencyInformation(emergencyId);
+            return Ok(result);
+        }
+
+        [HttpGet("newest-emergency-information/{emergencyId}")]
+        public async Task<IActionResult> GetNewestEmergencyInformation(int emergencyId)
+        {
+            var result = await _emergencyContactService.GetNewestEmergencyInformation(emergencyId);
+            return Ok(result);
+        }
+
+        [HttpGet("emergency-confirmation/{emergencyId}")]
+        public async Task<IActionResult> GetEmergencyConfirmation(int emergencyId)
+        {
+            var result = await _emergencyContactService.GetEmergencyConfirmation(emergencyId);
+            return Ok(result);
+        }
+
+        [HttpGet("emergency-confirmation/{elderlyId}")]
+        public async Task<IActionResult> GetListEmergencyConfirmationByElderly(int elderlyId)
+        {
+            var result = await _emergencyContactService.GetListEmergencyConfirmationByElderly(elderlyId);
+            return Ok(result);
+        }
+
+        [HttpPost("emergency-confirmation")]
+        public async Task<IActionResult> CreateEmergencyConfirmation(int elderlyId)
+        {
+            var result = await _emergencyContactService.CreateEmergencyConfirmation(elderlyId);
+            return Ok(result);
+        }
+
+        [HttpPost("emergency-information")]
+        public async Task<IActionResult> CreateEmergencyInformation([FromForm] CreateEmergencyInformationRequest req)
+        {
+            var result = await _emergencyContactService.CreateEmergencyInformation(req);
+            return Ok(result);
+        }        
+        
+        [HttpPost("confirmation")]
+        public async Task<IActionResult> ConfirmEmergency([FromQuery] int accountId, [FromQuery] int emergencyId)
+        {
+            var result = await _emergencyContactService.ConfirmEmergency(accountId, emergencyId);
+            return Ok(result);
+        }
+
         [HttpPost("family-emergency-call")]
         public async Task<IActionResult> FamilyEmergencyCall([FromQuery] int accountId)
         {
@@ -30,6 +81,13 @@ namespace SE.API.Controllers
         public async Task<IActionResult> DoctorEmergencyCall([FromQuery] int accountId)
         {
             return await HandleEmergencyCall(accountId, "Doctor");
+        }        
+        
+        [HttpPost("115-emergency-call")]
+        public async Task<IActionResult> SoS115EmergencyCall()
+        {
+            var result = await _emergencyContactService.SoS115EmergencyCall();
+            return Ok(result);
         }
 
         private async Task<IActionResult> HandleEmergencyCall(int accountId, string callType)
@@ -66,7 +124,7 @@ namespace SE.API.Controllers
             {
                 CallStatuses[accountId] = "Cancelled";
                 CallCancellations[accountId]?.Cancel();
-                return Ok(new { accountId, Status = "Call cancelled successfully." });
+                return Ok(new { Status = 1, Message = "Call cancelled successfully." });
             }
             return Ok(new { Status = 0, Message = "Call ID not found or already processed." });
         }
@@ -108,36 +166,4 @@ namespace SE.API.Controllers
             }
         }
     }
-
-    // POST: emergency-contacts
-    /*        [HttpPost]
-            public async Task<IActionResult> CreateEmergencyContact([FromBody] CreateEmergencyContactRequest request)
-            {
-                var result = await _emergencyContactService.CreateEmergencyContact(request);
-                return Ok(result);
-            }
-
-            // PUT: emergency-contacts/update
-            [HttpPut("update")]
-            public async Task<IActionResult> UpdateEmergencyContact([FromBody] UpdateEmergencyContactRequest request)
-            {
-                var result = await _emergencyContactService.UpdateEmergencyContact(request);
-                return Ok(result);
-            }
-
-            // GET: emergency-contacts/elderly/{elderlyId}
-            [HttpGet("elderly/{elderlyId}")]
-            public async Task<IActionResult> GetEmergencyContactsByElderlyId(int elderlyId)
-            {
-                var result = await _emergencyContactService.GetEmergencyContactsByElderlyId(elderlyId);
-                return Ok(result);
-            }
-
-            // PUT: emergency-contacts/status/{emergencyContactId}
-            [HttpPut("status/{emergencyContactId}")]
-            public async Task<IActionResult> UpdateEmergencyContactStatus(int emergencyContactId)
-            {
-                var result = await _emergencyContactService.UpdateEmergencyContactStatus(emergencyContactId);
-                return Ok(result);
-            }*/
 }

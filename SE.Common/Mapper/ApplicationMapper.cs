@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using SE.Common.DTO;
+using SE.Common.DTO.Emergency;
 using SE.Common.DTO.HealthIndicator;
 using SE.Common.Request;
 using SE.Common.Request.HealthIndicator;
@@ -54,6 +55,8 @@ namespace SE.Common.Mapper
             CreateMap<IotDeviceDto, Iotdevice>();
 
             CreateMap<Subscription, ComboDto>();
+
+            CreateMap<EmergencyInformation, GetEmergencyInformationDTO>().ReverseMap();
 
             CreateMap<Account, UserDTO>().ReverseMap();
             CreateMap<Account, GetUserPhoneNumberDTO>().ReverseMap();

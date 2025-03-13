@@ -67,6 +67,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[HealthIndicatorsBase]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[HeartRate]",
          "ObjectType": 0
       },

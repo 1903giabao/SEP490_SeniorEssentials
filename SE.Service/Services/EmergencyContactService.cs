@@ -17,33 +17,44 @@ using Newtonsoft.Json;
 using Firebase.Auth;
 using SE.Common.Request.Emergency;
 using Org.BouncyCastle.Ocsp;
+using Microsoft.Identity.Client;
+using Newtonsoft.Json.Linq;
+using SE.Common.DTO.Emergency;
 
 namespace SE.Service.Services
 {
     public interface IEmergencyContactService
     {
-/*        Task<IBusinessResult> CreateEmergencyContact(CreateEmergencyContactRequest request);
-        Task<IBusinessResult> UpdateEmergencyContact(UpdateEmergencyContactRequest request);
-        Task<IBusinessResult> GetEmergencyContactsByElderlyId(int elderlyId);
-        Task<IBusinessResult> UpdateEmergencyContactStatus(int emergencyContactId);*/
         Task<IBusinessResult> FamilyEmergencyCall(int accountId);
         Task<IBusinessResult> GetCallStatus(string callId);
         Task<IBusinessResult> DoctorEmergencyCall(int accountId);
+        Task<IBusinessResult> SoS115EmergencyCall();
+        Task<IBusinessResult> GetEmergencyConfirmation(int emergencyId);
+        Task<IBusinessResult> GetListEmergencyConfirmationByElderly(int elderlyId);
+        Task<IBusinessResult> GetListEmergencyInformation(int emergencyId);
+        Task<IBusinessResult> GetNewestEmergencyInformation(int emergencyId);
+        Task<IBusinessResult> CreateEmergencyInformation(CreateEmergencyInformationRequest request);
+        Task<IBusinessResult> CreateEmergencyConfirmation(int elderlyId);
+        Task<IBusinessResult> ConfirmEmergency(int accountId, int emergencyId);
     }
 
     public class EmergencyContactService : IEmergencyContactService
     {
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly INotificationService _notificationService;
+        private readonly ISmsService _smsService;
         private readonly string _apiKey;
         private readonly string _secretKey;
 
-        public EmergencyContactService(UnitOfWork unitOfWork, IMapper mapper)
+        public EmergencyContactService(UnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, ISmsService smsService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _apiKey = Environment.GetEnvironmentVariable("VoiceCallApiKey");
             _secretKey = Environment.GetEnvironmentVariable("VoiceCallSecretKey");
+            _notificationService = notificationService;
+            _smsService = smsService;
         }
 
         public async Task<IBusinessResult> GetCallStatus(string callId)
@@ -163,7 +174,7 @@ namespace SE.Service.Services
                 }
 
                 var bookings = _unitOfWork.BookingRepository.FindByCondition(b => b.ElderlyId == account.Elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
-                                                           .Select(b => b.BookingId).ToList();
+                                                            .Select(b => b.BookingId).ToList();
 
                 var doctor = await _unitOfWork.UserServiceRepository.GetProfessorByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
 
@@ -184,6 +195,26 @@ namespace SE.Service.Services
                 var response = new
                 {
                     Phone = phone,
+                    Message = callResults
+                };
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, response);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, $"An unexpected error occurred: {ex.Message}");
+            }
+        }        
+        
+        public async Task<IBusinessResult> SoS115EmergencyCall()
+        {
+            try
+            {
+                var callResults = await MakeCallAsync("0912393903");
+
+                var response = new
+                {
+                    Phone = "0912393903",
                     Message = callResults
                 };
 
@@ -222,20 +253,106 @@ namespace SE.Service.Services
             }
         }
 
+        public async Task<IBusinessResult> GetNewestEmergencyInformation(int emergencyId)
+        {
+            try
+            {
+                var emergency = await _unitOfWork.EmergencyConfirmationRepository.GetEmergencyConfirmationByIdAsync(emergencyId);
+
+                var newestInformation = _unitOfWork.EmergencyInformationRepository.FindByCondition(ei => ei.EmergencyConfirmationId == emergencyId)
+                                                                                   .OrderByDescending(ei => ei.DateTime)
+                                                                                   .FirstOrDefault();
+
+                var result = _mapper.Map<GetEmergencyInformationDTO>(newestInformation);
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, $"An unexpected error occurred: {ex.Message}");
+            }
+        }        
+        
+        public async Task<IBusinessResult> GetListEmergencyInformation(int emergencyId)
+        {
+            try
+            {
+                var emergency = await _unitOfWork.EmergencyConfirmationRepository.GetEmergencyConfirmationByIdAsync(emergencyId);
+
+                var listInformation = _unitOfWork.EmergencyInformationRepository.FindByCondition(ei => ei.EmergencyConfirmationId == emergencyId).ToList();
+
+                var result = _mapper.Map<List<GetEmergencyInformationDTO>>(listInformation);
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, $"An unexpected error occurred: {ex.Message}");
+            }
+        }        
+        
+        public async Task<IBusinessResult> GetListEmergencyConfirmationByElderly(int elderlyId)
+        {
+            try
+            {
+                var emergency = await _unitOfWork.EmergencyConfirmationRepository.GetListEmergencyConfirmationByElderlyIdAsync(elderlyId);
+
+                var result = emergency.Select(e => new GetEmergencyConfirmationDTO
+                {
+                    ElderlyId = (int)e.ElderlyId,
+                    EmergencyDate = e.EmergencyDate?.ToString("dd-MM-yyyy"),
+                    EmergencyTime = e.EmergencyDate?.ToString("HH-mm"),
+                    ConfirmationAccountName = e.ConfirmationAccount.FullName,
+                    ConfirmationDate = (DateTime)e.ConfirmationDate,
+                    IsConfirmed = (bool)(e.IsConfirm == null ? false : e.IsConfirm)
+                });
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, $"An unexpected error occurred: {ex.Message}");
+            }
+        }        
+        
+        public async Task<IBusinessResult> GetEmergencyConfirmation(int emergencyId)
+        {
+            try
+            {
+                var e = await _unitOfWork.EmergencyConfirmationRepository.GetEmergencyConfirmationByIdAsync(emergencyId);
+
+                var result = new GetEmergencyConfirmationDTO
+                {
+                    ElderlyId = (int)e.ElderlyId,
+                    EmergencyDate = e.EmergencyDate?.ToString("dd-MM-yyyy"),
+                    EmergencyTime = e.EmergencyDate?.ToString("HH-mm"),
+                    ConfirmationAccountName = e.ConfirmationAccount.FullName,
+                    ConfirmationDate = (DateTime)e.ConfirmationDate,
+                    IsConfirmed = (bool)(e.IsConfirm == null ? false : e.IsConfirm)
+                };
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, $"An unexpected error occurred: {ex.Message}");
+            }
+        }
+
         public async Task<IBusinessResult> CreateEmergencyInformation(CreateEmergencyInformationRequest request)
         {
             try
             {
-                if (request == null || request.ElderlyId <= 0)
+                if (request == null || request.EmergencyConfirmationId <= 0)
                 {
                     return new BusinessResult(Const.FAIL_READ, "Invalid emergency data.");
                 }
 
-                var elderly = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+                var emergencyConfirmation = await _unitOfWork.EmergencyConfirmationRepository.GetEmergencyConfirmationByIdAsync(request.EmergencyConfirmationId);
 
-                if (elderly == null)
+                if (emergencyConfirmation == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "Elderly does not exist.");
+                    return new BusinessResult(Const.FAIL_READ, "Emergency does not exist.");
                 }
 
                 var frontCameraImageLink = ("", "");
@@ -254,7 +371,7 @@ namespace SE.Service.Services
 
                 var emergencyInformation = new EmergencyInformation
                 {
-                    ElderlyId = request.ElderlyId,
+                    EmergencyConfirmationId = request.EmergencyConfirmationId,
                     FrontCameraImage = frontCameraImageLink.Item2,
                     RearCameraImage = rearCameraImageLink.Item2,
                     DateTime = DateTime.UtcNow.AddHours(7),
@@ -270,7 +387,98 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
                 }
 
-                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, emergencyInformation);
+                if (request.IsSendMessage)
+                {
+                    var groupMember = _unitOfWork.GroupMemberRepository.GetAll()
+                   .FirstOrDefault(gm => gm.AccountId == emergencyConfirmation.Elderly.AccountId && gm.Status == SD.GeneralStatus.ACTIVE);
+
+                    if (groupMember == null)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Account is not in any group.");
+                    }
+
+                    var groupId = groupMember.GroupId;
+
+                    var groupMembers = _unitOfWork.GroupMemberRepository.GetAll()
+                        .Where(gm => gm.GroupId == groupId && gm.Status == SD.GeneralStatus.ACTIVE)
+                        .Select(gm => gm.AccountId)
+                        .Distinct()
+                        .ToList();
+
+                    var otherMembers = groupMembers
+                        .Where(id => id != emergencyConfirmation.Elderly.AccountId)
+                        .ToList();
+
+                    var phoneNums = new List<string>();
+                    var deviceTokens = new List<string>();
+
+                    foreach (var member in otherMembers)
+                    {
+                        var accountPhone = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+
+                        if (accountPhone != null && accountPhone.RoleId == 3)
+                        {
+                            phoneNums.Add(accountPhone.PhoneNumber);
+                            deviceTokens.Add(accountPhone.DeviceToken);
+                        }
+                    }
+
+                    string latitude = request.Latitude;
+                    string longitude = request.Longitude;
+                    string googleMapsUrl = $"https://www.google.com/maps?q={latitude},{longitude}";
+
+                    var smsTasks = phoneNums.Select<string, Task<dynamic>>(async phone =>
+                    {
+                        try
+                        {
+                            var result = await _smsService.SendEmergencySmsAsync(phone,"Đây là vị trí của người thân bạn, hãy đến mau: " + googleMapsUrl);
+                            return new { Phone = phone, Result = result };
+                        }
+                        catch (Exception ex)
+                        {
+                            return new { Phone = phone, Result = ex.Message };
+                        }
+                    }).ToList();
+
+                    var notiTasks = deviceTokens.Select<string, Task<dynamic>>(async token =>
+                    {
+                        try
+                        {
+                            var result = await _notificationService.SendNotification(token, "TÍN HIỆU CẦU CỨU KHẨN CẤP", "Người thân của bạn đang gặp tình trạng khẩn cấp, hãy truy cập vào ứng dụng để xem vị trí!");
+                            return new { Token = token, Result = result };
+                        }
+                        catch (Exception ex)
+                        {
+                            return new { Token = token, Result = ex.Message };
+                        }
+                    }).ToList();
+
+                    if (request.CallProfessor)
+                    {
+                        var bookings = _unitOfWork.BookingRepository.FindByCondition(b => b.ElderlyId == emergencyConfirmation.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                                                                .Select(b => b.BookingId).ToList();
+
+                        var doctor = await _unitOfWork.UserServiceRepository.GetProfessorByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
+
+                        if (doctor == null)
+                        {
+                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không tìm thấy bác sĩ cho người già này.");
+                        }
+
+                        var phone = doctor.Account.PhoneNumber;
+                        var doctorToken = doctor.Account.DeviceToken;
+
+                        if (!FunctionCommon.IsValidPhoneNumber(phone))
+                        {
+                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Số điện thoại của bác sĩ không hợp lệ hoặc không tìm thấy.");
+                        }
+
+                        await _smsService.SendEmergencySmsAsync(phone, googleMapsUrl);
+                        await _notificationService.SendNotification(doctorToken, "TÍN HIỆU CẦU CỨU KHẨN CẤP", "Bệnh nhân của bạn đang gặp tình trạng khẩn cấp, hãy truy cập vào ứng dụng để xem vị trí!");
+                    }
+                }              
+
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
             }
             catch (Exception ex)
             {
@@ -278,34 +486,24 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> CreateEmergencyConfirmation(CreateEmergencyConfirmationRequest request)
+        public async Task<IBusinessResult> CreateEmergencyConfirmation(int elderlyId)
         {
             try
             {
-                if (request == null || request.ElderlyId <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "Invalid emergency data.");
-                }
-
-                var elderly = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(elderlyId);
 
                 if (elderly == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, "Elderly does not exist.");
                 }
 
-                var familyMember = await _unitOfWork.FamilyMemberRepository.GetByIdAsync(request.FamilyMemberId);
-
-                if (familyMember == null)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "Account does not exist.");
-                }
-
                 var emergencyConfirmation = new EmergencyConfirmation
                 {
-                    ElderlyId = elderly.ElderlyId,
-                    FamilyMemberId = familyMember.FamilyMemberId,
-                    DateTime = DateTime.UtcNow.AddHours(7),
+                    ElderlyId = elderly.Elderly.ElderlyId,
+                    ConfirmationAccountId = null,
+                    ConfirmationDate = null,
+                    IsConfirm = false,
+                    EmergencyDate = DateTime.UtcNow.AddHours(7),
                     Status = SD.GeneralStatus.ACTIVE,
                 };
 
@@ -316,106 +514,49 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
                 }
 
-                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, emergencyConfirmation);
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, emergencyConfirmation.EmergencyConfirmationId);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, ex.Message);
+            }
+        }        
+        
+        public async Task<IBusinessResult> ConfirmEmergency(int accountId, int emergencyId)
+        {
+            try
+            {
+                var account = await _unitOfWork.AccountRepository.GetByIdAsync(accountId);
+
+                if (account == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "Account does not exist.");
+                }
+
+                var emergencyConfirmation = await _unitOfWork.EmergencyConfirmationRepository.GetByIdAsync(emergencyId);
+
+                if (emergencyConfirmation == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "Emergency Confirmation does not exist.");
+                }
+
+                emergencyConfirmation.ConfirmationAccountId = account.AccountId;
+                emergencyConfirmation.IsConfirm = true;
+                emergencyConfirmation.ConfirmationDate = DateTime.Now;
+
+                var updateRs = await _unitOfWork.EmergencyConfirmationRepository.UpdateAsync(emergencyConfirmation);
+
+                if (updateRs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, emergencyConfirmation);
             }
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_CREATE, ex.Message);
             }
         }
-
-        /*public async Task<IBusinessResult> UpdateEmergencyContact(UpdateEmergencyContactRequest request)
-        {
-            try
-            {
-                if (request == null || request.ElderlyId <= 0 || request.AccountId <= 0 ||
-                    string.IsNullOrWhiteSpace(request.ContactName) || request.Priority < 0)
-                {
-                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid emergency contact update data.");
-                }
-
-                var emergencyContact = await _unitOfWork.EmergencyContactRepository
-                    .GetByElderlyIdAndAccountIdAsync(request.ElderlyId, request.AccountId);
-
-                if (emergencyContact == null)
-                {
-                    return new BusinessResult(Const.FAIL_UPDATE, "Emergency contact not found.");
-                }
-
-                emergencyContact.ContactName = request.ContactName;
-                emergencyContact.Priority = request.Priority;
-
-                await _unitOfWork.EmergencyContactRepository.UpdateAsync(emergencyContact);
-
-                return new BusinessResult(Const.SUCCESS_UPDATE, "Emergency contact updated successfully.");
-            }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_UPDATE, ex.Message);
-            }
-        }
-
-
-        public async Task<IBusinessResult> GetEmergencyContactsByElderlyId(int elderlyId)
-        {
-            try
-            {
-                if (elderlyId <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "Invalid elderly ID.");
-                }
-
-                var emergencyContacts = _unitOfWork.EmergencyContactRepository
-                    .FindByCondition(ec => ec.ElderlyId == elderlyId)
-                    .ToList();
-
-                if (emergencyContacts == null || !emergencyContacts.Any())
-                {
-                    return new BusinessResult(Const.FAIL_READ, "No emergency contacts found for the given elderly ID.");
-                }
-
-                var result = _mapper.Map<List<GetEmergencyContactDTO>>(emergencyContacts);
-
-                return new BusinessResult(Const.SUCCESS_READ, "Emergency contacts retrieved successfully.", result);
-            }
-         
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
-            }
-        }
-
-        public async Task<IBusinessResult> UpdateEmergencyContactStatus(int emergencyContactId)
-        {
-            try
-            {
-                if (emergencyContactId <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid emergency contact ID.");
-                }
-
-                var emergencyContact = _unitOfWork.EmergencyContactRepository
-                    .FindByCondition(ec => ec.EmergencyContactId == emergencyContactId)
-                    .FirstOrDefault();
-
-                if (emergencyContact == null)
-                {
-                    return new BusinessResult(Const.FAIL_UPDATE, "Emergency contact not found.");
-                }
-
-                emergencyContact.Status = SD.GeneralStatus.INACTIVE;
-
-                await _unitOfWork.EmergencyContactRepository.UpdateAsync(emergencyContact);
-
-                return new BusinessResult(Const.SUCCESS_UPDATE, "Emergency contact status updated successfully.");
-            }
-        
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
-            }
-        }*/
-
-
     }
 }

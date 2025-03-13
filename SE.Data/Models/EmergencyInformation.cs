@@ -9,7 +9,7 @@ public partial class EmergencyInformation
 {
     public int EmergencyInformationId { get; set; }
 
-    public int ElderlyId { get; set; }
+    public int? EmergencyConfirmationId { get; set; }
 
     public string FrontCameraImage { get; set; }
 
@@ -23,5 +23,5 @@ public partial class EmergencyInformation
 
     public string Status { get; set; }
 
-    public virtual Elderly Elderly { get; set; }
+    public virtual EmergencyConfirmation EmergencyConfirmation { get; set; }
 }

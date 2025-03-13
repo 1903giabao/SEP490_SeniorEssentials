@@ -9,15 +9,21 @@ public partial class EmergencyConfirmation
 {
     public int EmergencyConfirmationId { get; set; }
 
-    public int? FamilyMemberId { get; set; }
-
     public int? ElderlyId { get; set; }
 
-    public DateTime? DateTime { get; set; }
+    public int? ConfirmationAccountId { get; set; }
+
+    public DateTime? ConfirmationDate { get; set; }
+
+    public bool? IsConfirm { get; set; }
+
+    public DateTime? EmergencyDate { get; set; }
 
     public string Status { get; set; }
 
+    public virtual Account ConfirmationAccount { get; set; }
+
     public virtual Elderly Elderly { get; set; }
 
-    public virtual FamilyMember FamilyMember { get; set; }
+    public virtual ICollection<EmergencyInformation> EmergencyInformations { get; set; } = new List<EmergencyInformation>();
 }
