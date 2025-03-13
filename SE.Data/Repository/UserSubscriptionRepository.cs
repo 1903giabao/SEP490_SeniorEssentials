@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace SE.Data.Repository
 {
-    public class UserSubscriptionRepository : GenericRepository<UserService>
+    public class UserSubscriptionRepository : GenericRepository<UserSubscription>
     {
         public UserSubscriptionRepository() { }
         public UserSubscriptionRepository(SeniorEssentialsContext context)
@@ -19,7 +19,7 @@ namespace SE.Data.Repository
 
         public async Task<Professor> GetProfessorByBookingIdAsync(List<int> bookingIds, string status)
         {
-            var result = await _context.UserServices.Include(us => us.Professor).ThenInclude(us => us.Account).Where(us => bookingIds.Contains(us.BookingId) && us.Status.Equals(status)).Select(us => us.Professor).FirstOrDefaultAsync();
+            var result = await _context.UserSubscriptions.Include(us => us.Professor).ThenInclude(us => us.Account).Where(us => bookingIds.Contains((int)us.BookingId) && us.Status.Equals(status)).Select(us => us.Professor).FirstOrDefaultAsync();
             return result;
         }
     }

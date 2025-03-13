@@ -278,6 +278,52 @@ namespace SE.Service.Services
             }
         }
 
+        public async Task<IBusinessResult> CreateEmergencyConfirmation(CreateEmergencyConfirmationRequest request)
+        {
+            try
+            {
+                if (request == null || request.ElderlyId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "Invalid emergency data.");
+                }
+
+                var elderly = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "Elderly does not exist.");
+                }
+
+                var familyMember = await _unitOfWork.FamilyMemberRepository.GetByIdAsync(request.FamilyMemberId);
+
+                if (familyMember == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "Account does not exist.");
+                }
+
+                var emergencyConfirmation = new EmergencyConfirmation
+                {
+                    ElderlyId = elderly.ElderlyId,
+                    FamilyMemberId = familyMember.FamilyMemberId,
+                    DateTime = DateTime.UtcNow.AddHours(7),
+                    Status = SD.GeneralStatus.ACTIVE,
+                };
+
+                var createRs = await _unitOfWork.EmergencyConfirmationRepository.CreateAsync(emergencyConfirmation);
+
+                if (createRs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, emergencyConfirmation);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, ex.Message);
+            }
+        }
+
         /*public async Task<IBusinessResult> UpdateEmergencyContact(UpdateEmergencyContactRequest request)
         {
             try
