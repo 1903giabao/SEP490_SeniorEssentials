@@ -17,6 +17,7 @@ namespace SE.Common.DTO
         public IFormFile Avatar { get; set; }
         public string PhoneNumber { get; set; }
 
+        public string CreatedBy { get; set; }
         public int RoleId {  get; set; }
         public List<string> MedicalRecord { get; set; }
         public string Height {  get; set; }

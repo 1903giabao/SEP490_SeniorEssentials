@@ -47,6 +47,7 @@ namespace SE.Data.UnitOfWork
         private LiverEnzymeRepository _liverEnzymeRepository;
         private WeightRepository _weightRepository;
         private HeightRepository _heightRepository;
+        private HealthIndicatorBaseRepository _healthIndicatorBaseRepository;
 
 
         public UnitOfWork()
@@ -64,6 +65,14 @@ namespace SE.Data.UnitOfWork
             get
             {
                 return _accountRepository ??= new AccountRepository(_unitOfWorkContext);
+            }
+        }
+
+        public HealthIndicatorBaseRepository HealthIndicatorBaseRepository
+        {
+            get
+            {
+                return _healthIndicatorBaseRepository ??= new HealthIndicatorBaseRepository(_unitOfWorkContext);
             }
         }
 

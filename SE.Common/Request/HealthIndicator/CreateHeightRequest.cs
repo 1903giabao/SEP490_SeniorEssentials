@@ -11,5 +11,7 @@ namespace SE.Common.Request.HealthIndicator
         public int ElderlyId { get; set; }
         public decimal? Height { get; set; }
         public string HeightSource { get; set; }
+        public string CreatedBy { get; set; }
+
     }
 }

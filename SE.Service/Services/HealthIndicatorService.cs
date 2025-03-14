@@ -54,7 +54,12 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetLiverEnzymesDetail(int accountId);
 
         Task<IBusinessResult> GetKidneyFunctionDetail(int accountId);
+        Task<IBusinessResult> EvaluateHealthIndicator(EvaluateHealthIndicatorRequest req);
+        Task<IBusinessResult> GetAllHealthIndicators(int accountId);
 
+        Task<IBusinessResult> EvaluateBloodPressure(int systolic, int diastolic);
+        Task<IBusinessResult> EvaluateHeartRate(int? heartRate);
+        Task<IBusinessResult> EvaluateBMI(decimal? height, decimal? weight, int accountId);
 
 
     }
@@ -1397,12 +1402,23 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
-                var bloodGlucoseRecords = await _unitOfWork.BloodGlucoseRepository
-                    .FindByConditionAsync(b => b.ElderlyId == elderly.Elderly.ElderlyId && b.Status == SD.GeneralStatus.ACTIVE);
+                var bloodGlucoseRecords = new List<BloodGlucose>();
+                bloodGlucoseRecords = _unitOfWork.BloodGlucoseRepository
+                    .FindByCondition(b => b.ElderlyId == elderly.Elderly.ElderlyId && b.Status == SD.GeneralStatus.ACTIVE).ToList();
 
                 if (!bloodGlucoseRecords.Any())
                 {
                     return new BusinessResult(Const.FAIL_READ, "No blood glucose records found for the elderly.");
+                }
+
+                // Fetch all HealthIndicatorBase records for BloodGlucose
+                var healthIndicators = _unitOfWork.HealthIndicatorBaseRepository
+                    .FindByCondition(h => h.Type == "BloodGlucose" && h.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
+                if (!healthIndicators.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No health indicators found for BloodGlucose.");
                 }
 
                 var today = System.DateTime.UtcNow.AddHours(7);
@@ -1434,7 +1450,51 @@ namespace SE.Service.Services
                     })
                     .ToList();
 
-                // Calculate dailyRecords with non-null Indicator values
+                // Function to calculate evaluation percentages
+                (double LowPercent, double NormalPercent, double HighPercent) CalculateEvaluationPercentages(List<BloodGlucose> records, List<HealthIndicatorBase> indicators)
+                {
+                    int totalRecords = records.Count;
+                    if (totalRecords == 0)
+                        return (0, 0, 0);
+
+                    int lowCount = 0, normalCount = 0, highCount = 0;
+
+                    foreach (var record in records)
+                    {
+                        var indicator = indicators.FirstOrDefault(h => h.Time == record.Time);
+                        if (indicator == null)
+                            continue;
+
+                        if (record.BloodGlucose1 < indicator.MinValue)
+                            lowCount++;
+                        else if (record.BloodGlucose1 >= indicator.MinValue && record.BloodGlucose1 <= indicator.MaxValue)
+                            normalCount++;
+                        else if (record.BloodGlucose1 > indicator.MaxValue)
+                            highCount++;
+                    }
+
+                    return (
+                        LowPercent: (double)lowCount / totalRecords * 100,
+                        NormalPercent: (double)normalCount / totalRecords * 100,
+                        HighPercent: (double)highCount / totalRecords * 100
+                    );
+                }
+
+                // Function to calculate highest, lowest, and average
+                (double Highest, double Lowest, double Average) CalculateStatistics(List<BloodGlucose> records)
+                {
+                    if (!records.Any())
+                        return (0, 0, 0);
+
+                    var values = records.Select(r => (double)r.BloodGlucose1).ToList();
+                    return (
+                        Highest: Math.Round(values.Max(), MidpointRounding.AwayFromZero),
+                        Lowest: Math.Round(values.Min(), MidpointRounding.AwayFromZero),
+                        Average: Math.Round(values.Average(), MidpointRounding.AwayFromZero)
+                    );
+                }
+
+                // Calculate dailyRecords
                 var dailyRecords = last7Days
                     .Select(date => new
                     {
@@ -1443,14 +1503,17 @@ namespace SE.Service.Services
                             .Where(record => record.DateRecorded.HasValue && record.DateRecorded.Value.Date == date)
                             .ToList()
                     })
-                    .Select(x => new ChartDataModel
+                    .Select(x => new ChartBloodGlucoseModel
                     {
                         Type = x.Date.DayOfWeek.ToString(),
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(b => b.BloodGlucose1 ?? 0), MidpointRounding.AwayFromZero) : null
                     })
                     .ToList();
 
-                // Calculate weeklyRecords with non-null Indicator values
+                var dailyStats = CalculateStatistics(bloodGlucoseRecords.Where(r => last7Days.Contains(r.DateRecorded.Value.Date)).ToList());
+                var dailyEvaluation = CalculateEvaluationPercentages(bloodGlucoseRecords.Where(r => last7Days.Contains(r.DateRecorded.Value.Date)).ToList(), healthIndicators);
+
+                // Calculate weeklyRecords
                 var weeklyRecords = last6Weeks
                     .Select(week => new
                     {
@@ -1461,7 +1524,7 @@ namespace SE.Service.Services
                                              record.DateRecorded.Value.Date <= week.EndOfWeek)
                             .ToList()
                     })
-                    .Select(x => new ChartDataModel
+                    .Select(x => new ChartBloodGlucoseModel
                     {
                         Type = x.Week.WeekLabel,
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(b => b.BloodGlucose1 ?? 0), MidpointRounding.AwayFromZero) : null
@@ -1469,7 +1532,10 @@ namespace SE.Service.Services
                     .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
                     .ToList();
 
-                // Calculate monthlyRecords with non-null Indicator values
+                var weeklyStats = CalculateStatistics(bloodGlucoseRecords.Where(r => last6Weeks.Any(w => r.DateRecorded.Value.Date >= w.StartOfWeek && r.DateRecorded.Value.Date <= w.EndOfWeek)).ToList());
+                var weeklyEvaluation = CalculateEvaluationPercentages(bloodGlucoseRecords.Where(r => last6Weeks.Any(w => r.DateRecorded.Value.Date >= w.StartOfWeek && r.DateRecorded.Value.Date <= w.EndOfWeek)).ToList(), healthIndicators);
+
+                // Calculate monthlyRecords
                 var monthlyRecords = last4Months
                     .Select(month => new
                     {
@@ -1480,7 +1546,7 @@ namespace SE.Service.Services
                                              record.DateRecorded.Value.Date <= month.EndOfMonth)
                             .ToList()
                     })
-                    .Select(x => new ChartDataModel
+                    .Select(x => new ChartBloodGlucoseModel
                     {
                         Type = x.Month.MonthLabel,
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(b => b.BloodGlucose1 ?? 0), MidpointRounding.AwayFromZero) : null
@@ -1488,10 +1554,13 @@ namespace SE.Service.Services
                     .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
                     .ToList();
 
-                // Calculate yearlyRecords with non-null Indicator values
+                var monthlyStats = CalculateStatistics(bloodGlucoseRecords.Where(r => last4Months.Any(m => r.DateRecorded.Value.Date >= m.StartOfMonth && r.DateRecorded.Value.Date <= m.EndOfMonth)).ToList());
+                var monthlyEvaluation = CalculateEvaluationPercentages(bloodGlucoseRecords.Where(r => last4Months.Any(m => r.DateRecorded.Value.Date >= m.StartOfMonth && r.DateRecorded.Value.Date <= m.EndOfMonth)).ToList(), healthIndicators);
+
+                // Calculate yearlyRecords
                 var yearlyRecords = bloodGlucoseRecords
                     .GroupBy(b => b.DateRecorded.Value.Year)
-                    .Select(g => new ChartDataModel
+                    .Select(g => new ChartBloodGlucoseModel
                     {
                         Type = g.Key.ToString(),
                         Indicator = (double?)Math.Round(g.Average(b => b.BloodGlucose1 ?? 0), MidpointRounding.AwayFromZero)
@@ -1499,61 +1568,53 @@ namespace SE.Service.Services
                     .OrderBy(record => int.Parse(record.Type))
                     .ToList();
 
-                // Calculate averages for each tab (only non-null Indicators)
-                var dailyAverage = dailyRecords
-                    .Where(d => d.Indicator.HasValue)
-                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
-                    .Average(d => d.Indicator.Value);
+                var yearlyStats = CalculateStatistics(bloodGlucoseRecords);
+                var yearlyEvaluation = CalculateEvaluationPercentages(bloodGlucoseRecords, healthIndicators);
 
-                var weeklyAverage = weeklyRecords
-                    .Where(w => w.Indicator.HasValue)
-                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
-                    .Average(w => w.Indicator.Value);
-
-                var monthlyAverage = monthlyRecords
-                    .Where(m => m.Indicator.HasValue)
-                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
-                    .Average(m => m.Indicator.Value);
-
-                var yearlyAverage = yearlyRecords
-                    .Where(y => y.Indicator.HasValue)
-                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
-                    .Average(y => y.Indicator.Value);
-
-                // Calculate Evaluation for each tab
-                var dailyEvaluation = GetBloodGlucoseEvaluation(dailyAverage);
-                var weeklyEvaluation = GetBloodGlucoseEvaluation(weeklyAverage);
-                var monthlyEvaluation = GetBloodGlucoseEvaluation(monthlyAverage);
-                var yearlyEvaluation = GetBloodGlucoseEvaluation(yearlyAverage);
-
-                var responseList = new List<GetHealthIndicatorDetailReponse>
+                var responseList = new List<GetBloodGlucoseResponse>
         {
-            new GetHealthIndicatorDetailReponse
+            new GetBloodGlucoseResponse
             {
                 Tabs = "Ngày",
-                Average = dailyAverage,
-                Evaluation = dailyEvaluation,
+                Highest = dailyStats.Highest,
+                Lowest = dailyStats.Lowest,
+                Average = dailyStats.Average,
+                HighestPercent = dailyEvaluation.HighPercent,
+                LowestPercent = dailyEvaluation.LowPercent,
+                NormalPercent = dailyEvaluation.NormalPercent,
                 ChartDatabase = dailyRecords
             },
-            new GetHealthIndicatorDetailReponse
+            new GetBloodGlucoseResponse
             {
                 Tabs = "Tuần",
-                Average = weeklyAverage,
-                Evaluation = weeklyEvaluation,
+                Highest = weeklyStats.Highest,
+                Lowest = weeklyStats.Lowest,
+                Average = weeklyStats.Average,
+                HighestPercent = weeklyEvaluation.HighPercent,
+                LowestPercent = weeklyEvaluation.LowPercent,
+                NormalPercent = weeklyEvaluation.NormalPercent,
                 ChartDatabase = weeklyRecords
             },
-            new GetHealthIndicatorDetailReponse
+            new GetBloodGlucoseResponse
             {
                 Tabs = "Tháng",
-                Average = monthlyAverage,
-                Evaluation = monthlyEvaluation,
+                Highest = monthlyStats.Highest,
+                Lowest = monthlyStats.Lowest,
+                Average = monthlyStats.Average,
+                HighestPercent = monthlyEvaluation.HighPercent,
+                LowestPercent = monthlyEvaluation.LowPercent,
+                NormalPercent = monthlyEvaluation.NormalPercent,
                 ChartDatabase = monthlyRecords
             },
-            new GetHealthIndicatorDetailReponse
+            new GetBloodGlucoseResponse
             {
                 Tabs = "Năm",
-                Average = yearlyAverage,
-                Evaluation = yearlyEvaluation,
+                Highest = yearlyStats.Highest,
+                Lowest = yearlyStats.Lowest,
+                Average = yearlyStats.Average,
+                HighestPercent = yearlyEvaluation.HighPercent,
+                LowestPercent = yearlyEvaluation.LowPercent,
+                NormalPercent = yearlyEvaluation.NormalPercent,
                 ChartDatabase = yearlyRecords
             }
         };
@@ -1565,27 +1626,6 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
         }
-
-        private string GetBloodGlucoseEvaluation(double averageBloodGlucose)
-        {
-            if (averageBloodGlucose < 70)
-            {
-                return "Thấp";
-            }
-            else if (averageBloodGlucose >= 70 && averageBloodGlucose <= 140)
-            {
-                return "Bình thường";
-            }
-            else if (averageBloodGlucose > 140)
-            {
-                return "Cao";
-            }
-            else
-            {
-                return "Không xác định";
-            }
-        }
-
         public async Task<IBusinessResult> GetLipidProfileDetail(int accountId)
         {
             try
@@ -1891,10 +1931,7 @@ namespace SE.Service.Services
             {
                 return "Cao";
             }
-            else if (averageTotalCholesterol >= 220)
-            {
-                return "Rất cao";
-            }
+         
             else
             {
                 return "Không xác định";
@@ -2633,6 +2670,419 @@ namespace SE.Service.Services
             else
             {
                 return "Không xác định";
+            }
+        }
+
+        public async Task<IBusinessResult> EvaluateHealthIndicator(EvaluateHealthIndicatorRequest req)
+        {
+            try
+            {
+                string result ="Không xác định";
+
+                if (req.Indicators == null || !req.Indicators.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "INDICATORS MUST NOT BE EMPTY");
+                }
+
+                var healthIndicatorBases = await _unitOfWork.HealthIndicatorBaseRepository.GetAllAsync();
+
+                
+                foreach (var indicator in req.Indicators)
+                {
+                    var baseIndicator = _unitOfWork.HealthIndicatorBaseRepository.
+                                                    FindByCondition(i => i.Type == indicator.Type && indicator.Time != null && i.Time == indicator.Time)
+                                                    .FirstOrDefault();
+                    if (indicator.Value > baseIndicator.MaxValue)
+                    {
+                        result = "Cao";
+                    }
+                    else if (indicator.Value < baseIndicator.MinValue)
+                    {
+                        result = "Thấp";
+                    }
+                    else
+                    {
+                        result = "Bình thường";
+                    }
+                }
+
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetAllHealthIndicators(int accountId)
+        {
+            try
+            {
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                // Fetch all HealthIndicatorBase records for each type
+                var healthIndicators = _unitOfWork.HealthIndicatorBaseRepository
+                    .FindByCondition(h => h.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
+                if (!healthIndicators.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No health indicators found.");
+                }
+
+                // Function to calculate BMI
+                double CalculateBMI(decimal weight, decimal height)
+                {
+                    if (height == 0)
+                        return 0;
+
+                    // Convert height from cm to meters
+                    double heightInMeters = (double)height / 100;
+                    return (double)weight / (heightInMeters * heightInMeters);
+                }
+
+                // Function to get the latest record and average for a specific type
+                GetAllHealthIndicatorReponse GetIndicatorResponse<T>(
+                    List<T> records,
+                    Func<T, System.DateTime?> getDateRecorded,
+                    Func<T, decimal?> getIndicatorValue,
+                    string type,
+                    List<HealthIndicatorBase> indicators,
+                    bool calculateDifference = false, // Add a flag for weight and height
+                    double? bmi = null) // Add BMI for evaluation
+                    where T : class
+                {
+                    var latestRecord = records
+                        .OrderByDescending(r => getDateRecorded(r))
+                        .FirstOrDefault();
+
+                    if (latestRecord == null)
+                        return null;
+
+                    var latestDate = getDateRecorded(latestRecord);
+                    var latestIndicator = getIndicatorValue(latestRecord);
+
+                    if (!latestDate.HasValue || !latestIndicator.HasValue)
+                        return null;
+
+                    // Get the HealthIndicatorBase for the type
+                    var indicatorBase = indicators.FirstOrDefault(h => h.Type == type);
+                    if (indicatorBase == null)
+                        return null;
+
+                    // Determine evaluation
+                    string evaluation;
+                    if (bmi.HasValue && (type == "Weight" || type == "Height"))
+                    {
+                        // Use BMI for evaluation
+                        evaluation = (decimal)bmi < indicatorBase.MinValue ? "Thấp" :
+                                     (decimal)bmi > indicatorBase.MaxValue ? "Cao" :
+                                     "Bình thường";
+                    }
+                    else
+                    {
+                        // Use the indicator value for evaluation
+                        evaluation = latestIndicator < indicatorBase.MinValue ? "Thấp" :
+                                     latestIndicator > indicatorBase.MaxValue ? "Cao" :
+                                     "Bình thường";
+                    }
+
+                    // Calculate average for the last 30 days
+                    var last30DaysRecords = records
+                        .Where(r => (System.DateTime)getDateRecorded(r) >= System.DateTime.UtcNow.AddDays(-30))
+                        .ToList();
+
+                    var averageIndicator = last30DaysRecords.Any() ?
+                        last30DaysRecords.Average(r => getIndicatorValue(r) ?? 0) :
+                        0;
+
+                    // For weight and height, calculate the difference with the previous indicator
+                    string formattedAverageIndicator = averageIndicator.ToString("0");
+                    if (calculateDifference)
+                    {
+                        var previousRecord = records
+                            .OrderByDescending(r => getDateRecorded(r))
+                            .Skip(1) // Skip the latest record to get the previous one
+                            .FirstOrDefault();
+
+                        if (previousRecord != null)
+                        {
+                            var previousIndicator = getIndicatorValue(previousRecord);
+                            if (previousIndicator.HasValue)
+                            {
+                                var difference = latestIndicator.Value - previousIndicator.Value;
+                                formattedAverageIndicator = difference >= 0 ? $"+{difference}" : $"{difference}";
+                            }
+                        }
+                    }
+
+                    return new GetAllHealthIndicatorReponse
+                    {
+                        Tabs = type,
+                        Evaluation = evaluation,
+                        DateTime = latestDate.Value.ToString("dd-MM HH-mm"), // Format DateTime as DD-MM HH-mm
+                        Indicator = latestIndicator.Value.ToString("0"),
+                        AverageIndicator = formattedAverageIndicator
+                    };
+                }
+
+                // Fetch records for each type
+                var heightRecords = _unitOfWork.HeightRepository
+                    .FindByCondition(h => h.ElderlyId == elderly.Elderly.ElderlyId && h.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
+                var weightRecords = _unitOfWork.WeightRepository
+                    .FindByCondition(w => w.ElderlyId == elderly.Elderly.ElderlyId && w.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
+                var heartRateRecords = _unitOfWork.HeartRateRepository
+                    .FindByCondition(hr => hr.ElderlyId == elderly.Elderly.ElderlyId && hr.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
+                var bloodPressureRecords = _unitOfWork.BloodPressureRepository
+                    .FindByCondition(bp => bp.ElderlyId == elderly.Elderly.ElderlyId && bp.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
+                // Get the newest Height and Weight
+                var newestHeight = heightRecords
+                    .OrderByDescending(h => h.DateRecorded)
+                    .FirstOrDefault();
+
+                var newestWeight = weightRecords
+                    .OrderByDescending(w => w.DateRecorded)
+                    .FirstOrDefault();
+
+                // Calculate BMI if both Height and Weight are available
+                double? bmi = null;
+                if (newestHeight != null && newestWeight != null && newestHeight.Height1.HasValue && newestWeight.Weight1.HasValue)
+                {
+                    bmi = CalculateBMI(newestWeight.Weight1.Value, newestHeight.Height1.Value);
+                }
+
+                // Create responses for each type
+                var heightResponse = GetIndicatorResponse(
+                    heightRecords,
+                    h => h.DateRecorded,
+                    h => h.Height1,
+                    "Height",
+                    healthIndicators,
+                    calculateDifference: true, // Enable difference calculation for height
+                    bmi: bmi); // Pass BMI for evaluation
+
+                var weightResponse = GetIndicatorResponse(
+                    weightRecords,
+                    w => w.DateRecorded,
+                    w => w.Weight1,
+                    "Weight",
+                    healthIndicators,
+                    calculateDifference: true, // Enable difference calculation for weight
+                    bmi: bmi); // Pass BMI for evaluation
+
+                var heartRateResponse = GetIndicatorResponse(
+                    heartRateRecords,
+                    hr => hr.DateRecorded,
+                    hr => hr.HeartRate1,
+                    "HeartRate",
+                    healthIndicators);
+
+                // Special handling for Blood Pressure
+                var bloodPressureResponse = GetBloodPressureResponse(bloodPressureRecords, healthIndicators);
+
+                // Combine responses
+                var responseList = new List<GetAllHealthIndicatorReponse>();
+
+                if (heightResponse != null)
+                    responseList.Add(heightResponse);
+
+                if (weightResponse != null)
+                    responseList.Add(weightResponse);
+
+                if (heartRateResponse != null)
+                    responseList.Add(heartRateResponse);
+
+                if (bloodPressureResponse != null)
+                    responseList.Add(bloodPressureResponse);
+
+                return new BusinessResult(Const.SUCCESS_READ, "Health indicators retrieved successfully.", responseList);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        // Function to handle Blood Pressure response
+        private GetAllHealthIndicatorReponse GetBloodPressureResponse(List<BloodPressure> records, List<HealthIndicatorBase> indicators)
+        {
+            var latestRecord = records
+                .OrderByDescending(r => r.DateRecorded)
+                .FirstOrDefault();
+
+            if (latestRecord == null)
+                return null;
+
+            var latestDate = latestRecord.DateRecorded;
+            var systolic = latestRecord.Systolic;
+            var diastolic = latestRecord.Diastolic;
+
+            if (!latestDate.HasValue || !systolic.HasValue || !diastolic.HasValue)
+                return null;
+
+            // Get the HealthIndicatorBase for Systolic and Diastolic
+            var systolicIndicator = indicators.FirstOrDefault(h => h.Type == "Systolic");
+            var diastolicIndicator = indicators.FirstOrDefault(h => h.Type == "Diastolic");
+
+            if (systolicIndicator == null || diastolicIndicator == null)
+                return null;
+
+            // Determine evaluation for Blood Pressure
+            string evaluation = (systolic <= systolicIndicator.MaxValue && diastolic <= diastolicIndicator.MaxValue)
+                ? "Bình thường"
+                : "Cao hơn mức bình thường";
+
+            // Calculate average for the last 30 days
+            var last30DaysRecords = records
+                .Where(r => r.DateRecorded >= System.DateTime.UtcNow.AddDays(-30))
+                .ToList();
+
+            var averageSystolic = last30DaysRecords.Any() ?
+                last30DaysRecords.Average(r => r.Systolic ?? 0) :
+                0;
+
+            var averageDiastolic = last30DaysRecords.Any() ?
+                last30DaysRecords.Average(r => r.Diastolic ?? 0) :
+                0;
+
+            // Format Indicator and AverageIndicator as "Systolic/Diastolic"
+            string indicator = $"{systolic}/{diastolic}";
+            string averageIndicator = $"{Math.Round(averageSystolic, 0)}/{Math.Round(averageDiastolic, 0)}";
+
+            return new GetAllHealthIndicatorReponse
+            {
+                Tabs = "BloodPressure",
+                Evaluation = evaluation,
+                DateTime = latestDate.Value.ToString("dd-MM HH-mm"), // Format DateTime as DD-MM HH-mm
+                Indicator = indicator,
+                AverageIndicator = averageIndicator
+            };
+        }
+        public async Task<IBusinessResult> EvaluateBMI(decimal? height, decimal? weight, int accountId)
+        {
+
+            try
+            {
+
+                double bmi =0.0;
+
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+                if (height != null)
+                {
+                    var getWeight = _unitOfWork.WeightRepository.FindByCondition(h => h.ElderlyId == elderly.Elderly.ElderlyId)
+                                                 .OrderByDescending(x => x.DateRecorded)
+                                                 .FirstOrDefault();
+                    bmi = CalculateBMI((decimal)getWeight.Weight1, (decimal)height/100);
+
+                }
+                else if (weight != null)
+                {
+                    var getHeight = _unitOfWork.HeightRepository.FindByCondition(h => h.ElderlyId == elderly.Elderly.ElderlyId)
+                                              .OrderByDescending(x => x.DateRecorded)
+                                              .FirstOrDefault();
+                    bmi = CalculateBMI((decimal)weight, (decimal)getHeight.Height1/100);
+                }
+                var baseIndicator = _unitOfWork.HealthIndicatorBaseRepository.
+                                                    FindByCondition(i => i.Type == "Weight")
+                                                    .FirstOrDefault();
+                string result;
+                if ((decimal)bmi > baseIndicator.MaxValue)
+                {
+                    result = "Thừa cân";
+                }
+                else if ((decimal)bmi < baseIndicator.MinValue)
+                {
+                    result = "Thiếu cân";
+                }
+                else
+                {
+                    result = "Bình thường";
+                }
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> EvaluateHeartRate(int? heartRate)
+        {
+
+            try
+            {
+               
+              
+                var baseIndicator = _unitOfWork.HealthIndicatorBaseRepository.
+                                                    FindByCondition(i => i.Type == "HeartRate")
+                                                    .FirstOrDefault();
+                string result;
+                if (heartRate > baseIndicator.MaxValue)
+                {
+                    result = "Nhịp tim nhanh";
+                }
+                else if (heartRate < baseIndicator.MinValue)
+                {
+                    result = "Nhịp tim chậm";
+                }
+                else
+                {
+                    result = "Nhịp tim bình thường";
+                }
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> EvaluateBloodPressure(int systolic, int diastolic)
+        {
+
+            try
+            {
+
+                var baseSystolic = _unitOfWork.HealthIndicatorBaseRepository.
+                                                    FindByCondition(i => i.Type == "Systolic")
+                                                    .FirstOrDefault();
+                var baseDiastolic = _unitOfWork.HealthIndicatorBaseRepository.
+                                                    FindByCondition(i => i.Type == "Diastolic")
+                                                    .FirstOrDefault();
+                string result;
+                if (systolic<baseSystolic.MaxValue && diastolic<baseDiastolic.MaxValue)
+                {
+                    result = "Bình thường";
+                }
+                else if (systolic > baseSystolic.MaxValue && diastolic > baseDiastolic.MaxValue)
+                {
+                    result = "Cao hơn mức bình thường";
+                }
+                else
+                {
+                    result = "Không xác định";
+                }
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
             }
         }
 

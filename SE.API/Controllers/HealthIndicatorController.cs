@@ -69,6 +69,31 @@ public class HealthIndicatorController : ControllerBase
         var result = await _healthIndicatorService.GetKidneyFunctionDetail(accountId);
         return Ok(result);
     }
+    [HttpGet("healthIndicator/{accountId}")]
+    public async Task<IActionResult> GetAllHealthIndicators(int accountId)
+    {
+        var result = await _healthIndicatorService.GetAllHealthIndicators(accountId);
+        return Ok(result);
+    }
+
+    [HttpGet("healthIndicator/evaluation/bmi")]
+    public async Task<IActionResult> EvaluateBMI(decimal? height,decimal? weight,int accountId)
+    {
+        var result = await _healthIndicatorService.EvaluateBMI(height,weight,accountId);
+        return Ok(result);
+    }
+    [HttpGet("healthIndicator/evaluation/heart-rate")]
+    public async Task<IActionResult> EvaluateHeartRate(int heartRate)
+    {
+        var result = await _healthIndicatorService.EvaluateHeartRate(heartRate);
+        return Ok(result);
+    }
+    [HttpGet("healthIndicator/evaluation/blood-pressure")]
+    public async Task<IActionResult> GetAllHealthIndicators(int systolic, int diastolic )
+    {
+        var result = await _healthIndicatorService.EvaluateBloodPressure(systolic, diastolic);
+        return Ok(result);
+    }
     /*
         [HttpGet("weight/weightId")]
         public async Task<IActionResult> GetWeightHeightById(int weightId)

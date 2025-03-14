@@ -11,5 +11,8 @@ namespace SE.Common.Request.HealthIndicator
         public int ElderlyId { get; set; }
         public string BloodGlucose { get; set; }
         public string BloodGlucoseSource { get; set; }
+        public string CreatedBy { get; set; }
+
+        public string Time {  get; set; }
     }
 }

@@ -13,5 +13,7 @@ namespace SE.Common.Request.HealthIndicator
         public string BUN { get; set; }
         public string eGFR { get; set; }
         public string KidneyFunctionSource { get; set; }
+        public string CreatedBy { get; set; }
+
     }
 }

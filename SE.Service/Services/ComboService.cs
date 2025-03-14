@@ -43,10 +43,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "FEE MUST > 0");
                 }
 
-                if (req.ValidityPeriod <= 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "VALIDITY PERIOD MUST BE IN THE FUTURE");
-                }
+              
 
                 if (string.IsNullOrWhiteSpace(req.Name))
                 {
@@ -87,11 +84,6 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "FEE MUST > 0");
                 }
 
-                if (req.ValidityPeriod < 0)
-                {
-                    return new BusinessResult(Const.FAIL_READ, "VALIDITY PERIOD MUST BE IN THE FUTURE");
-                }
-
                 if (string.IsNullOrWhiteSpace(req.Name))
                 {
                     return new BusinessResult(Const.FAIL_READ, "NAME MUST NOT BE EMPTY");
@@ -112,7 +104,6 @@ namespace SE.Service.Services
                 combo.Name = req.Name;
                 combo.Description = req.Description;
                 combo.Fee = req.Fee;
-                combo.ValidityPeriod = req.ValidityPeriod;
                 combo.UpdatedDate = DateTime.UtcNow;
 
                 var result = await _unitOfWork.ComboRepository.UpdateAsync(combo);
