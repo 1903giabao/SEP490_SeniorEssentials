@@ -21,5 +21,7 @@ public partial class BloodGlucose
 
     public string CreatedBy { get; set; }
 
+    public string Time { get; set; }
+
     public virtual Elderly Elderly { get; set; }
 }

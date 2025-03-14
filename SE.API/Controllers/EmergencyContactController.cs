@@ -43,7 +43,7 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("emergency-confirmation/{elderlyId}")]
+        [HttpGet("list-emergency-confirmation/{elderlyId}")]
         public async Task<IActionResult> GetListEmergencyConfirmationByElderly(int elderlyId)
         {
             var result = await _emergencyContactService.GetListEmergencyConfirmationByElderly(elderlyId);
