@@ -16,5 +16,20 @@ namespace SE.Data.Repository
         {
             _context = context;
         }
+
+        public async Task<EmergencyInformation> GetNewestEmergencyInformation(int emergencyId)
+        {
+            return await _context.EmergencyInformations.Include(ei => ei.EmergencyConfirmation).ThenInclude(ei => ei.ConfirmationAccount)
+                .Where(ei => ei.EmergencyConfirmationId == emergencyId)
+                .OrderByDescending(ei => ei.DateTime)
+                .FirstOrDefaultAsync();
+        }        
+        
+        public async Task<List<EmergencyInformation>> GetListEmergencyInformation(int emergencyId)
+        {
+            return await _context.EmergencyInformations.Include(ei => ei.EmergencyConfirmation).ThenInclude(ei => ei.ConfirmationAccount)
+                .Where(ei => ei.EmergencyConfirmationId == emergencyId)
+                .ToListAsync();
+        }
     }
 }

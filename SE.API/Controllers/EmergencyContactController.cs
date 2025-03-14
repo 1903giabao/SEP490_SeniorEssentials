@@ -48,6 +48,13 @@ namespace SE.API.Controllers
         {
             var result = await _emergencyContactService.GetListEmergencyConfirmationByElderly(elderlyId);
             return Ok(result);
+        }        
+        
+        [HttpGet("list-emergency-confirmation-of-family-member/{familyMemberId}")]
+        public async Task<IActionResult> GetListEmergencyConfirmationByFamilyMember(int familyMemberId)
+        {
+            var result = await _emergencyContactService.GetListEmergencyConfirmationByFamilyMember(familyMemberId);
+            return Ok(result);
         }
 
         [HttpPost("emergency-confirmation")]

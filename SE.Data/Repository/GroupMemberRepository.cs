@@ -17,6 +17,24 @@ namespace SE.Data.Repository
             _context = context;
         }
 
+        public async Task<List<int>> GetFamilyMemberInGroupByGroupIdAsync(int groupId, string status)
+        {
+            return await _context.GroupMembers.Include(gm => gm.Account)
+                    .Where(gm => gm.GroupId == groupId && gm.Status.Equals(status) && gm.Account.RoleId == 3)
+                    .Select(gm => gm.AccountId)
+                    .Distinct()
+                    .ToListAsync();
+        }        
+        
+        public async Task<List<Elderly>> GetElderlyInGroupByGroupIdAsync(int groupId, string status)
+        {
+            return await _context.GroupMembers.Include(gm => gm.Account).ThenInclude(gm => gm.Elderly).ThenInclude(gm => gm.Account)
+                    .Where(gm => gm.GroupId == groupId && gm.Status.Equals(status) && gm.Account.RoleId == 2)
+                    .Select(gm => gm.Account.Elderly)
+                    .Distinct()
+                    .ToListAsync();
+        }
+
         public async Task<List<GroupMember>> GetGroupMembersByAccountIdAsync(int accountId)
         {
             return await _context.GroupMembers
