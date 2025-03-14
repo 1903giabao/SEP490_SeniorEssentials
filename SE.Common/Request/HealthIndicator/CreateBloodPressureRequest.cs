@@ -12,5 +12,7 @@ namespace SE.Common.Request.HealthIndicator
         public decimal? BloodPressureSystolic { get; set; }
         public decimal? BloodPressureDiastolic { get; set; }
         public string BloodPressureSource { get; set; }
+        public string CreatedBy { get; set; }
+
     }
 }

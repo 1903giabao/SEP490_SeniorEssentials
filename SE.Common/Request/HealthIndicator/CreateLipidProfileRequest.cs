@@ -14,5 +14,7 @@ namespace SE.Common.Request.HealthIndicator
         public string HDLCholesterol { get; set; }
         public string Triglycerides { get; set; }
         public string LipidProfileSource { get; set; }
+        public string CreatedBy { get; set; }
+
     }
 }

@@ -242,7 +242,33 @@ namespace SE.Service.Services
                         Height = Decimal.Parse(req.Height),
                         Status = SD.GeneralStatus.ACTIVE,
                     };
-                    var rsE = _unitOfWork.ElderlyRepository.CreateAsync(newElderly);
+                    var rsE = await _unitOfWork.ElderlyRepository.CreateAsync(newElderly);
+
+                    var weight = new Weight
+                    {
+                        ElderlyId = newElderly.ElderlyId,
+                        DateRecorded = DateTime.UtcNow.AddHours(7),
+                        Status  = SD.GeneralStatus.ACTIVE,
+                        Weight1 = Decimal.Parse(req.Weight),
+                        WeightSource = "Manually",
+                        CreatedBy = req.CreatedBy
+                    };
+
+                    var saveWeight = await _unitOfWork.WeightRepository.CreateAsync(weight);
+
+                    var height = new Height
+                    {
+                        ElderlyId = newElderly.ElderlyId,
+                        DateRecorded = DateTime.UtcNow.AddHours(7),
+                        Status = SD.GeneralStatus.ACTIVE,
+                        Height1 = Decimal.Parse(req.Height),
+                        HeightSource = "Manually",
+                        CreatedBy = req.CreatedBy
+                    };
+
+                    var saveHeight = await _unitOfWork.HeightRepository.CreateAsync(height);
+
+
                 }
 
                 var onlineMembersRef = _firestoreDb.Collection("OnlineMembers");

@@ -15,11 +15,11 @@ public partial class HealthIndicatorBase
 
     public decimal MaxValue { get; set; }
 
-    public DateTime Time { get; set; }
-
     public string Status { get; set; }
 
     public int? AccountId { get; set; }
+
+    public string Time { get; set; }
 
     public virtual Account Account { get; set; }
 }

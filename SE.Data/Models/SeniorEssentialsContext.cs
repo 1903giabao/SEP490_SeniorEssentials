@@ -13,7 +13,6 @@ public partial class SeniorEssentialsContext : DbContext
         : base(options)
     {
     }
-
     public SeniorEssentialsContext()
     {
     }
@@ -187,9 +186,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.Property(e => e.CreatedBy).HasMaxLength(55);
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
             entity.Property(e => e.Status).HasMaxLength(50);
-            entity.Property(e => e.Time)
-                .HasMaxLength(50)
-                .IsFixedLength();
+            entity.Property(e => e.Time).HasMaxLength(50);
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.BloodGlucoses)
                 .HasForeignKey(d => d.ElderlyId)
@@ -397,7 +394,7 @@ public partial class SeniorEssentialsContext : DbContext
                 .IsRequired()
                 .HasMaxLength(50)
                 .IsUnicode(false);
-            entity.Property(e => e.Time).HasColumnType("datetime");
+            entity.Property(e => e.Time).HasMaxLength(50);
             entity.Property(e => e.Type)
                 .IsRequired()
                 .HasMaxLength(255)
