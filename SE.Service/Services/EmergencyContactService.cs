@@ -256,11 +256,34 @@ namespace SE.Service.Services
             {
                 var emergency = await _unitOfWork.EmergencyConfirmationRepository.GetEmergencyConfirmationByIdAsync(emergencyId);
 
-                var newestInformation = _unitOfWork.EmergencyInformationRepository.FindByCondition(ei => ei.EmergencyConfirmationId == emergencyId)
-                                                                                   .OrderByDescending(ei => ei.DateTime)
-                                                                                   .FirstOrDefault();
+                if (emergency == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không tìm thấy đợt emergency này!");
+                }
 
-                var result = _mapper.Map<GetEmergencyInformationDTO>(newestInformation);
+                var newestInformation = await _unitOfWork.EmergencyInformationRepository.GetNewestEmergencyInformation(emergency.EmergencyConfirmationId);
+
+                if (newestInformation == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không tìm thấy emergency information nào!");
+                }
+
+                var result = new GetEmergencyInformationDTO
+                {
+                    EmergencyInformationId = newestInformation.EmergencyInformationId,
+                    EmergencyConfirmationId = emergency.EmergencyConfirmationId,
+                    ConfirmationAccountName = newestInformation.EmergencyConfirmation.ConfirmationAccount == null ? "" : newestInformation.EmergencyConfirmation.ConfirmationAccount.FullName,
+                    ConfirmationDate = newestInformation.EmergencyConfirmation.EmergencyDate?.ToString("dd-MM-yyyy"),
+                    ConfirmationTime = newestInformation.EmergencyConfirmation.EmergencyDate?.ToString("HH:mm"),
+                    IsConfirmed = newestInformation.EmergencyConfirmation.IsConfirm,
+                    FrontCameraImage = newestInformation.FrontCameraImage,
+                    RearCameraImage = newestInformation.RearCameraImage,
+                    Latitude = newestInformation.Latitude,
+                    Longitude = newestInformation.Longitude,
+                    InformationDate = newestInformation.DateTime?.ToString("dd-MM-yyyy"),
+                    InformationTime = newestInformation.DateTime?.ToString("HH:mm"),
+                    Status = newestInformation.Status
+                };
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
             }
@@ -276,9 +299,29 @@ namespace SE.Service.Services
             {
                 var emergency = await _unitOfWork.EmergencyConfirmationRepository.GetEmergencyConfirmationByIdAsync(emergencyId);
 
-                var listInformation = _unitOfWork.EmergencyInformationRepository.FindByCondition(ei => ei.EmergencyConfirmationId == emergencyId).ToList();
+                if (emergency == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không tìm thấy đợt emergency này!");
+                }
 
-                var result = _mapper.Map<List<GetEmergencyInformationDTO>>(listInformation);
+                var listInformation = await _unitOfWork.EmergencyInformationRepository.GetListEmergencyInformation(emergency.EmergencyConfirmationId);
+
+                var result = listInformation.Select(information => new GetEmergencyInformationDTO
+                {
+                    EmergencyInformationId = information.EmergencyInformationId,
+                    EmergencyConfirmationId = emergency.EmergencyConfirmationId,
+                    ConfirmationAccountName = information.EmergencyConfirmation.ConfirmationAccount == null ? "" : information.EmergencyConfirmation.ConfirmationAccount.FullName,
+                    ConfirmationDate = information.EmergencyConfirmation.EmergencyDate?.ToString("dd-MM-yyyy"),
+                    ConfirmationTime = information.EmergencyConfirmation.EmergencyDate?.ToString("HH:mm"),
+                    IsConfirmed = information.EmergencyConfirmation.IsConfirm,
+                    FrontCameraImage = information.FrontCameraImage,
+                    RearCameraImage = information.RearCameraImage,
+                    Latitude = information.Latitude,
+                    Longitude = information.Longitude,
+                    InformationDate = information.DateTime?.ToString("dd-MM-yyyy"),
+                    InformationTime = information.DateTime?.ToString("HH:mm"),
+                    Status = information.Status
+                });
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
             }
@@ -296,11 +339,12 @@ namespace SE.Service.Services
 
                 var result = emergency.Select(e => new GetEmergencyConfirmationDTO
                 {
-                    ElderlyId = (int)e.ElderlyId,
+                    EmergencyConfirmationId = e.EmergencyConfirmationId,
+                    ElderlyId = e.ElderlyId,
                     EmergencyDate = e.EmergencyDate?.ToString("dd-MM-yyyy"),
-                    EmergencyTime = e.EmergencyDate?.ToString("HH-mm"),
+                    EmergencyTime = e.EmergencyDate?.ToString("HH:mm"),
                     ConfirmationAccountName = e.ConfirmationAccount == null ? "" : e.ConfirmationAccount.FullName,
-                    ConfirmationDate = (DateTime)e.ConfirmationDate,
+                    ConfirmationDate = e.ConfirmationDate,
                     IsConfirmed = (bool)(e.IsConfirm == null ? false : e.IsConfirm)
                 });
 
@@ -336,20 +380,21 @@ namespace SE.Service.Services
                 var eldersInGroup = await _unitOfWork.GroupMemberRepository.GetElderlyInGroupByGroupIdAsync(groupId, SD.GeneralStatus.ACTIVE);
 
                 var otherMembers = eldersInGroup
-                    .Where(id => id != familyMemberId)
+                    .Where(id => id.AccountId != familyMemberId)
                     .ToList();
 
                 var totalResult = new List<GetListEmergencyConfirmationByFamilyMemberDTO>();
 
                 foreach ( var elderly in otherMembers )
                 {
-                    var emergency = await _unitOfWork.EmergencyConfirmationRepository.GetListEmergencyConfirmationByElderlyIdAsync(elderly);
+                    var emergency = await _unitOfWork.EmergencyConfirmationRepository.GetListEmergencyConfirmationByElderlyIdAsync(elderly.ElderlyId);
 
                     var listResult = emergency.Select(e => new GetEmergencyConfirmationDTO
                     {
+                        EmergencyConfirmationId = e.EmergencyConfirmationId,
                         ElderlyId = e.ElderlyId,
                         EmergencyDate = e.EmergencyDate?.ToString("dd-MM-yyyy"),
-                        EmergencyTime = e.EmergencyDate?.ToString("HH-mm"),
+                        EmergencyTime = e.EmergencyDate?.ToString("HH:mm"),
                         ConfirmationAccountName = e.ConfirmationAccount == null ? "" : e.ConfirmationAccount.FullName,
                         ConfirmationDate = e.ConfirmationDate,
                         IsConfirmed = (e.IsConfirm == null ? false : e.IsConfirm)
@@ -357,7 +402,9 @@ namespace SE.Service.Services
 
                     totalResult.Add(new GetListEmergencyConfirmationByFamilyMemberDTO
                     {
-                        ElderlyId = elderly,
+                        ElderlyId = elderly.ElderlyId,
+                        ElderlyName = elderly.Account.FullName,
+                        PhoneNumber = elderly.Account.PhoneNumber,
                         GetEmergencyConfirmationDTOs = listResult
                     });
                 }

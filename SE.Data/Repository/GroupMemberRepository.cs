@@ -26,11 +26,11 @@ namespace SE.Data.Repository
                     .ToListAsync();
         }        
         
-        public async Task<List<int>> GetElderlyInGroupByGroupIdAsync(int groupId, string status)
+        public async Task<List<Elderly>> GetElderlyInGroupByGroupIdAsync(int groupId, string status)
         {
-            return await _context.GroupMembers.Include(gm => gm.Account).ThenInclude(gm => gm.Elderly)
+            return await _context.GroupMembers.Include(gm => gm.Account).ThenInclude(gm => gm.Elderly).ThenInclude(gm => gm.Account)
                     .Where(gm => gm.GroupId == groupId && gm.Status.Equals(status) && gm.Account.RoleId == 2)
-                    .Select(gm => gm.Account.Elderly.ElderlyId)
+                    .Select(gm => gm.Account.Elderly)
                     .Distinct()
                     .ToListAsync();
         }
