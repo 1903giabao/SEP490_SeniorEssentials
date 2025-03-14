@@ -45,6 +45,8 @@ public partial class Account
 
     public virtual ICollection<GroupMember> GroupMembers { get; set; } = new List<GroupMember>();
 
+    public virtual ICollection<HealthIndicatorBase> HealthIndicatorBases { get; set; } = new List<HealthIndicatorBase>();
+
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
     public virtual Professor Professor { get; set; }

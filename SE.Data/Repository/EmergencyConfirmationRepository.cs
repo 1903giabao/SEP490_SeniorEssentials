@@ -19,12 +19,12 @@ namespace SE.Data.Repository
 
         public async Task<EmergencyConfirmation> GetEmergencyConfirmationByIdAsync(int id)
         {
-            return await _context.EmergencyConfirmations.Include(ec => ec.Elderly).ThenInclude(e => e.Account).FirstOrDefaultAsync(ec => ec.EmergencyConfirmationId == id);
+            return await _context.EmergencyConfirmations.Include(ec => ec.ConfirmationAccount).Include(ec => ec.Elderly).ThenInclude(e => e.Account).FirstOrDefaultAsync(ec => ec.EmergencyConfirmationId == id);
         }           
         
         public async Task<List<EmergencyConfirmation>> GetListEmergencyConfirmationByElderlyIdAsync(int id)
         {
-            return await _context.EmergencyConfirmations.Include(ec => ec.Elderly).ThenInclude(e => e.Account).Where(ec => ec.ElderlyId == id).ToListAsync();
+            return await _context.EmergencyConfirmations.Include(ec => ec.ConfirmationAccount).Include(ec => ec.Elderly).ThenInclude(e => e.Account).Where(ec => ec.ElderlyId == id).ToListAsync();
         }              
     }
 }

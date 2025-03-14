@@ -492,7 +492,7 @@ namespace SE.Service.Services
             {
                 var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(elderlyId);
 
-                if (elderly == null)
+                if (elderly == null || elderly.RoleId != 2)
                 {
                     return new BusinessResult(Const.FAIL_READ, "Elderly does not exist.");
                 }
@@ -514,7 +514,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
                 }
 
-                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, emergencyConfirmation.EmergencyConfirmationId);
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, new { EmergencyConfirmationId = emergencyConfirmation.EmergencyConfirmationId });
             }
             catch (Exception ex)
             {
@@ -551,7 +551,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
                 }
 
-                return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, emergencyConfirmation);
+                return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, "Confirm success");
             }
             catch (Exception ex)
             {

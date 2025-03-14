@@ -57,7 +57,7 @@ public partial class SeniorEssentialsContext : DbContext
 
     public virtual DbSet<GroupMember> GroupMembers { get; set; }
 
-    public virtual DbSet<HealthIndicatorsBase> HealthIndicatorsBases { get; set; }
+    public virtual DbSet<HealthIndicatorBase> HealthIndicatorBases { get; set; }
 
     public virtual DbSet<HeartRate> HeartRates { get; set; }
 
@@ -187,6 +187,9 @@ public partial class SeniorEssentialsContext : DbContext
             entity.Property(e => e.CreatedBy).HasMaxLength(55);
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
             entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.Time)
+                .HasMaxLength(50)
+                .IsFixedLength();
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.BloodGlucoses)
                 .HasForeignKey(d => d.ElderlyId)
@@ -382,68 +385,27 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasConstraintName("FK__GroupMemb__Group__0C85DE4D");
         });
 
-        modelBuilder.Entity<HealthIndicatorsBase>(entity =>
+        modelBuilder.Entity<HealthIndicatorBase>(entity =>
         {
-            entity.HasKey(e => e.HealthIndicatorsBaseId).HasName("PK__HealthIn__B69B687788A900DD");
+            entity.HasKey(e => e.Id).HasName("PK__HealthIn__3214EC0774C43183");
 
-            entity.ToTable("HealthIndicatorsBase");
+            entity.ToTable("HealthIndicatorBase");
 
-            entity.Property(e => e.Alpmax)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("ALPMax");
-            entity.Property(e => e.Alpmin)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("ALPMin");
-            entity.Property(e => e.Altmax)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("ALTMax");
-            entity.Property(e => e.Altmin)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("ALTMin");
-            entity.Property(e => e.Astmax)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("ASTMax");
-            entity.Property(e => e.Astmin)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("ASTMin");
-            entity.Property(e => e.BloodGlucoseMax).HasColumnType("decimal(5, 2)");
-            entity.Property(e => e.BloodGlucoseMin).HasColumnType("decimal(5, 2)");
-            entity.Property(e => e.Bunmax)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("BUNMax");
-            entity.Property(e => e.Bunmin)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("BUNMin");
-            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
-            entity.Property(e => e.EGfrmax)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("eGFRMax");
-            entity.Property(e => e.EGfrmin)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("eGFRMin");
-            entity.Property(e => e.Ggtmax)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("GGTMax");
-            entity.Property(e => e.Ggtmin)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("GGTMin");
-            entity.Property(e => e.HdlcholesterolMax)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("HDLCholesterolMax");
-            entity.Property(e => e.HdlcholesterolMin)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("HDLCholesterolMin");
-            entity.Property(e => e.LdlcholesterolMax)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("LDLCholesterolMax");
-            entity.Property(e => e.LdlcholesterolMin)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("LDLCholesterolMin");
-            entity.Property(e => e.Status).HasMaxLength(20);
-            entity.Property(e => e.TotalCholesterolMax).HasColumnType("decimal(5, 2)");
-            entity.Property(e => e.TotalCholesterolMin).HasColumnType("decimal(5, 2)");
-            entity.Property(e => e.TriglyceridesMax).HasColumnType("decimal(5, 2)");
-            entity.Property(e => e.TriglyceridesMin).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.MaxValue).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.MinValue).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.Time).HasColumnType("datetime");
+            entity.Property(e => e.Type)
+                .IsRequired()
+                .HasMaxLength(255)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.Account).WithMany(p => p.HealthIndicatorBases)
+                .HasForeignKey(d => d.AccountId)
+                .HasConstraintName("FK__HealthInd__Accou__382F5661");
         });
 
         modelBuilder.Entity<HeartRate>(entity =>
@@ -857,7 +819,6 @@ public partial class SeniorEssentialsContext : DbContext
                 .IsRequired()
                 .HasMaxLength(20);
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
-            entity.Property(e => e.ValidityPeriod).HasColumnType("datetime");
 
             entity.HasOne(d => d.Account).WithMany(p => p.Subscriptions)
                 .HasForeignKey(d => d.AccountId)

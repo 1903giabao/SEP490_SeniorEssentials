@@ -67,7 +67,7 @@
          "ObjectType": 0
       },
       {
-         "Name": "[dbo].[HealthIndicatorsBase]",
+         "Name": "[dbo].[HealthIndicatorBase]",
          "ObjectType": 0
       },
       {

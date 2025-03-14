@@ -43,7 +43,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "FEE MUST > 0");
                 }
 
-                if (req.ValidityPeriod <= DateTime.UtcNow)
+                if (req.ValidityPeriod <= 0)
                 {
                     return new BusinessResult(Const.FAIL_READ, "VALIDITY PERIOD MUST BE IN THE FUTURE");
                 }
@@ -87,7 +87,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "FEE MUST > 0");
                 }
 
-                if (req.ValidityPeriod <= DateTime.UtcNow)
+                if (req.ValidityPeriod < 0)
                 {
                     return new BusinessResult(Const.FAIL_READ, "VALIDITY PERIOD MUST BE IN THE FUTURE");
                 }
