@@ -15,11 +15,10 @@ namespace SE.Common.Response
 
         public decimal? EGfrAverage { get; set; }
 
-        public string CreatinineEvaluation { get; set; }
+        public double HighestPercent { get; set; }
 
-        public string BunEvaluation { get; set; }
-
-        public string EGfrEvaluation { get; set; }
+        public double LowestPercent { get; set; }
+        public double NormalPercent { get; set; }
 
         public List<CharKidneyFunctionModel> ChartDatabase { get; set; }
     }

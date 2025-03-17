@@ -17,13 +17,11 @@ namespace SE.Common.Response
         public decimal? AlpAverage { get; set; }
 
         public decimal? GgtAverage { get; set; }
-        public string AltEvaluation { get; set; }
+        public double HighestPercent { get; set; }
 
-        public string AstEvaluation { get; set; }
+        public double LowestPercent { get; set; }
+        public double NormalPercent { get; set; }
 
-        public string AlpEvaluation { get; set; }
-
-        public string GgtEvaluation { get; set; }
         public List<CharLiverEnzymesModel> ChartDatabase { get; set; }
 
 

@@ -19,6 +19,7 @@ using System.Globalization;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using Google.Type;
 using static Google.Cloud.Vision.V1.ProductSearchResults.Types;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace SE.Service.Services
 {
@@ -65,6 +66,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> EvaluateKidneyFunction(decimal creatinine, decimal BUN, decimal eGFR);
         Task<IBusinessResult> EvaluateBloodGlusose(int bloodGlucose, string time);
 
+        Task<IBusinessResult> GetLogBookResponses(int accountId);
 
     }
 
@@ -1154,12 +1156,14 @@ namespace SE.Service.Services
         }
 
         private string GetHeartRateEvaluation(double averageHeartRate)
+
         {
-            if (averageHeartRate < 60)
+            var baseHeal = _unitOfWork.HealthIndicatorBaseRepository.FindByCondition(x => x.Type == "HeartRate").FirstOrDefault();
+            if ((decimal)averageHeartRate < baseHeal.MinValue)
             {
                 return "Thấp";
             }
-            else if (averageHeartRate >= 60 && averageHeartRate <= 100)
+            else if ((decimal)averageHeartRate >= baseHeal.MinValue && (decimal)averageHeartRate <= baseHeal.MaxValue)
             {
                 return "Trung bình";
             }
@@ -1377,22 +1381,27 @@ namespace SE.Service.Services
 
         private string GetBloodPressureEvaluation(double averageSystolic, double averageDiastolic)
         {
-            if (averageSystolic < 90 && averageDiastolic < 60)
+
+            var baseSystolic = _unitOfWork.HealthIndicatorBaseRepository.
+                                                   FindByCondition(i => i.Type == "Systolic")
+                                                   .FirstOrDefault();
+            var baseDiastolic = _unitOfWork.HealthIndicatorBaseRepository.
+                                                FindByCondition(i => i.Type == "Diastolic")
+                                                .FirstOrDefault();
+            string result;
+            if ((decimal)averageSystolic < baseSystolic.MaxValue && (decimal)averageDiastolic < baseDiastolic.MaxValue)
             {
-                return "Thấp";
+                result = "Bình thường";
             }
-            else if (averageSystolic < 120 && averageDiastolic < 80)
+            else if ((decimal)averageSystolic > baseSystolic.MaxValue && (decimal)averageDiastolic > baseDiastolic.MaxValue)
             {
-                return "Bình thường";
-            }
-            else if (averageSystolic >= 130 || averageDiastolic >= 80)
-            {
-                return "Cao";
+                result = "Cao hơn mức bình thường";
             }
             else
             {
-                return "Không xác định";
+                result = "Không xác định";
             }
+            return result;
         }
 
         public async Task<IBusinessResult> GetBloodGlucoseDetail(int accountId)
@@ -1453,7 +1462,6 @@ namespace SE.Service.Services
                         MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
                     })
                     .ToList();
-
                 // Function to calculate evaluation percentages
                 (double LowPercent, double NormalPercent, double HighPercent) CalculateEvaluationPercentages(List<BloodGlucose> records, List<HealthIndicatorBase> indicators)
                 {
@@ -1477,13 +1485,26 @@ namespace SE.Service.Services
                             highCount++;
                     }
 
-                    return (
-                        LowPercent: (double)lowCount / totalRecords * 100,
-                        NormalPercent: (double)normalCount / totalRecords * 100,
-                        HighPercent: (double)highCount / totalRecords * 100
-                    );
-                }
+                    // Calculate percentages
+                    double lowPercent = (double)lowCount / totalRecords * 100;
+                    double normalPercent = (double)normalCount / totalRecords * 100;
+                    double highPercent = (double)highCount / totalRecords * 100;
 
+                    // Ensure the sum is 100% (due to rounding errors)
+                    double sum = lowPercent + normalPercent + highPercent;
+                    if (sum != 100.0)
+                    {
+                        // Adjust the largest percentage to make the sum 100%
+                        if (lowPercent >= normalPercent && lowPercent >= highPercent)
+                            lowPercent += 100.0 - sum;
+                        else if (normalPercent >= lowPercent && normalPercent >= highPercent)
+                            normalPercent += 100.0 - sum;
+                        else
+                            highPercent += 100.0 - sum;
+                    }
+
+                    return (Math.Round( lowPercent,2), Math.Round(normalPercent,2), Math.Round(highPercent,2));
+                }
                 // Function to calculate highest, lowest, and average
                 (double Highest, double Lowest, double Average) CalculateStatistics(List<BloodGlucose> records)
                 {
@@ -1678,7 +1699,7 @@ namespace SE.Service.Services
                     })
                     .ToList();
 
-                // Calculate dailyRecords with non-null Indicator values
+                // Calculate dailyRecords
                 var dailyRecords = last7Days
                     .Select(date => new
                     {
@@ -1692,12 +1713,12 @@ namespace SE.Service.Services
                         Type = x.Date.DayOfWeek.ToString(),
                         TotalCholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.TotalCholesterol ?? 0), 2) : null,
                         Ldlcholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ldlcholesterol ?? 0), 2) : null,
-                        Hdlcholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Hdlcholesterol ?? 0),2) : null,
+                        Hdlcholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Hdlcholesterol ?? 0), 2) : null,
                         Triglycerides = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Triglycerides ?? 0), 2) : null
                     })
                     .ToList();
 
-                // Calculate weeklyRecords with non-null Indicator values
+                // Calculate weeklyRecords
                 var weeklyRecords = last6Weeks
                     .Select(week => new
                     {
@@ -1719,7 +1740,7 @@ namespace SE.Service.Services
                     .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
                     .ToList();
 
-                // Calculate monthlyRecords with non-null Indicator values
+                // Calculate monthlyRecords
                 var monthlyRecords = last4Months
                     .Select(month => new
                     {
@@ -1741,7 +1762,7 @@ namespace SE.Service.Services
                     .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
                     .ToList();
 
-                // Calculate yearlyRecords with non-null Indicator values
+                // Calculate yearlyRecords
                 var yearlyRecords = lipidProfileRecords
                     .GroupBy(l => l.DateRecorded.Value.Year)
                     .Select(g => new CharLipidProfileModel
@@ -1755,160 +1776,61 @@ namespace SE.Service.Services
                     .OrderBy(record => int.Parse(record.Type))
                     .ToList();
 
-                // Calculate averages for each tab (only non-null Indicators)
-                var dailyTotalCholesterolAverage = dailyRecords
-                    .Where(d => d.TotalCholesterol.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { TotalCholesterol = 0 })
-                    .Average(d => d.TotalCholesterol.Value);
+                // Calculate percentages for each tab
+                var dailyPercentages = CalculatePercentages(dailyRecords);
+                var weeklyPercentages = CalculatePercentages(weeklyRecords);
+                var monthlyPercentages = CalculatePercentages(monthlyRecords);
+                var yearlyPercentages = CalculatePercentages(yearlyRecords);
 
-                var dailyLdlcholesterolAverage = dailyRecords
-                    .Where(d => d.Ldlcholesterol.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { Ldlcholesterol = 0 })
-                    .Average(d => d.Ldlcholesterol.Value);
-
-                var dailyHdlcholesterolAverage = dailyRecords
-                    .Where(d => d.Hdlcholesterol.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { Hdlcholesterol = 0 })
-                    .Average(d => d.Hdlcholesterol.Value);
-
-                var dailyTriglyceridesAverage = dailyRecords
-                    .Where(d => d.Triglycerides.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { Triglycerides = 0 })
-                    .Average(d => d.Triglycerides.Value);
-
-                var weeklyTotalCholesterolAverage = weeklyRecords
-                    .Where(w => w.TotalCholesterol.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { TotalCholesterol = 0 })
-                    .Average(w => w.TotalCholesterol.Value);
-
-                var weeklyLdlcholesterolAverage = weeklyRecords
-                    .Where(w => w.Ldlcholesterol.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { Ldlcholesterol = 0 })
-                    .Average(w => w.Ldlcholesterol.Value);
-
-                var weeklyHdlcholesterolAverage = weeklyRecords
-                    .Where(w => w.Hdlcholesterol.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { Hdlcholesterol = 0 })
-                    .Average(w => w.Hdlcholesterol.Value);
-
-                var weeklyTriglyceridesAverage = weeklyRecords
-                    .Where(w => w.Triglycerides.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { Triglycerides = 0 })
-                    .Average(w => w.Triglycerides.Value);
-
-                var monthlyTotalCholesterolAverage = monthlyRecords
-                    .Where(m => m.TotalCholesterol.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { TotalCholesterol = 0 })
-                    .Average(m => m.TotalCholesterol.Value);
-
-                var monthlyLdlcholesterolAverage = monthlyRecords
-                    .Where(m => m.Ldlcholesterol.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { Ldlcholesterol = 0 })
-                    .Average(m => m.Ldlcholesterol.Value);
-
-                var monthlyHdlcholesterolAverage = monthlyRecords
-                    .Where(m => m.Hdlcholesterol.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { Hdlcholesterol = 0 })
-                    .Average(m => m.Hdlcholesterol.Value);
-
-                var monthlyTriglyceridesAverage = monthlyRecords
-                    .Where(m => m.Triglycerides.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { Triglycerides = 0 })
-                    .Average(m => m.Triglycerides.Value);
-
-                var yearlyTotalCholesterolAverage = yearlyRecords
-                    .Where(y => y.TotalCholesterol.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { TotalCholesterol = 0 })
-                    .Average(y => y.TotalCholesterol.Value);
-
-                var yearlyLdlcholesterolAverage = yearlyRecords
-                    .Where(y => y.Ldlcholesterol.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { Ldlcholesterol = 0 })
-                    .Average(y => y.Ldlcholesterol.Value);
-
-                var yearlyHdlcholesterolAverage = yearlyRecords
-                    .Where(y => y.Hdlcholesterol.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { Hdlcholesterol = 0 })
-                    .Average(y => y.Hdlcholesterol.Value);
-
-                var yearlyTriglyceridesAverage = yearlyRecords
-                    .Where(y => y.Triglycerides.HasValue)
-                    .DefaultIfEmpty(new CharLipidProfileModel { Triglycerides = 0 })
-                    .Average(y => y.Triglycerides.Value);
-
-                // Calculate Evaluation for each tab
-                var dailyTotalCholesterolEvaluation = GetTotalCholesterolEvaluation(dailyTotalCholesterolAverage);
-                var dailyLdlcholesterolEvaluation = GetLdlcholesterolEvaluation(dailyLdlcholesterolAverage);
-                var dailyHdlcholesterolEvaluation = GetHdlcholesterolEvaluation(dailyHdlcholesterolAverage);
-                var dailyTriglyceridesEvaluation = GetTriglyceridesEvaluation(dailyTriglyceridesAverage);
-
-                var weeklyTotalCholesterolEvaluation = GetTotalCholesterolEvaluation(weeklyTotalCholesterolAverage);
-                var weeklyLdlcholesterolEvaluation = GetLdlcholesterolEvaluation(weeklyLdlcholesterolAverage);
-                var weeklyHdlcholesterolEvaluation = GetHdlcholesterolEvaluation(weeklyHdlcholesterolAverage);
-                var weeklyTriglyceridesEvaluation = GetTriglyceridesEvaluation(weeklyTriglyceridesAverage);
-
-                var monthlyTotalCholesterolEvaluation = GetTotalCholesterolEvaluation(monthlyTotalCholesterolAverage);
-                var monthlyLdlcholesterolEvaluation = GetLdlcholesterolEvaluation(monthlyLdlcholesterolAverage);
-                var monthlyHdlcholesterolEvaluation = GetHdlcholesterolEvaluation(monthlyHdlcholesterolAverage);
-                var monthlyTriglyceridesEvaluation = GetTriglyceridesEvaluation(monthlyTriglyceridesAverage);
-
-                var yearlyTotalCholesterolEvaluation = GetTotalCholesterolEvaluation(yearlyTotalCholesterolAverage);
-                var yearlyLdlcholesterolEvaluation = GetLdlcholesterolEvaluation(yearlyLdlcholesterolAverage);
-                var yearlyHdlcholesterolEvaluation = GetHdlcholesterolEvaluation(yearlyHdlcholesterolAverage);
-                var yearlyTriglyceridesEvaluation = GetTriglyceridesEvaluation(yearlyTriglyceridesAverage);
-
+                // Prepare response
                 var responseList = new List<GetLipidProfileDetail>
         {
             new GetLipidProfileDetail
             {
                 Tabs = "Ngày",
-                TotalCholesterolAverage = dailyTotalCholesterolAverage,
-                LdlcholesterolAverage = dailyLdlcholesterolAverage,
-                HdlcholesterolAverage = dailyHdlcholesterolAverage,
-                TriglyceridesAverage = dailyTriglyceridesAverage,
-                TotalCholesterolEvaluation = dailyTotalCholesterolEvaluation,
-                LdlcholesteroEvaluation = dailyLdlcholesterolEvaluation,
-                HdlcholesterolEvaluation = dailyHdlcholesterolEvaluation,
-                TriglyceridesEvaluation = dailyTriglyceridesEvaluation,
+                TotalCholesterolAverage = dailyRecords.Average(d => d.TotalCholesterol ?? 0),
+                LdlcholesterolAverage = dailyRecords.Average(d => d.Ldlcholesterol ?? 0),
+                HdlcholesterolAverage = dailyRecords.Average(d => d.Hdlcholesterol ?? 0),
+                TriglyceridesAverage = dailyRecords.Average(d => d.Triglycerides ?? 0),
+                HighestPercent = dailyPercentages.HighestPercent,
+                LowestPercent = dailyPercentages.LowestPercent,
+                NormalPercent = dailyPercentages.NormalPercent,
                 ChartDatabase = dailyRecords
             },
             new GetLipidProfileDetail
             {
                 Tabs = "Tuần",
-                TotalCholesterolAverage = weeklyTotalCholesterolAverage,
-                LdlcholesterolAverage = weeklyLdlcholesterolAverage,
-                HdlcholesterolAverage = weeklyHdlcholesterolAverage,
-                TriglyceridesAverage = weeklyTriglyceridesAverage,
-                TotalCholesterolEvaluation = weeklyTotalCholesterolEvaluation,
-                LdlcholesteroEvaluation = weeklyLdlcholesterolEvaluation,
-                HdlcholesterolEvaluation = weeklyHdlcholesterolEvaluation,
-                TriglyceridesEvaluation = weeklyTriglyceridesEvaluation,
+                TotalCholesterolAverage = weeklyRecords.Average(w => w.TotalCholesterol ?? 0),
+                LdlcholesterolAverage = weeklyRecords.Average(w => w.Ldlcholesterol ?? 0),
+                HdlcholesterolAverage = weeklyRecords.Average(w => w.Hdlcholesterol ?? 0),
+                TriglyceridesAverage = weeklyRecords.Average(w => w.Triglycerides ?? 0),
+                HighestPercent = weeklyPercentages.HighestPercent,
+                LowestPercent = weeklyPercentages.LowestPercent,
+                NormalPercent = weeklyPercentages.NormalPercent,
                 ChartDatabase = weeklyRecords
             },
             new GetLipidProfileDetail
             {
                 Tabs = "Tháng",
-                TotalCholesterolAverage = monthlyTotalCholesterolAverage,
-                LdlcholesterolAverage = monthlyLdlcholesterolAverage,
-                HdlcholesterolAverage = monthlyHdlcholesterolAverage,
-                TriglyceridesAverage = monthlyTriglyceridesAverage,
-                TotalCholesterolEvaluation = monthlyTotalCholesterolEvaluation,
-                LdlcholesteroEvaluation = monthlyLdlcholesterolEvaluation,
-                HdlcholesterolEvaluation = monthlyHdlcholesterolEvaluation,
-                TriglyceridesEvaluation = monthlyTriglyceridesEvaluation,
+                TotalCholesterolAverage = monthlyRecords.Average(m => m.TotalCholesterol ?? 0),
+                LdlcholesterolAverage = monthlyRecords.Average(m => m.Ldlcholesterol ?? 0),
+                HdlcholesterolAverage = monthlyRecords.Average(m => m.Hdlcholesterol ?? 0),
+                TriglyceridesAverage = monthlyRecords.Average(m => m.Triglycerides ?? 0),
+                HighestPercent = monthlyPercentages.HighestPercent,
+                LowestPercent = monthlyPercentages.LowestPercent,
+                NormalPercent = monthlyPercentages.NormalPercent,
                 ChartDatabase = monthlyRecords
             },
             new GetLipidProfileDetail
             {
                 Tabs = "Năm",
-                TotalCholesterolAverage = yearlyTotalCholesterolAverage,
-                LdlcholesterolAverage = yearlyLdlcholesterolAverage,
-                HdlcholesterolAverage = yearlyHdlcholesterolAverage,
-                TriglyceridesAverage = yearlyTriglyceridesAverage,
-                TotalCholesterolEvaluation = yearlyTotalCholesterolEvaluation,
-                LdlcholesteroEvaluation = yearlyLdlcholesterolEvaluation,
-                HdlcholesterolEvaluation = yearlyHdlcholesterolEvaluation,
-                TriglyceridesEvaluation = yearlyTriglyceridesEvaluation,
+                TotalCholesterolAverage = yearlyRecords.Average(y => y.TotalCholesterol ?? 0),
+                LdlcholesterolAverage = yearlyRecords.Average(y => y.Ldlcholesterol ?? 0),
+                HdlcholesterolAverage = yearlyRecords.Average(y => y.Hdlcholesterol ?? 0),
+                TriglyceridesAverage = yearlyRecords.Average(y => y.Triglycerides ?? 0),
+                HighestPercent = yearlyPercentages.HighestPercent,
+                LowestPercent = yearlyPercentages.LowestPercent,
+                NormalPercent = yearlyPercentages.NormalPercent,
                 ChartDatabase = yearlyRecords
             }
         };
@@ -1921,45 +1843,105 @@ namespace SE.Service.Services
             }
         }
 
+        private (double HighestPercent, double LowestPercent, double NormalPercent) CalculatePercentages(List<CharLipidProfileModel> records)
+        {
+            int totalRecords = records.Count;
+            if (totalRecords == 0)
+                return (0, 0, 0);
+
+            int highestCount = 0;
+            int lowestCount = 0;
+            int normalCount = 0;
+
+            foreach (var record in records)
+            {
+                // Evaluate Total Cholesterol
+                var totalCholesterolEvaluation = GetTotalCholesterolEvaluation(record.TotalCholesterol ?? 0);
+                if (totalCholesterolEvaluation == "Cao") highestCount++;
+                else if (totalCholesterolEvaluation == "Thấp") lowestCount++;
+                else if (totalCholesterolEvaluation == "Bình thường") normalCount++;
+
+                // Evaluate LDL Cholesterol
+                var ldlCholesterolEvaluation = GetLdlcholesterolEvaluation(record.Ldlcholesterol ?? 0);
+                if (ldlCholesterolEvaluation == "Cao") highestCount++;
+                else if (ldlCholesterolEvaluation == "Thấp") lowestCount++;
+                else if (ldlCholesterolEvaluation == "Bình thường") normalCount++;
+
+                // Evaluate HDL Cholesterol
+                var hdlCholesterolEvaluation = GetHdlcholesterolEvaluation(record.Hdlcholesterol ?? 0);
+                if (hdlCholesterolEvaluation == "Cao") highestCount++;
+                else if (hdlCholesterolEvaluation == "Thấp") lowestCount++;
+                else if (hdlCholesterolEvaluation == "Bình thường") normalCount++;
+
+                // Evaluate Triglycerides
+                var triglyceridesEvaluation = GetTriglyceridesEvaluation(record.Triglycerides ?? 0);
+                if (triglyceridesEvaluation == "Cao") highestCount++;
+                else if (triglyceridesEvaluation == "Thấp") lowestCount++;
+                else if (triglyceridesEvaluation == "Bình thường") normalCount++;
+            }
+
+            // Total evaluations = totalRecords * 4 (since there are 4 indicators)
+            int totalEvaluations = totalRecords * 4;
+
+            // Calculate percentages
+            double highestPercent = (double)highestCount / totalEvaluations * 100;
+            double lowestPercent = (double)lowestCount / totalEvaluations * 100;
+            double normalPercent = (double)normalCount / totalEvaluations * 100;
+
+            // Ensure the sum is 100% (due to rounding errors)
+            double sum = highestPercent + lowestPercent + normalPercent;
+            if (sum != 100.0)
+            {
+                // Adjust the largest percentage to make the sum 100%
+                if (highestPercent >= lowestPercent && highestPercent >= normalPercent)
+                    highestPercent += 100.0 - sum;
+                else if (lowestPercent >= highestPercent && lowestPercent >= normalPercent)
+                    lowestPercent += 100.0 - sum;
+                else
+                    normalPercent += 100.0 - sum;
+            }
+
+            return (Math.Round(highestPercent,2), Math.Round(lowestPercent,2), Math.Round(normalPercent,2));
+        }
         private string GetTotalCholesterolEvaluation(decimal averageTotalCholesterol)
         {
-            if (averageTotalCholesterol < 160)
+            var baseHealth = _unitOfWork.HealthIndicatorBaseRepository
+                   .FindByCondition(i => i.Type == "TotalCholesterol")
+                   .FirstOrDefault();
+
+            if (averageTotalCholesterol < baseHealth.MinValue)
             {
                 return "Thấp";
             }
-            else if (averageTotalCholesterol >= 160 && averageTotalCholesterol < 180)
+            else if (averageTotalCholesterol >= baseHealth.MinValue && averageTotalCholesterol < baseHealth.MaxValue)
             {
                 return "Bình thường";
             }
-            else if (averageTotalCholesterol >= 180 && averageTotalCholesterol < 220)
+            else if (averageTotalCholesterol >= baseHealth.MaxValue )
             {
                 return "Cao";
             }
-         
-            else
-            {
-                return "Không xác định";
-            }
+            return "Không xác định";
         }
 
         private string GetLdlcholesterolEvaluation(decimal averageLdlcholesterol)
         {
-            if (averageLdlcholesterol < 40)
+            var baseHealth = _unitOfWork.HealthIndicatorBaseRepository
+                   .FindByCondition(i => i.Type == "LDLCholesterol")
+                   .FirstOrDefault();
+            if (averageLdlcholesterol < baseHealth.MinValue)
             {
                 return "Thấp";
             }
-            else if (averageLdlcholesterol >= 40 && averageLdlcholesterol < 120)
+            else if (averageLdlcholesterol >= baseHealth.MinValue && averageLdlcholesterol < baseHealth.MaxValue)
             {
                 return "Bình thường";
             }
-            else if (averageLdlcholesterol >= 120 && averageLdlcholesterol < 170)
+            else if (averageLdlcholesterol >= baseHealth.MaxValue)
             {
                 return "Cao";
             }
-            else if (averageLdlcholesterol >= 170)
-            {
-                return "Rất cao";
-            }
+          
             else
             {
                 return "Không xác định";
@@ -1968,15 +1950,18 @@ namespace SE.Service.Services
 
         private string GetHdlcholesterolEvaluation(decimal averageHdlcholesterol)
         {
-            if (averageHdlcholesterol < 40)
+            var baseHealth = _unitOfWork.HealthIndicatorBaseRepository
+                   .FindByCondition(i => i.Type == "HDLCholesterol")
+                   .FirstOrDefault();
+            if (averageHdlcholesterol < baseHealth.MinValue)
             {
                 return "Thấp";
             }
-            else if (averageHdlcholesterol >= 40 && averageHdlcholesterol < 65)
+            else if (averageHdlcholesterol >= baseHealth.MinValue && averageHdlcholesterol < baseHealth.MaxValue)
             {
                 return "Bình thường";
             }
-            else if (averageHdlcholesterol >= 65)
+            else if (averageHdlcholesterol >= baseHealth.MaxValue)
             {
                 return "Cao tốt";
             }
@@ -1988,17 +1973,20 @@ namespace SE.Service.Services
 
         private string GetTriglyceridesEvaluation(decimal averageTriglycerides)
         {
-            if (averageTriglycerides < 50)
+            var baseHealth = _unitOfWork.HealthIndicatorBaseRepository
+                   .FindByCondition(i => i.Type == "Triglycerides")
+                   .FirstOrDefault();
+            if (averageTriglycerides < baseHealth.MinValue)
             {
                 return "Thấp";
             }
-            else if (averageTriglycerides >= 50 && averageTriglycerides < 170)
+            else if (averageTriglycerides >= baseHealth.MinValue && averageTriglycerides < baseHealth.MaxValue)
             {
                 return "Bình thường";
             }
-            else if (averageTriglycerides >= 170)
+            else if (averageTriglycerides >= baseHealth.MaxValue)
             {
-                return "Hơi cao";
+                return "Cao";
             }
             else
             {
@@ -2054,7 +2042,7 @@ namespace SE.Service.Services
                     })
                     .ToList();
 
-                // Calculate dailyRecords with non-null Indicator values
+                // Calculate dailyRecords
                 var dailyRecords = last7Days
                     .Select(date => new
                     {
@@ -2073,7 +2061,7 @@ namespace SE.Service.Services
                     })
                     .ToList();
 
-                // Calculate weeklyRecords with non-null Indicator values
+                // Calculate weeklyRecords
                 var weeklyRecords = last6Weeks
                     .Select(week => new
                     {
@@ -2095,7 +2083,7 @@ namespace SE.Service.Services
                     .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
                     .ToList();
 
-                // Calculate monthlyRecords with non-null Indicator values
+                // Calculate monthlyRecords
                 var monthlyRecords = last4Months
                     .Select(month => new
                     {
@@ -2117,7 +2105,7 @@ namespace SE.Service.Services
                     .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
                     .ToList();
 
-                // Calculate yearlyRecords with non-null Indicator values
+                // Calculate yearlyRecords
                 var yearlyRecords = liverEnzymeRecords
                     .GroupBy(l => l.DateRecorded.Value.Year)
                     .Select(g => new CharLiverEnzymesModel
@@ -2131,160 +2119,65 @@ namespace SE.Service.Services
                     .OrderBy(record => int.Parse(record.Type))
                     .ToList();
 
-                // Calculate averages for each tab (only non-null Indicators)
-                var dailyAltAverage = dailyRecords
-                    .Where(d => d.Alt.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alt = 0 })
-                    .Average(d => d.Alt.Value);
+                // Calculate percentages for each tab
+                var dailyPercentages = CalculatePercentages(dailyRecords);
+                var weeklyPercentages = CalculatePercentages(weeklyRecords);
+                var monthlyPercentages = CalculatePercentages(monthlyRecords);
+                var yearlyPercentages = CalculatePercentages(yearlyRecords);
 
-                var dailyAstAverage = dailyRecords
-                    .Where(d => d.Ast.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ast = 0 })
-                    .Average(d => d.Ast.Value);
-
-                var dailyAlpAverage = dailyRecords
-                    .Where(d => d.Alp.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alp = 0 })
-                    .Average(d => d.Alp.Value);
-
-                var dailyGgtAverage = dailyRecords
-                    .Where(d => d.Ggt.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ggt = 0 })
-                    .Average(d => d.Ggt.Value);
-
-                var weeklyAltAverage = weeklyRecords
-                    .Where(w => w.Alt.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alt = 0 })
-                    .Average(w => w.Alt.Value);
-
-                var weeklyAstAverage = weeklyRecords
-                    .Where(w => w.Ast.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ast = 0 })
-                    .Average(w => w.Ast.Value);
-
-                var weeklyAlpAverage = weeklyRecords
-                    .Where(w => w.Alp.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alp = 0 })
-                    .Average(w => w.Alp.Value);
-
-                var weeklyGgtAverage = weeklyRecords
-                    .Where(w => w.Ggt.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ggt = 0 })
-                    .Average(w => w.Ggt.Value);
-
-                var monthlyAltAverage = monthlyRecords
-                    .Where(m => m.Alt.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alt = 0 })
-                    .Average(m => m.Alt.Value);
-
-                var monthlyAstAverage = monthlyRecords
-                    .Where(m => m.Ast.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ast = 0 })
-                    .Average(m => m.Ast.Value);
-
-                var monthlyAlpAverage = monthlyRecords
-                    .Where(m => m.Alp.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alp = 0 })
-                    .Average(m => m.Alp.Value);
-
-                var monthlyGgtAverage = monthlyRecords
-                    .Where(m => m.Ggt.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ggt = 0 })
-                    .Average(m => m.Ggt.Value);
-
-                var yearlyAltAverage = yearlyRecords
-                    .Where(y => y.Alt.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alt = 0 })
-                    .Average(y => y.Alt.Value);
-
-                var yearlyAstAverage = yearlyRecords
-                    .Where(y => y.Ast.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ast = 0 })
-                    .Average(y => y.Ast.Value);
-
-                var yearlyAlpAverage = yearlyRecords
-                    .Where(y => y.Alp.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Alp = 0 })
-                    .Average(y => y.Alp.Value);
-
-                var yearlyGgtAverage = yearlyRecords
-                    .Where(y => y.Ggt.HasValue)
-                    .DefaultIfEmpty(new CharLiverEnzymesModel { Ggt = 0 })
-                    .Average(y => y.Ggt.Value);
-
-                // Calculate Evaluation for each tab
-                var dailyAltEvaluation = GetAltEvaluation(dailyAltAverage);
-                var dailyAstEvaluation = GetAstEvaluation(dailyAstAverage);
-                var dailyAlpEvaluation = GetAlpEvaluation(dailyAlpAverage);
-                var dailyGgtEvaluation = GetGgtEvaluation(dailyGgtAverage);
-
-                var weeklyAltEvaluation = GetAltEvaluation(weeklyAltAverage);
-                var weeklyAstEvaluation = GetAstEvaluation(weeklyAstAverage);
-                var weeklyAlpEvaluation = GetAlpEvaluation(weeklyAlpAverage);
-                var weeklyGgtEvaluation = GetGgtEvaluation(weeklyGgtAverage);
-
-                var monthlyAltEvaluation = GetAltEvaluation(monthlyAltAverage);
-                var monthlyAstEvaluation = GetAstEvaluation(monthlyAstAverage);
-                var monthlyAlpEvaluation = GetAlpEvaluation(monthlyAlpAverage);
-                var monthlyGgtEvaluation = GetGgtEvaluation(monthlyGgtAverage);
-
-                var yearlyAltEvaluation = GetAltEvaluation(yearlyAltAverage);
-                var yearlyAstEvaluation = GetAstEvaluation(yearlyAstAverage);
-                var yearlyAlpEvaluation = GetAlpEvaluation(yearlyAlpAverage);
-                var yearlyGgtEvaluation = GetGgtEvaluation(yearlyGgtAverage);
-
+                // Prepare response
                 var responseList = new List<GetLiverEnzymesDetail>
         {
             new GetLiverEnzymesDetail
             {
                 Tabs = "Ngày",
-                AltAverage = dailyAltAverage,
-                AstAverage = dailyAstAverage,
-                AlpAverage = dailyAlpAverage,
-                GgtAverage = dailyGgtAverage,
-                AltEvaluation = dailyAltEvaluation,
-                AstEvaluation = dailyAstEvaluation,
-                AlpEvaluation = dailyAlpEvaluation,
-                GgtEvaluation = dailyGgtEvaluation,
+                AltAverage = dailyRecords.Average(d => d.Alt ?? 0),
+                AstAverage = dailyRecords.Average(d => d.Ast ?? 0),
+                AlpAverage = dailyRecords.Average(d => d.Alp ?? 0),
+                GgtAverage = dailyRecords.Average(d => d.Ggt ?? 0),
+              
+                HighestPercent = dailyPercentages.HighestPercent,
+                LowestPercent = dailyPercentages.LowestPercent,
+                NormalPercent = dailyPercentages.NormalPercent,
                 ChartDatabase = dailyRecords
             },
             new GetLiverEnzymesDetail
             {
                 Tabs = "Tuần",
-                AltAverage = weeklyAltAverage,
-                AstAverage = weeklyAstAverage,
-                AlpAverage = weeklyAlpAverage,
-                GgtAverage = weeklyGgtAverage,
-                AltEvaluation = weeklyAltEvaluation,
-                AstEvaluation = weeklyAstEvaluation,
-                AlpEvaluation = weeklyAlpEvaluation,
-                GgtEvaluation = weeklyGgtEvaluation,
+                AltAverage = weeklyRecords.Average(w => w.Alt ?? 0),
+                AstAverage = weeklyRecords.Average(w => w.Ast ?? 0),
+                AlpAverage = weeklyRecords.Average(w => w.Alp ?? 0),
+                GgtAverage = weeklyRecords.Average(w => w.Ggt ?? 0),
+           
+                HighestPercent = weeklyPercentages.HighestPercent,
+                LowestPercent = weeklyPercentages.LowestPercent,
+                NormalPercent = weeklyPercentages.NormalPercent,
                 ChartDatabase = weeklyRecords
             },
             new GetLiverEnzymesDetail
             {
                 Tabs = "Tháng",
-                AltAverage = monthlyAltAverage,
-                AstAverage = monthlyAstAverage,
-                AlpAverage = monthlyAlpAverage,
-                GgtAverage = monthlyGgtAverage,
-                AltEvaluation = monthlyAltEvaluation,
-                AstEvaluation = monthlyAstEvaluation,
-                AlpEvaluation = monthlyAlpEvaluation,
-                GgtEvaluation = monthlyGgtEvaluation,
+                AltAverage = monthlyRecords.Average(m => m.Alt ?? 0),
+                AstAverage = monthlyRecords.Average(m => m.Ast ?? 0),
+                AlpAverage = monthlyRecords.Average(m => m.Alp ?? 0),
+                GgtAverage = monthlyRecords.Average(m => m.Ggt ?? 0),
+         
+                HighestPercent = monthlyPercentages.HighestPercent,
+                LowestPercent = monthlyPercentages.LowestPercent,
+                NormalPercent = monthlyPercentages.NormalPercent,
                 ChartDatabase = monthlyRecords
             },
             new GetLiverEnzymesDetail
             {
                 Tabs = "Năm",
-                AltAverage = yearlyAltAverage,
-                AstAverage = yearlyAstAverage,
-                AlpAverage = yearlyAlpAverage,
-                GgtAverage = yearlyGgtAverage,
-                AltEvaluation = yearlyAltEvaluation,
-                AstEvaluation = yearlyAstEvaluation,
-                AlpEvaluation = yearlyAlpEvaluation,
-                GgtEvaluation = yearlyGgtEvaluation,
+                AltAverage = yearlyRecords.Average(y => y.Alt ?? 0),
+                AstAverage = yearlyRecords.Average(y => y.Ast ?? 0),
+                AlpAverage = yearlyRecords.Average(y => y.Alp ?? 0),
+                GgtAverage = yearlyRecords.Average(y => y.Ggt ?? 0),
+              
+                HighestPercent = yearlyPercentages.HighestPercent,
+                LowestPercent = yearlyPercentages.LowestPercent,
+                NormalPercent = yearlyPercentages.NormalPercent,
                 ChartDatabase = yearlyRecords
             }
         };
@@ -2297,13 +2190,76 @@ namespace SE.Service.Services
             }
         }
 
+        private (double HighestPercent, double LowestPercent, double NormalPercent) CalculatePercentages(List<CharLiverEnzymesModel> records)
+        {
+            int totalRecords = records.Count;
+            if (totalRecords == 0)
+                return (0, 0, 0);
+
+            int highestCount = 0;
+            int lowestCount = 0;
+            int normalCount = 0;
+
+            foreach (var record in records)
+            {
+                // Evaluate ALT
+                var altEvaluation = GetAltEvaluation(record.Alt ?? 0);
+                if (altEvaluation == "Cao") highestCount++;
+                else if (altEvaluation == "Thấp") lowestCount++;
+                else if (altEvaluation == "Bình thường") normalCount++;
+
+                // Evaluate AST
+                var astEvaluation = GetAstEvaluation(record.Ast ?? 0);
+                if (astEvaluation == "Cao") highestCount++;
+                else if (astEvaluation == "Thấp") lowestCount++;
+                else if (astEvaluation == "Bình thường") normalCount++;
+
+                // Evaluate ALP
+                var alpEvaluation = GetAlpEvaluation(record.Alp ?? 0);
+                if (alpEvaluation == "Cao") highestCount++;
+                else if (alpEvaluation == "Thấp") lowestCount++;
+                else if (alpEvaluation == "Bình thường") normalCount++;
+
+                // Evaluate GGT
+                var ggtEvaluation = GetGgtEvaluation(record.Ggt ?? 0);
+                if (ggtEvaluation == "Cao") highestCount++;
+                else if (ggtEvaluation == "Thấp") lowestCount++;
+                else if (ggtEvaluation == "Bình thường") normalCount++;
+            }
+
+            // Total evaluations = totalRecords * 4 (since there are 4 indicators)
+            int totalEvaluations = totalRecords * 4;
+
+            // Calculate percentages
+            double highestPercent = (double)highestCount / totalEvaluations * 100;
+            double lowestPercent = (double)lowestCount / totalEvaluations * 100;
+            double normalPercent = (double)normalCount / totalEvaluations * 100;
+
+            // Ensure the sum is 100% (due to rounding errors)
+            double sum = highestPercent + lowestPercent + normalPercent;
+            if (sum != 100.0)
+            {
+                // Adjust the largest percentage to make the sum 100%
+                if (highestPercent >= lowestPercent && highestPercent >= normalPercent)
+                    highestPercent += 100.0 - sum;
+                else if (lowestPercent >= highestPercent && lowestPercent >= normalPercent)
+                    lowestPercent += 100.0 - sum;
+                else
+                    normalPercent += 100.0 - sum;
+            }
+
+            return (Math.Round(highestPercent,2), Math.Round(lowestPercent,2), Math.Round(normalPercent,2));
+        }
         private string GetAltEvaluation(decimal averageAlt)
         {
-            if (averageAlt >= 7 && averageAlt <= 56)
+            var baseHealth = _unitOfWork.HealthIndicatorBaseRepository
+                   .FindByCondition(i => i.Type == "ALT")
+                   .FirstOrDefault();
+            if (averageAlt >= baseHealth.MinValue && averageAlt <= baseHealth.MaxValue)
             {
                 return "Bình thường";
             }
-            else if (averageAlt > 56)
+            else if (averageAlt > baseHealth.MaxValue)
             {
                 return "Cao";
             }
@@ -2315,11 +2271,14 @@ namespace SE.Service.Services
 
         private string GetAstEvaluation(decimal averageAst)
         {
-            if (averageAst >= 10 && averageAst <= 40)
+            var baseHealth = _unitOfWork.HealthIndicatorBaseRepository
+                   .FindByCondition(i => i.Type == "AST")
+                   .FirstOrDefault();
+            if (averageAst >= baseHealth.MinValue && averageAst <= baseHealth.MaxValue)
             {
                 return "Bình thường";
             }
-            else if (averageAst > 40)
+            else if (averageAst > baseHealth.MaxValue)
             {
                 return "Cao";
             }
@@ -2331,11 +2290,14 @@ namespace SE.Service.Services
 
         private string GetAlpEvaluation(decimal averageAlp)
         {
-            if (averageAlp >= 44 && averageAlp <= 147)
+            var baseHealth = _unitOfWork.HealthIndicatorBaseRepository
+                   .FindByCondition(i => i.Type == "ALP")
+                   .FirstOrDefault();
+            if (averageAlp >= baseHealth.MinValue && averageAlp <= baseHealth.MaxValue)
             {
                 return "Bình thường";
             }
-            else if (averageAlp > 147)
+            else if (averageAlp > baseHealth.MaxValue)
             {
                 return "Cao";
             }
@@ -2347,11 +2309,14 @@ namespace SE.Service.Services
 
         private string GetGgtEvaluation(decimal averageGgt)
         {
-            if (averageGgt >= 8 && averageGgt <= 50)
+            var baseHealth = _unitOfWork.HealthIndicatorBaseRepository
+                   .FindByCondition(i => i.Type == "GGT")
+                   .FirstOrDefault();
+            if (averageGgt >= baseHealth.MinValue && averageGgt <= baseHealth.MaxValue)
             {
                 return "Bình thường";
             }
-            else if (averageGgt > 50)
+            else if (averageGgt > baseHealth.MaxValue)
             {
                 return "Cao";
             }
@@ -2360,8 +2325,6 @@ namespace SE.Service.Services
                 return "Không xác định";
             }
         }
-
-
         public async Task<IBusinessResult> GetKidneyFunctionDetail(int accountId)
         {
             try
@@ -2410,7 +2373,7 @@ namespace SE.Service.Services
                     })
                     .ToList();
 
-                // Calculate dailyRecords with non-null Indicator values
+                // Calculate dailyRecords
                 var dailyRecords = last7Days
                     .Select(date => new
                     {
@@ -2428,7 +2391,7 @@ namespace SE.Service.Services
                     })
                     .ToList();
 
-                // Calculate weeklyRecords with non-null Indicator values
+                // Calculate weeklyRecords
                 var weeklyRecords = last6Weeks
                     .Select(week => new
                     {
@@ -2449,7 +2412,7 @@ namespace SE.Service.Services
                     .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
                     .ToList();
 
-                // Calculate monthlyRecords with non-null Indicator values
+                // Calculate monthlyRecords
                 var monthlyRecords = last4Months
                     .Select(month => new
                     {
@@ -2470,7 +2433,7 @@ namespace SE.Service.Services
                     .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
                     .ToList();
 
-                // Calculate yearlyRecords with non-null Indicator values
+                // Calculate yearlyRecords
                 var yearlyRecords = kidneyFunctionRecords
                     .GroupBy(k => k.DateRecorded.Value.Year)
                     .Select(g => new CharKidneyFunctionModel
@@ -2483,128 +2446,61 @@ namespace SE.Service.Services
                     .OrderBy(record => int.Parse(record.Type))
                     .ToList();
 
-                // Calculate averages for each tab (only non-null Indicators)
-                var dailyCreatinineAverage = dailyRecords
-                    .Where(d => d.Creatinine.HasValue)
-                    .DefaultIfEmpty(new CharKidneyFunctionModel { Creatinine = 0 })
-                    .Average(d => d.Creatinine.Value);
+                // Calculate percentages for each tab
+                var dailyPercentages = CalculatePercentages(dailyRecords);
+                var weeklyPercentages = CalculatePercentages(weeklyRecords);
+                var monthlyPercentages = CalculatePercentages(monthlyRecords);
+                var yearlyPercentages = CalculatePercentages(yearlyRecords);
 
-                var dailyBunAverage = dailyRecords
-                    .Where(d => d.Bun.HasValue)
-                    .DefaultIfEmpty(new CharKidneyFunctionModel { Bun = 0 })
-                    .Average(d => d.Bun.Value);
-
-                var dailyEGfrAverage = dailyRecords
-                    .Where(d => d.EGfr.HasValue)
-                    .DefaultIfEmpty(new CharKidneyFunctionModel { EGfr = 0 })
-                    .Average(d => d.EGfr.Value);
-
-                var weeklyCreatinineAverage = weeklyRecords
-                    .Where(w => w.Creatinine.HasValue)
-                    .DefaultIfEmpty(new CharKidneyFunctionModel { Creatinine = 0 })
-                    .Average(w => w.Creatinine.Value);
-
-                var weeklyBunAverage = weeklyRecords
-                    .Where(w => w.Bun.HasValue)
-                    .DefaultIfEmpty(new CharKidneyFunctionModel { Bun = 0 })
-                    .Average(w => w.Bun.Value);
-
-                var weeklyEGfrAverage = weeklyRecords
-                    .Where(w => w.EGfr.HasValue)
-                    .DefaultIfEmpty(new CharKidneyFunctionModel { EGfr = 0 })
-                    .Average(w => w.EGfr.Value);
-
-                var monthlyCreatinineAverage = monthlyRecords
-                    .Where(m => m.Creatinine.HasValue)
-                    .DefaultIfEmpty(new CharKidneyFunctionModel { Creatinine = 0 })
-                    .Average(m => m.Creatinine.Value);
-
-                var monthlyBunAverage = monthlyRecords
-                    .Where(m => m.Bun.HasValue)
-                    .DefaultIfEmpty(new CharKidneyFunctionModel { Bun = 0 })
-                    .Average(m => m.Bun.Value);
-
-                var monthlyEGfrAverage = monthlyRecords
-                    .Where(m => m.EGfr.HasValue)
-                    .DefaultIfEmpty(new CharKidneyFunctionModel { EGfr = 0 })
-                    .Average(m => m.EGfr.Value);
-
-                var yearlyCreatinineAverage = yearlyRecords
-                    .Where(y => y.Creatinine.HasValue)
-                    .DefaultIfEmpty(new CharKidneyFunctionModel { Creatinine = 0 })
-                    .Average(y => y.Creatinine.Value);
-
-                var yearlyBunAverage = yearlyRecords
-                    .Where(y => y.Bun.HasValue)
-                    .DefaultIfEmpty(new CharKidneyFunctionModel { Bun = 0 })
-                    .Average(y => y.Bun.Value);
-
-                var yearlyEGfrAverage = yearlyRecords
-                    .Where(y => y.EGfr.HasValue)
-                    .DefaultIfEmpty(new CharKidneyFunctionModel { EGfr = 0 })
-                    .Average(y => y.EGfr.Value);
-
-                // Calculate Evaluation for each tab
-                var dailyCreatinineEvaluation = GetCreatinineEvaluation(dailyCreatinineAverage);
-                var dailyBunEvaluation = GetBunEvaluation(dailyBunAverage);
-                var dailyEGfrEvaluation = GetEGfrEvaluation(dailyEGfrAverage);
-
-                var weeklyCreatinineEvaluation = GetCreatinineEvaluation(weeklyCreatinineAverage);
-                var weeklyBunEvaluation = GetBunEvaluation(weeklyBunAverage);
-                var weeklyEGfrEvaluation = GetEGfrEvaluation(weeklyEGfrAverage);
-
-                var monthlyCreatinineEvaluation = GetCreatinineEvaluation(monthlyCreatinineAverage);
-                var monthlyBunEvaluation = GetBunEvaluation(monthlyBunAverage);
-                var monthlyEGfrEvaluation = GetEGfrEvaluation(monthlyEGfrAverage);
-
-                var yearlyCreatinineEvaluation = GetCreatinineEvaluation(yearlyCreatinineAverage);
-                var yearlyBunEvaluation = GetBunEvaluation(yearlyBunAverage);
-                var yearlyEGfrEvaluation = GetEGfrEvaluation(yearlyEGfrAverage);
-
+                // Prepare response
                 var responseList = new List<GetKidneyFunctionDetail>
         {
             new GetKidneyFunctionDetail
             {
                 Tabs = "Ngày",
-                CreatinineAverage = dailyCreatinineAverage,
-                BunAverage = dailyBunAverage,
-                EGfrAverage = dailyEGfrAverage,
-                CreatinineEvaluation = dailyCreatinineEvaluation,
-                BunEvaluation = dailyBunEvaluation,
-                EGfrEvaluation = dailyEGfrEvaluation,
+                CreatinineAverage = dailyRecords.Average(d => d.Creatinine ?? 0),
+                BunAverage = dailyRecords.Average(d => d.Bun ?? 0),
+                EGfrAverage = dailyRecords.Average(d => d.EGfr ?? 0),
+                
+                HighestPercent = dailyPercentages.HighestPercent,
+                LowestPercent = dailyPercentages.LowestPercent,
+                NormalPercent = dailyPercentages.NormalPercent,
                 ChartDatabase = dailyRecords
             },
             new GetKidneyFunctionDetail
             {
                 Tabs = "Tuần",
-                CreatinineAverage = weeklyCreatinineAverage,
-                BunAverage = weeklyBunAverage,
-                EGfrAverage = weeklyEGfrAverage,
-                CreatinineEvaluation = weeklyCreatinineEvaluation,
-                BunEvaluation = weeklyBunEvaluation,
-                EGfrEvaluation = weeklyEGfrEvaluation,
+                CreatinineAverage = weeklyRecords.Average(w => w.Creatinine ?? 0),
+                BunAverage = weeklyRecords.Average(w => w.Bun ?? 0),
+                EGfrAverage = weeklyRecords.Average(w => w.EGfr ?? 0),
+
+                HighestPercent = weeklyPercentages.HighestPercent,
+                LowestPercent = weeklyPercentages.LowestPercent,
+                NormalPercent = weeklyPercentages.NormalPercent,
                 ChartDatabase = weeklyRecords
             },
             new GetKidneyFunctionDetail
             {
                 Tabs = "Tháng",
-                CreatinineAverage = monthlyCreatinineAverage,
-                BunAverage = monthlyBunAverage,
-                EGfrAverage = monthlyEGfrAverage,
-                CreatinineEvaluation = monthlyCreatinineEvaluation,
-                BunEvaluation = monthlyBunEvaluation,
-                EGfrEvaluation = monthlyEGfrEvaluation,
+                CreatinineAverage = monthlyRecords.Average(m => m.Creatinine ?? 0),
+                BunAverage = monthlyRecords.Average(m => m.Bun ?? 0),
+                EGfrAverage = monthlyRecords.Average(m => m.EGfr ?? 0),
+           
+                HighestPercent = monthlyPercentages.HighestPercent,
+                LowestPercent = monthlyPercentages.LowestPercent,
+                NormalPercent = monthlyPercentages.NormalPercent,
                 ChartDatabase = monthlyRecords
             },
             new GetKidneyFunctionDetail
             {
                 Tabs = "Năm",
-                CreatinineAverage = yearlyCreatinineAverage,
-                BunAverage = yearlyBunAverage,
-                EGfrAverage = yearlyEGfrAverage,
-                CreatinineEvaluation = yearlyCreatinineEvaluation,
-                BunEvaluation = yearlyBunEvaluation,
-                EGfrEvaluation = yearlyEGfrEvaluation,
+                CreatinineAverage = yearlyRecords.Average(y => y.Creatinine ?? 0),
+                BunAverage = yearlyRecords.Average(y => y.Bun ?? 0),
+                EGfrAverage = yearlyRecords.Average(y => y.EGfr ?? 0),
+              
+                HighestPercent = yearlyPercentages.HighestPercent,
+                LowestPercent = yearlyPercentages.LowestPercent,
+                NormalPercent = yearlyPercentages.NormalPercent,
                 ChartDatabase = yearlyRecords
             }
         };
@@ -2617,17 +2513,70 @@ namespace SE.Service.Services
             }
         }
 
+        private (double HighestPercent, double LowestPercent, double NormalPercent) CalculatePercentages(List<CharKidneyFunctionModel> records)
+        {
+            int totalRecords = records.Count;
+            if (totalRecords == 0)
+                return (0, 0, 0);
+
+            int highestCount = 0;
+            int lowestCount = 0;
+            int normalCount = 0;
+
+            foreach (var record in records)
+            {
+                // Evaluate Creatinine
+                var creatinineEvaluation = GetCreatinineEvaluation(record.Creatinine ?? 0);
+                if (creatinineEvaluation == "Cao") highestCount++;
+                else if (creatinineEvaluation == "Thấp") lowestCount++;
+                else if (creatinineEvaluation == "Bình thường") normalCount++;
+
+                // Evaluate Bun
+                var bunEvaluation = GetBunEvaluation(record.Bun ?? 0);
+                if (bunEvaluation == "Cao") highestCount++;
+                else if (bunEvaluation == "Thấp") lowestCount++;
+                else if (bunEvaluation == "Bình thường") normalCount++;
+
+                // Evaluate EGfr
+                var egfrEvaluation = GetEGfrEvaluation(record.EGfr ?? 0);
+                if (egfrEvaluation == "Cao") highestCount++;
+                else if (egfrEvaluation == "Thấp") lowestCount++;
+                else if (egfrEvaluation == "Bình thường") normalCount++;
+            }
+
+            // Total evaluations = totalRecords * 3 (since there are 3 indicators)
+            int totalEvaluations = totalRecords * 3;
+
+            // Calculate percentages
+            double highestPercent = (double)highestCount / totalEvaluations * 100;
+            double lowestPercent = (double)lowestCount / totalEvaluations * 100;
+            double normalPercent = (double)normalCount / totalEvaluations * 100;
+
+            // Ensure the sum is 100% (due to rounding errors)
+            double sum = highestPercent + lowestPercent + normalPercent;
+            if (sum != 100.0)
+            {
+                // Adjust the largest percentage to make the sum 100%
+                if (highestPercent >= lowestPercent && highestPercent >= normalPercent)
+                    highestPercent += 100.0 - sum;
+                else if (lowestPercent >= highestPercent && lowestPercent >= normalPercent)
+                    lowestPercent += 100.0 - sum;
+                else
+                    normalPercent += 100.0 - sum;
+            }
+
+            return (Math.Round(highestPercent,2), Math.Round(lowestPercent,2), Math.Round(normalPercent,2));
+        }
         private string GetCreatinineEvaluation(decimal averageCreatinine)
         {
-            if (averageCreatinine >= 0.6m && averageCreatinine <= 1.2m)
+            var baseHealth = _unitOfWork.HealthIndicatorBaseRepository
+                   .FindByCondition(i => i.Type == "Creatinine")
+                   .FirstOrDefault();
+            if (averageCreatinine >= baseHealth.MinValue && averageCreatinine <= baseHealth.MaxValue)
             {
                 return "Bình thường";
             }
-            else if (averageCreatinine < 0.6m)
-            {
-                return "Thấp";
-            }
-            else if (averageCreatinine > 1.2m)
+            else if (averageCreatinine > baseHealth.MaxValue)
             {
                 return "Cao";
             }
@@ -2639,15 +2588,14 @@ namespace SE.Service.Services
 
         private string GetBunEvaluation(decimal averageBun)
         {
-            if (averageBun >= 7 && averageBun <= 20)
+            var baseHealth = _unitOfWork.HealthIndicatorBaseRepository
+                   .FindByCondition(i => i.Type == "Bun")
+                   .FirstOrDefault();
+            if (averageBun >= baseHealth.MinValue && averageBun <= baseHealth.MaxValue)
             {
                 return "Bình thường";
             }
-            else if (averageBun < 7)
-            {
-                return "Thấp";
-            }
-            else if (averageBun > 20)
+            else if (averageBun > baseHealth.MaxValue)
             {
                 return "Cao";
             }
@@ -2659,17 +2607,16 @@ namespace SE.Service.Services
 
         private string GetEGfrEvaluation(decimal averageEGfr)
         {
-            if (averageEGfr >= 90 && averageEGfr <= 120)
+            var baseHealth = _unitOfWork.HealthIndicatorBaseRepository
+                   .FindByCondition(i => i.Type == "EGfr")
+                   .FirstOrDefault();
+            if (averageEGfr >= baseHealth.MinValue && averageEGfr <= baseHealth.MaxValue)
             {
                 return "Bình thường";
             }
-            else if (averageEGfr < 60)
+            else if (averageEGfr > baseHealth.MaxValue)
             {
-                return "Thấp";
-            }
-            else if (averageEGfr < 15)
-            {
-                return "Rất thấp";
+                return "Cao";
             }
             else
             {
@@ -2729,7 +2676,6 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
-                // Fetch all HealthIndicatorBase records for each type
                 var healthIndicators = _unitOfWork.HealthIndicatorBaseRepository
                     .FindByCondition(h => h.Status == SD.GeneralStatus.ACTIVE)
                     .ToList();
@@ -2785,20 +2731,20 @@ namespace SE.Service.Services
                     {
                         // Use BMI for evaluation
                         evaluation = (decimal)bmi < indicatorBase.MinValue ? "Thấp" :
-                                     (decimal)bmi > indicatorBase.MaxValue ? "Cao" :
-                                     "Bình thường";
+                                      (decimal)bmi > indicatorBase.MaxValue ? "Cao" :
+                                      "Bình thường";
                     }
                     else
                     {
                         // Use the indicator value for evaluation
                         evaluation = latestIndicator < indicatorBase.MinValue ? "Thấp" :
-                                     latestIndicator > indicatorBase.MaxValue ? "Cao" :
-                                     "Bình thường";
+                                      latestIndicator > indicatorBase.MaxValue ? "Cao" :
+                                      "Bình thường";
                     }
 
                     // Calculate average for the last 30 days
                     var last30DaysRecords = records
-                        .Where(r => (System.DateTime)getDateRecorded(r) >= System.DateTime.UtcNow.AddDays(-30))
+                        .Where(r => getDateRecorded(r) >= System.DateTime.UtcNow.AddDays(-30))
                         .ToList();
 
                     var averageIndicator = last30DaysRecords.Any() ?
@@ -2852,6 +2798,22 @@ namespace SE.Service.Services
                     .FindByCondition(bp => bp.ElderlyId == elderly.Elderly.ElderlyId && bp.Status == SD.GeneralStatus.ACTIVE)
                     .ToList();
 
+                var lipidProfileRecords = _unitOfWork.LipidProfileRepository
+                    .FindByCondition(lp => lp.ElderlyId == elderly.Elderly.ElderlyId && lp.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
+                var liverEnzymeRecords = _unitOfWork.LiverEnzymeRepository
+                    .FindByCondition(le => le.ElderlyId == elderly.Elderly.ElderlyId && le.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
+                var bloodGlucoseRecords = _unitOfWork.BloodGlucoseRepository
+                    .FindByCondition(bg => bg.ElderlyId == elderly.Elderly.ElderlyId && bg.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
+                var kidneyFunctionRecords = _unitOfWork.KidneyFunctionRepository
+                    .FindByCondition(kf => kf.ElderlyId == elderly.Elderly.ElderlyId && kf.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
                 // Get the newest Height and Weight
                 var newestHeight = heightRecords
                     .OrderByDescending(h => h.DateRecorded)
@@ -2894,8 +2856,51 @@ namespace SE.Service.Services
                     "HeartRate",
                     healthIndicators);
 
-                // Special handling for Blood Pressure
                 var bloodPressureResponse = GetBloodPressureResponse(bloodPressureRecords, healthIndicators);
+
+                // Lipid Profile: Only use TotalCholesterol
+                var lipidProfileResponse = GetIndicatorResponse(
+                    lipidProfileRecords,
+                    lp => lp.DateRecorded,
+                    lp => lp.TotalCholesterol, // Use TotalCholesterol as the indicator
+                    "TotalCholesterol",
+                    healthIndicators,
+                    calculateDifference: true); // Enable difference calculation
+
+                // Kidney Function: Only use eGFR
+                var kidneyFunctionResponse = GetIndicatorResponse(
+                    kidneyFunctionRecords,
+                    kf => kf.DateRecorded,
+                    kf => kf.EGfr, // Use eGFR as the indicator
+                    "eGFR",
+                    healthIndicators,
+                    calculateDifference: true); // Enable difference calculation
+
+                // Liver Enzyme: Only get the newest date
+                var liverEnzymeResponse = liverEnzymeRecords
+                    .OrderByDescending(le => le.DateRecorded)
+                    .Select(le => new GetAllHealthIndicatorReponse
+                    {
+                        Tabs = "LiverEnzyme",
+                        Evaluation = "N/A", // No evaluation for Liver Enzyme
+                        DateTime = le.DateRecorded?.ToString("dd-MM HH-mm") ?? "N/A",
+                        Indicator = "N/A", // No indicator for Liver Enzyme
+                        AverageIndicator = "N/A" // No average for Liver Enzyme
+                    })
+                    .FirstOrDefault();
+
+                // Blood Glucose: Evaluate based on Time field
+                var bloodGlucoseResponse = bloodGlucoseRecords
+                    .OrderByDescending(bg => bg.DateRecorded)
+                    .Select(bg => new GetAllHealthIndicatorReponse
+                    {
+                        Tabs = "BloodGlucose",
+                        Evaluation = GetBloodGlucoseEvaluation(bg.BloodGlucose1, bg.Time, healthIndicators),
+                        DateTime = bg.DateRecorded?.ToString("dd-MM HH-mm") ?? "N/A",
+                        Indicator = bg.BloodGlucose1?.ToString("0") ?? "N/A",
+                        AverageIndicator = "N/A" // No average for Blood Glucose
+                    })
+                    .FirstOrDefault();
 
                 // Combine responses
                 var responseList = new List<GetAllHealthIndicatorReponse>();
@@ -2912,6 +2917,18 @@ namespace SE.Service.Services
                 if (bloodPressureResponse != null)
                     responseList.Add(bloodPressureResponse);
 
+                if (lipidProfileResponse != null)
+                    responseList.Add(lipidProfileResponse);
+
+                if (liverEnzymeResponse != null)
+                    responseList.Add(liverEnzymeResponse);
+
+                if (bloodGlucoseResponse != null)
+                    responseList.Add(bloodGlucoseResponse);
+
+                if (kidneyFunctionResponse != null)
+                    responseList.Add(kidneyFunctionResponse);
+
                 return new BusinessResult(Const.SUCCESS_READ, "Health indicators retrieved successfully.", responseList);
             }
             catch (Exception ex)
@@ -2919,8 +2936,6 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
         }
-
-        // Function to handle Blood Pressure response
         private GetAllHealthIndicatorReponse GetBloodPressureResponse(List<BloodPressure> records, List<HealthIndicatorBase> indicators)
         {
             var latestRecord = records
@@ -2975,6 +2990,22 @@ namespace SE.Service.Services
                 AverageIndicator = averageIndicator
             };
         }
+        private string GetBloodGlucoseEvaluation(decimal? bloodGlucose, string time, List<HealthIndicatorBase> indicators)
+        {
+            if (!bloodGlucose.HasValue || string.IsNullOrEmpty(time))
+                return "N/A";
+
+            // Find the HealthIndicatorBase for the specific time
+            var indicatorBase = indicators.FirstOrDefault(h => h.Type == "BloodGlucose" && h.Time == time);
+            if (indicatorBase == null)
+                return "N/A";
+
+            // Determine evaluation
+            return bloodGlucose < indicatorBase.MinValue ? "Thấp" :
+                   bloodGlucose > indicatorBase.MaxValue ? "Cao" :
+                   "Bình thường";
+        }
+
         public async Task<IBusinessResult> EvaluateBMI(decimal? height, decimal? weight, int accountId)
         {
 
@@ -3071,15 +3102,15 @@ namespace SE.Service.Services
                 string result;
                 if (systolic<baseSystolic.MaxValue && diastolic<baseDiastolic.MaxValue)
                 {
-                    result = "Bình thường";
+                    result = "Huyết áp bình thường";
                 }
                 else if (systolic > baseSystolic.MaxValue && diastolic > baseDiastolic.MaxValue)
                 {
-                    result = "Cao hơn mức bình thường";
+                    result = "Huyết áp cao hơn mức bình thường";
                 }
                 else
                 {
-                    result = "Không xác định";
+                    result = "Huyết áp không xác định";
                 }
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
 
@@ -3101,15 +3132,15 @@ namespace SE.Service.Services
                 string result;
                 if (bloodGlucose < baseBloodGlucose.MaxValue && bloodGlucose > baseBloodGlucose.MinValue)
                 {
-                    result = "Thận bình thường";
+                    result = "Đường huyết bình thường";
                 }
                 else if (bloodGlucose > baseBloodGlucose.MaxValue)
                 {
-                    result = "Thận cao hơn mức bình thường";
+                    result = "Đường huyết cao hơn mức bình thường";
                 }
                 else
                 {
-                    result = "Thận thấp hơn mức bình thường";
+                    result = "Đường huyết thấp hơn mức bình thường";
                 }
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
 
@@ -3374,5 +3405,366 @@ namespace SE.Service.Services
                 throw new Exception(ex.Message);
             }
         }
+        private string GetBmiEvaluation(decimal weight, decimal heightInMeters)
+        {
+            if (heightInMeters <= 0)
+            {
+                return "N/A"; // Height must be greater than 0
+            }
+
+            // Calculate BMI
+            double bmi = CalculateBMI(weight, heightInMeters);
+
+            // Evaluate BMI based on standard categories
+            if (bmi < 18.5)
+            {
+                return "Thiếu cân";
+            }
+            else if (bmi >= 18.5 && bmi < 24.9)
+            {
+                return "Bình thường";
+            }
+            else if (bmi >= 25 && bmi < 29.9)
+            {
+                return "Thừa cân";
+            }
+            else if (bmi >= 30)
+            {
+                return "Béo phì";
+            }
+            else
+            {
+                return "Không xác định";
+            }
+        }
+
+        public async Task<IBusinessResult> GetLogBookResponses(int accountId)
+        {
+
+            var elderlyId = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+            var responses = new List<LogBookReponse>();
+
+            // Fetch all relevant data for the given elderlyId
+            var bloodGlucoseRecords = _unitOfWork.BloodGlucoseRepository
+                .FindByCondition(bg => bg.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .ToList();
+
+            var bloodPressureRecords = _unitOfWork.BloodPressureRepository
+                .FindByCondition(bp => bp.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .ToList();
+
+            var heartRateRecords = _unitOfWork.HeartRateRepository
+                .FindByCondition(hr => hr.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .ToList();
+
+            var heightRecords = _unitOfWork.HeightRepository
+                .FindByCondition(h => h.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .ToList();
+
+            var height = heightRecords.Select(x=>x.HeightId).LastOrDefault();
+
+            var weightRecords = _unitOfWork.WeightRepository
+                .FindByCondition(w => w.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .ToList();
+
+            var weight = weightRecords.Select(x => x.Weight1).LastOrDefault();
+
+            var kidneyFunctionRecords = _unitOfWork.KidneyFunctionRepository
+                .FindByCondition(kf => kf.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .ToList();
+
+            var lipidProfileRecords = _unitOfWork.LipidProfileRepository
+                .FindByCondition(lp => lp.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .ToList();
+
+            var liverEnzymeRecords = _unitOfWork.LiverEnzymeRepository
+                .FindByCondition(le => le.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .ToList();
+
+            // Evaluate and add responses for each tab
+            responses.AddRange(GetBloodGlucoseResponse(bloodGlucoseRecords));
+            responses.AddRange(GetBloodPressureResponse(bloodPressureRecords));
+            responses.AddRange(GetHeartRateResponse(heartRateRecords));
+            responses.AddRange(GetHeightResponse( heightRecords,(int)weight));
+            responses.AddRange(GetWeightResponse(weightRecords, height));
+            responses.AddRange(GetKidneyFunctionResponse(kidneyFunctionRecords));
+            responses.AddRange(GetLipidProfileResponse(lipidProfileRecords));
+            responses.AddRange(GetLiverEnzymeResponse(liverEnzymeRecords));
+
+            return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, responses.OrderByDescending(x=>x.DateRecorded));
+        }
+
+        private List<LogBookReponse> GetBloodGlucoseResponse(List<BloodGlucose> records)
+        {
+            var responses = new List<LogBookReponse>();
+
+            foreach (var record in records)
+            {
+                var response = new LogBookReponse
+                {
+                    Tabs = "BloodGlucose",
+                    Id = record.BloodGlucoseId,
+                    DataType = record.BloodGlucoseSource,
+                    DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                    TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
+                    DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"), 
+                    Indicator = $"{record.BloodGlucose1}",
+                    Evaluation =(string) EvaluateBloodGlusose((int)record.BloodGlucose1,record.Time).Result.Data
+                };
+                responses.Add(response);
+            }
+
+            if (!responses.Any())
+            {
+                responses.Add(new LogBookReponse
+                {
+                    Tabs = "BloodGlucose",
+                    DateRecorded = System.DateTime.Now.ToString(),
+                    Indicator = "N/A",
+                    Evaluation = "N/A"
+                });
+            }
+
+            return responses;
+        }
+
+        private List<LogBookReponse> GetBloodPressureResponse(List<BloodPressure> records)
+        {
+            var responses = new List<LogBookReponse>();
+
+            foreach (var record in records)
+            {
+                var response = new LogBookReponse
+                {
+                    Tabs = "BloodPressure",
+                    Id = record.BloodPressureId,
+                    DataType = record.SystolicSource,
+                    DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                    TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
+                    DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
+                    Indicator = $"{record.Systolic}/{record.Diastolic}",
+                    Evaluation = GetBloodPressureEvaluation((double)record.Systolic, (double)record.Diastolic)
+                };
+                responses.Add(response);
+            }
+
+            if (!responses.Any())
+            {
+                responses.Add(new LogBookReponse
+                {
+                    Tabs = "BloodPressure",
+                    DateRecorded = System.DateTime.Now.ToString(),
+                    Indicator = "N/A",
+                    Evaluation = "N/A"
+                });
+            }
+
+            return responses;
+        }
+
+        private List<LogBookReponse> GetHeartRateResponse(List<HeartRate> records)
+        {
+            var responses = new List<LogBookReponse>();
+
+            foreach (var record in records)
+            {
+                var response = new LogBookReponse
+                {
+                    Tabs = "HeartRate",
+                    Id = record.HeartRateId,
+                    DataType = record.HeartRateSource,
+                    DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                    TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
+                    DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
+                    Indicator = $"{record.HeartRate1}",
+                    Evaluation = GetHeartRateEvaluation((double)record.HeartRate1)
+                };
+                responses.Add(response);
+            }
+
+            if (!responses.Any())
+            {
+                responses.Add(new LogBookReponse
+                {
+                    Tabs = "HeartRate",
+                    DateRecorded = System.DateTime.Now.ToString(),
+                    Indicator = "N/A",
+                    Evaluation = "N/A"
+                });
+            }
+
+            return responses;
+        }
+
+        private List<LogBookReponse> GetHeightResponse(List<Height> records, int weight)
+        {
+            var responses = new List<LogBookReponse>();
+            foreach (var record in records)
+            {
+                
+                var response = new LogBookReponse
+                {
+                    Tabs = "Height",
+                    Id = record.HeightId,
+                    DataType = record.HeightSource,
+                    DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                    TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
+                    DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
+                    Indicator = $"{record.Height1}",
+                    Evaluation = GetBmiEvaluation(weight,(decimal)record.Height1) 
+                };
+                responses.Add(response);
+            }
+
+            if (!responses.Any())
+            {
+                responses.Add(new LogBookReponse
+                {
+                    Tabs = "Height",
+                    DateRecorded = System.DateTime.Now.ToString(),
+                    Indicator = "N/A",
+                    Evaluation = "N/A"
+                });
+            }
+
+            return responses;
+        }
+
+        private List<LogBookReponse> GetWeightResponse(List<Weight> records, int height)
+        {
+            var responses = new List<LogBookReponse>();
+
+            foreach (var record in records)
+            {
+                var response = new LogBookReponse
+                {
+                    Tabs = "Weight",
+                    Id = record.WeightId,
+                    DataType = record.WeightSource,
+                    DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                    TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
+                    DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
+                    Indicator = $"{record.Weight1}",
+                    Evaluation = GetBmiEvaluation((decimal)record.Weight1, height)
+                };
+                responses.Add(response);
+            }
+
+            if (!responses.Any())
+            {
+                responses.Add(new LogBookReponse
+                {
+                    Tabs = "Weight",
+                    DateRecorded = System.DateTime.Now.ToString(),
+                    Indicator = "N/A",
+                    Evaluation = "N/A"
+                });
+            }
+
+            return responses;
+        }
+
+        private List<LogBookReponse> GetKidneyFunctionResponse(List<KidneyFunction> records)
+        {
+            var responses = new List<LogBookReponse>();
+
+            foreach (var record in records)
+            {
+                var response = new LogBookReponse
+                {
+                    Tabs = "KidneyFunction",
+                    Id = record.KidneyFunctionId,
+                    DataType = record.KidneyFunctionSource,
+                    DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                    TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
+                    DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
+                    Indicator = $"{record.Creatinine}/{record.Bun}/{record.EGfr}",
+                    Evaluation = (string)EvaluateKidneyFunction((decimal)record.Creatinine, (decimal)record.Bun, (decimal)record.EGfr).Result.Data
+                };
+                responses.Add(response);
+            }
+
+            if (!responses.Any())
+            {
+                responses.Add(new LogBookReponse
+                {
+                    Tabs = "KidneyFunction",
+                    DateRecorded = System.DateTime.Now.ToString(),
+                    Indicator = "N/A",
+                    Evaluation = "N/A"
+                });
+            }
+
+            return responses;
+        }
+
+        private List<LogBookReponse> GetLipidProfileResponse(List<LipidProfile> records)
+        {
+            var responses = new List<LogBookReponse>();
+
+            foreach (var record in records)
+            {
+                var response = new LogBookReponse
+                {
+                    Tabs = "LipidProfile",
+                    Id = record.LipidProfileId,
+                    DataType = record.LipidProfileSource,
+                    DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                    TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
+                    DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
+                    Indicator = $"{record.TotalCholesterol}/{record.Ldlcholesterol}/{record.Hdlcholesterol}/{record.Triglycerides}",
+                    Evaluation =(string) EvaluateLipidProfile((decimal)record.TotalCholesterol, (decimal)record.Ldlcholesterol, (decimal)record.Hdlcholesterol, (decimal)record.Triglycerides).Result.Data
+                };
+                responses.Add(response);
+            }
+
+            if (!responses.Any())
+            {
+                responses.Add(new LogBookReponse
+                {
+                    Tabs = "LipidProfile",
+                    DateRecorded = System.DateTime.Now.ToString(),
+                    Indicator = "N/A",
+                    Evaluation = "N/A"
+                });
+            }
+
+            return responses;
+        }
+
+        private List<LogBookReponse> GetLiverEnzymeResponse(List<LiverEnzyme> records)
+        {
+            var responses = new List<LogBookReponse>();
+
+            foreach (var record in records)
+            {
+                var response = new LogBookReponse
+                {
+                    Tabs = "LiverEnzyme",
+                    Id = record.LiverEnzymesId,
+                    DataType = record.LiverEnzymesSource,
+                    DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                    TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
+                    DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
+                    Indicator = $"{record.Alt}/{record.Ast}/{record.Alp}/{record.Ggt}",
+                    Evaluation =(string) EvaluateLiverEnzymes((decimal)record.Alt, (decimal)record.Ast, (decimal)record.Alp, (decimal)record.Ggt).Result.Data
+                };
+                responses.Add(response);
+            }
+
+            if (!responses.Any())
+            {
+                responses.Add(new LogBookReponse
+                {
+                    Tabs = "LiverEnzyme",
+                    DateRecorded = System.DateTime.Now.ToString(),
+                    Indicator = "N/A",
+                    Evaluation = "N/A"
+                });
+            }
+
+            return responses;
+        }
+
     }
 }
