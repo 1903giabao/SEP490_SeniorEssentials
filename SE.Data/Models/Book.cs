@@ -5,23 +5,25 @@ using System.Collections.Generic;
 
 namespace SE.Data.Models;
 
-public partial class Lesson
+public partial class Book
 {
-    public int LessonId { get; set; }
-
-    public int? PlaylistId { get; set; }
+    public int BookId { get; set; }
 
     public int? AccountId { get; set; }
 
-    public string LessonName { get; set; }
+    public string BookName { get; set; }
 
-    public string LessonUrl { get; set; }
+    public string BookUrl { get; set; }
+
+    public string BookType { get; set; }
+
+    public string Author { get; set; }
+
+    public DateTime? PublishDate { get; set; }
 
     public DateTime? CreatedDate { get; set; }
 
     public string Status { get; set; }
 
     public virtual Account Account { get; set; }
-
-    public virtual Playlist Playlist { get; set; }
 }

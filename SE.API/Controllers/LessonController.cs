@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SE.Common.Request;
+using SE.Common.Request.Content;
 using SE.Service.Services;
 
 namespace SE.API.Controllers
@@ -15,7 +16,7 @@ namespace SE.API.Controllers
             _lessonService = LessonService;
         }
 
-        [HttpGet]
+/*        [HttpGet]
         public async Task<IActionResult> GetAllLesson()
         {
             var result = await _lessonService.GetAllLesson();
@@ -62,6 +63,6 @@ namespace SE.API.Controllers
         {
             var result = await _lessonService.Feedback(req);
             return Ok(result);
-        }
+        }*/
     }
 }

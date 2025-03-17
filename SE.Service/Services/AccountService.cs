@@ -22,7 +22,7 @@ namespace SE.Service.Services
     public interface IAccountService
     {
         Task<IBusinessResult> CreateNewTempAccount(CreateNewAccountDTO req);
-        Task<IBusinessResult> GetAllUsers();
+        Task<IBusinessResult> GetAllUsers(int roleId = 0);
         Task<IBusinessResult> GetUserById(int id);
         Task<IBusinessResult> GetUserByPhoneNumber(string phoneNumber, int userId);
     }
@@ -92,30 +92,20 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> GetAllUsers()
+        public async Task<IBusinessResult> GetAllUsers(int roleId = 0)
         {
-            var users = _unitOfWork.AccountRepository.GetAll();
+            var users = new List<Data.Models.Account>();
+
+            if (roleId == 0)
+            {
+                users = _unitOfWork.AccountRepository.GetAll();
+            }
+            else
+            {
+                users = _unitOfWork.AccountRepository.FindByCondition(a => a.RoleId == roleId).ToList();
+            }
 
             var rs = _mapper.Map<List<UserDTO>>(users);
-
-            CollectionReference onlineRef = _firestoreDb.Collection("OnlineMembers");
-
-            foreach (var user in rs)
-            {
-                DocumentSnapshot onlineSnapshot = await onlineRef.Document(user.AccountId.ToString()).GetSnapshotAsync();
-
-                var onlineData = onlineSnapshot.ToDictionary();
-
-                if (onlineData != null)
-                {
-                    user.IsOnline = onlineData.ContainsKey("IsOnline") && (bool)onlineData["IsOnline"];
-                }
-                else
-                {
-                    user.IsOnline = false;
-                }
-
-            }
 
             return new BusinessResult (Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
         }
@@ -131,15 +121,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
                 }
 
-                DocumentReference onlineRef = _firestoreDb.Collection("OnlineMembers").Document(id.ToString());
-
-                DocumentSnapshot onlineSnapshot = await onlineRef.GetSnapshotAsync();
-
-                var onlineData = onlineSnapshot.ToDictionary();
-
                 var rs = _mapper.Map<UserDTO>(user);
-
-                rs.IsOnline = onlineData.ContainsKey("IsOnline") && (bool)onlineData["IsOnline"];
 
                 return new BusinessResult (Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
             }

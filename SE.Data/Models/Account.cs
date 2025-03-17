@@ -35,6 +35,10 @@ public partial class Account
 
     public string DeviceToken { get; set; }
 
+    public bool? IsSuperAdmin { get; set; }
+
+    public virtual ICollection<Book> Books { get; set; } = new List<Book>();
+
     public virtual ContentProvider ContentProvider { get; set; }
 
     public virtual Elderly Elderly { get; set; }
@@ -47,7 +51,13 @@ public partial class Account
 
     public virtual ICollection<HealthIndicatorBase> HealthIndicatorBases { get; set; } = new List<HealthIndicatorBase>();
 
+    public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
+
+    public virtual ICollection<Music> Musics { get; set; } = new List<Music>();
+
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
+    public virtual ICollection<Playlist> Playlists { get; set; } = new List<Playlist>();
 
     public virtual Professor Professor { get; set; }
 

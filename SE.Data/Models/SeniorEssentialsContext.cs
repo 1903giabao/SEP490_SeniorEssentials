@@ -13,6 +13,7 @@ public partial class SeniorEssentialsContext : DbContext
         : base(options)
     {
     }
+
     public SeniorEssentialsContext()
     {
     }
@@ -39,6 +40,8 @@ public partial class SeniorEssentialsContext : DbContext
     public virtual DbSet<BloodGlucose> BloodGlucoses { get; set; }
 
     public virtual DbSet<BloodPressure> BloodPressures { get; set; }
+
+    public virtual DbSet<Book> Books { get; set; }
 
     public virtual DbSet<Booking> Bookings { get; set; }
 
@@ -68,10 +71,6 @@ public partial class SeniorEssentialsContext : DbContext
 
     public virtual DbSet<Lesson> Lessons { get; set; }
 
-    public virtual DbSet<LessonFeedback> LessonFeedbacks { get; set; }
-
-    public virtual DbSet<LessonHistory> LessonHistories { get; set; }
-
     public virtual DbSet<LipidProfile> LipidProfiles { get; set; }
 
     public virtual DbSet<LiverEnzyme> LiverEnzymes { get; set; }
@@ -80,7 +79,11 @@ public partial class SeniorEssentialsContext : DbContext
 
     public virtual DbSet<MedicationSchedule> MedicationSchedules { get; set; }
 
+    public virtual DbSet<Music> Musics { get; set; }
+
     public virtual DbSet<Notification> Notifications { get; set; }
+
+    public virtual DbSet<Playlist> Playlists { get; set; }
 
     public virtual DbSet<Prescription> Prescriptions { get; set; }
 
@@ -208,6 +211,25 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Elderly).WithMany(p => p.BloodPressures)
                 .HasForeignKey(d => d.ElderlyId)
                 .HasConstraintName("FK__BloodPres__Elder__671F4F74");
+        });
+
+        modelBuilder.Entity<Book>(entity =>
+        {
+            entity.HasKey(e => e.BookId).HasName("PK__Book__3DE0C207C04FCD7F");
+
+            entity.ToTable("Book");
+
+            entity.Property(e => e.Author).HasMaxLength(50);
+            entity.Property(e => e.BookName).HasMaxLength(100);
+            entity.Property(e => e.BookType).HasMaxLength(50);
+            entity.Property(e => e.BookUrl).HasColumnName("BookURL");
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.PublishDate).HasColumnType("datetime");
+            entity.Property(e => e.Status).HasMaxLength(20);
+
+            entity.HasOne(d => d.Account).WithMany(p => p.Books)
+                .HasForeignKey(d => d.AccountId)
+                .HasConstraintName("FK__Book__AccountId__4959E263");
         });
 
         modelBuilder.Entity<Booking>(entity =>
@@ -488,66 +510,22 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Lesson>(entity =>
         {
-            entity.HasKey(e => e.LessonId).HasName("PK__Lesson__B084ACD01A05EA24");
+            entity.HasKey(e => e.LessonId).HasName("PK__Lesson__B084ACD0D1280DF7");
 
             entity.ToTable("Lesson");
 
-            entity.Property(e => e.LessonDescription).HasMaxLength(100);
-            entity.Property(e => e.LessonName)
-                .IsRequired()
-                .HasMaxLength(50);
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasMaxLength(20);
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.LessonName).HasMaxLength(100);
+            entity.Property(e => e.LessonUrl).HasColumnName("LessonURL");
+            entity.Property(e => e.Status).HasMaxLength(20);
 
-            entity.HasOne(d => d.ContentProvider).WithMany(p => p.Lessons)
-                .HasForeignKey(d => d.ContentProviderId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Lesson__ContentP__0F624AF8");
-        });
+            entity.HasOne(d => d.Account).WithMany(p => p.Lessons)
+                .HasForeignKey(d => d.AccountId)
+                .HasConstraintName("FK__Lesson__AccountI__42ACE4D4");
 
-        modelBuilder.Entity<LessonFeedback>(entity =>
-        {
-            entity.HasKey(e => e.LessonFeedbackId).HasName("PK__LessonFe__2E31584533C8810A");
-
-            entity.ToTable("LessonFeedback");
-
-            entity.Property(e => e.FeedbackComment).HasMaxLength(255);
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasMaxLength(20);
-
-            entity.HasOne(d => d.Elderly).WithMany(p => p.LessonFeedbacks)
-                .HasForeignKey(d => d.ElderlyId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__LessonFee__Elder__10566F31");
-
-            entity.HasOne(d => d.Lesson).WithMany(p => p.LessonFeedbacks)
-                .HasForeignKey(d => d.LessonId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__LessonFee__Lesso__114A936A");
-        });
-
-        modelBuilder.Entity<LessonHistory>(entity =>
-        {
-            entity.HasKey(e => e.LessonHistoryId).HasName("PK__LessonHi__D3775A592E64F554");
-
-            entity.ToTable("LessonHistory");
-
-            entity.Property(e => e.StartTime).HasColumnType("datetime");
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasMaxLength(20);
-
-            entity.HasOne(d => d.Elderly).WithMany(p => p.LessonHistories)
-                .HasForeignKey(d => d.ElderlyId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__LessonHis__Elder__123EB7A3");
-
-            entity.HasOne(d => d.Lesson).WithMany(p => p.LessonHistories)
-                .HasForeignKey(d => d.LessonId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__LessonHis__Lesso__1332DBDC");
+            entity.HasOne(d => d.Playlist).WithMany(p => p.Lessons)
+                .HasForeignKey(d => d.PlaylistId)
+                .HasConstraintName("FK__Lesson__Playlist__41B8C09B");
         });
 
         modelBuilder.Entity<LipidProfile>(entity =>
@@ -650,6 +628,27 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasConstraintName("FK__Medicatio__Medic__17036CC0");
         });
 
+        modelBuilder.Entity<Music>(entity =>
+        {
+            entity.HasKey(e => e.MusicId).HasName("PK__Music__11F840007C779ACD");
+
+            entity.ToTable("Music");
+
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.MusicName).HasMaxLength(100);
+            entity.Property(e => e.MusicUrl).HasColumnName("MusicURL");
+            entity.Property(e => e.Singer).HasMaxLength(50);
+            entity.Property(e => e.Status).HasMaxLength(20);
+
+            entity.HasOne(d => d.Account).WithMany(p => p.Musics)
+                .HasForeignKey(d => d.AccountId)
+                .HasConstraintName("FK__Music__AccountId__467D75B8");
+
+            entity.HasOne(d => d.Playlist).WithMany(p => p.Musics)
+                .HasForeignKey(d => d.PlaylistId)
+                .HasConstraintName("FK__Music__PlaylistI__4589517F");
+        });
+
         modelBuilder.Entity<Notification>(entity =>
         {
             entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E122022E05E");
@@ -672,6 +671,21 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Notificat__Accou__19DFD96B");
+        });
+
+        modelBuilder.Entity<Playlist>(entity =>
+        {
+            entity.HasKey(e => e.PlaylistId).HasName("PK__Playlist__B30167A0F60AE6CC");
+
+            entity.ToTable("Playlist");
+
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.PlaylistName).HasMaxLength(100);
+            entity.Property(e => e.Status).HasMaxLength(20);
+
+            entity.HasOne(d => d.Account).WithMany(p => p.Playlists)
+                .HasForeignKey(d => d.AccountId)
+                .HasConstraintName("FK__Playlist__Accoun__3EDC53F0");
         });
 
         modelBuilder.Entity<Prescription>(entity =>

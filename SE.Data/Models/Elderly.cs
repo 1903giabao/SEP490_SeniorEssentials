@@ -43,10 +43,6 @@ public partial class Elderly
 
     public virtual ICollection<KidneyFunction> KidneyFunctions { get; set; } = new List<KidneyFunction>();
 
-    public virtual ICollection<LessonFeedback> LessonFeedbacks { get; set; } = new List<LessonFeedback>();
-
-    public virtual ICollection<LessonHistory> LessonHistories { get; set; } = new List<LessonHistory>();
-
     public virtual ICollection<LipidProfile> LipidProfiles { get; set; } = new List<LipidProfile>();
 
     public virtual ICollection<LiverEnzyme> LiverEnzymes { get; set; } = new List<LiverEnzyme>();
