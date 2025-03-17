@@ -36,6 +36,6 @@ namespace SE.Common.DTO
 
         public string DeviceToken { get; set; }
 
-        public bool? IsOnline { get; set; }
+        public bool? IsSuperAdmin { get; set; }
     }
 }

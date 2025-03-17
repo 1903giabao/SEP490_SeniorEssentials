@@ -35,6 +35,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[Book]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[Booking]",
          "ObjectType": 0
       },
@@ -91,14 +95,6 @@
          "ObjectType": 0
       },
       {
-         "Name": "[dbo].[LessonFeedback]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[LessonHistory]",
-         "ObjectType": 0
-      },
-      {
          "Name": "[dbo].[LipidProfile]",
          "ObjectType": 0
       },
@@ -115,7 +111,15 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[Music]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[Notification]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Playlist]",
          "ObjectType": 0
       },
       {
@@ -172,7 +176,6 @@
    "UseAsyncStoredProcedureCalls": true,
    "UseBoolPropertiesWithoutDefaultSql": false,
    "UseDatabaseNames": false,
-   "UseDatabaseNamesForRoutines": true,
    "UseDateOnlyTimeOnly": true,
    "UseDbContextSplitting": false,
    "UseDecimalDataAnnotationForSprocResult": true,
@@ -191,6 +194,5 @@
    "UseSchemaFolders": false,
    "UseSchemaNamespaces": false,
    "UseSpatial": false,
-   "UseT4": false,
-   "UseT4Split": false
+   "UseT4": false
 }

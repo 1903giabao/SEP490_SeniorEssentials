@@ -5,17 +5,13 @@ using System.Collections.Generic;
 
 namespace SE.Data.Models;
 
-public partial class Lesson
+public partial class Playlist
 {
-    public int LessonId { get; set; }
-
-    public int? PlaylistId { get; set; }
+    public int PlaylistId { get; set; }
 
     public int? AccountId { get; set; }
 
-    public string LessonName { get; set; }
-
-    public string LessonUrl { get; set; }
+    public string PlaylistName { get; set; }
 
     public DateTime? CreatedDate { get; set; }
 
@@ -23,5 +19,7 @@ public partial class Lesson
 
     public virtual Account Account { get; set; }
 
-    public virtual Playlist Playlist { get; set; }
+    public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
+
+    public virtual ICollection<Music> Musics { get; set; } = new List<Music>();
 }

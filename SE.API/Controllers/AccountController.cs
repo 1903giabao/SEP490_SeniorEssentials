@@ -16,12 +16,12 @@ namespace SE.API.Controllers
             _activityService = activityService;
         }
 
-        [HttpGet]
+        [HttpGet("{roleId}")]
         [SwaggerOperation(Summary = "Get all user")]
 
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<IActionResult> GetAllUsers(int roleId = 0)
         {
-            var result = await _activityService.GetAllUsers();
+            var result = await _activityService.GetAllUsers(roleId);
             bool isSuccess = result.Data != null && result.Message == Const.SUCCESS_READ_MSG;
 
             var response = new

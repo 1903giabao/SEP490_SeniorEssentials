@@ -5,17 +5,19 @@ using System.Collections.Generic;
 
 namespace SE.Data.Models;
 
-public partial class Lesson
+public partial class Music
 {
-    public int LessonId { get; set; }
+    public int MusicId { get; set; }
 
     public int? PlaylistId { get; set; }
 
     public int? AccountId { get; set; }
 
-    public string LessonName { get; set; }
+    public string MusicName { get; set; }
 
-    public string LessonUrl { get; set; }
+    public string MusicUrl { get; set; }
+
+    public string Singer { get; set; }
 
     public DateTime? CreatedDate { get; set; }
 

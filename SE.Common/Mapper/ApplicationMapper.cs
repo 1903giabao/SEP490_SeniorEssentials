@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using SE.Common.DTO;
+using SE.Common.DTO.Content;
 using SE.Common.DTO.Emergency;
 using SE.Common.DTO.HealthIndicator;
 using SE.Common.Request;
+using SE.Common.Request.Content;
 using SE.Common.Request.HealthIndicator;
 using SE.Common.Request.SE.Common.Request;
 using SE.Data.Models;
@@ -27,12 +29,9 @@ namespace SE.Common.Mapper
             CreateMap<LessonModel, Lesson>().ReverseMap();
             CreateMap<CreateLessonRequest, Lesson>().ReverseMap();
 
-            CreateMap<LessonFeedback, LessonFeedbackModel>()
-                .ForMember(dest => dest.LessonName, opt => opt.MapFrom(src => src.Lesson.LessonName))
-                .ForMember(dest => dest.ELderlyName, opt => opt.MapFrom(src => src.Elderly.Account.FullName))
-                .ReverseMap()
-                .ForPath(dest => dest.Elderly.Account.FullName, opt => opt.MapFrom(src => src.ELderlyName));
-            CreateMap<LessonFeedbackRequest, LessonFeedback>().ReverseMap();
+            CreateMap<LessonDTO, Lesson>().ReverseMap();
+            CreateMap<MusicDTO, Music>().ReverseMap();
+            CreateMap<BookDTO, Book>().ReverseMap();
                 
             CreateMap<CreateComboModel, Subscription>().ReverseMap();
             CreateMap<CreateActivityModel, Activity>().ReverseMap();

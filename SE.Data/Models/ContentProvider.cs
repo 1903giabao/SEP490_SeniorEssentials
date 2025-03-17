@@ -16,6 +16,4 @@ public partial class ContentProvider
     public string Status { get; set; }
 
     public virtual Account Account { get; set; }
-
-    public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
 }

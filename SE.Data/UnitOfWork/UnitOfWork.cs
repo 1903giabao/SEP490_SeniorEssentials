@@ -13,6 +13,7 @@ namespace SE.Data.UnitOfWork
         private AccountRepository _accountRepository;
         private ActivityRepository _activityRepository;
         private ActivityScheduleRepository _activityScheduleRepository;
+        private BookRepository _bookRepository;
         private BookingRepository _bookingRepository;
         private SubscriptionRepository _comboRepository;
         private ContentProviderRepository _contentProviderRepository;
@@ -24,11 +25,11 @@ namespace SE.Data.UnitOfWork
         private GroupMemberRepository _groupMemberRepository;
         private IotdeviceRepository _idoeviceRepository;
         private LessonRepository _lessonRepository;
-        private LessonHistoryRepository _lessonHistoryRepository;
-        private LessonFeedbackRepository _lessonFeedbackRepository;
         private MedicationRepository _medicationRepository;
         private MedicationScheduleRepository _medicationScheduleRepository;
         private NotificationRepository _notificationRepository;
+        private PlaylistRepository _playlistRepository;
+        private MusicRepository _musicRepository;
         private ProfessorAppointmentRepository _professorAppointmentRepository;
         private ProfessorRatingRepository _professorRatingRepository;
         private ProfessorScheduleRepository _professorScheduleRepository;
@@ -65,6 +66,30 @@ namespace SE.Data.UnitOfWork
             get
             {
                 return _accountRepository ??= new AccountRepository(_unitOfWorkContext);
+            }
+        }        
+        
+        public BookRepository BookRepository
+        {
+            get
+            {
+                return _bookRepository ??= new BookRepository(_unitOfWorkContext);
+            }
+        }
+
+        public MusicRepository MusicRepository
+        {
+            get
+            {
+                return _musicRepository ??= new MusicRepository(_unitOfWorkContext);
+            }
+        }
+
+        public PlaylistRepository PlaylistRepository
+        {
+            get
+            {
+                return _playlistRepository ??= new PlaylistRepository(_unitOfWorkContext);
             }
         }
 
@@ -145,16 +170,6 @@ namespace SE.Data.UnitOfWork
         public LessonRepository LessonRepository
         {
             get => _lessonRepository ??= new LessonRepository(_unitOfWorkContext);
-        }
-
-        public LessonHistoryRepository LessonHistoryRepository
-        {
-            get => _lessonHistoryRepository ??= new LessonHistoryRepository(_unitOfWorkContext);
-        }
-
-        public LessonFeedbackRepository LessonFeedbackRepository
-        {
-            get => _lessonFeedbackRepository ??= new LessonFeedbackRepository(_unitOfWorkContext);
         }
 
         public MedicationRepository MedicationRepository

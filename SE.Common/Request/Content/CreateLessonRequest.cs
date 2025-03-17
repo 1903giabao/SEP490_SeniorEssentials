@@ -1,15 +1,16 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SE.Common.Request
+namespace SE.Common.Request.Content
 {
     public class CreateLessonRequest
     {
-        public int ContentProviderId { get; set; }
+        public int AccountId { get; set; }
         public string LessonName { get; set; }
-        public string LessonDescription { get; set; }
+        public IFormFile LessonFile { get; set; }
     }
 }
