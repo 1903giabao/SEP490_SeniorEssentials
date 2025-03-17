@@ -17,10 +17,10 @@ namespace SE.Common.Response
         public decimal? HdlcholesterolAverage { get; set; }
 
         public decimal? TriglyceridesAverage { get; set; }
-        public string TotalCholesterolEvaluation { get; set; }
-        public string LdlcholesteroEvaluation { get; set; }
-        public string HdlcholesterolEvaluation { get; set; }
-        public string TriglyceridesEvaluation { get; set; }
+        public double HighestPercent { get; set; }
+
+        public double LowestPercent { get; set; }
+        public double NormalPercent { get; set; }
 
         public List<CharLipidProfileModel> ChartDatabase { get; set; }
     }
