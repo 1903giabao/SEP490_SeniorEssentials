@@ -1,3 +1,4 @@
+using Google.Cloud.Firestore.V1;
 using Microsoft.AspNetCore.Mvc;
 using SE.Common.DTO;
 using SE.Common.Request;
@@ -94,6 +95,33 @@ public class HealthIndicatorController : ControllerBase
         var result = await _healthIndicatorService.EvaluateBloodPressure(systolic, diastolic);
         return Ok(result);
     }
+
+    [HttpGet("healthIndicator/evaluation/liver-enzymes")]
+    public async Task<IActionResult> EvaluateLiverEnzymes(decimal alt, decimal ast, decimal alp, decimal ggt)
+    {
+        var result = await _healthIndicatorService.EvaluateLiverEnzymes(alt, ast, alp, ggt);
+        return Ok(result);
+    }
+    [HttpGet("healthIndicator/evaluation/lipid-profile")]
+    public async Task<IActionResult> EvaluateLipidProfile(decimal totalCholesterol, decimal ldlCholesterol, decimal hdlCholesterol, decimal triglycerides)
+    {
+        var result = await _healthIndicatorService.EvaluateLipidProfile(totalCholesterol, ldlCholesterol, hdlCholesterol, triglycerides);
+        return Ok(result);
+    }
+    [HttpGet("healthIndicator/evaluation/kidney-function")]
+    public async Task<IActionResult> EvaluateKidneyFunction(decimal creatinine, decimal BUN, decimal eGFR)
+    {
+        var result = await _healthIndicatorService.EvaluateKidneyFunction(creatinine, BUN, eGFR);
+        return Ok(result);
+    }
+    [HttpGet("healthIndicator/evaluation/blood-glucose")]
+    public async Task<IActionResult> EvaluateBloodGlusose(int bloodGlucose, string time)
+    {
+        var result = await _healthIndicatorService.EvaluateBloodGlusose(bloodGlucose, time);
+        return Ok(result);
+    }
+
+
     /*
         [HttpGet("weight/weightId")]
         public async Task<IActionResult> GetWeightHeightById(int weightId)

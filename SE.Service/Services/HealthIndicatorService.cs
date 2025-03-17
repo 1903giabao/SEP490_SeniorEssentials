@@ -60,6 +60,10 @@ namespace SE.Service.Services
         Task<IBusinessResult> EvaluateBloodPressure(int systolic, int diastolic);
         Task<IBusinessResult> EvaluateHeartRate(int? heartRate);
         Task<IBusinessResult> EvaluateBMI(decimal? height, decimal? weight, int accountId);
+        Task<IBusinessResult> EvaluateLiverEnzymes(decimal? alt, decimal? ast, decimal? alp, decimal? ggt);
+        Task<IBusinessResult> EvaluateLipidProfile(decimal? totalCholesterol, decimal? ldlCholesterol, decimal? hdlCholesterol, decimal? triglycerides);
+        Task<IBusinessResult> EvaluateKidneyFunction(decimal creatinine, decimal BUN, decimal eGFR);
+        Task<IBusinessResult> EvaluateBloodGlusose(int bloodGlucose, string time);
 
 
     }
@@ -3085,6 +3089,290 @@ namespace SE.Service.Services
                 throw new Exception(ex.Message);
             }
         }
+        public async Task<IBusinessResult> EvaluateBloodGlusose(int bloodGlucose, string time)
+        {
 
+            try
+            {
+                var baseBloodGlucose = _unitOfWork.HealthIndicatorBaseRepository.
+                                                    FindByCondition(i => i.Type == "BloodGlucose" && i.Time == time)
+                                                    .FirstOrDefault();
+
+                string result;
+                if (bloodGlucose < baseBloodGlucose.MaxValue && bloodGlucose > baseBloodGlucose.MinValue)
+                {
+                    result = "Thận bình thường";
+                }
+                else if (bloodGlucose > baseBloodGlucose.MaxValue)
+                {
+                    result = "Thận cao hơn mức bình thường";
+                }
+                else
+                {
+                    result = "Thận thấp hơn mức bình thường";
+                }
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> EvaluateKidneyFunction(decimal creatinine, decimal BUN, decimal eGFR)
+        {
+            try
+            {
+                // Fetch the base values for creatinine, BUN, and eGFR from the repository
+                var baseCreatinine = _unitOfWork.HealthIndicatorBaseRepository
+                    .FindByCondition(i => i.Type == "Creatinine")
+                    .FirstOrDefault();
+
+                var baseBUN = _unitOfWork.HealthIndicatorBaseRepository
+                    .FindByCondition(i => i.Type == "BUN")
+                    .FirstOrDefault();
+
+                var baseEGFR = _unitOfWork.HealthIndicatorBaseRepository
+                    .FindByCondition(i => i.Type == "eGFR")
+                    .FirstOrDefault();
+
+                // Evaluate creatinine levels
+                string creatinineResult;
+                if (creatinine < baseCreatinine.MinValue)
+                {
+                    creatinineResult = "Creatinine thấp hơn mức bình thường";
+                }
+                else if (creatinine > baseCreatinine.MaxValue)
+                {
+                    creatinineResult = "Creatinine cao hơn mức bình thường";
+                }
+                else
+                {
+                    creatinineResult = "Creatinine bình thường";
+                }
+
+                // Evaluate BUN levels
+                string BUNResult;
+                if (BUN < baseBUN.MinValue)
+                {
+                    BUNResult = "BUN thấp hơn mức bình thường";
+                }
+                else if (BUN > baseBUN.MaxValue)
+                {
+                    BUNResult = "BUN cao hơn mức bình thường";
+                }
+                else
+                {
+                    BUNResult = "BUN level is normal";
+                }
+
+                // Evaluate eGFR levels
+                string eGFRResult;
+                if (eGFR < baseEGFR.MinValue)
+                {
+                    eGFRResult = "eGFR thấp hơn mức bình thường";
+                }
+                else if (eGFR > baseEGFR.MaxValue)
+                {
+                    eGFRResult = "eGFR cao hơn mức bình thường";
+                }
+                else
+                {
+                    eGFRResult = "eGFR bình thường";
+                }
+
+                // Combine the results into a single message
+                string combinedResult = $" {creatinineResult} - {BUNResult} - {eGFRResult}";
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, combinedResult);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> EvaluateLipidProfile(decimal? totalCholesterol, decimal? ldlCholesterol, decimal? hdlCholesterol, decimal? triglycerides)
+        {
+            try
+            {
+                // Fetch the base values for lipid profile indicators from the repository
+                var baseTotalCholesterol = _unitOfWork.HealthIndicatorBaseRepository
+                    .FindByCondition(i => i.Type == "TotalCholesterol")
+                    .FirstOrDefault();
+
+                var baseLDLCholesterol = _unitOfWork.HealthIndicatorBaseRepository
+                    .FindByCondition(i => i.Type == "LDLCholesterol")
+                    .FirstOrDefault();
+
+                var baseHDLCholesterol = _unitOfWork.HealthIndicatorBaseRepository
+                    .FindByCondition(i => i.Type == "HDLCholesterol")
+                    .FirstOrDefault();
+
+                var baseTriglycerides = _unitOfWork.HealthIndicatorBaseRepository
+                    .FindByCondition(i => i.Type == "Triglycerides")
+                    .FirstOrDefault();
+
+                // Evaluate Total Cholesterol
+                string totalCholesterolResult;
+                if (totalCholesterol < baseTotalCholesterol.MinValue)
+                {
+                    totalCholesterolResult = "Toàn phần Cholesterol thấp hơn mức bình thường";
+                }
+                else if (totalCholesterol > baseTotalCholesterol.MaxValue)
+                {
+                    totalCholesterolResult = "Toàn phần Cholesterol cao hơn mức bình thường";
+                }
+                else
+                {
+                    totalCholesterolResult = "Toàn phần Cholesterol bình thường";
+                }
+
+                // Evaluate LDL Cholesterol
+                string ldlCholesterolResult;
+                if (ldlCholesterol < baseLDLCholesterol.MinValue)
+                {
+                    ldlCholesterolResult = "LDL Cholesterol thấp hơn mức bình thường";
+                }
+                else if (ldlCholesterol > baseLDLCholesterol.MaxValue)
+                {
+                    ldlCholesterolResult = "LDL Cholesterol cao hơn mức bình thường";
+                }
+                else
+                {
+                    ldlCholesterolResult = "LDL Cholesterol bình thường";
+                }
+
+                // Evaluate HDL Cholesterol
+                string hdlCholesterolResult;
+                if (hdlCholesterol < baseHDLCholesterol.MinValue)
+                {
+                    hdlCholesterolResult = "HDL Cholesterol thấp hơn mức bình thường";
+                }
+                else if (hdlCholesterol > baseHDLCholesterol.MaxValue)
+                {
+                    hdlCholesterolResult = "HDL Cholesterol cao hơn mức bình thường";
+                }
+                else
+                {
+                    hdlCholesterolResult = "HDL Cholesterol bình thường";
+                }
+
+                // Evaluate Triglycerides
+                string triglyceridesResult;
+                if (triglycerides < baseTriglycerides.MinValue)
+                {
+                    triglyceridesResult = "Triglycerides thấp hơn mức bình thường";
+                }
+                else if (triglycerides > baseTriglycerides.MaxValue)
+                {
+                    triglyceridesResult = "Triglycerides cao hơn mức bình thường";
+                }
+                else
+                {
+                    triglyceridesResult = "Triglycerides bình thường";
+                }
+
+                // Combine the results into a single message
+                string combinedResult = $"{totalCholesterolResult} - {ldlCholesterolResult} - {hdlCholesterolResult}, Triglycerides: {triglyceridesResult}";
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, combinedResult);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+        public async Task<IBusinessResult> EvaluateLiverEnzymes(decimal? alt, decimal? ast, decimal? alp, decimal? ggt)
+        {
+            try
+            {
+                var baseALT = _unitOfWork.HealthIndicatorBaseRepository
+                    .FindByCondition(i => i.Type == "ALT")
+                    .FirstOrDefault();
+
+                var baseAST = _unitOfWork.HealthIndicatorBaseRepository
+                    .FindByCondition(i => i.Type == "AST")
+                    .FirstOrDefault();
+
+                var baseALP = _unitOfWork.HealthIndicatorBaseRepository
+                    .FindByCondition(i => i.Type == "ALP")
+                    .FirstOrDefault();
+
+                var baseGGT = _unitOfWork.HealthIndicatorBaseRepository
+                    .FindByCondition(i => i.Type == "GGT")
+                    .FirstOrDefault();
+
+                // Evaluate ALT (Alanine Aminotransferase)
+                string altResult;
+                if (alt < baseALT.MinValue)
+                {
+                    altResult = "ALT thấp hơn mức bình thường";
+                }
+                else if (alt > baseALT.MaxValue)
+                {
+                    altResult = "ALT cao hơn mức bình thường";
+                }
+                else
+                {
+                    altResult = "ALT bình thường";
+                }
+
+                // Evaluate AST (Aspartate Aminotransferase)
+                string astResult;
+                if (ast < baseAST.MinValue)
+                {
+                    astResult = "AST thấp hơn mức bình thường";
+                }
+                else if (ast > baseAST.MaxValue)
+                {
+                    astResult = "AST cao hơn mức bình thường";
+                }
+                else
+                {
+                    astResult = "AST bình thường";
+                }
+
+                // Evaluate ALP (Alkaline Phosphatase)
+                string alpResult;
+                if (alp < baseALP.MinValue)
+                {
+                    alpResult = "ALP thấp hơn mức bình thường";
+                }
+                else if (alp > baseALP.MaxValue)
+                {
+                    alpResult = "ALP cao hơn mức bình thường";
+                }
+                else
+                {
+                    alpResult = "ALP bình thường";
+                }
+
+                // Evaluate GGT (Gamma-Glutamyl Transferase)
+                string ggtResult;
+                if (ggt < baseGGT.MinValue)
+                {
+                    ggtResult = "GGT thấp hơn mức bình thường";
+                }
+                else if (ggt > baseGGT.MaxValue)
+                {
+                    ggtResult = "GGT cao hơn mức bình thường";
+                }
+                else
+                {
+                    ggtResult = "GGT bình thường";
+                }
+
+                // Combine the results into a single message
+                string combinedResult = $"{altResult} - {astResult} - {alpResult} - {ggtResult}";
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, combinedResult);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
     }
 }
