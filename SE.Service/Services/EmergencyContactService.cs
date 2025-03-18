@@ -273,8 +273,8 @@ namespace SE.Service.Services
                     EmergencyInformationId = newestInformation.EmergencyInformationId,
                     EmergencyConfirmationId = emergency.EmergencyConfirmationId,
                     ConfirmationAccountName = newestInformation.EmergencyConfirmation.ConfirmationAccount == null ? "" : newestInformation.EmergencyConfirmation.ConfirmationAccount.FullName,
-                    ConfirmationDate = newestInformation.EmergencyConfirmation.EmergencyDate?.ToString("dd-MM-yyyy"),
-                    ConfirmationTime = newestInformation.EmergencyConfirmation.EmergencyDate?.ToString("HH:mm"),
+                    ConfirmationDate = newestInformation.EmergencyConfirmation.ConfirmationDate?.ToString("dd-MM-yyyy"),
+                    ConfirmationTime = newestInformation.EmergencyConfirmation.ConfirmationDate?.ToString("HH:mm"),
                     IsConfirmed = newestInformation.EmergencyConfirmation.IsConfirm,
                     FrontCameraImage = newestInformation.FrontCameraImage,
                     RearCameraImage = newestInformation.RearCameraImage,
@@ -311,8 +311,8 @@ namespace SE.Service.Services
                     EmergencyInformationId = information.EmergencyInformationId,
                     EmergencyConfirmationId = emergency.EmergencyConfirmationId,
                     ConfirmationAccountName = information.EmergencyConfirmation.ConfirmationAccount == null ? "" : information.EmergencyConfirmation.ConfirmationAccount.FullName,
-                    ConfirmationDate = information.EmergencyConfirmation.EmergencyDate?.ToString("dd-MM-yyyy"),
-                    ConfirmationTime = information.EmergencyConfirmation.EmergencyDate?.ToString("HH:mm"),
+                    ConfirmationDate = information.EmergencyConfirmation.ConfirmationDate?.ToString("dd-MM-yyyy"),
+                    ConfirmationTime = information.EmergencyConfirmation.ConfirmationDate?.ToString("HH:mm"),
                     IsConfirmed = information.EmergencyConfirmation.IsConfirm,
                     FrontCameraImage = information.FrontCameraImage,
                     RearCameraImage = information.RearCameraImage,
@@ -427,7 +427,7 @@ namespace SE.Service.Services
                 {
                     ElderlyId = (int)e.ElderlyId,
                     EmergencyDate = e.EmergencyDate?.ToString("dd-MM-yyyy"),
-                    EmergencyTime = e.EmergencyDate?.ToString("HH-mm"),
+                    EmergencyTime = e.EmergencyDate?.ToString("HH:mm"),
                     ConfirmationAccountName = e.ConfirmationAccount == null ? "" : e.ConfirmationAccount.FullName,
                     ConfirmationDate = (DateTime)e.ConfirmationDate,
                     IsConfirmed = (bool)(e.IsConfirm == null ? false : e.IsConfirm)
@@ -644,7 +644,7 @@ namespace SE.Service.Services
 
                 emergencyConfirmation.ConfirmationAccountId = account.AccountId;
                 emergencyConfirmation.IsConfirm = true;
-                emergencyConfirmation.ConfirmationDate = DateTime.Now;
+                emergencyConfirmation.ConfirmationDate = DateTime.UtcNow.AddHours(7);
 
                 var updateRs = await _unitOfWork.EmergencyConfirmationRepository.UpdateAsync(emergencyConfirmation);
 

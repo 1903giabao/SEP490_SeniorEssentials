@@ -213,6 +213,13 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
                 }
 
+                var playlistExist = await _unitOfWork.PlaylistRepository.GetByIdAsync(req.PlaylistId);
+
+                if (playlistExist == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Playlist does not exist!");
+                }
+
                 var lessonURL = ("", "");
 
                 if (req.LessonFile != null)
@@ -223,6 +230,7 @@ namespace SE.Service.Services
                 var lesson = new Lesson
                 {
                     AccountId = req.AccountId,
+                    PlaylistId = playlistExist.PlaylistId,
                     LessonName = req.LessonName,
                     LessonUrl = lessonURL.Item2,
                     CreatedDate = DateTime.UtcNow.AddHours(7),
