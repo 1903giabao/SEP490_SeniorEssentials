@@ -8,10 +8,10 @@ namespace SE.Common.Request.HealthIndicator
 {
     public class CreateKidneyFunctionRequest
     {
-        public int ElderlyId { get; set; }
+        public int AccountId { get; set; }
         public string Creatinine { get; set; }
         public string BUN { get; set; }
-        public string eGFR { get; set; }
+        public string EGFR { get; set; }
         public string KidneyFunctionSource { get; set; }
         public string CreatedBy { get; set; }
 

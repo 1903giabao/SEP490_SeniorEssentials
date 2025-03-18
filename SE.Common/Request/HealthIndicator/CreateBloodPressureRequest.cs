@@ -8,10 +8,12 @@ namespace SE.Common.Request.HealthIndicator
 {
     public class CreateBloodPressureRequest
     {
-        public int ElderlyId { get; set; }
-        public decimal? BloodPressureSystolic { get; set; }
-        public decimal? BloodPressureDiastolic { get; set; }
-        public string BloodPressureSource { get; set; }
+        public int AccountId { get; set; }
+        public decimal? Systolic { get; set; }
+        public decimal? Diastolic { get; set; }
+        public string SystolicSource { get; set; }
+
+        public string DiastolicSource { get; set; }
         public string CreatedBy { get; set; }
 
     }

@@ -8,8 +8,8 @@ namespace SE.Common.Request.HealthIndicator
 {
     public class CreateHeightRequest
     {
-        public int ElderlyId { get; set; }
-        public decimal? Height { get; set; }
+        public int AccountId { get; set; }
+        public decimal? Height1 { get; set; }
         public string HeightSource { get; set; }
         public string CreatedBy { get; set; }
 
