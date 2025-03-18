@@ -13,7 +13,7 @@ namespace SE.Common.DTO.Emergency
         public string? ConfirmationAccountName { get; set; }
         public string? EmergencyDate { get; set; }
         public string? EmergencyTime { get; set; }
-        public DateTime? ConfirmationDate { get; set; }
+        public string? ConfirmationDate { get; set; }
         public bool? IsConfirmed { get; set; }
     }
 }

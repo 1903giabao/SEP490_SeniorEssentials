@@ -344,7 +344,7 @@ namespace SE.Service.Services
                     EmergencyDate = e.EmergencyDate?.ToString("dd-MM-yyyy"),
                     EmergencyTime = e.EmergencyDate?.ToString("HH:mm"),
                     ConfirmationAccountName = e.ConfirmationAccount == null ? "" : e.ConfirmationAccount.FullName,
-                    ConfirmationDate = e.ConfirmationDate,
+                    ConfirmationDate = e.ConfirmationDate?.ToString("dd-MM-yyyy HH:mm"),
                     IsConfirmed = (bool)(e.IsConfirm == null ? false : e.IsConfirm)
                 });
 
@@ -396,7 +396,7 @@ namespace SE.Service.Services
                         EmergencyDate = e.EmergencyDate?.ToString("dd-MM-yyyy"),
                         EmergencyTime = e.EmergencyDate?.ToString("HH:mm"),
                         ConfirmationAccountName = e.ConfirmationAccount == null ? "" : e.ConfirmationAccount.FullName,
-                        ConfirmationDate = e.ConfirmationDate,
+                        ConfirmationDate = e.ConfirmationDate?.ToString("dd-MM-yyyy HH:mm"),
                         IsConfirmed = (e.IsConfirm == null ? false : e.IsConfirm)
                     }).ToList();
 
@@ -425,11 +425,12 @@ namespace SE.Service.Services
 
                 var result = new GetEmergencyConfirmationDTO
                 {
+                    EmergencyConfirmationId = e.EmergencyConfirmationId,
                     ElderlyId = (int)e.ElderlyId,
                     EmergencyDate = e.EmergencyDate?.ToString("dd-MM-yyyy"),
                     EmergencyTime = e.EmergencyDate?.ToString("HH:mm"),
                     ConfirmationAccountName = e.ConfirmationAccount == null ? "" : e.ConfirmationAccount.FullName,
-                    ConfirmationDate = (DateTime)e.ConfirmationDate,
+                    ConfirmationDate = e.ConfirmationDate?.ToString("dd-MM-yyyy HH:mm"),
                     IsConfirmed = (bool)(e.IsConfirm == null ? false : e.IsConfirm)
                 };
 
