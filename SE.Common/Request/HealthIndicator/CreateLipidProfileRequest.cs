@@ -8,7 +8,7 @@ namespace SE.Common.Request.HealthIndicator
 {
     public class CreateLipidProfileRequest
     {
-        public int ElderlyId { get; set; }
+        public int AccountId { get; set; }
         public string TotalCholesterol { get; set; }
         public string LDLCholesterol { get; set; }
         public string HDLCholesterol { get; set; }

@@ -44,6 +44,19 @@ namespace SE.Service.Services
         Task<IBusinessResult> UpdateLipidProfileStatus(int lipidProfileId, string status);
         Task<IBusinessResult> UpdateLiverEnzymesStatus(int liverEnzymesId, string status);
         Task<IBusinessResult> UpdateKidneyFunctionStatus(int kidneyFunctionId, string status);
+
+        //update
+
+        Task<IBusinessResult> UpdateKidneyFunction(int kidneyFunctionId, decimal creatinine, decimal bun, decimal eGfr);
+        Task<IBusinessResult> UpdateLiverEnzymes(int liverEnzymesId, decimal alt, decimal ast, decimal alp, decimal ggt);
+        Task<IBusinessResult> UpdateLipidProfile(int lipidProfileId, decimal totalCholesterol, decimal ldlcholesterol, decimal hdlcholesterol, decimal triglycerides);
+        Task<IBusinessResult> UpdateBloodGlucose(int bloodGlucoseId, decimal bloodGlucoseUpdate, string time);
+        Task<IBusinessResult> UpdateHeartRate(int heartRateId, int heartRateUpdate);
+        Task<IBusinessResult> UpdateBloodPressure(int bloodPressureId, int systolic, int diastolic);
+        Task<IBusinessResult> UpdateHeight(int heightId, int heightUpdate);
+        Task<IBusinessResult> UpdateWeight(int weightId, int weightUpdate);
+
+
         //tivo
         Task<IBusinessResult> GetWeightDetail(int accountId);
         Task<IBusinessResult> GetHeightDetail(int accountId);
@@ -84,14 +97,15 @@ namespace SE.Service.Services
         {
             try
             {
-                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
-                if (request.Weight <= 0)
+                if (request.Weight1 <= 0)
                 {
                     return new BusinessResult(Const.FAIL_CREATE, "Weight must be greater than 0.");
                 }
@@ -99,6 +113,7 @@ namespace SE.Service.Services
                 var weightEntity = _mapper.Map<Weight>(request);
                 weightEntity.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 weightEntity.Status = SD.GeneralStatus.ACTIVE;
+                weightEntity.ElderlyId = getElderly.Elderly.ElderlyId;
 
                 await _unitOfWork.WeightRepository.CreateAsync(weightEntity);
 
@@ -114,14 +129,16 @@ namespace SE.Service.Services
         {
             try
             {
-                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
-                if (request.Height <= 0)
+                if (request.Height1 <= 0)
                 {
                     return new BusinessResult(Const.FAIL_CREATE, "Height must be greater than 0.");
                 }
@@ -129,6 +146,7 @@ namespace SE.Service.Services
                 var heightEntity = _mapper.Map<Height>(request);
                 heightEntity.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 heightEntity.Status = SD.GeneralStatus.ACTIVE;
+                heightEntity.ElderlyId = getElderly.Elderly.ElderlyId;
 
                 await _unitOfWork.HeightRepository.CreateAsync(heightEntity);
 
@@ -144,19 +162,21 @@ namespace SE.Service.Services
         {
             try
             {
-                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
-                if (request.BloodPressureSystolic < 30 || request.BloodPressureSystolic > 300)
+                if (request.Systolic < 30 || request.Systolic > 300)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Systolic blood pressure must be in 30~300!");
                 }
 
-                if (request.BloodPressureDiastolic < 20 || request.BloodPressureDiastolic > 250)
+                if (request.Diastolic < 20 || request.Diastolic > 250)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Diastolic blood pressure must be in 20~250!");
                 }
@@ -164,6 +184,7 @@ namespace SE.Service.Services
                 var bloodPressure = _mapper.Map<BloodPressure>(request);
                 bloodPressure.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 bloodPressure.Status = SD.GeneralStatus.ACTIVE;
+                bloodPressure.ElderlyId = getElderly.Elderly.ElderlyId;
 
                 await _unitOfWork.BloodPressureRepository.CreateAsync(bloodPressure);
 
@@ -179,14 +200,16 @@ namespace SE.Service.Services
         {
             try
             {
-                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
-                if (request.HeartRate < 40 || request.HeartRate > 300)
+                if (request.HeartRate1 < 40 || request.HeartRate1 > 300)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Heart rate must be in 40~300!");
                 }
@@ -194,6 +217,7 @@ namespace SE.Service.Services
                 var heartRate = _mapper.Map<HeartRate>(request);
                 heartRate.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 heartRate.Status = SD.GeneralStatus.ACTIVE;
+                heartRate.ElderlyId = getElderly.Elderly.ElderlyId;
 
                 await _unitOfWork.HeartRateRepository.CreateAsync(heartRate);
 
@@ -209,7 +233,9 @@ namespace SE.Service.Services
         {
             try
             {
-                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
                 {
@@ -219,6 +245,7 @@ namespace SE.Service.Services
                 var bloodGlucose = _mapper.Map<BloodGlucose>(request);
                 bloodGlucose.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 bloodGlucose.Status = SD.GeneralStatus.ACTIVE;
+                bloodGlucose.ElderlyId = getElderly.Elderly.ElderlyId;
 
                 await _unitOfWork.BloodGlucoseRepository.CreateAsync(bloodGlucose);
 
@@ -234,7 +261,9 @@ namespace SE.Service.Services
         {
             try
             {
-                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
                 {
@@ -244,6 +273,7 @@ namespace SE.Service.Services
                 var lipidProfile = _mapper.Map<LipidProfile>(request);
                 lipidProfile.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 lipidProfile.Status = SD.GeneralStatus.ACTIVE;
+                lipidProfile.ElderlyId = getElderly.Elderly.ElderlyId;
 
                 await _unitOfWork.LipidProfileRepository.CreateAsync(lipidProfile);
 
@@ -259,7 +289,9 @@ namespace SE.Service.Services
         {
             try
             {
-                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
                 {
@@ -269,6 +301,7 @@ namespace SE.Service.Services
                 var liverEnzyme = _mapper.Map<LiverEnzyme>(request);
                 liverEnzyme.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 liverEnzyme.Status = SD.GeneralStatus.ACTIVE;
+                liverEnzyme.ElderlyId = getElderly.Elderly.ElderlyId;
 
                 await _unitOfWork.LiverEnzymeRepository.CreateAsync(liverEnzyme);
 
@@ -284,7 +317,9 @@ namespace SE.Service.Services
         {
             try
             {
-                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(request.ElderlyId);
+                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
                 {
@@ -294,6 +329,7 @@ namespace SE.Service.Services
                 var kidneyFunction = _mapper.Map<KidneyFunction>(request);
                 kidneyFunction.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 kidneyFunction.Status = SD.GeneralStatus.ACTIVE;
+                kidneyFunction.ElderlyId = getElderly.Elderly.ElderlyId;
 
                 await _unitOfWork.KidneyFunctionRepository.CreateAsync(kidneyFunction);
 
@@ -546,6 +582,270 @@ namespace SE.Service.Services
                 }
 
                 return new BusinessResult(Const.SUCCESS_UPDATE, "Kidney function status updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+
+        //update
+
+        public async Task<IBusinessResult> UpdateWeight(int weightId, int weightUpdate)
+        {
+            try
+            {
+                if (weightId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid weight ID.");
+                }
+
+                var weight = await _unitOfWork.WeightRepository.GetByIdAsync(weightId);
+                if (weight == null)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Weight record not found.");
+                }
+
+                weight.Weight1 = weightUpdate;
+                var rs = await _unitOfWork.WeightRepository.UpdateAsync(weight);
+
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Weight status updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateHeight(int heightId, int heightUpdate)
+        {
+            try
+            {
+                if (heightId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid height ID.");
+                }
+
+                var height = await _unitOfWork.HeightRepository.GetByIdAsync(heightId);
+                if (height == null)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Height record not found.");
+                }
+
+                height.Height1 = heightUpdate;
+                var rs = await _unitOfWork.HeightRepository.UpdateAsync(height);
+
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Height status updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateBloodPressure(int bloodPressureId, int systolic, int diastolic)
+        {
+            try
+            {
+                if (bloodPressureId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid blood pressure ID.");
+                }
+
+                var bloodPressure = await _unitOfWork.BloodPressureRepository.GetByIdAsync(bloodPressureId);
+                if (bloodPressure == null)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Blood pressure record not found.");
+                }
+
+                bloodPressure.Systolic = systolic;
+                bloodPressure.Diastolic = diastolic;
+                var rs = await _unitOfWork.BloodPressureRepository.UpdateAsync(bloodPressure);
+
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Blood pressure status updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateHeartRate(int heartRateId, int heartRateUpdate)
+        {
+            try
+            {
+                if (heartRateId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid heart rate ID.");
+                }
+
+                var heartRate = await _unitOfWork.HeartRateRepository.GetByIdAsync(heartRateId);
+                if (heartRate == null)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Heart rate record not found.");
+                }
+
+                heartRate.HeartRate1 = heartRateUpdate;
+                var rs = await _unitOfWork.HeartRateRepository.UpdateAsync(heartRate);
+
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Heart rate updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateBloodGlucose(int bloodGlucoseId, decimal bloodGlucoseUpdate, string time)
+        {
+            try
+            {
+                if (bloodGlucoseId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid blood glucose ID.");
+                }
+
+                var bloodGlucose = await _unitOfWork.BloodGlucoseRepository.GetByIdAsync(bloodGlucoseId);
+                if (bloodGlucose == null)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Blood glucose record not found.");
+                }
+
+                bloodGlucose.BloodGlucose1 = bloodGlucoseUpdate;
+                bloodGlucose.Time = time;
+                var rs = await _unitOfWork.BloodGlucoseRepository.UpdateAsync(bloodGlucose);
+
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Blood glucose status updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateLipidProfile(int lipidProfileId, decimal totalCholesterol, decimal ldlcholesterol, decimal hdlcholesterol, decimal triglycerides)
+        {
+            try
+            {
+                if (lipidProfileId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid lipid profile ID.");
+                }
+
+                var lipidProfile = await _unitOfWork.LipidProfileRepository.GetByIdAsync(lipidProfileId);
+                if (lipidProfile == null)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Lipid profile record not found.");
+                }
+
+                lipidProfile.TotalCholesterol = totalCholesterol;
+                lipidProfile.Ldlcholesterol = ldlcholesterol;
+                lipidProfile.Hdlcholesterol = hdlcholesterol;
+                lipidProfile.Triglycerides = triglycerides;
+
+                var rs = await _unitOfWork.LipidProfileRepository.UpdateAsync(lipidProfile);
+
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Lipid profile updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateLiverEnzymes(int liverEnzymesId, decimal alt, decimal ast, decimal alp, decimal ggt)
+        {
+            try
+            {
+                if (liverEnzymesId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid liver enzymes ID.");
+                }
+
+                var liverEnzymes = await _unitOfWork.LiverEnzymeRepository.GetByIdAsync(liverEnzymesId);
+                if (liverEnzymes == null)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Liver enzymes record not found.");
+                }
+
+                liverEnzymes.Alt = alt;
+                liverEnzymes.Ast = ast;
+                liverEnzymes.Alp = alp;
+                liverEnzymes.Ggt = ggt;
+
+                var rs = await _unitOfWork.LiverEnzymeRepository.UpdateAsync(liverEnzymes);
+
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Liver enzymes updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateKidneyFunction(int kidneyFunctionId, decimal creatinine, decimal bun, decimal eGfr)
+        {
+            try
+            {
+                if (kidneyFunctionId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid kidney function ID.");
+                }
+
+                var kidneyFunction = await _unitOfWork.KidneyFunctionRepository.GetByIdAsync(kidneyFunctionId);
+                if (kidneyFunction == null)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Kidney function record not found.");
+                }
+
+                kidneyFunction.Creatinine = creatinine;
+                kidneyFunction.Bun = bun;
+                kidneyFunction.EGfr = eGfr;
+
+                var rs = await _unitOfWork.KidneyFunctionRepository.UpdateAsync(kidneyFunction);
+
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Kidney function updated successfully.");
             }
             catch (Exception ex)
             {

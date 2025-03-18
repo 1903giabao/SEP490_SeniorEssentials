@@ -5,6 +5,7 @@ using SE.Common.Request;
 using SE.Common.Request.HealthIndicator;
 using SE.Data.Models;
 using SE.Service.Services;
+using static SE.Common.Request.HealthIndicator.UpdateHealthIndicatorRequest;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -237,5 +238,61 @@ public class HealthIndicatorController : ControllerBase
         var result = await _healthIndicatorService.UpdateKidneyFunctionStatus(kidneyFunctionId, status);
         return Ok(result);
     }
+    [HttpPut("update-kidney-function/{kidneyFunctionId}")]
+    public async Task<IActionResult> UpdateKidneyFunction(int kidneyFunctionId, [FromBody] KidneyFunctionUpdateRequest request)
+    {
+        var result = await _healthIndicatorService.UpdateKidneyFunction(kidneyFunctionId, request.Creatinine, request.Bun, request.EGfr);
+        return Ok(result);
+    }
+
+    [HttpPut("update-liver-enzymes/{liverEnzymesId}")]
+    public async Task<IActionResult> UpdateLiverEnzymes(int liverEnzymesId, [FromBody] LiverEnzymesUpdateRequest request)
+    {
+        var result = await _healthIndicatorService.UpdateLiverEnzymes(liverEnzymesId, request.Alt, request.Ast, request.Alp, request.Ggt);
+        return Ok(result);
+    }
+
+    [HttpPut("update-lipid-profile/{lipidProfileId}")]
+    public async Task<IActionResult> UpdateLipidProfile(int lipidProfileId, [FromBody] LipidProfileUpdateRequest request)
+    {
+        var result = await _healthIndicatorService.UpdateLipidProfile(lipidProfileId, request.TotalCholesterol, request.LdlCholesterol, request.HdlCholesterol, request.Triglycerides);
+        return Ok(result);
+    }
+
+    [HttpPut("update-blood-glucose/{bloodGlucoseId}")]
+    public async Task<IActionResult> UpdateBloodGlucose(int bloodGlucoseId, [FromBody] BloodGlucoseUpdateRequest request)
+    {
+        var result = await _healthIndicatorService.UpdateBloodGlucose(bloodGlucoseId, request.BloodGlucoseUpdate, request.Time);
+        return Ok(result);
+    }
+
+    [HttpPut("update-heart-rate/{heartRateId}")]
+    public async Task<IActionResult> UpdateHeartRate(int heartRateId, [FromBody] int heartRateUpdate)
+    {
+        var result = await _healthIndicatorService.UpdateHeartRate(heartRateId, heartRateUpdate);
+        return Ok(result);
+    }
+
+    [HttpPut("update-blood-pressure/{bloodPressureId}")]
+    public async Task<IActionResult> UpdateBloodPressure(int bloodPressureId, [FromBody] BloodPressureUpdateRequest request)
+    {
+        var result = await _healthIndicatorService.UpdateBloodPressure(bloodPressureId, request.Systolic, request.Diastolic);
+        return Ok(result);
+    }
+
+    [HttpPut("update-height/{heightId}")]
+    public async Task<IActionResult> UpdateHeight(int heightId, [FromBody] int heightUpdate)
+    {
+        var result = await _healthIndicatorService.UpdateHeight(heightId, heightUpdate);
+        return Ok(result);
+    }
+
+    [HttpPut("update-weight/{weightId}")]
+    public async Task<IActionResult> UpdateWeight(int weightId, [FromBody] int weightUpdate)
+    {
+        var result = await _healthIndicatorService.UpdateWeight(weightId, weightUpdate);
+        return Ok(result);
+    }
+
 }
 
