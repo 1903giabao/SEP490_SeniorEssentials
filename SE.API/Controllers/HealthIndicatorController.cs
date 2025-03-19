@@ -116,7 +116,7 @@ public class HealthIndicatorController : ControllerBase
         return Ok(result);
     }
     [HttpGet("healthIndicator/evaluation/blood-glucose")]
-    public async Task<IActionResult> EvaluateBloodGlusose(int bloodGlucose, string time)
+    public async Task<IActionResult> EvaluateBloodGlusose(decimal bloodGlucose, string time)
     {
         var result = await _healthIndicatorService.EvaluateBloodGlusose(bloodGlucose, time);
         return Ok(result);

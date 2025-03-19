@@ -77,7 +77,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> EvaluateLiverEnzymes(decimal? alt, decimal? ast, decimal? alp, decimal? ggt);
         Task<IBusinessResult> EvaluateLipidProfile(decimal? totalCholesterol, decimal? ldlCholesterol, decimal? hdlCholesterol, decimal? triglycerides);
         Task<IBusinessResult> EvaluateKidneyFunction(decimal creatinine, decimal BUN, decimal eGFR);
-        Task<IBusinessResult> EvaluateBloodGlusose(int bloodGlucose, string time);
+        Task<IBusinessResult> EvaluateBloodGlusose(decimal bloodGlucose, string time);
 
         Task<IBusinessResult> GetLogBookResponses(int accountId);
 
@@ -854,6 +854,29 @@ namespace SE.Service.Services
         }
 
         //tivo
+
+        private string MapDayOfWeekToVietnamese(System.DayOfWeek dayOfWeek)
+        {
+            switch (dayOfWeek)
+            {
+                case System.DayOfWeek.Monday:
+                    return "T2";
+                case System.DayOfWeek.Tuesday:
+                    return "T3";
+                case System.DayOfWeek.Wednesday:
+                    return "T4";
+                case System.DayOfWeek.Thursday:
+                    return "T5";
+                case System.DayOfWeek.Friday:
+                    return "T6";
+                case System.DayOfWeek.Saturday:
+                    return "T7";
+                case System.DayOfWeek.Sunday:
+                    return "CN";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(dayOfWeek), dayOfWeek, null);
+            }
+        }
         public async Task<IBusinessResult> GetWeightDetail(int accountId)
         {
             try
@@ -935,7 +958,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                        Type = x.Date.DayOfWeek.ToString(),
+                        Type = MapDayOfWeekToVietnamese(x.Date.DayOfWeek),
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(w => w.Weight1 ?? 0), 2) : null
                     })
                     .ToList();
@@ -1145,7 +1168,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                        Type = x.Date.DayOfWeek.ToString(),
+                        Type = MapDayOfWeekToVietnamese(x.Date.DayOfWeek),
                         Indicator = x.Records.Any() ? (double?)x.Records.Average(h => h.Height1) : null // Keep null if no valid records
                     })
                     .ToList();
@@ -1339,7 +1362,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                        Type = x.Date.DayOfWeek.ToString(),
+                        Type = MapDayOfWeekToVietnamese(x.Date.DayOfWeek),
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.HeartRate1 ?? 0)) : null
                     })
                     .ToList();
@@ -1532,7 +1555,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartBloodPressureModel
                     {
-                        Type = x.Date.DayOfWeek.ToString(),
+                        Type = MapDayOfWeekToVietnamese(x.Date.DayOfWeek),
                         Indicator = x.Records.Any() ? $"{Math.Round(x.Records.Average(b => b.Systolic ?? 0), MidpointRounding.AwayFromZero)}/{Math.Round(x.Records.Average(b => b.Diastolic ?? 0), MidpointRounding.AwayFromZero)}" : null
                     })
                     .ToList();
@@ -1695,7 +1718,7 @@ namespace SE.Service.Services
             }
             else if ((decimal)averageSystolic > baseSystolic.MaxValue && (decimal)averageDiastolic > baseDiastolic.MaxValue)
             {
-                result = "Cao hơn mức bình thường";
+                result = "Cao ";
             }
             else
             {
@@ -1830,7 +1853,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartBloodGlucoseModel
                     {
-                        Type = x.Date.DayOfWeek.ToString(),
+                        Type = MapDayOfWeekToVietnamese(x.Date.DayOfWeek),
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(b => b.BloodGlucose1 ?? 0), MidpointRounding.AwayFromZero) : null
                     })
                     .ToList();
@@ -2010,7 +2033,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharLipidProfileModel
                     {
-                        Type = x.Date.DayOfWeek.ToString(),
+                        Type = MapDayOfWeekToVietnamese(x.Date.DayOfWeek),
                         TotalCholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.TotalCholesterol ?? 0), 2) : null,
                         Ldlcholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ldlcholesterol ?? 0), 2) : null,
                         Hdlcholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Hdlcholesterol ?? 0), 2) : null,
@@ -2353,7 +2376,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharLiverEnzymesModel
                     {
-                        Type = x.Date.DayOfWeek.ToString(),
+                        Type = MapDayOfWeekToVietnamese(x.Date.DayOfWeek),
                         Alt = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alt ?? 0), 2) : null,
                         Ast = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ast ?? 0), 2) : null,
                         Alp = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alp ?? 0), 2) : null,
@@ -2684,7 +2707,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharKidneyFunctionModel
                     {
-                        Type = x.Date.DayOfWeek.ToString(),
+                        Type = MapDayOfWeekToVietnamese(x.Date.DayOfWeek),
                         Creatinine = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Creatinine ?? 0), 2) : null,
                         Bun = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Bun ?? 0), 2) : null,
                         EGfr = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.EGfr ?? 0), 2) : null
@@ -3019,9 +3042,27 @@ namespace SE.Service.Services
 
                     if (!latestDate.HasValue || !latestIndicator.HasValue)
                         return null;
-
+                    var indicatorBase = new HealthIndicatorBase();
                     // Get the HealthIndicatorBase for the type
-                    var indicatorBase = indicators.FirstOrDefault(h => h.Type == type);
+                    if (type == "KidneyFunction")
+                    {
+                        indicatorBase = indicators.FirstOrDefault(h => h.Type == "Creatinine");
+
+                    }
+                    else if (type == "LiverEnzyme")
+                    {
+                        indicatorBase = indicators.FirstOrDefault(h => h.Type == "Alt");
+
+                    }
+                    else if (type == "LipidProfile")
+                    {
+                        indicatorBase = indicators.FirstOrDefault(h => h.Type == "TotalCholesterol");
+
+                    }else
+                    {
+                        indicatorBase = indicators.FirstOrDefault(h => h.Type == type);
+
+                    }
                     if (indicatorBase == null)
                         return null;
 
@@ -3069,13 +3110,18 @@ namespace SE.Service.Services
                                 formattedAverageIndicator = difference >= 0 ? $"+{difference}" : $"{difference}";
                             }
                         }
+                        else
+                        {
+                            // If it's the first indicator, set the difference to +0
+                            formattedAverageIndicator = "+0";
+                        }
                     }
 
                     return new GetAllHealthIndicatorReponse
                     {
                         Tabs = type,
                         Evaluation = evaluation,
-                        DateTime = latestDate.Value.ToString("dd-MM HH-mm"), // Format DateTime as DD-MM HH-mm
+                        DateTime = latestDate.Value.ToString("dd-MM HH:mm"), // Format DateTime as DD-MM HH-mm
                         Indicator = latestIndicator.Value.ToString("0"),
                         AverageIndicator = formattedAverageIndicator
                     };
@@ -3137,8 +3183,8 @@ namespace SE.Service.Services
                     h => h.Height1,
                     "Height",
                     healthIndicators,
-                    calculateDifference: true, // Enable difference calculation for height
-                    bmi: bmi); // Pass BMI for evaluation
+                    calculateDifference: true,
+                    bmi: bmi);
 
                 var weightResponse = GetIndicatorResponse(
                     weightRecords,
@@ -3146,8 +3192,8 @@ namespace SE.Service.Services
                     w => w.Weight1,
                     "Weight",
                     healthIndicators,
-                    calculateDifference: true, // Enable difference calculation for weight
-                    bmi: bmi); // Pass BMI for evaluation
+                    calculateDifference: true,
+                    bmi: bmi);
 
                 var heartRateResponse = GetIndicatorResponse(
                     heartRateRecords,
@@ -3163,7 +3209,7 @@ namespace SE.Service.Services
                     lipidProfileRecords,
                     lp => lp.DateRecorded,
                     lp => lp.TotalCholesterol, // Use TotalCholesterol as the indicator
-                    "TotalCholesterol",
+                    "LipidProfile", // Renamed to "LipidProfile"
                     healthIndicators,
                     calculateDifference: true); // Enable difference calculation
 
@@ -3171,23 +3217,35 @@ namespace SE.Service.Services
                 var kidneyFunctionResponse = GetIndicatorResponse(
                     kidneyFunctionRecords,
                     kf => kf.DateRecorded,
-                    kf => kf.EGfr, // Use eGFR as the indicator
-                    "eGFR",
+                    kf => kf.EGfr, 
+                    "KidneyFunction",
                     healthIndicators,
                     calculateDifference: true); // Enable difference calculation
 
-                // Liver Enzyme: Only get the newest date
-                var liverEnzymeResponse = liverEnzymeRecords
+                var liverEnzymeResponse = GetIndicatorResponse(
+                    liverEnzymeRecords,
+                    lz =>lz.DateRecorded,
+                    lz=>lz.Alt,
+                    "LiverEnzyme",
+                    healthIndicators,
+                    calculateDifference : true
+                    
+                    );
+
+
+                /*var liverEnzymeResponse = liverEnzymeRecords
                     .OrderByDescending(le => le.DateRecorded)
                     .Select(le => new GetAllHealthIndicatorReponse
                     {
                         Tabs = "LiverEnzyme",
-                        Evaluation = "N/A", // No evaluation for Liver Enzyme
-                        DateTime = le.DateRecorded?.ToString("dd-MM HH-mm") ?? "N/A",
-                        Indicator = "N/A", // No indicator for Liver Enzyme
-                        AverageIndicator = "N/A" // No average for Liver Enzyme
+                        Evaluation = "N/A",
+                        DateTime = le.DateRecorded?.ToString("dd-MM HH:mm") ?? "N/A",
+                        Indicator = "N/A",
+                        AverageIndicator = "N/A"
                     })
-                    .FirstOrDefault();
+                    .FirstOrDefault();*/
+
+
 
                 // Blood Glucose: Evaluate based on Time field
                 var bloodGlucoseResponse = bloodGlucoseRecords
@@ -3196,9 +3254,9 @@ namespace SE.Service.Services
                     {
                         Tabs = "BloodGlucose",
                         Evaluation = GetBloodGlucoseEvaluation(bg.BloodGlucose1, bg.Time, healthIndicators),
-                        DateTime = bg.DateRecorded?.ToString("dd-MM HH-mm") ?? "N/A",
+                        DateTime = bg.DateRecorded?.ToString("dd-MM HH:mm") ?? "N/A",
                         Indicator = bg.BloodGlucose1?.ToString("0") ?? "N/A",
-                        AverageIndicator = "N/A" // No average for Blood Glucose
+                        AverageIndicator = GetDifferenceIndicator(bloodGlucoseRecords, bg => bg.BloodGlucose1) // Calculate difference for Blood Glucose
                     })
                     .FirstOrDefault();
 
@@ -3236,6 +3294,37 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
         }
+
+        // Function to calculate the difference indicator
+        private string GetDifferenceIndicator<T>(List<T> records, Func<T, decimal?> getIndicatorValue)
+        {
+            if (!records.Any())
+                return "+0"; // If no records, return +0
+
+            var latestRecord = records
+                .OrderByDescending(r => getIndicatorValue(r))
+                .FirstOrDefault();
+
+            if (latestRecord == null)
+                return "+0";
+
+            var previousRecord = records
+                .OrderByDescending(r => getIndicatorValue(r))
+                .Skip(1) // Skip the latest record to get the previous one
+                .FirstOrDefault();
+
+            if (previousRecord == null)
+                return "+0"; // If it's the first record, return +0
+
+            var latestIndicator = getIndicatorValue(latestRecord);
+            var previousIndicator = getIndicatorValue(previousRecord);
+
+            if (!latestIndicator.HasValue || !previousIndicator.HasValue)
+                return "+0";
+
+            var difference = latestIndicator.Value - previousIndicator.Value;
+            return difference >= 0 ? $"+{difference}" : $"{difference}";
+        }
         private GetAllHealthIndicatorReponse GetBloodPressureResponse(List<BloodPressure> records, List<HealthIndicatorBase> indicators)
         {
             var latestRecord = records
@@ -3262,7 +3351,7 @@ namespace SE.Service.Services
             // Determine evaluation for Blood Pressure
             string evaluation = (systolic <= systolicIndicator.MaxValue && diastolic <= diastolicIndicator.MaxValue)
                 ? "Bình thường"
-                : "Cao hơn mức bình thường";
+                : "Cao ";
 
             // Calculate average for the last 30 days
             var last30DaysRecords = records
@@ -3285,7 +3374,7 @@ namespace SE.Service.Services
             {
                 Tabs = "BloodPressure",
                 Evaluation = evaluation,
-                DateTime = latestDate.Value.ToString("dd-MM HH-mm"), // Format DateTime as DD-MM HH-mm
+                DateTime = latestDate.Value.ToString("dd-MM HH:mm"), // Format DateTime as DD-MM HH-mm
                 Indicator = indicator,
                 AverageIndicator = averageIndicator
             };
@@ -3404,9 +3493,9 @@ namespace SE.Service.Services
                 {
                     result = "Huyết áp bình thường";
                 }
-                else if (systolic > baseSystolic.MaxValue && diastolic > baseDiastolic.MaxValue)
+                else if (systolic > baseSystolic.MaxValue)
                 {
-                    result = "Huyết áp cao hơn mức bình thường";
+                    result = "Huyết áp cao";
                 }
                 else
                 {
@@ -3420,7 +3509,7 @@ namespace SE.Service.Services
                 throw new Exception(ex.Message);
             }
         }
-        public async Task<IBusinessResult> EvaluateBloodGlusose(int bloodGlucose, string time)
+        public async Task<IBusinessResult> EvaluateBloodGlusose(decimal bloodGlucose, string time)
         {
 
             try
@@ -3436,11 +3525,11 @@ namespace SE.Service.Services
                 }
                 else if (bloodGlucose > baseBloodGlucose.MaxValue)
                 {
-                    result = "Đường huyết cao hơn mức bình thường";
+                    result = "Đường huyết cao";
                 }
                 else
                 {
-                    result = "Đường huyết thấp hơn mức bình thường";
+                    result = "Đường huyết thấp";
                 }
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
 
@@ -3472,11 +3561,11 @@ namespace SE.Service.Services
                 string creatinineResult;
                 if (creatinine < baseCreatinine.MinValue)
                 {
-                    creatinineResult = "Creatinine thấp hơn mức bình thường";
+                    creatinineResult = "Creatinine thấp";
                 }
                 else if (creatinine > baseCreatinine.MaxValue)
                 {
-                    creatinineResult = "Creatinine cao hơn mức bình thường";
+                    creatinineResult = "Creatinine cao";
                 }
                 else
                 {
@@ -3487,26 +3576,26 @@ namespace SE.Service.Services
                 string BUNResult;
                 if (BUN < baseBUN.MinValue)
                 {
-                    BUNResult = "BUN thấp hơn mức bình thường";
+                    BUNResult = "BUN thấp ";
                 }
                 else if (BUN > baseBUN.MaxValue)
                 {
-                    BUNResult = "BUN cao hơn mức bình thường";
+                    BUNResult = "BUN cao ";
                 }
                 else
                 {
-                    BUNResult = "BUN level is normal";
+                    BUNResult = "BUN level bình thường";
                 }
 
                 // Evaluate eGFR levels
                 string eGFRResult;
                 if (eGFR < baseEGFR.MinValue)
                 {
-                    eGFRResult = "eGFR thấp hơn mức bình thường";
+                    eGFRResult = "eGFR thấp ";
                 }
                 else if (eGFR > baseEGFR.MaxValue)
                 {
-                    eGFRResult = "eGFR cao hơn mức bình thường";
+                    eGFRResult = "eGFR cao ";
                 }
                 else
                 {
@@ -3549,11 +3638,11 @@ namespace SE.Service.Services
                 string totalCholesterolResult;
                 if (totalCholesterol < baseTotalCholesterol.MinValue)
                 {
-                    totalCholesterolResult = "Toàn phần Cholesterol thấp hơn mức bình thường";
+                    totalCholesterolResult = "Toàn phần Cholesterol thấp ";
                 }
                 else if (totalCholesterol > baseTotalCholesterol.MaxValue)
                 {
-                    totalCholesterolResult = "Toàn phần Cholesterol cao hơn mức bình thường";
+                    totalCholesterolResult = "Toàn phần Cholesterol cao ";
                 }
                 else
                 {
@@ -3564,11 +3653,11 @@ namespace SE.Service.Services
                 string ldlCholesterolResult;
                 if (ldlCholesterol < baseLDLCholesterol.MinValue)
                 {
-                    ldlCholesterolResult = "LDL Cholesterol thấp hơn mức bình thường";
+                    ldlCholesterolResult = "LDL Cholesterol thấp ";
                 }
                 else if (ldlCholesterol > baseLDLCholesterol.MaxValue)
                 {
-                    ldlCholesterolResult = "LDL Cholesterol cao hơn mức bình thường";
+                    ldlCholesterolResult = "LDL Cholesterol cao ";
                 }
                 else
                 {
@@ -3579,11 +3668,11 @@ namespace SE.Service.Services
                 string hdlCholesterolResult;
                 if (hdlCholesterol < baseHDLCholesterol.MinValue)
                 {
-                    hdlCholesterolResult = "HDL Cholesterol thấp hơn mức bình thường";
+                    hdlCholesterolResult = "HDL Cholesterol thấp ";
                 }
                 else if (hdlCholesterol > baseHDLCholesterol.MaxValue)
                 {
-                    hdlCholesterolResult = "HDL Cholesterol cao hơn mức bình thường";
+                    hdlCholesterolResult = "HDL Cholesterol cao ";
                 }
                 else
                 {
@@ -3594,11 +3683,11 @@ namespace SE.Service.Services
                 string triglyceridesResult;
                 if (triglycerides < baseTriglycerides.MinValue)
                 {
-                    triglyceridesResult = "Triglycerides thấp hơn mức bình thường";
+                    triglyceridesResult = "Triglycerides thấp ";
                 }
                 else if (triglycerides > baseTriglycerides.MaxValue)
                 {
-                    triglyceridesResult = "Triglycerides cao hơn mức bình thường";
+                    triglyceridesResult = "Triglycerides cao ";
                 }
                 else
                 {
@@ -3639,11 +3728,11 @@ namespace SE.Service.Services
                 string altResult;
                 if (alt < baseALT.MinValue)
                 {
-                    altResult = "ALT thấp hơn mức bình thường";
+                    altResult = "ALT thấp ";
                 }
                 else if (alt > baseALT.MaxValue)
                 {
-                    altResult = "ALT cao hơn mức bình thường";
+                    altResult = "ALT cao ";
                 }
                 else
                 {
@@ -3654,11 +3743,11 @@ namespace SE.Service.Services
                 string astResult;
                 if (ast < baseAST.MinValue)
                 {
-                    astResult = "AST thấp hơn mức bình thường";
+                    astResult = "AST thấp ";
                 }
                 else if (ast > baseAST.MaxValue)
                 {
-                    astResult = "AST cao hơn mức bình thường";
+                    astResult = "AST cao ";
                 }
                 else
                 {
@@ -3669,11 +3758,11 @@ namespace SE.Service.Services
                 string alpResult;
                 if (alp < baseALP.MinValue)
                 {
-                    alpResult = "ALP thấp hơn mức bình thường";
+                    alpResult = "ALP thấp ";
                 }
                 else if (alp > baseALP.MaxValue)
                 {
-                    alpResult = "ALP cao hơn mức bình thường";
+                    alpResult = "ALP cao ";
                 }
                 else
                 {
@@ -3684,11 +3773,11 @@ namespace SE.Service.Services
                 string ggtResult;
                 if (ggt < baseGGT.MinValue)
                 {
-                    ggtResult = "GGT thấp hơn mức bình thường";
+                    ggtResult = "GGT thấp ";
                 }
                 else if (ggt > baseGGT.MaxValue)
                 {
-                    ggtResult = "GGT cao hơn mức bình thường";
+                    ggtResult = "GGT cao ";
                 }
                 else
                 {

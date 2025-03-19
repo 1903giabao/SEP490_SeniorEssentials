@@ -427,7 +427,7 @@ namespace SE.Service.Services
                 {
                     ElderlyId = (int)e.ElderlyId,
                     EmergencyDate = e.EmergencyDate?.ToString("dd-MM-yyyy"),
-                    EmergencyTime = e.EmergencyDate?.ToString("HH-mm"),
+                    EmergencyTime = e.EmergencyDate?.ToString("HH:mm"),
                     ConfirmationAccountName = e.ConfirmationAccount == null ? "" : e.ConfirmationAccount.FullName,
                     ConfirmationDate = (DateTime)e.ConfirmationDate,
                     IsConfirmed = (bool)(e.IsConfirm == null ? false : e.IsConfirm)
