@@ -121,7 +121,7 @@ namespace SE.Service.Services
 
                 else if (FunctionCommon.IsValidPhoneNumber(account)) 
                 {
-                    var sendPhoneOTP = await _smsService.SendSmsAsync(account, otp.ToString());
+                    var sendPhoneOTP = await _smsService.SendOTPSmsAsync(account, otp.ToString());
                     if (sendPhoneOTP == null)
                     {
                         return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot send sms.");

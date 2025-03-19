@@ -14,12 +14,25 @@ using SE.Service.Helper;
 using SE.Common.Request.Content;
 using Org.BouncyCastle.Ocsp;
 using SE.Common.DTO.Content;
+using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics;
+using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
+using System.IO;
+using MediaInfo;
+using NAudio.Wave;
+using ATL;
+using TagLib;
 
 namespace SE.Service.Services
 {
     public interface IContentService
     {
-        Task<IBusinessResult> GetAllMusics();
+        Task<IBusinessResult> GetAllMusics(int playlistId);
+        Task<IBusinessResult> GetAllLessons(int playlistId);
+        Task<IBusinessResult> GetAllBooks();
+        Task<IBusinessResult> GetAllLessonPlaylist();
+        Task<IBusinessResult> GetAllMusicPlaylist();
         Task<IBusinessResult> CreateMusic(CreateMusicRequest req);
         Task<IBusinessResult> DeleteMusic(int musicId);
         Task<IBusinessResult> CreateBook(CreateBookRequest req);
@@ -46,15 +59,115 @@ namespace SE.Service.Services
             _mapper = mapper;
         }
 
-        public async Task<IBusinessResult> GetAllMusics()
+        public async Task<IBusinessResult> GetAllMusics(int playlistId)
         {
             try
             {
-                var musics = await _unitOfWork.MusicRepository.GetAllAsync();
+                var musics = _unitOfWork.MusicRepository.FindByCondition(m => m.Status.Equals(SD.GeneralStatus.ACTIVE) && m.PlaylistId == playlistId).ToList();
 
                 var rs = _mapper.Map<List<MusicDTO>>(musics);
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }        
+        
+        public async Task<IBusinessResult> GetAllLessons(int playlistId)
+        {
+            try
+            {
+                var lessons = _unitOfWork.LessonRepository.FindByCondition(l => l.Status.Equals(SD.GeneralStatus.ACTIVE) && l.PlaylistId == playlistId).ToList();
+
+                var rs = _mapper.Map<List<LessonDTO>>(lessons);
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetAllBooks()
+        {
+            try
+            {
+                var books = _unitOfWork.BookRepository.FindByCondition(b => b.Status.Equals(SD.GeneralStatus.ACTIVE)).ToList();
+
+                var rs = _mapper.Map<List<BookDTO>>(books);
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }        
+        
+        public async Task<IBusinessResult> GetAllLessonPlaylist()
+        {
+            try
+            {
+                var playlists = await _unitOfWork.PlaylistRepository.GetAllPlaylist(SD.GeneralStatus.ACTIVE);
+
+                var listLessonPlaylist = new List<PlaylistDTO>();
+
+                if (playlists != null && playlists.Any())
+                {
+                    foreach (var playlist in playlists)
+                    {
+                        if (!playlist.Lessons.IsNullOrEmpty())
+                        {
+                            var playlistDTO = new PlaylistDTO
+                            {
+                                PlaylistId = playlist.PlaylistId,
+                                PlaylistName = playlist.PlaylistName,
+                                NumberOfContent = playlist.Lessons.Count,
+                            };
+
+                            listLessonPlaylist.Add(playlistDTO);
+                        }
+                    }
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, listLessonPlaylist);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }        
+        
+        public async Task<IBusinessResult> GetAllMusicPlaylist()
+        {
+            try
+            {
+                var playlists = await _unitOfWork.PlaylistRepository.GetAllPlaylist(SD.GeneralStatus.ACTIVE);
+
+                var listMusicPlaylist = new List<PlaylistDTO>();
+
+                if (playlists != null && playlists.Any())
+                {
+                    foreach (var playlist in playlists)
+                    {
+                        if (!playlist.Musics.IsNullOrEmpty())
+                        {
+                            var playlistDTO = new PlaylistDTO
+                            {
+                                PlaylistId = playlist.PlaylistId,
+                                PlaylistName = playlist.PlaylistName,
+                                NumberOfContent = playlist.Musics.Count,
+                            };
+
+                            listMusicPlaylist.Add(playlistDTO);
+                        }
+                    }
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, listMusicPlaylist);
             }
             catch (Exception ex)
             {
@@ -73,36 +186,69 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
                 }
 
-                var musicURL = ("", "");
+                var playlistExist = await _unitOfWork.PlaylistRepository.GetByIdAsync(req.PlaylistId);
 
-                if (req.MusicFile != null)
+                if (playlistExist == null)
                 {
-                    musicURL = await CloudinaryHelper.UploadImageAsync(req.MusicFile);
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Playlist does not exist!");
                 }
 
-                var music = new Music
+                foreach (var file in req.MusicFiles)
                 {
-                    AccountId = req.AccountId,
-                    MusicName = req.MusicName,
-                    MusicUrl = musicURL.Item2,
-                    Singer = req.Singer,
-                    CreatedDate = DateTime.UtcNow.AddHours(7),
-                    Status = SD.GeneralStatus.ACTIVE,
-                };
+                    using (var stream = file.OpenReadStream())
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        stream.CopyTo(memoryStream);
+                        memoryStream.Position = 0;
 
-                var createRs = await _unitOfWork.MusicRepository.CreateAsync(music);
+                        var tagLibFile = TagLib.File.Create(new StreamFileAbstraction(file.FileName, memoryStream, null));
+                        var musicName = GetTitleBeforeHyphen(tagLibFile.Tag.Title);
+                        var singer = tagLibFile.Tag.FirstPerformer;
 
-                if (createRs > 0)
-                {
-                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
+                        var musicURL = ("", "");
+
+                        if (file != null)
+                        {
+                            musicURL = await CloudinaryHelper.UploadAudioAsync(file);
+                        }
+
+                        var music = new Music
+                        {
+                            AccountId = req.AccountId,
+                            CreatedDate = DateTime.UtcNow.AddHours(7),
+                            MusicName = musicName,
+                            Singer = singer,
+                            PlaylistId = req.PlaylistId,
+                            MusicUrl = musicURL.Item2,
+                            Status = SD.GeneralStatus.ACTIVE,
+                        };
+
+                        var createRs = await _unitOfWork.MusicRepository.CreateAsync(music);
+
+                        if (createRs < 1)
+                        {
+                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                        }
+                    }
                 }
 
-                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
             }
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
             }
+        }
+
+        private string GetTitleBeforeHyphen(string fullTitle)
+        {
+            if (string.IsNullOrEmpty(fullTitle))
+            {
+                return fullTitle;
+            }
+
+            var parts = fullTitle.Split(new[] { '-' }, 2, StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length > 0 ? parts[0].Trim() : fullTitle;
         }
 
         public async Task<IBusinessResult> DeleteMusic(int musicId)
@@ -220,31 +366,34 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Playlist does not exist!");
                 }
 
-                var lessonURL = ("", "");
-
-                if (req.LessonFile != null)
+                foreach (var lessonRq in req.Lessons)
                 {
-                    lessonURL = await CloudinaryHelper.UploadImageAsync(req.LessonFile);
+                    var lessonURL = ("", "");
+
+                    if (lessonRq.LessonFile != null)
+                    {
+                        lessonURL = await CloudinaryHelper.UploadImageAsync(lessonRq.LessonFile);
+                    }
+
+                    var lesson = new Lesson
+                    {
+                        AccountId = req.AccountId,
+                        PlaylistId = playlistExist.PlaylistId,
+                        LessonName = lessonRq.LessonName,
+                        LessonUrl = lessonURL.Item2,
+                        CreatedDate = DateTime.UtcNow.AddHours(7),
+                        Status = SD.GeneralStatus.ACTIVE,
+                    };
+
+                    var createRs = await _unitOfWork.LessonRepository.CreateAsync(lesson);
+
+                    if (createRs < 1)
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                    }
                 }
 
-                var lesson = new Lesson
-                {
-                    AccountId = req.AccountId,
-                    PlaylistId = playlistExist.PlaylistId,
-                    LessonName = req.LessonName,
-                    LessonUrl = lessonURL.Item2,
-                    CreatedDate = DateTime.UtcNow.AddHours(7),
-                    Status = SD.GeneralStatus.ACTIVE,
-                };
-
-                var createRs = await _unitOfWork.LessonRepository.CreateAsync(lesson);
-
-                if (createRs > 0)
-                {
-                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
-                }
-
-                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
             }
             catch (Exception ex)
             {

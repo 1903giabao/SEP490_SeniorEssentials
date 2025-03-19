@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -12,10 +13,12 @@ using Org.BouncyCastle.Ocsp;
 using SE.Common;
 using SE.Common.DTO;
 using SE.Common.Enums;
+using SE.Common.Request.Account;
 using SE.Data.Models;
 using SE.Data.UnitOfWork;
 using SE.Service.Base;
 using SE.Service.Helper;
+using static System.Net.WebRequestMethods;
 
 namespace SE.Service.Services
 {
@@ -25,19 +28,172 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetAllUsers(int roleId = 0);
         Task<IBusinessResult> GetUserById(int id);
         Task<IBusinessResult> GetUserByPhoneNumber(string phoneNumber, int userId);
+        Task<IBusinessResult> CreateSystemAccount(CreateSystemAccountRequest req);
+        Task<IBusinessResult> CreateProfessorAccount(CreateProfessorAccountRequest req);
     }
 
     public class AccountService : IAccountService
     {
         private readonly UnitOfWork _unitOfWork;
+        private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
+        private readonly ISmsService _smsService;
         private readonly FirestoreDb _firestoreDb;
 
-        public AccountService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb)
+        public AccountService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb, ISmsService smsService, IEmailService emailService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _firestoreDb = firestoreDb;
+            _smsService = smsService;
+            _emailService = emailService;
+        }
+
+        public async Task<IBusinessResult> CreateSystemAccount(CreateSystemAccountRequest req)
+        {
+            try
+            {
+                if (req.RoleId != 1 && req.RoleId != 5)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "Invalid role!");
+                }
+
+                if (!FunctionCommon.IsValidEmail(req.Email) && !FunctionCommon.IsValidPhoneNumber(req.PhoneNumber))
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Wrong email or phone number format!");
+                }
+
+                var newAccount = new Data.Models.Account
+                {
+                    RoleId = req.RoleId,
+                    Avatar = "https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png",
+                    CreatedDate = DateTime.UtcNow.AddHours(7),
+                    DateOfBirth = req.DateOfBirth,
+                    Email = req.Email,
+                    Password = SecurityUtil.Hash(req.Password),
+                    FullName = req.FullName,
+                    Gender = req.Gender,
+                    PhoneNumber = req.PhoneNumber,
+                };
+
+                var createRs = await _unitOfWork.AccountRepository.CreateAsync(newAccount);
+
+                if (createRs > 0)
+                {
+                    var mailData = new EmailData
+                    {
+                        EmailToId = req.Email,
+                        EmailToName = "Senior Essentials",
+                        EmailBody = "TÀI KHOẢN CỦA BẠN TRÊN SENIOR ESSENTIALS ĐÃ ĐƯỢC TẠO THÀNH CÔNG!",
+                        EmailSubject = "TẠO TÀI KHOẢN THÀNH CÔNG"
+                    };
+
+                    var emailResult = await _emailService.SendEmailAsync(mailData);
+                    if (!emailResult)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Can not send email!");
+                    }
+
+                    var result = await _smsService.SendSmsAsync(req.PhoneNumber, "TÀI KHOẢN CỦA BẠN TRÊN SENIOR ESSENTIALS ĐÃ ĐƯỢC TẠO THÀNH CÔNG!");
+
+                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
+                }
+
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> CreateProfessorAccount(CreateProfessorAccountRequest req)
+        {
+            try
+            {
+                if (!FunctionCommon.IsValidEmail(req.Email) && !FunctionCommon.IsValidPhoneNumber(req.PhoneNumber))
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Wrong email or phone number format!");
+                }
+
+                var avatar = ("", "");
+
+                if (req.Avatar != null)
+                {
+                    avatar = await CloudinaryHelper.UploadImageAsync(req.Avatar);
+                }
+
+                var newAccount = new Data.Models.Account
+                {
+                    RoleId = 4,
+                    Avatar = req.Avatar == null ? "https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png" : avatar.Item2,
+                    CreatedDate = DateTime.UtcNow.AddHours(7),
+                    DateOfBirth = req.DateOfBirth,
+                    Email = req.Email,
+                    Password = SecurityUtil.Hash(req.Password),
+                    FullName = req.FullName,
+                    Gender = req.Gender,
+                    PhoneNumber = req.PhoneNumber,
+                    IsVerified = true,
+                    IsSuperAdmin = false,
+                    Status = SD.GeneralStatus.ACTIVE,
+                    DeviceToken = null,
+                    Otp = null,
+                };
+
+                var createRs = await _unitOfWork.AccountRepository.CreateAsync(newAccount);
+
+                if (createRs > 0)
+                {
+                    var newProfessor = new Professor
+                    {
+                        AccountId = newAccount.AccountId,
+                        Achievement = req.Achievement,
+                        Career = req.Career,
+                        ConsultationFee = req.ConsultationFee,
+                        ClinicAddress = req.ClinicAddress,
+                        ExperienceYears = req.ExperienceYears,
+                        Knowledge = req.Knowledge,
+                        Qualification = req.Qualification,
+                        Specialization = req.Specialization,
+                        Status = SD.GeneralStatus.ACTIVE,
+                        Rating = null
+                    };
+
+                    var createProfessorRs = await _unitOfWork.ProfessorRepository.CreateAsync(newProfessor);
+
+                    if (createProfessorRs < 1)
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Failed to create professor!");
+                    }
+
+                    var mailData = new EmailData
+                    {
+                        EmailToId = req.Email,
+                        EmailToName = "Senior Essentials",
+                        EmailBody = "TÀI KHOẢN CỦA BẠN TRÊN SENIOR ESSENTIALS ĐÃ ĐƯỢC TẠO THÀNH CÔNG!",
+                        EmailSubject = "TẠO TÀI KHOẢN THÀNH CÔNG"
+                    };
+
+                    var emailResult = await _emailService.SendEmailAsync(mailData);
+                    if (!emailResult)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Can not send email!");
+                    }
+
+                    var result = await _smsService.SendSmsAsync(req.PhoneNumber, "TÀI KHOẢN CỦA BẠN TRÊN SENIOR ESSENTIALS ĐÃ ĐƯỢC TẠO THÀNH CÔNG!");
+
+                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
+                }
+
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Failed to create account!");
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
 
         public async Task<IBusinessResult> CreateNewTempAccount(CreateNewAccountDTO req)

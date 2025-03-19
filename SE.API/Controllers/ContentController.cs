@@ -15,15 +15,43 @@ namespace SE.API.Controllers
             _contentService = contentService;
         }
 
-        [HttpGet("all-music")]
-        public async Task<IActionResult> GetAllMusics()
+        [HttpGet("all-music/{playlistId}")]
+        public async Task<IActionResult> GetAllMusics(int playlistId)
         {
-            var result = await _contentService.GetAllMusics();
+            var result = await _contentService.GetAllMusics(playlistId);
+            return Ok(result);
+        }           
+        
+        [HttpGet("all-lesson/{playlistId}")]
+        public async Task<IActionResult> GetAllLessons(int playlistId)
+        {
+            var result = await _contentService.GetAllLessons(playlistId);
+            return Ok(result);
+        }        
+        
+        [HttpGet("all-book")]
+        public async Task<IActionResult> GetAllBooks()
+        {
+            var result = await _contentService.GetAllBooks();
+            return Ok(result);
+        }
+
+        [HttpGet("all-lesson-playlist")]
+        public async Task<IActionResult> GetAllLessonPlaylist()
+        {
+            var result = await _contentService.GetAllLessonPlaylist();
+            return Ok(result);
+        }
+
+        [HttpGet("all-music-playlist")]
+        public async Task<IActionResult> GetAllMusicPlaylist()
+        {
+            var result = await _contentService.GetAllMusicPlaylist();
             return Ok(result);
         }
 
         [HttpPost("music")]
-        public async Task<IActionResult> CreateMusic(CreateMusicRequest req)
+        public async Task<IActionResult> CreateMusic([FromForm] CreateMusicRequest req)
         {
             var result = await _contentService.CreateMusic(req);
             return Ok(result);
@@ -51,7 +79,7 @@ namespace SE.API.Controllers
         }
 
         [HttpPost("lesson")]
-        public async Task<IActionResult> CreateLesson(CreateLessonRequest req)
+        public async Task<IActionResult> CreateLesson([FromForm] CreateLessonRequest req)
         {
             var result = await _contentService.CreateLesson(req);
             return Ok(result);
