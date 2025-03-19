@@ -3153,7 +3153,7 @@ namespace SE.Service.Services
                     }
                     else if (type == "LiverEnzyme")
                     {
-                        indicatorBase = indicators.FirstOrDefault(h => h.Type == "Alt");
+                        indicatorBase = indicators.FirstOrDefault(h => h.Type == "ALT");
 
                     }
                     else if (type == "LipidProfile")
