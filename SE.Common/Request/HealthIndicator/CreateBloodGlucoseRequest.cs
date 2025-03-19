@@ -13,8 +13,6 @@ namespace SE.Common.Request.HealthIndicator
 
         public string BloodGlucose1 { get; set; }
         public string BloodGlucoseSource { get; set; }
-        public string CreatedBy { get; set; }
-
         public string Time {  get; set; }
     }
 }
