@@ -13,7 +13,5 @@ namespace SE.Common.Request.HealthIndicator
 
         public int? HeartRate1 { get; set; }
         public string HeartRateSource { get; set; }
-        public string CreatedBy { get; set; }
-
     }
 }

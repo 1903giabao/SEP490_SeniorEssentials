@@ -16,7 +16,6 @@ namespace SE.Common.Request.HealthIndicator
         public string Alp { get; set; }
         public string Ggt { get; set; }
         public string LiverEnzymesSource { get; set; }
-        public string CreatedBy { get; set; }
 
     }
 }

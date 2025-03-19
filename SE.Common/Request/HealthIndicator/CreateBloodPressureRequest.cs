@@ -16,7 +16,6 @@ namespace SE.Common.Request.HealthIndicator
         public string SystolicSource { get; set; }
 
         public string DiastolicSource { get; set; }
-        public string CreatedBy { get; set; }
 
     }
 }
