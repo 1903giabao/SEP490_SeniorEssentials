@@ -9,6 +9,8 @@ namespace SE.Common.Request.HealthIndicator
     public class CreateHeartRateRequest
     {
         public int AccountId { get; set; }
+        public int ElderlyId { get; set; }
+
         public int? HeartRate1 { get; set; }
         public string HeartRateSource { get; set; }
         public string CreatedBy { get; set; }

@@ -9,6 +9,8 @@ namespace SE.Common.Request.HealthIndicator
     public class CreateLiverEnzymesRequest
     {
         public int AccountId { get; set; }
+        public int ElderlyId { get; set; }
+
         public string Alt { get; set; }
         public string Ast { get; set; }
         public string Alp { get; set; }
