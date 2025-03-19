@@ -12,8 +12,7 @@ namespace SE.Common.Request.Content
     public class CreateMusicRequest
     {
         public int AccountId { get; set; }
-        public string MusicName { get; set; }
-        public IFormFile MusicFile { get; set; }
-        public string Singer { get; set; }
+        public int PlaylistId { get; set; }
+        public List<IFormFile> MusicFiles { get; set; }
     }
 }

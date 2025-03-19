@@ -9,8 +9,8 @@ namespace SE.Service.Services
 {
     public interface ISmsService
     {
-        Task<string> SendSmsAsync(string phoneNumber, string otp);
-        Task<string> SendEmergencySmsAsync(string phoneNumber, string content);
+        Task<string> SendOTPSmsAsync(string phoneNumber, string otp);
+        Task<string> SendSmsAsync(string phoneNumber, string content);
     }
 
     public class SmsService : ISmsService
@@ -27,7 +27,7 @@ namespace SE.Service.Services
         }
 
 
-        public async Task<string> SendSmsAsync(string phoneNumber, string otp)
+        public async Task<string> SendOTPSmsAsync(string phoneNumber, string otp)
         {
             string content = $"Mã OTP của bạn là : {otp}";
             content = System.Net.WebUtility.UrlEncode(content);
@@ -49,7 +49,7 @@ namespace SE.Service.Services
             }
         }        
         
-        public async Task<string> SendEmergencySmsAsync(string phoneNumber, string content)
+        public async Task<string> SendSmsAsync(string phoneNumber, string content)
         {
             content = System.Net.WebUtility.UrlEncode(content);
 

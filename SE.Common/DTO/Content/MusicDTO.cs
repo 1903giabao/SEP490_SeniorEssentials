@@ -20,7 +20,7 @@ namespace SE.Common.DTO.Content
 
         public string Singer { get; set; }
 
-        public DateTime? CreatedDate { get; set; }
+        public string CreatedDate { get; set; }
 
         public string Status { get; set; }
     }

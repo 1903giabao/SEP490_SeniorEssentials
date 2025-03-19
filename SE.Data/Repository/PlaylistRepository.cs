@@ -16,6 +16,11 @@ namespace SE.Data.Repository
         {
             _context = context;
         }
-    
+
+        public async Task<List<Playlist>> GetAllPlaylist(string status)
+        {
+            var result = await _context.Playlists.Include(p => p.Musics).Include(p => p.Lessons).Where(p => p.Status.Equals(status)).ToListAsync();
+            return result;
+        }
     }
 }

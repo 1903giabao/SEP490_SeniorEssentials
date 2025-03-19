@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SE.Common;
+using SE.Common.Request.Account;
 using SE.Service.Services;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -9,11 +10,11 @@ namespace SE.API.Controllers
     [ApiController]
     public class AccountController : Controller
     {
-        private readonly IAccountService _activityService;
+        private readonly IAccountService _accountService;
 
         public AccountController(IAccountService activityService)
         {
-            _activityService = activityService;
+            _accountService = activityService;
         }
 
         [HttpGet("{roleId}")]
@@ -21,15 +22,7 @@ namespace SE.API.Controllers
 
         public async Task<IActionResult> GetAllUsers(int roleId = 0)
         {
-            var result = await _activityService.GetAllUsers(roleId);
-            bool isSuccess = result.Data != null && result.Message == Const.SUCCESS_READ_MSG;
-
-            var response = new
-            {
-                isSuccess = isSuccess,
-                data = result.Data
-            };
-
+            var result = await _accountService.GetAllUsers(roleId);
             return Ok(result);
         }
 
@@ -38,15 +31,7 @@ namespace SE.API.Controllers
 
         public async Task<IActionResult> GetUserById(int userId)
         {
-            var result = await _activityService.GetUserById(userId);
-            bool isSuccess = result.Data != null && result.Message == Const.SUCCESS_READ_MSG;
-
-            var response = new
-            {
-                isSuccess = isSuccess,
-                data = result.Data
-            };
-
+            var result = await _accountService.GetUserById(userId);
             return Ok(result);
         }
 
@@ -55,15 +40,21 @@ namespace SE.API.Controllers
 
         public async Task<IActionResult> GetUserByPhoneNumber(string phoneNumber, int userId)
         {
-            var result = await _activityService.GetUserByPhoneNumber(phoneNumber, userId);
-            bool isSuccess = result.Data != null && result.Message == Const.SUCCESS_READ_MSG;
+            var result = await _accountService.GetUserByPhoneNumber(phoneNumber, userId);
+            return Ok(result);
+        }
 
-            var response = new
-            {
-                isSuccess = isSuccess,
-                data = result.Data
-            };
-
+        [HttpPost("system-account")]
+        public async Task<IActionResult> CreateSystemAccount([FromBody] CreateSystemAccountRequest req)
+        {
+            var result = await _accountService.CreateSystemAccount(req);
+            return Ok(result);
+        }        
+        
+        [HttpPost("professor-account")]
+        public async Task<IActionResult> CreateProfessorAccount([FromForm] CreateProfessorAccountRequest req)
+        {
+            var result = await _accountService.CreateProfessorAccount(req);
             return Ok(result);
         }
     }
