@@ -97,8 +97,22 @@ namespace SE.Service.Services
         {
             try
             {
-                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
-                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
+                var getElderly = new Account();
+                var getFamily = new Account();
+                var isExisted = new Elderly();
+                if (request.ElderlyId != null)
+                {
+                    //id nguoi gia
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
+                    getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                
+                }
+                else
+                {
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                }
+
+                isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
                 {
@@ -115,6 +129,9 @@ namespace SE.Service.Services
                 weightEntity.Status = SD.GeneralStatus.ACTIVE;
                 weightEntity.ElderlyId = getElderly.Elderly.ElderlyId;
 
+                if (getFamily != null) weightEntity.CreatedBy = getFamily.FullName;
+                else weightEntity.CreatedBy = getElderly.FullName;
+
                 await _unitOfWork.WeightRepository.CreateAsync(weightEntity);
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Weight created successfully.");
@@ -129,8 +146,19 @@ namespace SE.Service.Services
         {
             try
             {
-                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                var getElderly = new Account();
+                var getFamily = new Account();
+                if (request.ElderlyId != null)
+                {
+                    //id nguoi gia
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
+                    getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
 
+                }
+                else
+                {
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                }
                 var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
@@ -147,6 +175,8 @@ namespace SE.Service.Services
                 heightEntity.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 heightEntity.Status = SD.GeneralStatus.ACTIVE;
                 heightEntity.ElderlyId = getElderly.Elderly.ElderlyId;
+                if (getFamily != null) heightEntity.CreatedBy = getFamily.FullName;
+                else heightEntity.CreatedBy = getElderly.FullName;
 
                 await _unitOfWork.HeightRepository.CreateAsync(heightEntity);
 
@@ -162,8 +192,19 @@ namespace SE.Service.Services
         {
             try
             {
-                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                var getElderly = new Account();
+                var getFamily = new Account();
+                if (request.ElderlyId != null)
+                {
+                    //id nguoi gia
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
+                    getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
 
+                }
+                else
+                {
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                }
                 var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
@@ -185,7 +226,8 @@ namespace SE.Service.Services
                 bloodPressure.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 bloodPressure.Status = SD.GeneralStatus.ACTIVE;
                 bloodPressure.ElderlyId = getElderly.Elderly.ElderlyId;
-
+                if (getFamily != null) bloodPressure.CreatedBy = getFamily.FullName;
+                else bloodPressure.CreatedBy = getElderly.FullName;
                 await _unitOfWork.BloodPressureRepository.CreateAsync(bloodPressure);
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Blood Pressure created successfully.");
@@ -200,8 +242,19 @@ namespace SE.Service.Services
         {
             try
             {
-                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                var getElderly = new Account();
+                var getFamily = new Account();
+                if (request.ElderlyId != null)
+                {
+                    //id nguoi gia
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
+                    getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
 
+                }
+                else
+                {
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                }
                 var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
@@ -218,7 +271,8 @@ namespace SE.Service.Services
                 heartRate.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 heartRate.Status = SD.GeneralStatus.ACTIVE;
                 heartRate.ElderlyId = getElderly.Elderly.ElderlyId;
-
+                if (getFamily != null) heartRate.CreatedBy = getFamily.FullName;
+                else heartRate.CreatedBy = getElderly.FullName;
                 await _unitOfWork.HeartRateRepository.CreateAsync(heartRate);
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Heart Rate created successfully.");
@@ -233,8 +287,19 @@ namespace SE.Service.Services
         {
             try
             {
-                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                var getElderly = new Account();
+                var getFamily = new Account();
+                if (request.ElderlyId != null)
+                {
+                    //id nguoi gia
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
+                    getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
 
+                }
+                else
+                {
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                }
                 var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
@@ -246,7 +311,8 @@ namespace SE.Service.Services
                 bloodGlucose.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 bloodGlucose.Status = SD.GeneralStatus.ACTIVE;
                 bloodGlucose.ElderlyId = getElderly.Elderly.ElderlyId;
-
+                if (getFamily != null) bloodGlucose.CreatedBy = getFamily.FullName;
+                else bloodGlucose.CreatedBy = getElderly.FullName;
                 await _unitOfWork.BloodGlucoseRepository.CreateAsync(bloodGlucose);
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Blood Glucose created successfully.");
@@ -261,8 +327,19 @@ namespace SE.Service.Services
         {
             try
             {
-                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                var getElderly = new Account();
+                var getFamily = new Account();
+                if (request.ElderlyId != null)
+                {
+                    //id nguoi gia
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
+                    getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
 
+                }
+                else
+                {
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                }
                 var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
@@ -274,7 +351,8 @@ namespace SE.Service.Services
                 lipidProfile.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 lipidProfile.Status = SD.GeneralStatus.ACTIVE;
                 lipidProfile.ElderlyId = getElderly.Elderly.ElderlyId;
-
+                if (getFamily != null) lipidProfile.CreatedBy = getFamily.FullName;
+                else lipidProfile.CreatedBy = getElderly.FullName;
                 await _unitOfWork.LipidProfileRepository.CreateAsync(lipidProfile);
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Lipid Profile created successfully.");
@@ -289,8 +367,19 @@ namespace SE.Service.Services
         {
             try
             {
-                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                var getElderly = new Account();
+                var getFamily = new Account();
+                if (request.ElderlyId != null)
+                {
+                    //id nguoi gia
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
+                    getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
 
+                }
+                else
+                {
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                }
                 var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
@@ -302,7 +391,8 @@ namespace SE.Service.Services
                 liverEnzyme.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 liverEnzyme.Status = SD.GeneralStatus.ACTIVE;
                 liverEnzyme.ElderlyId = getElderly.Elderly.ElderlyId;
-
+                if (getFamily != null) liverEnzyme.CreatedBy = getFamily.FullName;
+                else liverEnzyme.CreatedBy = getElderly.FullName;
                 await _unitOfWork.LiverEnzymeRepository.CreateAsync(liverEnzyme);
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Liver Enzymes created successfully.");
@@ -317,8 +407,19 @@ namespace SE.Service.Services
         {
             try
             {
-                var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                var getElderly = new Account();
+                var getFamily = new Account();
+                if (request.ElderlyId != null)
+                {
+                    //id nguoi gia
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
+                    getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
 
+                }
+                else
+                {
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                }
                 var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
 
                 if (isExisted == null)
@@ -330,7 +431,8 @@ namespace SE.Service.Services
                 kidneyFunction.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 kidneyFunction.Status = SD.GeneralStatus.ACTIVE;
                 kidneyFunction.ElderlyId = getElderly.Elderly.ElderlyId;
-
+                if (getFamily != null) kidneyFunction.CreatedBy = getFamily.FullName;
+                else kidneyFunction.CreatedBy = getElderly.FullName;
                 await _unitOfWork.KidneyFunctionRepository.CreateAsync(kidneyFunction);
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Kidney Function created successfully.");

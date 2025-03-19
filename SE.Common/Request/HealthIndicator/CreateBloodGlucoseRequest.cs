@@ -9,6 +9,8 @@ namespace SE.Common.Request.HealthIndicator
     public class CreateBloodGlucoseRequest
     {
         public int AccountId { get; set; }
+        public int ElderlyId { get; set; }
+
         public string BloodGlucose1 { get; set; }
         public string BloodGlucoseSource { get; set; }
         public string CreatedBy { get; set; }
