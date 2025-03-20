@@ -7,6 +7,7 @@ using SE.Common.Request;
 using SE.Common.Request.Content;
 using SE.Common.Request.HealthIndicator;
 using SE.Common.Request.SE.Common.Request;
+using SE.Common.Response.Professor;
 using SE.Data.Models;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,7 @@ namespace SE.Common.Mapper
                 .ReverseMap();
             CreateMap<GetUserInRoomChatDetailDTO, Account>().ReverseMap();
 
+            CreateMap<Professor, GetProfessorDetail>().ReverseMap();
 
             CreateMap<LessonModel, Lesson>().ReverseMap();
             CreateMap<CreateLessonRequest, Lesson>().ReverseMap();

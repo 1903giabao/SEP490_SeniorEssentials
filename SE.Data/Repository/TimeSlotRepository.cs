@@ -1,4 +1,5 @@
-﻿using SE.Data.Base;
+﻿using Microsoft.EntityFrameworkCore;
+using SE.Data.Base;
 using SE.Data.Models;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,14 @@ namespace SE.Data.Repository
         public TimeSlotRepository(SeniorEssentialsContext context)
         {
             _context = context;
+        }
+        public async Task<List<TimeSlot>> GetByProfessorScheduleIdAsync(int professorScheduleId)
+        {
+            var rs = await _context.TimeSlots
+                .Where(ts => ts.ProfessorScheduleId == professorScheduleId )
+                .OrderBy(ts => ts.StartTime)
+                .ToListAsync();
+            return rs;
         }
     }
 }

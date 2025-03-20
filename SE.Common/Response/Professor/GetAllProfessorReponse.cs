@@ -11,7 +11,7 @@ namespace SE.Common.Response.Professor
         public string ProfessorName {  get; set; }
         public int ProfessorId {  get; set; }
         public string Major {  get; set; }
-        public string Time { get; set; }
+        public string DateTime { get; set; }
         public string Date {  get; set; }
         public decimal Rating { get; set; }
     }

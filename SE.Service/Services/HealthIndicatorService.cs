@@ -47,14 +47,14 @@ namespace SE.Service.Services
 
         //update
 
-        Task<IBusinessResult> UpdateKidneyFunction(int kidneyFunctionId, decimal creatinine, decimal bun, decimal eGfr);
-        Task<IBusinessResult> UpdateLiverEnzymes(int liverEnzymesId, decimal alt, decimal ast, decimal alp, decimal ggt);
-        Task<IBusinessResult> UpdateLipidProfile(int lipidProfileId, decimal totalCholesterol, decimal ldlcholesterol, decimal hdlcholesterol, decimal triglycerides);
-        Task<IBusinessResult> UpdateBloodGlucose(int bloodGlucoseId, decimal bloodGlucoseUpdate, string time);
-        Task<IBusinessResult> UpdateHeartRate(int heartRateId, int heartRateUpdate);
-        Task<IBusinessResult> UpdateBloodPressure(int bloodPressureId, int systolic, int diastolic);
-        Task<IBusinessResult> UpdateHeight(int heightId, int heightUpdate);
-        Task<IBusinessResult> UpdateWeight(int weightId, int weightUpdate);
+        Task<IBusinessResult> UpdateKidneyFunction(int kidneyFunctionId, decimal creatinine, decimal bun, decimal eGfr, string type);
+        Task<IBusinessResult> UpdateLiverEnzymes(int liverEnzymesId, decimal alt, decimal ast, decimal alp, decimal ggt, string type);
+        Task<IBusinessResult> UpdateLipidProfile(int lipidProfileId, decimal totalCholesterol, decimal ldlcholesterol, decimal hdlcholesterol, decimal triglycerides, string type);
+        Task<IBusinessResult> UpdateBloodGlucose(int bloodGlucoseId, decimal bloodGlucoseUpdate, string time, string type);
+        Task<IBusinessResult> UpdateHeartRate(int heartRateId, int heartRateUpdate, string type);
+        Task<IBusinessResult> UpdateBloodPressure(int bloodPressureId, int systolic, int diastolic, string type);
+        Task<IBusinessResult> UpdateHeight(int heightId, int heightUpdate, string type);
+        Task<IBusinessResult> UpdateWeight(int weightId, int weightUpdate, string type);
 
 
         //tivo
@@ -694,7 +694,7 @@ namespace SE.Service.Services
 
         //update
 
-        public async Task<IBusinessResult> UpdateWeight(int weightId, int weightUpdate)
+        public async Task<IBusinessResult> UpdateWeight(int weightId, int weightUpdate, string createdBy)
         {
             try
             {
@@ -710,6 +710,7 @@ namespace SE.Service.Services
                 }
 
                 weight.Weight1 = weightUpdate;
+                weight.CreatedBy = createdBy;
                 var rs = await _unitOfWork.WeightRepository.UpdateAsync(weight);
 
                 if (rs < 1)
@@ -725,7 +726,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateHeight(int heightId, int heightUpdate)
+        public async Task<IBusinessResult> UpdateHeight(int heightId, int heightUpdate, string createdBy)
         {
             try
             {
@@ -741,6 +742,8 @@ namespace SE.Service.Services
                 }
 
                 height.Height1 = heightUpdate;
+                height.CreatedBy = createdBy;
+
                 var rs = await _unitOfWork.HeightRepository.UpdateAsync(height);
 
                 if (rs < 1)
@@ -756,7 +759,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateBloodPressure(int bloodPressureId, int systolic, int diastolic)
+        public async Task<IBusinessResult> UpdateBloodPressure(int bloodPressureId, int systolic, int diastolic, string createdBy)
         {
             try
             {
@@ -773,6 +776,7 @@ namespace SE.Service.Services
 
                 bloodPressure.Systolic = systolic;
                 bloodPressure.Diastolic = diastolic;
+                bloodPressure.CreatedBy = createdBy;
                 var rs = await _unitOfWork.BloodPressureRepository.UpdateAsync(bloodPressure);
 
                 if (rs < 1)
@@ -788,7 +792,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateHeartRate(int heartRateId, int heartRateUpdate)
+        public async Task<IBusinessResult> UpdateHeartRate(int heartRateId, int heartRateUpdate, string createdBy)
         {
             try
             {
@@ -804,6 +808,7 @@ namespace SE.Service.Services
                 }
 
                 heartRate.HeartRate1 = heartRateUpdate;
+                heartRate.CreatedBy = createdBy;
                 var rs = await _unitOfWork.HeartRateRepository.UpdateAsync(heartRate);
 
                 if (rs < 1)
@@ -819,7 +824,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateBloodGlucose(int bloodGlucoseId, decimal bloodGlucoseUpdate, string time)
+        public async Task<IBusinessResult> UpdateBloodGlucose(int bloodGlucoseId, decimal bloodGlucoseUpdate, string time, string createdBy)
         {
             try
             {
@@ -836,6 +841,7 @@ namespace SE.Service.Services
 
                 bloodGlucose.BloodGlucose1 = bloodGlucoseUpdate;
                 bloodGlucose.Time = time;
+                bloodGlucose.CreatedBy = createdBy;
                 var rs = await _unitOfWork.BloodGlucoseRepository.UpdateAsync(bloodGlucose);
 
                 if (rs < 1)
@@ -851,7 +857,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateLipidProfile(int lipidProfileId, decimal totalCholesterol, decimal ldlcholesterol, decimal hdlcholesterol, decimal triglycerides)
+        public async Task<IBusinessResult> UpdateLipidProfile(int lipidProfileId, decimal totalCholesterol, decimal ldlcholesterol, decimal hdlcholesterol, decimal triglycerides, string createdBy)
         {
             try
             {
@@ -870,6 +876,7 @@ namespace SE.Service.Services
                 lipidProfile.Ldlcholesterol = ldlcholesterol;
                 lipidProfile.Hdlcholesterol = hdlcholesterol;
                 lipidProfile.Triglycerides = triglycerides;
+                lipidProfile.CreatedBy = createdBy;
 
                 var rs = await _unitOfWork.LipidProfileRepository.UpdateAsync(lipidProfile);
 
@@ -886,7 +893,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateLiverEnzymes(int liverEnzymesId, decimal alt, decimal ast, decimal alp, decimal ggt)
+        public async Task<IBusinessResult> UpdateLiverEnzymes(int liverEnzymesId, decimal alt, decimal ast, decimal alp, decimal ggt, string createdBy)
         {
             try
             {
@@ -905,6 +912,7 @@ namespace SE.Service.Services
                 liverEnzymes.Ast = ast;
                 liverEnzymes.Alp = alp;
                 liverEnzymes.Ggt = ggt;
+                liverEnzymes.CreatedBy = createdBy;
 
                 var rs = await _unitOfWork.LiverEnzymeRepository.UpdateAsync(liverEnzymes);
 
@@ -921,7 +929,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateKidneyFunction(int kidneyFunctionId, decimal creatinine, decimal bun, decimal eGfr)
+        public async Task<IBusinessResult> UpdateKidneyFunction(int kidneyFunctionId, decimal creatinine, decimal bun, decimal eGfr, string createdBy)
         {
             try
             {
@@ -939,6 +947,7 @@ namespace SE.Service.Services
                 kidneyFunction.Creatinine = creatinine;
                 kidneyFunction.Bun = bun;
                 kidneyFunction.EGfr = eGfr;
+                kidneyFunction.CreatedBy = createdBy;
 
                 var rs = await _unitOfWork.KidneyFunctionRepository.UpdateAsync(kidneyFunction);
 
@@ -3797,7 +3806,7 @@ namespace SE.Service.Services
                 }
 
                 // Combine the results into a single message
-                string combinedResult = $"{totalCholesterolResult} - {ldlCholesterolResult} - {hdlCholesterolResult}, Triglycerides: {triglyceridesResult}";
+                string combinedResult = $"{totalCholesterolResult} - {ldlCholesterolResult} - {hdlCholesterolResult} - Triglycerides: {triglyceridesResult}";
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, combinedResult);
             }

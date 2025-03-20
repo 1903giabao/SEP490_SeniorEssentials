@@ -16,5 +16,13 @@ namespace SE.Data.Repository
         {
             _context = context;
         }
+        public async Task<List<ProfessorSchedule>> GetByProfessorIdAsync(int professorId)
+        {
+            var rs = await _context.ProfessorSchedules
+                .Where(ps => ps.ProfessorId == professorId && ps.Status == "Active")
+                .OrderBy(ps => ps.DayOfWeek)
+                .ToListAsync();
+            return rs;
+        }
     }
 }
