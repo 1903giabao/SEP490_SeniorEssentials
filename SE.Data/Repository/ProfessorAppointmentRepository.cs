@@ -32,5 +32,14 @@ namespace SE.Data.Repository
 
             return result;
         }
+
+        public async Task<List<ProfessorAppointment>> GetByElderlyIdAsync(int elderlyId, string type)
+        {
+            return await _context.ProfessorAppointments
+                .Include(pa => pa.TimeSlot)
+                .ThenInclude(ts => ts.ProfessorSchedule)
+                .Where(pa => pa.ElderlyId == elderlyId && pa.Status == type)
+                .ToListAsync();
+        }
     }
 }

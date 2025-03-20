@@ -16,6 +16,12 @@ namespace SE.Data.Repository
         {
             _context = context;
         }
+
+        public async Task<Professor> GetAccountByProfessorId (int professorId)
+        {
+            var rs = await _context.Professors.Include(p=>p.Account).FirstOrDefaultAsync();
+            return rs;
+        } 
     }
 
 }
