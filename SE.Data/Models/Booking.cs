@@ -29,7 +29,7 @@ public partial class Booking
 
     public int? TransactionId { get; set; }
 
-    public virtual FamilyMember Account { get; set; }
+    public virtual Account Account { get; set; }
 
     public virtual Elderly Elderly { get; set; }
 

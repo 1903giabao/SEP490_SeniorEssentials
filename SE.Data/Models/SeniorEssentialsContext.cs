@@ -883,7 +883,6 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Booking).WithOne(p => p.TransactionNavigation)
                 .HasForeignKey<Transaction>(d => d.BookingId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Transacti__Booki__236943A5");
         });
 

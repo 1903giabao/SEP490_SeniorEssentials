@@ -11,7 +11,7 @@ public partial class Transaction
 
     public int AccountId { get; set; }
 
-    public int BookingId { get; set; }
+    public int? BookingId { get; set; }
 
     public decimal Price { get; set; }
 
