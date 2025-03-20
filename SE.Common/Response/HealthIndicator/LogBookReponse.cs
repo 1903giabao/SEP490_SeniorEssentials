@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SE.Common.Response
+namespace SE.Common.Response.HealthIndicator
 {
     public class LogBookReponse
     {
@@ -17,6 +17,6 @@ namespace SE.Common.Response
         public string TimeRecorded { get; set; }
 
         public string DataType { get; set; }
-        public string Evaluation {  get; set; }
+        public string Evaluation { get; set; }
     }
 }

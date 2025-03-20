@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SE.Common.Response.Professor;
 
 namespace SE.Service.Services
 {
@@ -18,12 +19,12 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateSchedule(List<ProfessorScheduleRequest> req);
     }
 
-    public class ProfessorScheduleService : IProfessorScheduleService
+    public class ProfessorService : IProfessorScheduleService
     {
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public ProfessorScheduleService(UnitOfWork unitOfWork, IMapper mapper)
+        public ProfessorService(UnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -67,5 +68,31 @@ namespace SE.Service.Services
                 throw new Exception(ex.Message);
             }
         }
+
+        public async Task<IBusinessResult> GetAllProfessor()
+        {
+            try
+            {
+                var getAllProfessor = _unitOfWork.ProfessorRepository.GetAll();
+                var result = new List<GetAllProfessorReponse>();
+                foreach (var item in getAllProfessor) {
+                    var professor = new GetAllProfessorReponse();
+                    var professorInfor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(item.AccountId);
+                    
+                    
+                    
+                    professor.ProfessorName = professorInfor.FullName;
+                    professor.ProfessorId = professorInfor.Professor.ProfessorId;
+                    professor.Major = professorInfor.Professor.Knowledge;
+                    professor.Rating = (decimal)professorInfor.Professor.Rating;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+        }
+
     }
 }

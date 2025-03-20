@@ -42,7 +42,7 @@ builder.Services.AddScoped<IIdentityService, IdentityService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IFirebaseService, FirebaseService>();
 builder.Services.AddScoped<ILessonService, LessonService>();
-builder.Services.AddScoped<IProfessorScheduleService, ProfessorScheduleService>();
+builder.Services.AddScoped<IProfessorScheduleService, ProfessorService>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
 builder.Services.AddScoped<IComboService, ComboService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
