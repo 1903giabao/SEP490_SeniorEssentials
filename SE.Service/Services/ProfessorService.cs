@@ -14,12 +14,12 @@ using SE.Common.Response.Professor;
 
 namespace SE.Service.Services
 {
-    public interface IProfessorScheduleService
+    public interface IProfessorService
     {
         Task<IBusinessResult> CreateSchedule(List<ProfessorScheduleRequest> req);
     }
 
-    public class ProfessorService : IProfessorScheduleService
+    public class ProfessorService : IProfessorService
     {
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -69,7 +69,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> GetAllProfessor()
+        /*public async Task<IBusinessResult> GetAllProfessor()
         {
             try
             {
@@ -92,7 +92,7 @@ namespace SE.Service.Services
                 throw ex;
             }
 
-        }
+        }*/
 
     }
 }

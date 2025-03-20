@@ -4,13 +4,13 @@ using SE.Service.Services;
 
 namespace SE.API.Controllers
 {
-    [Route("professor-schedule-management")]
+    [Route("professor-management")]
     [ApiController]
-    public class ProfessorScheduleController : Controller
+    public class ProfessorController : Controller
     {
-        private readonly IProfessorScheduleService _professorScheduleService;
+        private readonly IProfessorService _professorScheduleService;
 
-        public ProfessorScheduleController(IProfessorScheduleService professorScheduleService)
+        public ProfessorController(IProfessorService professorScheduleService)
         {
             _professorScheduleService = professorScheduleService;
         }
