@@ -14,6 +14,4 @@ public partial class FamilyMember
     public string Status { get; set; }
 
     public virtual Account Account { get; set; }
-
-    public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 }

@@ -37,6 +37,8 @@ public partial class Account
 
     public bool? IsSuperAdmin { get; set; }
 
+    public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+
     public virtual ICollection<Book> Books { get; set; } = new List<Book>();
 
     public virtual ContentProvider ContentProvider { get; set; }
