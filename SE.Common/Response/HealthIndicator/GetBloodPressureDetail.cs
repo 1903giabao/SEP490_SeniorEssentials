@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SE.Common.Response
+namespace SE.Common.Response.HealthIndicator
 {
     public class GetBloodPressureDetail
     {

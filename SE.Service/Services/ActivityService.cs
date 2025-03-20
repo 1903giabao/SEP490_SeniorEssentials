@@ -4,7 +4,7 @@ using Microsoft.Identity.Client;
 using SE.Common;
 using SE.Common.DTO;
 using SE.Common.Enums;
-using SE.Common.Response;
+using SE.Common.Response.HealthIndicator;
 using SE.Data.Models;
 using SE.Data.Repository;
 using SE.Data.UnitOfWork;

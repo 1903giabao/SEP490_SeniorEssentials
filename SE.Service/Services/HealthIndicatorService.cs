@@ -14,12 +14,12 @@ using SE.Common.Enums;
 using SE.Common.DTO.HealthIndicator;
 using Firebase.Auth;
 using Microsoft.Identity.Client;
-using SE.Common.Response;
 using System.Globalization;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using Google.Type;
 using static Google.Cloud.Vision.V1.ProductSearchResults.Types;
 using Microsoft.EntityFrameworkCore.Storage;
+using SE.Common.Response.HealthIndicator;
 
 namespace SE.Service.Services
 {
@@ -1818,13 +1818,13 @@ namespace SE.Service.Services
             {
                 result = "Bình thường";
             }
-            else if ((decimal)averageSystolic > baseSystolic.MaxValue && (decimal)averageDiastolic > baseDiastolic.MaxValue)
+            else if ((decimal)averageSystolic < baseSystolic.MinValue && (decimal)averageDiastolic < baseDiastolic.MinValue)
             {
-                result = "Cao ";
+                result = "Thấp";
             }
             else
             {
-                result = "Không xác định";
+                result = "Cao";
             }
             return result;
         }
@@ -3595,13 +3595,13 @@ namespace SE.Service.Services
                 {
                     result = "Huyết áp bình thường";
                 }
-                else if (systolic > baseSystolic.MaxValue)
+                else if (systolic < baseSystolic.MinValue && diastolic < baseDiastolic.MinValue)
                 {
-                    result = "Huyết áp cao";
+                    result = "Huyết áp thấp";
                 }
                 else
                 {
-                    result = "Huyết áp không xác định";
+                    result = "Huyết áp cao";
                 }
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
 
@@ -3999,7 +3999,7 @@ namespace SE.Service.Services
                     DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
                     TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
                     DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"), 
-                    Indicator = $"{record.BloodGlucose1}",
+                    Indicator = $"{record.BloodGlucose1}/{record.Time}",
                     Evaluation =(string) EvaluateBloodGlusose((int)record.BloodGlucose1,record.Time).Result.Data
                 };
                 responses.Add(response);
