@@ -965,6 +965,32 @@ namespace SE.Service.Services
         }
 
         //tivo
+        private string MapWeekToVietnamese(string week)
+        {
+            if (week.StartsWith("Week "))
+            {
+                string number = week.Substring(5); // Extract the number part
+                return "T-" + number;
+            }
+            throw new ArgumentException("Invalid week format", nameof(week));
+        }
+
+        private string MapMonthToVietnamese(string month)
+        {
+            Dictionary<string, string> monthMapping = new Dictionary<string, string>
+    {
+        { "January", "Th1" }, { "February", "Th2" }, { "March", "Th3" }, { "April", "Th4" },
+        { "May", "Th5" }, { "June", "Th6" }, { "July", "Th7" }, { "August", "Th8" },
+        { "September", "Th9" }, { "October", "Th10" }, { "November", "Th11" }, { "December", "Th12" }
+    };
+
+            if (monthMapping.TryGetValue(month, out string vietnamese))
+            {
+                return vietnamese;
+            }
+
+            throw new ArgumentException("Invalid month name", nameof(month));
+        }
 
         private string MapDayOfWeekToVietnamese(System.DayOfWeek dayOfWeek)
         {
@@ -1043,7 +1069,7 @@ namespace SE.Service.Services
                     {
                         StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
                         EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
-                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}"
                     })
                     .ToList();
 
@@ -1054,7 +1080,7 @@ namespace SE.Service.Services
                     {
                         StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
                         EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
-                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)}"
                     })
                     .ToList();
 
@@ -1087,10 +1113,9 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                        Type = x.Week.WeekLabel,
+                        Type = MapWeekToVietnamese( x.Week.WeekLabel),
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(w => w.Weight1 ?? 0), 2) : null
                     })
-                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
                     .ToList();
 
                 // Calculate monthlyRecords with non-null Indicator values
@@ -1106,10 +1131,9 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                        Type = x.Month.MonthLabel,
+                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(w => w.Weight1 ?? 0), 2) : null
                     })
-                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
                     .ToList();
 
                 // Calculate yearlyRecords with non-null Indicator values
@@ -1253,7 +1277,7 @@ namespace SE.Service.Services
                     {
                         StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
                         EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
-                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}"
                     })
                     .ToList();
 
@@ -1264,7 +1288,7 @@ namespace SE.Service.Services
                     {
                         StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
                         EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
-                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)}"
                     })
                     .ToList();
 
@@ -1297,10 +1321,10 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                        Type = x.Week.WeekLabel,
+                                                Type = MapWeekToVietnamese( x.Week.WeekLabel),
                         Indicator = x.Records.Any() ? (double?)x.Records.Average(h => h.Height1) : null // Keep null if no valid records
                     })
-                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
+
                     .ToList();
 
                 // Calculate monthlyRecords with non-null Indicator values
@@ -1316,10 +1340,10 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                        Type = x.Month.MonthLabel,
+                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
                         Indicator = x.Records.Any() ? (double?)x.Records.Average(h => h.Height1) : null // Keep null if no valid records
                     })
-                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
+
                     .ToList();
 
                 // Calculate yearlyRecords with non-null Indicator values
@@ -1448,7 +1472,7 @@ namespace SE.Service.Services
                     {
                         StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
                         EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
-                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}"
                     })
                     .ToList();
 
@@ -1459,7 +1483,7 @@ namespace SE.Service.Services
                     {
                         StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
                         EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
-                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)}"
                     })
                     .ToList();
 
@@ -1490,10 +1514,10 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                        Type = x.Week.WeekLabel,
+                                                Type = MapWeekToVietnamese( x.Week.WeekLabel),
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.HeartRate1 ?? 0),2) : null
                     })
-                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
+
                     .ToList();
 
                 var monthlyRecords = last4Months
@@ -1508,10 +1532,10 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                        Type = x.Month.MonthLabel,
+                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.HeartRate1 ?? 0),2) : null
                     })
-                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
+
                     .ToList();
 
                 var yearlyRecords = heartRateRecords
@@ -1640,7 +1664,7 @@ namespace SE.Service.Services
                     {
                         StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
                         EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
-                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}"
                     })
                     .ToList();
 
@@ -1651,7 +1675,7 @@ namespace SE.Service.Services
                     {
                         StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
                         EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
-                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)}"
                     })
                     .ToList();
 
@@ -1684,10 +1708,10 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartBloodPressureModel
                     {
-                        Type = x.Week.WeekLabel,
+                                                Type = MapWeekToVietnamese( x.Week.WeekLabel),
                         Indicator = x.Records.Any() ? $"{Math.Round(x.Records.Average(b => b.Systolic ?? 0), MidpointRounding.AwayFromZero)}/{Math.Round(x.Records.Average(b => b.Diastolic ?? 0), MidpointRounding.AwayFromZero)}" : null
                     })
-                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
+
                     .ToList();
 
                 // Calculate monthlyRecords with non-null Indicator values
@@ -1703,10 +1727,10 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartBloodPressureModel
                     {
-                        Type = x.Month.MonthLabel,
+                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
                         Indicator = x.Records.Any() ? $"{Math.Round(x.Records.Average(b => b.Systolic ?? 0), MidpointRounding.AwayFromZero)}/{Math.Round(x.Records.Average(b => b.Diastolic ?? 0), MidpointRounding.AwayFromZero)}" : null
                     })
-                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
+
                     .ToList();
 
                 // Calculate yearlyRecords with non-null Indicator values
@@ -1882,7 +1906,7 @@ namespace SE.Service.Services
                     {
                         StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
                         EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
-                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}"
                     })
                     .ToList();
 
@@ -1893,7 +1917,7 @@ namespace SE.Service.Services
                     {
                         StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
                         EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
-                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)}"
                     })
                     .ToList();
                 // Function to calculate evaluation percentages
@@ -1985,10 +2009,10 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartBloodGlucoseModel
                     {
-                        Type = x.Week.WeekLabel,
+                                                Type = MapWeekToVietnamese( x.Week.WeekLabel),
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(b => b.BloodGlucose1 ?? 0), MidpointRounding.AwayFromZero) : null
                     })
-                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
+
                     .ToList();
 
                 var weeklyStats = CalculateStatistics(bloodGlucoseRecords.Where(r => last6Weeks.Any(w => r.DateRecorded.Value.Date >= w.StartOfWeek && r.DateRecorded.Value.Date <= w.EndOfWeek)).ToList());
@@ -2007,10 +2031,10 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartBloodGlucoseModel
                     {
-                        Type = x.Month.MonthLabel,
+                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(b => b.BloodGlucose1 ?? 0), MidpointRounding.AwayFromZero) : null
                     })
-                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
+
                     .ToList();
 
                 var monthlyStats = CalculateStatistics(bloodGlucoseRecords.Where(r => last4Months.Any(m => r.DateRecorded.Value.Date >= m.StartOfMonth && r.DateRecorded.Value.Date <= m.EndOfMonth)).ToList());
@@ -2118,7 +2142,7 @@ namespace SE.Service.Services
                     {
                         StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
                         EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
-                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}"
                     })
                     .ToList();
 
@@ -2129,7 +2153,7 @@ namespace SE.Service.Services
                     {
                         StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
                         EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
-                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)}"
                     })
                     .ToList();
 
@@ -2165,13 +2189,13 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharLipidProfileModel
                     {
-                        Type = x.Week.WeekLabel,
+                                                Type = MapWeekToVietnamese( x.Week.WeekLabel),
                         TotalCholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.TotalCholesterol ?? 0), 2) : null,
                         Ldlcholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ldlcholesterol ?? 0), 2) : null,
                         Hdlcholesterol = x.Records.Any() ? (decimal?)x.Records.Average(l => l.Hdlcholesterol ?? 0) : null,
                         Triglycerides = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Triglycerides ?? 0), 2) : null
                     })
-                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
+
                     .ToList();
 
                 // Calculate monthlyRecords
@@ -2187,13 +2211,13 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharLipidProfileModel
                     {
-                        Type = x.Month.MonthLabel,
+                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
                         TotalCholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.TotalCholesterol ?? 0), 2) : null,
                         Ldlcholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ldlcholesterol ?? 0), 2) : null,
                         Hdlcholesterol = x.Records.Any() ? (decimal?)x.Records.Average(l => l.Hdlcholesterol ?? 0) : null,
                         Triglycerides = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Triglycerides ?? 0), 2) : null
                     })
-                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
+
                     .ToList();
 
                 // Calculate yearlyRecords
@@ -2461,7 +2485,7 @@ namespace SE.Service.Services
                     {
                         StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
                         EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
-                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}"
                     })
                     .ToList();
 
@@ -2472,7 +2496,7 @@ namespace SE.Service.Services
                     {
                         StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
                         EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
-                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)}"
                     })
                     .ToList();
 
@@ -2508,13 +2532,13 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharLiverEnzymesModel
                     {
-                        Type = x.Week.WeekLabel,
+                                                Type = MapWeekToVietnamese( x.Week.WeekLabel),
                         Alt = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alt ?? 0), 2) : null,
                         Ast = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ast ?? 0), 2) : null,
                         Alp = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alp ?? 0), 2) : null,
                         Ggt = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ggt ?? 0), 2) : null
                     })
-                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
+
                     .ToList();
 
                 // Calculate monthlyRecords
@@ -2530,13 +2554,13 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharLiverEnzymesModel
                     {
-                        Type = x.Month.MonthLabel,
+                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
                         Alt = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alt ?? 0), 2) : null,
                         Ast = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ast ?? 0), 2) : null,
                         Alp = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alp ?? 0), 2) : null,
                         Ggt = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ggt ?? 0), 2) : null
                     })
-                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
+
                     .ToList();
 
                 // Calculate yearlyRecords
@@ -2792,7 +2816,7 @@ namespace SE.Service.Services
                     {
                         StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
                         EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
-                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}, {date.Year}"
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}"
                     })
                     .ToList();
 
@@ -2803,7 +2827,7 @@ namespace SE.Service.Services
                     {
                         StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
                         EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
-                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)} {date.Year}"
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)}"
                     })
                     .ToList();
 
@@ -2838,12 +2862,12 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharKidneyFunctionModel
                     {
-                        Type = x.Week.WeekLabel,
+                                                Type = MapWeekToVietnamese( x.Week.WeekLabel),
                         Creatinine = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Creatinine ?? 0), 2) : null,
                         Bun = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Bun ?? 0), 2) : null,
                         EGfr = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.EGfr ?? 0), 2) : null
                     })
-                    .OrderBy(record => System.DateTime.Parse(record.Type.Split(',')[1].Trim() + "-" + record.Type.Split(' ')[1].TrimStart('0')))
+
                     .ToList();
 
                 // Calculate monthlyRecords
@@ -2859,12 +2883,12 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharKidneyFunctionModel
                     {
-                        Type = x.Month.MonthLabel,
+                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
                         Creatinine = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Creatinine ?? 0), 2) : null,
                         Bun = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Bun ?? 0), 2) : null,
                         EGfr = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.EGfr ?? 0), 2) : null
                     })
-                    .OrderBy(record => System.DateTime.ParseExact(record.Type, "MMMM yyyy", CultureInfo.InvariantCulture))
+
                     .ToList();
 
                 // Calculate yearlyRecords
@@ -3233,7 +3257,7 @@ namespace SE.Service.Services
                         Tabs = type,
                         Evaluation = evaluation,
                         DateTime = latestDate.Value.ToString("dd-MM HH:mm"), // Format DateTime as DD-MM HH-mm
-                        Indicator = latestIndicator.Value.ToString("0"),
+                        Indicator = latestIndicator.Value.ToString(),
                         AverageIndicator = formattedAverageIndicator
                     };
                 }
@@ -3546,7 +3570,14 @@ namespace SE.Service.Services
                 {
                     result = "Bình thường";
                 }
-                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+
+                var final = new 
+                {
+                    Evaluation = result,
+                    BMI = bmi
+                };
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, final);
 
             }
             catch (Exception ex)
@@ -3632,15 +3663,15 @@ namespace SE.Service.Services
                 string result;
                 if (bloodGlucose < baseBloodGlucose.MaxValue && bloodGlucose > baseBloodGlucose.MinValue)
                 {
-                    result = "Đường huyết bình thường";
+                    result = "bình thường";
                 }
                 else if (bloodGlucose > baseBloodGlucose.MaxValue)
                 {
-                    result = "Đường huyết cao";
+                    result = "cao";
                 }
                 else
                 {
-                    result = "Đường huyết thấp";
+                    result = "thấp";
                 }
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
 
@@ -4170,6 +4201,12 @@ namespace SE.Service.Services
 
             foreach (var record in records)
             {
+                var healthIndicators = _unitOfWork.HealthIndicatorBaseRepository
+    .FindByCondition(h => h.Status == SD.GeneralStatus.ACTIVE && h.Type == "Creatinine")
+    .FirstOrDefault();
+                var evaluation = record.EGfr < healthIndicators.MinValue ? "Thấp" :
+                              record.EGfr > healthIndicators.MaxValue ? "Cao" :
+                              "Bình thường";
                 var response = new LogBookReponse
                 {
                     Tabs = "KidneyFunction",
@@ -4179,7 +4216,7 @@ namespace SE.Service.Services
                     TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
                     DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
                     Indicator = $"{record.Creatinine}/{record.Bun}/{record.EGfr}",
-                    Evaluation = (string)EvaluateKidneyFunction((decimal)record.Creatinine, (decimal)record.Bun, (decimal)record.EGfr).Result.Data
+                    Evaluation = evaluation
                 };
                 responses.Add(response);
             }
@@ -4204,6 +4241,12 @@ namespace SE.Service.Services
 
             foreach (var record in records)
             {
+                var healthIndicators = _unitOfWork.HealthIndicatorBaseRepository
+    .FindByCondition(h => h.Status == SD.GeneralStatus.ACTIVE && h.Type == "TotalCholesterol")
+    .FirstOrDefault();
+                var evaluation = record.TotalCholesterol < healthIndicators.MinValue ? "Thấp" :
+                              record.TotalCholesterol > healthIndicators.MaxValue ? "Cao" :
+                              "Bình thường";
                 var response = new LogBookReponse
                 {
                     Tabs = "LipidProfile",
@@ -4213,7 +4256,7 @@ namespace SE.Service.Services
                     TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
                     DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
                     Indicator = $"{record.TotalCholesterol}/{record.Ldlcholesterol}/{record.Hdlcholesterol}/{record.Triglycerides}",
-                    Evaluation =(string) EvaluateLipidProfile((decimal)record.TotalCholesterol, (decimal)record.Ldlcholesterol, (decimal)record.Hdlcholesterol, (decimal)record.Triglycerides).Result.Data
+                    Evaluation = evaluation
                 };
                 responses.Add(response);
             }
@@ -4238,6 +4281,12 @@ namespace SE.Service.Services
 
             foreach (var record in records)
             {
+                var healthIndicators = _unitOfWork.HealthIndicatorBaseRepository
+.FindByCondition(h => h.Status == SD.GeneralStatus.ACTIVE && h.Type == "ALT")
+.FirstOrDefault();
+                var evaluation = record.Alt < healthIndicators.MinValue ? "Thấp" :
+                              record.Alt > healthIndicators.MaxValue ? "Cao" :
+                              "Bình thường";
                 var response = new LogBookReponse
                 {
                     Tabs = "LiverEnzyme",
@@ -4247,7 +4296,7 @@ namespace SE.Service.Services
                     TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
                     DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
                     Indicator = $"{record.Alt}/{record.Ast}/{record.Alp}/{record.Ggt}",
-                    Evaluation =(string) EvaluateLiverEnzymes((decimal)record.Alt, (decimal)record.Ast, (decimal)record.Alp, (decimal)record.Ggt).Result.Data
+                    Evaluation = evaluation
                 };
                 responses.Add(response);
             }
