@@ -14,7 +14,7 @@ namespace SE.Common.Response.Professor
         public string DateTime { get; set; }
         public int ProfessorId { get; set; }
 
-        public string Specialization { get; set; }
+        public List<string> Specialization { get; set; }
 
         public string ClinicAddress { get; set; }
 
@@ -24,12 +24,12 @@ namespace SE.Common.Response.Professor
 
         public decimal Rating { get; set; }
 
-        public string Qualification { get; set; }
+        public List<string> Qualification { get; set; }
 
-        public string Knowledge { get; set; }
+        public List<string> Knowledge { get; set; }
 
-        public string Career { get; set; }
+        public List<string> Career { get; set; }
 
-        public string Achievement { get; set; }
+        public List<string> Achievement { get; set; }
     }
 }

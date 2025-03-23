@@ -3228,7 +3228,7 @@ namespace SE.Service.Services
                         0;
 
                     // For weight and height, calculate the difference with the previous indicator
-                    string formattedAverageIndicator = averageIndicator.ToString("0");
+                    string formattedAverageIndicator = averageIndicator.ToString();
                     if (calculateDifference)
                     {
                         var previousRecord = records
@@ -3390,7 +3390,7 @@ namespace SE.Service.Services
                         Tabs = "BloodGlucose",
                         Evaluation = GetBloodGlucoseEvaluation(bg.BloodGlucose1, bg.Time, healthIndicators),
                         DateTime = bg.DateRecorded?.ToString("dd-MM HH:mm") ?? "N/A",
-                        Indicator = bg.BloodGlucose1?.ToString("0") ?? "N/A",
+                        Indicator = bg.BloodGlucose1?.ToString() ?? "N/A",
                         AverageIndicator = GetDifferenceIndicator(bloodGlucoseRecords, bg => bg.BloodGlucose1) // Calculate difference for Blood Glucose
                     })
                     .FirstOrDefault();
@@ -3663,15 +3663,15 @@ namespace SE.Service.Services
                 string result;
                 if (bloodGlucose < baseBloodGlucose.MaxValue && bloodGlucose > baseBloodGlucose.MinValue)
                 {
-                    result = "bình thường";
+                    result = "Bình thường";
                 }
                 else if (bloodGlucose > baseBloodGlucose.MaxValue)
                 {
-                    result = "cao";
+                    result = "Cao";
                 }
                 else
                 {
-                    result = "thấp";
+                    result = "Thấp";
                 }
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
 

@@ -27,7 +27,11 @@ public partial class ProfessorAppointment
 
     public string Status { get; set; }
 
-    public string Report { get; set; }
+    public string Content { get; set; }
+
+    public string Solution { get; set; }
+
+    public bool? IsOnline { get; set; }
 
     public virtual Booking Booking { get; set; }
 

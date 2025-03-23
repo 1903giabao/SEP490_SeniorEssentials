@@ -22,5 +22,11 @@ namespace SE.Data.Repository
             var result = await _context.UserSubscriptions.Include(us => us.Professor).ThenInclude(us => us.Account).Where(us => bookingIds.Contains((int)us.BookingId) && us.Status.Equals(status)).Select(us => us.Professor).FirstOrDefaultAsync();
             return result;
         }
+
+        public async Task<UserSubscription> GetProfessorByElderlyId(int elderlyId)
+        {
+            var rs = await _context.UserSubscriptions.Include(us => us.Booking).ThenInclude(b => b.Elderly).FirstOrDefaultAsync(us=>us.Booking.ElderlyId == elderlyId && us.Status == "Active");
+            return rs;
+        }
     }
 }

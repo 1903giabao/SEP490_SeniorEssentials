@@ -22,8 +22,16 @@ namespace SE.Common.Enums
         {
             public static string ACTIVE = "Active";
             public static string INACTIVE = "Inactive";
-        }        
+        }  
         
+        public class ProfessorAppointmentStatus
+        {
+            public static string NOTYET = "NotYet";
+            public static string JOINED = "Joined";
+            public static string CANCELLED = "Cancelled";
+
+        }
+
         public class UserLinkStatus
         {
             public static string PENDING = "Pending";
