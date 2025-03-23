@@ -258,8 +258,21 @@ namespace SE.Service.Services
                             var nearestTimeSlot = timeSlots.OrderBy(ts => ts.StartTime).First();
                             professor.Date = nearestDate.ToString("dd-MM-yyyy");
 
+                            // Convert TimeOnly? to TimeSpan
+                            var startTimeSpan = nearestTimeSlot.StartTime.HasValue
+                                ? new TimeSpan(nearestTimeSlot.StartTime.Value.Hour, nearestTimeSlot.StartTime.Value.Minute, 0)
+                                : TimeSpan.Zero;
+
+                            var endTimeSpan = nearestTimeSlot.EndTime.HasValue
+                                ? new TimeSpan(nearestTimeSlot.EndTime.Value.Hour, nearestTimeSlot.EndTime.Value.Minute, 0)
+                                : TimeSpan.Zero;
+
                             // Format time in 24-hour format
-                            professor.DateTime = $"{nearestSchedule.DayOfWeek}/{nearestTimeSlot.StartTime:hh\\:mm}-{nearestTimeSlot.EndTime:hh\\:mm}";
+                            var startTime24H = DateTime.Today.Add(startTimeSpan).ToString("HH:mm");
+                            var endTime24H = DateTime.Today.Add(endTimeSpan).ToString("HH:mm");
+
+                            // Assign the formatted time to DateTime property
+                            professor.DateTime = $"{nearestSchedule.DayOfWeek}/{startTime24H}-{endTime24H}";
                         }
                     }
 
@@ -294,9 +307,11 @@ namespace SE.Service.Services
                                 .Where(p => p.DateTime != null)
                                 .Where(p =>
                                 {
-                                    var timeSlot = p.DateTime.Split('/')[1].Split('-');
-                                    if (timeSlot.Length == 2 && TimeSpan.TryParse(timeSlot[0], out var slotStartTime) && TimeSpan.TryParse(timeSlot[1], out var slotEndTime))
+                                    var timeSlotPart = p.DateTime.Split('/')[1]; // Get the time part (e.g., "15:00-16:00")
+                                    var timeSlotParts = timeSlotPart.Split('-');
+                                    if (timeSlotParts.Length == 2 && TimeSpan.TryParse(timeSlotParts[0], out var slotStartTime) && TimeSpan.TryParse(timeSlotParts[1], out var slotEndTime))
                                     {
+                                        // Check if the time slot overlaps with the filter range
                                         return slotStartTime >= startTime && slotEndTime <= endTime;
                                     }
                                     return false;
