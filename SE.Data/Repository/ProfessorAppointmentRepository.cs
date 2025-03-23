@@ -41,5 +41,14 @@ namespace SE.Data.Repository
                 .Where(pa => pa.ElderlyId == elderlyId && pa.Status == type)
                 .ToListAsync();
         }
+        public async Task<List<ProfessorAppointment>> GetByDateAsync(DateOnly date)
+        {
+            var startOfDay = date.ToDateTime(TimeOnly.MinValue);
+            var endOfDay = date.ToDateTime(TimeOnly.MaxValue);
+
+            return await _context.ProfessorAppointments
+                .Where(a => a.AppointmentTime >= startOfDay && a.AppointmentTime <= endOfDay)
+                .ToListAsync();
+        }
     }
 }

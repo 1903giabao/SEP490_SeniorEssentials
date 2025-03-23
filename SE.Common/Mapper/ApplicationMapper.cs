@@ -19,6 +19,17 @@ namespace SE.Common.Mapper
 {
     public class ApplicationMapper : Profile
     {
+        private List<string> SplitStringToList(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return new List<string>();
+            }
+
+            return input.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => s.Trim())
+                        .ToList();
+        }
         public ApplicationMapper() 
         {
             CreateMap<UserModel, Account>().ReverseMap();
@@ -26,7 +37,12 @@ namespace SE.Common.Mapper
                 .ReverseMap();
             CreateMap<GetUserInRoomChatDetailDTO, Account>().ReverseMap();
 
-            CreateMap<Professor, GetProfessorDetail>().ReverseMap();
+            CreateMap<Professor, GetProfessorDetail>()
+                       .ForMember(dest => dest.Specialization, opt => opt.MapFrom(src => SplitStringToList(src.Specialization)))
+                       .ForMember(dest => dest.Qualification, opt => opt.MapFrom(src => SplitStringToList(src.Qualification)))
+                       .ForMember(dest => dest.Knowledge, opt => opt.MapFrom(src => SplitStringToList(src.Knowledge)))
+                       .ForMember(dest => dest.Career, opt => opt.MapFrom(src => SplitStringToList(src.Career)))
+                       .ForMember(dest => dest.Achievement, opt => opt.MapFrom(src => SplitStringToList(src.Achievement)));
 
             CreateMap<LessonModel, Lesson>().ReverseMap();
             CreateMap<CreateLessonRequest, Lesson>().ReverseMap();
