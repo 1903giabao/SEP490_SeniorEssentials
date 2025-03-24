@@ -4215,7 +4215,7 @@ namespace SE.Service.Services
                     DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
                     TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
                     DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
-                    Indicator = $"{record.Creatinine}/{record.Bun}/{record.EGfr}",
+                    Indicator = $"{record.EGfr}/{record.Bun}/{record.Creatinine}",
                     Evaluation = evaluation
                 };
                 responses.Add(response);
