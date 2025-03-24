@@ -19,7 +19,7 @@ namespace SE.Data.Repository
 
         public async Task<Professor> GetAccountByProfessorId (int professorId)
         {
-            var rs = await _context.Professors.Include(p=>p.Account).FirstOrDefaultAsync();
+            var rs = await _context.Professors.Include(p=>p.Account).FirstOrDefaultAsync(p=>p.ProfessorId == professorId);
             return rs;
         } 
     }

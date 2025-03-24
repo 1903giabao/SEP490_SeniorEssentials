@@ -35,10 +35,19 @@ namespace SE.Data.Repository
 
         public async Task<List<ProfessorAppointment>> GetByElderlyIdAsync(int elderlyId, string type)
         {
+
+            if (type == "All")
+            {
+                return await _context.ProfessorAppointments
+                .Include(pa => pa.TimeSlot)
+                .ThenInclude(ts => ts.ProfessorSchedule)
+                .Where(pa => pa.ElderlyId == elderlyId)
+                .ToListAsync();
+            }
             return await _context.ProfessorAppointments
                 .Include(pa => pa.TimeSlot)
                 .ThenInclude(ts => ts.ProfessorSchedule)
-                .Where(pa => pa.ElderlyId == elderlyId && pa.Status == type)
+                .Where(pa => pa.ElderlyId == elderlyId && pa.Status.ToLower() == type.ToLower())
                 .ToListAsync();
         }
         public async Task<List<ProfessorAppointment>> GetByDateAsync(DateOnly date)

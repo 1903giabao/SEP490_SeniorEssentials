@@ -3223,9 +3223,9 @@ namespace SE.Service.Services
                         .Where(r => getDateRecorded(r) >= System.DateTime.UtcNow.AddDays(-30))
                         .ToList();
 
-                    var averageIndicator = last30DaysRecords.Any() ?
+                    var averageIndicator = Math.Round(last30DaysRecords.Any() ?
                         last30DaysRecords.Average(r => getIndicatorValue(r) ?? 0) :
-                        0;
+                        0,2);
 
                     // For weight and height, calculate the difference with the previous indicator
                     string formattedAverageIndicator = averageIndicator.ToString();

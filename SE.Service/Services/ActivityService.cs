@@ -46,23 +46,19 @@ namespace SE.Service.Services
 
                 var result = new List<GetScheduleInDayResponse>();
                 var activitySchedules = activities
-    .SelectMany(a => a.ActivitySchedules
-        .Where(s => s.StartTime?.ToString("yyyy-MM-dd") == date.ToString("yyyy-MM-dd"))
-        .Select(s => new GetScheduleInDayResponse
-        {
-            ActivityId = a.ActivityId,
-            Title = a.ActivityName,
-            Description = a.ActivityDescription,
-            StartTime = s.StartTime?.ToString("HH:mm"),
-            EndTime = s.EndTime?.ToString("HH:mm"),
-            Type = "Activity",
-            CreatedBy = createBy,
-            Duration = CalculateDuration(date, s.ActivityScheduleId, a.ActivitySchedules) 
-        }))
-    .ToList();
-
-
-
+                                        .SelectMany(a => a.ActivitySchedules
+                                            .Where(s => s.StartTime?.ToString("yyyy-MM-dd") == date.ToString("yyyy-MM-dd"))
+                                            .Select(s => new GetScheduleInDayResponse
+                                            {
+                                                ActivityId = a.ActivityId,
+                                                Title = a.ActivityName,
+                                                Description = a.ActivityDescription,
+                                                StartTime = s.StartTime?.ToString("HH:mm"),
+                                                EndTime = s.EndTime?.ToString("HH:mm"),
+                                                Type = "Activity",
+                                                CreatedBy = createBy,
+                                                Duration = CalculateDuration(date, s.ActivityScheduleId, a.ActivitySchedules)
+                                            })).ToList();
                 result.AddRange(activitySchedules);
 
                 var medicationScheduleResponses = medicationSchedules
