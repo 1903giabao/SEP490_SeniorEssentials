@@ -53,8 +53,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> UpdateBloodGlucose(int bloodGlucoseId, decimal bloodGlucoseUpdate, string time, string type);
         Task<IBusinessResult> UpdateHeartRate(int heartRateId, int heartRateUpdate, string type);
         Task<IBusinessResult> UpdateBloodPressure(int bloodPressureId, int systolic, int diastolic, string type);
-        Task<IBusinessResult> UpdateHeight(int heightId, int heightUpdate, string type);
-        Task<IBusinessResult> UpdateWeight(int weightId, int weightUpdate, string type);
+        Task<IBusinessResult> UpdateHeight(int heightId, decimal heightUpdate, string type);
+        Task<IBusinessResult> UpdateWeight(int weightId, decimal weightUpdate, string type);
 
 
         //tivo
@@ -694,7 +694,7 @@ namespace SE.Service.Services
 
         //update
 
-        public async Task<IBusinessResult> UpdateWeight(int weightId, int weightUpdate, string createdBy)
+        public async Task<IBusinessResult> UpdateWeight(int weightId, decimal weightUpdate, string createdBy)
         {
             try
             {
@@ -726,7 +726,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateHeight(int heightId, int heightUpdate, string createdBy)
+        public async Task<IBusinessResult> UpdateHeight(int heightId, decimal heightUpdate, string createdBy)
         {
             try
             {
