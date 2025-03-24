@@ -718,7 +718,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
                 }
 
-                return new BusinessResult(Const.SUCCESS_UPDATE, "Weight status updated successfully.");
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Weight updated successfully.");
             }
             catch (Exception ex)
             {
@@ -751,7 +751,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
                 }
 
-                return new BusinessResult(Const.SUCCESS_UPDATE, "Height status updated successfully.");
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Height updated successfully.");
             }
             catch (Exception ex)
             {
@@ -784,7 +784,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
                 }
 
-                return new BusinessResult(Const.SUCCESS_UPDATE, "Blood pressure status updated successfully.");
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Blood pressure updated successfully.");
             }
             catch (Exception ex)
             {
@@ -849,7 +849,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
                 }
 
-                return new BusinessResult(Const.SUCCESS_UPDATE, "Blood glucose status updated successfully.");
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Blood glucose updated successfully.");
             }
             catch (Exception ex)
             {

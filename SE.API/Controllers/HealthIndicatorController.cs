@@ -281,14 +281,14 @@ public class HealthIndicatorController : ControllerBase
     }
 
     [HttpPut("update-height/{heightId}")]
-    public async Task<IActionResult> UpdateHeight(int heightId, [FromBody] int heightUpdate, string createdBy)
+    public async Task<IActionResult> UpdateHeight(int heightId, [FromBody] decimal heightUpdate, string createdBy)
     {
         var result = await _healthIndicatorService.UpdateHeight(heightId, heightUpdate, createdBy);
         return Ok(result);
     }
 
     [HttpPut("update-weight/{weightId}")]
-    public async Task<IActionResult> UpdateWeight(int weightId, [FromBody] int weightUpdate, string createdBy)
+    public async Task<IActionResult> UpdateWeight(int weightId, [FromBody] decimal weightUpdate, string createdBy)
     {
         var result = await _healthIndicatorService.UpdateWeight(weightId, weightUpdate, createdBy);
         return Ok(result);
