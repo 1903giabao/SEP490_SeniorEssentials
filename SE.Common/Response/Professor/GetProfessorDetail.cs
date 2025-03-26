@@ -8,11 +8,12 @@ namespace SE.Common.Response.Professor
 {
     public class GetProfessorDetail
     {
+        public int AccountId { get; set; }
+        public int ProfessorId { get; set; }
         public string FullName { get; set; }
         public string Avatar { get; set; }
 
         public string DateTime { get; set; }
-        public int ProfessorId { get; set; }
 
         public List<string> Specialization { get; set; }
 

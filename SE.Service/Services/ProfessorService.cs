@@ -142,27 +142,41 @@ namespace SE.Service.Services
         {
             try
             {
-                // Fetch professor details
                 var getProfessor = await _unitOfWork.ProfessorRepository.GetAccountByProfessorId(professorId);
 
-                // Fetch additional professor information
                 var getProfessorInfor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(getProfessor.AccountId);
 
-                // Map the professor details to the response model
                 var professor = _mapper.Map<GetProfessorDetail>(getProfessor);
 
-                // Set additional properties
                 professor.ProfessorId = professorId;
                 professor.FullName = getProfessorInfor.FullName;
                 professor.Avatar = getProfessorInfor.Avatar;
 
-                // Return the result
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, professor);
             }
             catch (Exception ex)
             {
-                // Handle exceptions
-                throw ex;
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
+            }
+        }
+
+        public async Task<IBusinessResult> GetProfessorDetailByAccountId(int accountId)
+        {
+            try
+            {
+                var getProfessorInfor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(accountId);
+
+                var professor = _mapper.Map<GetProfessorDetail>(getProfessorInfor.Professor);
+
+                professor.ProfessorId = getProfessorInfor.Professor.ProfessorId;
+                professor.FullName = getProfessorInfor.FullName;
+                professor.Avatar = getProfessorInfor.Avatar;
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, professor);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
             }
         }
 

@@ -10,5 +10,7 @@ namespace SE.Common.Request.Content
     {
         public int AccountId { get; set; }
         public string PlaylistName { get; set; }
+        public string PlaylistImage { get; set; }
+        public bool IsLesson { get; set; }
     }
 }

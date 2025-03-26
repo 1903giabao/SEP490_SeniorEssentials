@@ -18,6 +18,8 @@ namespace SE.Common.DTO.Content
 
         public string MusicUrl { get; set; }
 
+        public string ImageUrl { get; set; }
+
         public string Singer { get; set; }
 
         public string CreatedDate { get; set; }

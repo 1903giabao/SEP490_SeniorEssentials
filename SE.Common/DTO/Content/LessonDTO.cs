@@ -18,6 +18,8 @@ namespace SE.Common.DTO.Content
 
         public string LessonUrl { get; set; }
 
+        public string ImageUrl { get; set; }
+
         public DateTime? CreatedDate { get; set; }
 
         public string Status { get; set; }
