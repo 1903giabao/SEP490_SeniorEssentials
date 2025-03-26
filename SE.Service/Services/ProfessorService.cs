@@ -15,6 +15,7 @@ using static Google.Cloud.Vision.V1.ProductSearchResults.Types;
 using SE.Common.Request.Professor;
 using SE.Common.DTO;
 using Firebase.Auth;
+using SE.Service.Helper;
 
 namespace SE.Service.Services
 {
@@ -29,7 +30,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetReportInAppointment(int appointmentId);
         Task<IBusinessResult> GetProfessorDetailOfElderly(int elderlyId);
         Task<IBusinessResult> CancelProfessorAppointment(int professorAppointmentId);
-
+        Task<IBusinessResult> GetProfessorDetailByAccountId(int accountId);
+        Task<IBusinessResult> UpdateProfessorInfor(UpdateProfessorRequest req);
     }
 
     public class ProfessorService : IProfessorService
@@ -156,7 +158,7 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
+                throw ex;
             }
         }
 
@@ -176,7 +178,7 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
             }
         }
 
@@ -432,8 +434,6 @@ namespace SE.Service.Services
                 return users;
         }
 
-
-
         public async Task<IBusinessResult> CancelProfessorAppointment(int professorAppointmentId)
         {
             try
@@ -499,7 +499,66 @@ namespace SE.Service.Services
             }
         }
 
+        public async Task<IBusinessResult> UpdateProfessorInfor(UpdateProfessorRequest req)
+        {
+            try
+            {
+                var getProfessorAccountInfor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(req.AccountId);
 
+                if (getProfessorAccountInfor == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Account does not exist");
+                }
+
+                var professor = await _unitOfWork.ProfessorRepository.GetByIdAsync(getProfessorAccountInfor.Professor.ProfessorId);
+
+                if (professor == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor does not exist");
+                }
+
+                if (req.Avatar != null)
+                {
+                    var avatar = ("", "");
+
+                    if (req.Avatar != null)
+                    {
+                        avatar = await CloudinaryHelper.UploadImageAsync(req.Avatar);
+                    }
+
+                    getProfessorAccountInfor.Avatar = avatar.Item2;
+
+                    var updateAccountRs = await _unitOfWork.AccountRepository.UpdateAsync(getProfessorAccountInfor);
+
+                    if (updateAccountRs < 1)
+                    {
+                        return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                    } 
+                }
+
+                professor.Knowledge = req.Knowledge;
+                professor.Achievement = req.Achievement;
+                professor.ClinicAddress = req.ClinicAddress;
+                professor.Career = req.Career;
+                professor.ConsultationFee = req.ConsultationFee;
+                professor.ExperienceYears = req.ExperienceYears;
+                professor.Qualification = req.Qualification;
+                professor.Specialization = req.Specialization;
+
+                var updateRs = await _unitOfWork.ProfessorRepository.UpdateAsync(professor);
+
+                if (updateRs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
+            }
+        }
 
     }
 
