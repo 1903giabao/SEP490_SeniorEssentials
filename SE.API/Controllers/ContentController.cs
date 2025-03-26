@@ -55,12 +55,19 @@ namespace SE.API.Controllers
         {
             var result = await _contentService.CreateMusic(req);
             return Ok(result);
+        }          
+        
+        [HttpPost("music-status")]
+        public async Task<IActionResult> ChangeMusicStatus([FromQuery] int musicId, [FromQuery] string status)
+        {
+            var result = await _contentService.ChangeMusicStatus(musicId, status);
+            return Ok(result);
         }        
         
-        [HttpDelete("music")]
-        public async Task<IActionResult> DeleteMusic([FromQuery] int musicId)
+        [HttpDelete("music-by-admin")]
+        public async Task<IActionResult> DeleteMusicByAdmin([FromQuery] int musicId)
         {
-            var result = await _contentService.DeleteMusic(musicId);
+            var result = await _contentService.DeleteMusicByAdmin(musicId);
             return Ok(result);
         }
 
@@ -71,10 +78,17 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("book")]
-        public async Task<IActionResult> DeleteBook([FromQuery] int bookId)
+        [HttpPost("book-status")]
+        public async Task<IActionResult> ChangeBookStatus([FromQuery] int bookId, [FromQuery] string status)
         {
-            var result = await _contentService.DeleteBook(bookId);
+            var result = await _contentService.ChangeBookStatus(bookId, status);
+            return Ok(result);
+        }
+
+        [HttpDelete("book-by-admin")]
+        public async Task<IActionResult> DeleteBookByAdmin([FromQuery] int bookId)
+        {
+            var result = await _contentService.DeleteBookByAdmin(bookId);
             return Ok(result);
         }
 
@@ -85,10 +99,17 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("lesson")]
-        public async Task<IActionResult> DeleteLesson([FromQuery] int lessonId)
+        [HttpPost("lesson-status")]
+        public async Task<IActionResult> ChangeLessonStatus([FromQuery] int lessonId, [FromQuery] string status)
         {
-            var result = await _contentService.DeleteLesson(lessonId);
+            var result = await _contentService.ChangeLessonStatus(lessonId, status);
+            return Ok(result);
+        }
+
+        [HttpDelete("lesson-by-admin")]
+        public async Task<IActionResult> DeleteLessonByAdmin([FromQuery] int lessonId)
+        {
+            var result = await _contentService.DeleteLessonByAdmin(lessonId);
             return Ok(result);
         }
 
@@ -106,10 +127,17 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("playlist")]
-        public async Task<IActionResult> DeletePlaylist([FromQuery] int playlistId)
+        [HttpPost("playlist-status")]
+        public async Task<IActionResult> ChangePlaylistStatus([FromQuery] int playlistId, [FromQuery] string status)
         {
-            var result = await _contentService.DeletePlaylist(playlistId);
+            var result = await _contentService.ChangePlaylistStatus(playlistId, status);
+            return Ok(result);
+        }
+
+        [HttpDelete("playlist-by-admin")]
+        public async Task<IActionResult> DeletePlaylistByAdmin([FromQuery] int playlistId)
+        {
+            var result = await _contentService.DeletePlaylistByAdmin(playlistId);
             return Ok(result);
         }
 
