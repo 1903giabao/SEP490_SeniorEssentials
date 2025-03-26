@@ -35,17 +35,20 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetAllLessonPlaylist();
         Task<IBusinessResult> GetAllMusicPlaylist();
         Task<IBusinessResult> CreateMusic(CreateMusicRequest req);
-        Task<IBusinessResult> DeleteMusic(int musicId);
+        Task<IBusinessResult> ChangeMusicStatus(int musicId, string status);
+        Task<IBusinessResult> DeleteMusicByAdmin(int musicId);
         Task<IBusinessResult> CreateBook(CreateBookRequest req);
-        Task<IBusinessResult> DeleteBook(int bookId);
+        Task<IBusinessResult> ChangeBookStatus(int bookId, string status);
+        Task<IBusinessResult> DeleteBookByAdmin(int bookId);
         Task<IBusinessResult> CreateLesson(CreateLessonRequest req);
-        Task<IBusinessResult> DeleteLesson(int lessonId);
+        Task<IBusinessResult> ChangeLessonStatus(int lessonId, string status);
+        Task<IBusinessResult> DeleteLessonByAdmin(int lessonId);
         Task<IBusinessResult> CreatePlaylist(CreatePlaylistRequest req);
         Task<IBusinessResult> UpdatePlaylist(UpdatePlaylistRequest req);
-        Task<IBusinessResult> DeletePlaylist(int playlistId);
+        Task<IBusinessResult> ChangePlaylistStatus(int playlistId, string status);
         Task<IBusinessResult> AddLessonToPlayList(int lessonId, int playlistId);
         Task<IBusinessResult> AddMusicToPlayList(int musicId, int playlistId);
-
+        Task<IBusinessResult> DeletePlaylistByAdmin(int playlistId);
     }
 
     public class ContentService : IContentService
@@ -247,7 +250,7 @@ namespace SE.Service.Services
                             ImageUrl = imageURL.Item2,
                             PlaylistId = req.PlaylistId,
                             MusicUrl = musicURL.Item2,
-                            Status = SD.GeneralStatus.ACTIVE,
+                            Status = SD.ContentStatus.ACTIVE,
                         };
 
                         var createRs = await _unitOfWork.MusicRepository.CreateAsync(music);
@@ -290,7 +293,7 @@ namespace SE.Service.Services
             return parts.Length > 0 ? parts[0].Trim() : fullTitle;
         }
 
-        public async Task<IBusinessResult> DeleteMusic(int musicId)
+        public async Task<IBusinessResult> ChangeMusicStatus(int musicId, string status)
         {
             try
             {
@@ -301,9 +304,44 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Music does not exist!");
                 }
 
-                var deleteRs = await _unitOfWork.MusicRepository.RemoveAsync(music);
+                if (!status.Equals(SD.GeneralStatus.ACTIVE) && !status.Equals(SD.ContentStatus.INACTIVE))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Status does not support!");
+                }
 
-                if (deleteRs)
+                music.Status = status;
+
+                var deleteRs = await _unitOfWork.MusicRepository.UpdateAsync(music);
+
+                if (deleteRs > 0)
+                {
+                    return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
+                }
+
+                return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }        
+        
+        public async Task<IBusinessResult> DeleteMusicByAdmin(int musicId)
+        {
+            try
+            {
+                var music = await _unitOfWork.MusicRepository.GetByIdAsync(musicId);
+
+                if (music == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Music does not exist!");
+                }
+
+                music.Status = SD.ContentStatus.ADMINDELETE;
+
+                var deleteRs = await _unitOfWork.MusicRepository.UpdateAsync(music);
+
+                if (deleteRs > 0)
                 {
                     return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
                 }
@@ -361,7 +399,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> DeleteBook(int bookId)
+        public async Task<IBusinessResult> ChangeBookStatus(int bookId, string status)
         {
             try
             {
@@ -372,9 +410,44 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Book does not exist!");
                 }
 
-                var deleteRs = await _unitOfWork.BookRepository.RemoveAsync(book);
+                if (!status.Equals(SD.GeneralStatus.ACTIVE) && !status.Equals(SD.ContentStatus.INACTIVE))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Status does not support!");
+                }
 
-                if (deleteRs)
+                book.Status = status;
+
+                var deleteRs = await _unitOfWork.BookRepository.UpdateAsync(book);
+
+                if (deleteRs > 0)
+                {
+                    return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
+                }
+
+                return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }        
+        
+        public async Task<IBusinessResult> DeleteBookByAdmin(int bookId)
+        {
+            try
+            {
+                var book = await _unitOfWork.BookRepository.GetByIdAsync(bookId);
+
+                if (book == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Book does not exist!");
+                }
+
+                book.Status = SD.ContentStatus.ADMINDELETE;
+
+                var deleteRs = await _unitOfWork.BookRepository.UpdateAsync(book);
+
+                if (deleteRs > 0)
                 {
                     return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
                 }
@@ -459,7 +532,7 @@ namespace SE.Service.Services
                         LessonUrl = lessonURL.Item2,
                         ImageUrl = imageURL.Item2,
                         CreatedDate = DateTime.UtcNow.AddHours(7),
-                        Status = SD.GeneralStatus.ACTIVE,
+                        Status = SD.ContentStatus.ACTIVE,
                     };
 
                     var createRs = await _unitOfWork.LessonRepository.CreateAsync(lesson);
@@ -478,7 +551,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> DeleteLesson(int lessonId)
+        public async Task<IBusinessResult> ChangeLessonStatus(int lessonId, string status)
         {
             try
             {
@@ -489,9 +562,44 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Lesson does not exist!");
                 }
 
-                var deleteRs = await _unitOfWork.LessonRepository.RemoveAsync(lesson);
+                if (!status.Equals(SD.GeneralStatus.ACTIVE) && !status.Equals(SD.ContentStatus.INACTIVE))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Status does not support!");
+                }
 
-                if (deleteRs)
+                lesson.Status = status;
+
+                var deleteRs = await _unitOfWork.LessonRepository.UpdateAsync(lesson);
+
+                if (deleteRs > 0)
+                {
+                    return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
+                }
+
+                return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }        
+        
+        public async Task<IBusinessResult> DeleteLessonByAdmin(int lessonId)
+        {
+            try
+            {
+                var lesson = await _unitOfWork.LessonRepository.GetByIdAsync(lessonId);
+
+                if (lesson == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Lesson does not exist!");
+                }
+
+                lesson.Status = SD.ContentStatus.ADMINDELETE;
+
+                var deleteRs = await _unitOfWork.LessonRepository.UpdateAsync(lesson);
+
+                if (deleteRs > 0)
                 {
                     return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
                 }
@@ -520,7 +628,7 @@ namespace SE.Service.Services
                     AccountId = req.AccountId,
                     PlaylistName = req.PlaylistName,
                     CreatedDate = DateTime.UtcNow.AddHours(7),
-                    Status = SD.GeneralStatus.ACTIVE,
+                    Status = SD.ContentStatus.ACTIVE,
                     IsLesson = req.IsLesson,
                 };
 
@@ -567,7 +675,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> DeletePlaylist(int playlistId)
+        public async Task<IBusinessResult> ChangePlaylistStatus(int playlistId, string status)
         {
             try
             {
@@ -578,37 +686,73 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Playlist does not exist!");
                 }
 
-                var listLesson = await _unitOfWork.LessonRepository.GetLessonsByPlaylist(playlistId);
+                /*                var listLesson = await _unitOfWork.LessonRepository.GetLessonsByPlaylist(playlistId);
 
-                foreach (var lesson in listLesson)
+                                foreach (var lesson in listLesson)
+                                {
+                                    lesson.Playlist = null;
+                                    lesson.PlaylistId = null;
+                                    var updateRs = await _unitOfWork.LessonRepository.UpdateAsync(lesson);
+
+                                    if (updateRs < 1)
+                                    {
+                                        return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                                    }
+                                }
+
+                                var listMusic = await _unitOfWork.MusicRepository.GetMusicsByPlaylist(playlistId);
+
+                                foreach (var music in listMusic)
+                                {
+                                    music.Playlist = null;
+                                    music.PlaylistId = null;
+                                    var updateRs = await _unitOfWork.MusicRepository.UpdateAsync(music);
+
+                                    if (updateRs < 1)
+                                    {
+                                        return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                                    }
+                                }*/
+
+
+                if (!status.Equals(SD.GeneralStatus.ACTIVE) && !status.Equals(SD.ContentStatus.INACTIVE))
                 {
-                    lesson.Playlist = null;
-                    lesson.PlaylistId = null;
-                    var updateRs = await _unitOfWork.LessonRepository.UpdateAsync(lesson);
-
-                    if (updateRs < 1)
-                    {
-                        return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
-                    }
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Status does not support!");
                 }
 
-                var listMusic = await _unitOfWork.MusicRepository.GetMusicsByPlaylist(playlistId);
+                playlistExist.Status = status;
 
-                foreach (var music in listMusic)
+                var deleteRs = await _unitOfWork.PlaylistRepository.UpdateAsync(playlistExist);
+
+                if (deleteRs > 0)
                 {
-                    music.Playlist = null;
-                    music.PlaylistId = null;
-                    var updateRs = await _unitOfWork.MusicRepository.UpdateAsync(music);
-
-                    if (updateRs < 1)
-                    {
-                        return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
-                    }
+                    return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
                 }
 
-                var deleteRs = await _unitOfWork.PlaylistRepository.RemoveAsync(playlistExist);
+                return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
 
-                if (deleteRs)
+        public async Task<IBusinessResult> DeletePlaylistByAdmin(int playlistId)
+        {
+            try
+            {
+                var playlistExist = await _unitOfWork.PlaylistRepository.GetByIdAsync(playlistId);
+
+                if (playlistExist == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Playlist does not exist!");
+                }
+
+                playlistExist.Status = SD.ContentStatus.ADMINDELETE;
+
+                var deleteRs = await _unitOfWork.PlaylistRepository.UpdateAsync(playlistExist);
+
+                if (deleteRs > 0)
                 {
                     return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
                 }

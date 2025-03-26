@@ -23,5 +23,7 @@ namespace SE.Common.DTO.Content
         public DateTime? PublishDate { get; set; }
 
         public DateTime? CreatedDate { get; set; }
+
+        public string Status { get; set; }
     }
 }
