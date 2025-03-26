@@ -26,7 +26,7 @@ namespace SE.Common.Mapper
                 return new List<string>();
             }
 
-            return input.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries)
+            return input.Split(new[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries)
                         .Select(s => s.Trim())
                         .ToList();
         }

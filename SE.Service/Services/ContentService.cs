@@ -64,7 +64,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var musics = _unitOfWork.MusicRepository.FindByCondition(m => m.Status.Equals(SD.GeneralStatus.ACTIVE) && m.PlaylistId == playlistId).ToList();
+                var musics = _unitOfWork.MusicRepository.FindByCondition(m => m.PlaylistId == playlistId).ToList();
 
                 var rs = _mapper.Map<List<MusicDTO>>(musics);
 
@@ -80,7 +80,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var lessons = _unitOfWork.LessonRepository.FindByCondition(l => l.Status.Equals(SD.GeneralStatus.ACTIVE) && l.PlaylistId == playlistId).ToList();
+                var lessons = _unitOfWork.LessonRepository.FindByCondition(l => l.PlaylistId == playlistId).ToList();
 
                 var rs = _mapper.Map<List<LessonDTO>>(lessons);
 
@@ -96,7 +96,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var books = _unitOfWork.BookRepository.FindByCondition(b => b.Status.Equals(SD.GeneralStatus.ACTIVE)).ToList();
+                var books = _unitOfWork.BookRepository.GetAll();
 
                 var rs = _mapper.Map<List<BookDTO>>(books);
 
@@ -112,7 +112,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var playlists = await _unitOfWork.PlaylistRepository.GetAllLessonsPlaylist(SD.GeneralStatus.ACTIVE);
+                var playlists = await _unitOfWork.PlaylistRepository.GetAllLessonsPlaylist();
 
                 var listLessonPlaylist = new List<PlaylistDTO>();
 
@@ -144,7 +144,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var playlists = await _unitOfWork.PlaylistRepository.GetAllMusicsPlaylist(SD.GeneralStatus.ACTIVE);
+                var playlists = await _unitOfWork.PlaylistRepository.GetAllMusicsPlaylist();
 
                 var listMusicPlaylist = new List<PlaylistDTO>();
 
