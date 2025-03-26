@@ -17,6 +17,10 @@ public partial class Playlist
 
     public string Status { get; set; }
 
+    public string ImageUrl { get; set; }
+
+    public bool? IsLesson { get; set; }
+
     public virtual Account Account { get; set; }
 
     public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();

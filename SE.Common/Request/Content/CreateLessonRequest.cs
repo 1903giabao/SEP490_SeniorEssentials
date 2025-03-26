@@ -11,12 +11,7 @@ namespace SE.Common.Request.Content
     {
         public int AccountId { get; set; }
         public int PlaylistId { get; set; }
-        public List<LessonToCreate> Lessons { get; set; }
-    }
-
-    public class LessonToCreate
-    {
         public string LessonName { get; set; }
-        public IFormFile LessonFile { get; set; }
+        public IFormFile? LessonFile { get; set; }
     }
 }

@@ -3977,39 +3977,39 @@ namespace SE.Service.Services
 
             // Fetch all relevant data for the given elderlyId
             var bloodGlucoseRecords = _unitOfWork.BloodGlucoseRepository
-                .FindByCondition(bg => bg.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .FindByCondition(bg => bg.ElderlyId == elderlyId.Elderly.ElderlyId && bg.Status.Equals(SD.GeneralStatus.ACTIVE))
                 .ToList();
 
             var bloodPressureRecords = _unitOfWork.BloodPressureRepository
-                .FindByCondition(bp => bp.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .FindByCondition(bp => bp.ElderlyId == elderlyId.Elderly.ElderlyId && bp.Status.Equals(SD.GeneralStatus.ACTIVE))
                 .ToList();
 
             var heartRateRecords = _unitOfWork.HeartRateRepository
-                .FindByCondition(hr => hr.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .FindByCondition(hr => hr.ElderlyId == elderlyId.Elderly.ElderlyId && hr.Status.Equals(SD.GeneralStatus.ACTIVE))
                 .ToList();
 
             var heightRecords = _unitOfWork.HeightRepository
-                .FindByCondition(h => h.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .FindByCondition(h => h.ElderlyId == elderlyId.Elderly.ElderlyId && h.Status.Equals(SD.GeneralStatus.ACTIVE))
                 .ToList();
 
             var height = heightRecords.Select(x=>x.HeightId).LastOrDefault();
 
             var weightRecords = _unitOfWork.WeightRepository
-                .FindByCondition(w => w.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .FindByCondition(w => w.ElderlyId == elderlyId.Elderly.ElderlyId && w.Status.Equals(SD.GeneralStatus.ACTIVE))
                 .ToList();
 
             var weight = weightRecords.Select(x => x.Weight1).LastOrDefault();
 
             var kidneyFunctionRecords = _unitOfWork.KidneyFunctionRepository
-                .FindByCondition(kf => kf.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .FindByCondition(kf => kf.ElderlyId == elderlyId.Elderly.ElderlyId && kf.Status.Equals(SD.GeneralStatus.ACTIVE))
                 .ToList();
 
             var lipidProfileRecords = _unitOfWork.LipidProfileRepository
-                .FindByCondition(lp => lp.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .FindByCondition(lp => lp.ElderlyId == elderlyId.Elderly.ElderlyId && lp.Status.Equals(SD.GeneralStatus.ACTIVE))
                 .ToList();
 
             var liverEnzymeRecords = _unitOfWork.LiverEnzymeRepository
-                .FindByCondition(le => le.ElderlyId == elderlyId.Elderly.ElderlyId)
+                .FindByCondition(le => le.ElderlyId == elderlyId.Elderly.ElderlyId && le.Status.Equals(SD.GeneralStatus.ACTIVE))
                 .ToList();
 
             // Evaluate and add responses for each tab

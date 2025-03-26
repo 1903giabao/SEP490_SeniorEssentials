@@ -515,6 +515,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.ToTable("Lesson");
 
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.ImageUrl).HasColumnName("ImageURL");
             entity.Property(e => e.LessonName).HasMaxLength(100);
             entity.Property(e => e.LessonUrl).HasColumnName("LessonURL");
             entity.Property(e => e.Status).HasMaxLength(20);
@@ -635,6 +636,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.ToTable("Music");
 
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.ImageUrl).HasColumnName("ImageURL");
             entity.Property(e => e.MusicName).HasMaxLength(100);
             entity.Property(e => e.MusicUrl).HasColumnName("MusicURL");
             entity.Property(e => e.Singer).HasMaxLength(50);
@@ -680,6 +682,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.ToTable("Playlist");
 
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.ImageUrl).HasColumnName("ImageURL");
             entity.Property(e => e.PlaylistName).HasMaxLength(100);
             entity.Property(e => e.Status).HasMaxLength(20);
 

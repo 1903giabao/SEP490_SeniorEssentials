@@ -56,6 +56,13 @@ namespace SE.API.Controllers
         {
             var result = await _accountService.CreateProfessorAccount(req);
             return Ok(result);
+        }        
+        
+        [HttpPut("account-status")]
+        public async Task<IActionResult> ChangeAccountStatus([FromBody] ChangeAccountStatusReq req)
+        {
+            var result = await _accountService.ChangeAccountStatus(req);
+            return Ok(result);
         }
     }
 }

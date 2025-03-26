@@ -23,6 +23,8 @@ public partial class Music
 
     public string Status { get; set; }
 
+    public string ImageUrl { get; set; }
+
     public virtual Account Account { get; set; }
 
     public virtual Playlist Playlist { get; set; }

@@ -23,6 +23,7 @@ using MediaInfo;
 using NAudio.Wave;
 using ATL;
 using TagLib;
+using TagLib.Flac;
 
 namespace SE.Service.Services
 {
@@ -111,7 +112,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var playlists = await _unitOfWork.PlaylistRepository.GetAllPlaylist(SD.GeneralStatus.ACTIVE);
+                var playlists = await _unitOfWork.PlaylistRepository.GetAllLessonsPlaylist(SD.GeneralStatus.ACTIVE);
 
                 var listLessonPlaylist = new List<PlaylistDTO>();
 
@@ -119,17 +120,15 @@ namespace SE.Service.Services
                 {
                     foreach (var playlist in playlists)
                     {
-                        if (!playlist.Lessons.IsNullOrEmpty())
+                        var playlistDTO = new PlaylistDTO
                         {
-                            var playlistDTO = new PlaylistDTO
-                            {
-                                PlaylistId = playlist.PlaylistId,
-                                PlaylistName = playlist.PlaylistName,
-                                NumberOfContent = playlist.Lessons.Count,
-                            };
+                            PlaylistId = playlist.PlaylistId,
+                            PlaylistName = playlist.PlaylistName,
+                            ImageUrl = playlist.ImageUrl,
+                            NumberOfContent = playlist.Lessons.Count,
+                        };
 
-                            listLessonPlaylist.Add(playlistDTO);
-                        }
+                        listLessonPlaylist.Add(playlistDTO);
                     }
                 }
 
@@ -145,7 +144,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var playlists = await _unitOfWork.PlaylistRepository.GetAllPlaylist(SD.GeneralStatus.ACTIVE);
+                var playlists = await _unitOfWork.PlaylistRepository.GetAllMusicsPlaylist(SD.GeneralStatus.ACTIVE);
 
                 var listMusicPlaylist = new List<PlaylistDTO>();
 
@@ -153,17 +152,14 @@ namespace SE.Service.Services
                 {
                     foreach (var playlist in playlists)
                     {
-                        if (!playlist.Musics.IsNullOrEmpty())
+                        var playlistDTO = new PlaylistDTO
                         {
-                            var playlistDTO = new PlaylistDTO
-                            {
-                                PlaylistId = playlist.PlaylistId,
-                                PlaylistName = playlist.PlaylistName,
-                                NumberOfContent = playlist.Musics.Count,
-                            };
+                            PlaylistId = playlist.PlaylistId,
+                            PlaylistName = playlist.PlaylistName,
+                            NumberOfContent = playlist.Musics.Count,
+                        };
 
-                            listMusicPlaylist.Add(playlistDTO);
-                        }
+                        listMusicPlaylist.Add(playlistDTO);
                     }
                 }
 
@@ -212,12 +208,43 @@ namespace SE.Service.Services
                             musicURL = await CloudinaryHelper.UploadAudioAsync(file);
                         }
 
+                        var imageURL = ("", "");
+
+                        var pictures = tagLibFile.Tag.Pictures;
+                        if (pictures != null && pictures.Length > 0)
+                        {
+                            var picture = pictures[0];
+
+                            using (var memoryStreamImage = new MemoryStream(picture.Data.Data))
+                            {
+                                string fileName = "cover" + GetFileExtension(picture.MimeType);
+
+                                IFormFile formFile = new FormFile(
+                                    baseStream: memoryStreamImage,
+                                    baseStreamOffset: 0,
+                                    length: picture.Data.Data.Length,
+                                    name: "file",
+                                    fileName: fileName
+                                )
+                                {
+                                    Headers = new HeaderDictionary(),
+                                    ContentType = picture.MimeType
+                                };
+
+                                if (formFile != null)
+                                {
+                                    imageURL = await CloudinaryHelper.UploadImageAsync(formFile);
+                                }
+                            }
+                        }
+
                         var music = new Music
                         {
                             AccountId = req.AccountId,
                             CreatedDate = DateTime.UtcNow.AddHours(7),
                             MusicName = musicName,
                             Singer = singer,
+                            ImageUrl = imageURL.Item2,
                             PlaylistId = req.PlaylistId,
                             MusicUrl = musicURL.Item2,
                             Status = SD.GeneralStatus.ACTIVE,
@@ -237,6 +264,18 @@ namespace SE.Service.Services
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        private string GetFileExtension(string mimeType)
+        {
+            switch (mimeType)
+            {
+                case "image/jpeg": return ".jpg";
+                case "image/png": return ".png";
+                case "image/gif": return ".gif";
+                case "image/bmp": return ".bmp";
+                default: return ".jpg";
             }
         }
 
@@ -366,21 +405,59 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Playlist does not exist!");
                 }
 
-                foreach (var lessonRq in req.Lessons)
+                var file = req.LessonFile;
+                using (var stream = file.OpenReadStream())
+                using (var memoryStream = new MemoryStream())
                 {
+                    stream.CopyTo(memoryStream);
+                    memoryStream.Position = 0;
+
+                    var tagLibFile = TagLib.File.Create(new StreamFileAbstraction(file.FileName, memoryStream, null));
+
                     var lessonURL = ("", "");
 
-                    if (lessonRq.LessonFile != null)
+                    if (file != null)
                     {
-                        lessonURL = await CloudinaryHelper.UploadImageAsync(lessonRq.LessonFile);
+                        lessonURL = await CloudinaryHelper.UploadVideoAsync(file);
+                    }
+
+                    var imageURL = ("", "");
+
+                    var pictures = tagLibFile.Tag.Pictures;
+                    if (pictures != null && pictures.Length > 0)
+                    {
+                        var picture = pictures[0];
+
+                        using (var memoryStreamImage = new MemoryStream(picture.Data.Data))
+                        {
+                            string fileName = "cover" + GetFileExtension(picture.MimeType);
+
+                            IFormFile formFile = new FormFile(
+                                baseStream: memoryStreamImage,
+                                baseStreamOffset: 0,
+                                length: picture.Data.Data.Length,
+                                name: "file",
+                                fileName: fileName
+                            )
+                            {
+                                Headers = new HeaderDictionary(),
+                                ContentType = picture.MimeType
+                            };
+
+                            if (formFile != null)
+                            {
+                                imageURL = await CloudinaryHelper.UploadImageAsync(formFile);
+                            }
+                        }
                     }
 
                     var lesson = new Lesson
                     {
                         AccountId = req.AccountId,
                         PlaylistId = playlistExist.PlaylistId,
-                        LessonName = lessonRq.LessonName,
+                        LessonName = req.LessonName,
                         LessonUrl = lessonURL.Item2,
+                        ImageUrl = imageURL.Item2,
                         CreatedDate = DateTime.UtcNow.AddHours(7),
                         Status = SD.GeneralStatus.ACTIVE,
                     };
@@ -444,6 +521,7 @@ namespace SE.Service.Services
                     PlaylistName = req.PlaylistName,
                     CreatedDate = DateTime.UtcNow.AddHours(7),
                     Status = SD.GeneralStatus.ACTIVE,
+                    IsLesson = req.IsLesson,
                 };
 
                 var createRs = await _unitOfWork.PlaylistRepository.CreateAsync(playlist);

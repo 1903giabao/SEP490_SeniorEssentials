@@ -30,6 +30,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetUserByPhoneNumber(string phoneNumber, int userId);
         Task<IBusinessResult> CreateSystemAccount(CreateSystemAccountRequest req);
         Task<IBusinessResult> CreateProfessorAccount(CreateProfessorAccountRequest req);
+        Task<IBusinessResult> ChangeAccountStatus(ChangeAccountStatusReq req);
     }
 
     public class AccountService : IAccountService
@@ -58,7 +59,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "Invalid role!");
                 }
 
-                if (!FunctionCommon.IsValidEmail(req.Email) && !FunctionCommon.IsValidPhoneNumber(req.PhoneNumber))
+                if (!FunctionCommon.IsValidEmail(req.Email) || !FunctionCommon.IsValidPhoneNumber(req.PhoneNumber))
                 {
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Wrong email or phone number format!");
                 }
@@ -112,7 +113,7 @@ namespace SE.Service.Services
         {
             try
             {
-                if (!FunctionCommon.IsValidEmail(req.Email) && !FunctionCommon.IsValidPhoneNumber(req.PhoneNumber))
+                if (!FunctionCommon.IsValidEmail(req.Email) || !FunctionCommon.IsValidPhoneNumber(req.PhoneNumber))
                 {
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Wrong email or phone number format!");
                 }
@@ -217,7 +218,8 @@ namespace SE.Service.Services
                         PhoneNumber = req.Account,
                         Otp = req.OTP,
                         Password = SecurityUtil.Hash(req.Password),
-                        IsVerified = false
+                        IsVerified = false,
+                        Status = SD.GeneralStatus.ACTIVE
                     };
                     rs = await _unitOfWork.AccountRepository.CreateAsync(newAccount);
                 }
@@ -229,7 +231,8 @@ namespace SE.Service.Services
                         Email = req.Account,
                         Otp = req.OTP,
                         Password = SecurityUtil.Hash(req.Password),
-                        IsVerified = false
+                        IsVerified = false,
+                        Status = SD.GeneralStatus.ACTIVE
                     };
                     rs = await _unitOfWork.AccountRepository.CreateAsync(newAccount);
                 }
@@ -335,6 +338,39 @@ namespace SE.Service.Services
 
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> ChangeAccountStatus(ChangeAccountStatusReq req)
+        {
+            try
+            {
+                var user = await _unitOfWork.AccountRepository.GetByIdAsync(req.AccountId);
+
+                if (user == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
+                }
+
+                if (!req.Status.Equals(SD.GeneralStatus.ACTIVE) && !req.Status.Equals(SD.GeneralStatus.INACTIVE))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Status does not support!");
+                }
+
+                user.Status = req.Status;
+
+                var updateRs = await _unitOfWork.AccountRepository.UpdateAsync(user);
+
+                if (updateRs > 0)
+                {
+                    return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
             }
             catch (Exception ex)
             {
