@@ -12,5 +12,6 @@ namespace SE.Common.DTO.Content
         public string PlaylistName { get; set; }
         public string ImageUrl { get; set; }
         public int NumberOfContent { get; set; }
+        public string Status { get; set; }
     }
 }
