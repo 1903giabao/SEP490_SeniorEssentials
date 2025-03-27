@@ -16,6 +16,7 @@ using SE.Common.Request.Professor;
 using SE.Common.DTO;
 using Firebase.Auth;
 using SE.Service.Helper;
+using Microsoft.Identity.Client;
 
 namespace SE.Service.Services
 {
@@ -552,7 +553,13 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
                 }
 
-                return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
+                var professorRs = _mapper.Map<GetProfessorDetail>(professor);
+
+                professorRs.ProfessorId = getProfessorAccountInfor.Professor.ProfessorId;
+                professorRs.FullName = getProfessorAccountInfor.FullName;
+                professorRs.Avatar = getProfessorAccountInfor.Avatar;
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, professorRs);
             }
             catch (Exception ex)
             {
