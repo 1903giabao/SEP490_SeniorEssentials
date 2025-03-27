@@ -85,7 +85,7 @@ namespace SE.API.Controllers
         }        
         
         [HttpPut("professor-detail")]
-        public async Task<IActionResult> UpdateProfessorInfor([FromBody] UpdateProfessorRequest req)
+        public async Task<IActionResult> UpdateProfessorInfor([FromForm] UpdateProfessorRequest req)
         {
             var rs = await _professorScheduleService.UpdateProfessorInfor(req);
             return Ok(rs);
