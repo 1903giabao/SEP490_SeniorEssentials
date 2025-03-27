@@ -75,6 +75,8 @@ namespace SE.Service.Services
                     FullName = req.FullName,
                     Gender = req.Gender,
                     PhoneNumber = req.PhoneNumber,
+                    Status = SD.GeneralStatus.ACTIVE,
+                    IsSuperAdmin = false
                 };
 
                 var createRs = await _unitOfWork.AccountRepository.CreateAsync(newAccount);

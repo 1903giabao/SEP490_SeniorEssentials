@@ -57,7 +57,7 @@ namespace SE.API.Controllers
             return Ok(result);
         }          
         
-        [HttpPost("music-status")]
+        [HttpPut("music-status")]
         public async Task<IActionResult> ChangeMusicStatus([FromQuery] int musicId, [FromQuery] string status)
         {
             var result = await _contentService.ChangeMusicStatus(musicId, status);
@@ -78,7 +78,7 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpPost("book-status")]
+        [HttpPut("book-status")]
         public async Task<IActionResult> ChangeBookStatus([FromQuery] int bookId, [FromQuery] string status)
         {
             var result = await _contentService.ChangeBookStatus(bookId, status);
@@ -99,7 +99,7 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpPost("lesson-status")]
+        [HttpPut("lesson-status")]
         public async Task<IActionResult> ChangeLessonStatus([FromQuery] int lessonId, [FromQuery] string status)
         {
             var result = await _contentService.ChangeLessonStatus(lessonId, status);
@@ -127,7 +127,7 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpPost("playlist-status")]
+        [HttpPut("playlist-status")]
         public async Task<IActionResult> ChangePlaylistStatus([FromQuery] int playlistId, [FromQuery] string status)
         {
             var result = await _contentService.ChangePlaylistStatus(playlistId, status);
