@@ -24,6 +24,7 @@ using NAudio.Wave;
 using ATL;
 using TagLib;
 using TagLib.Flac;
+using ATL.Playlist;
 
 namespace SE.Service.Services
 {
@@ -129,6 +130,7 @@ namespace SE.Service.Services
                             PlaylistName = playlist.PlaylistName,
                             ImageUrl = playlist.ImageUrl,
                             NumberOfContent = playlist.Lessons.Count,
+                            Status = playlist.Status,
                         };
 
                         listLessonPlaylist.Add(playlistDTO);
@@ -160,6 +162,7 @@ namespace SE.Service.Services
                             PlaylistId = playlist.PlaylistId,
                             PlaylistName = playlist.PlaylistName,
                             NumberOfContent = playlist.Musics.Count,
+                            Status = playlist.Status,
                         };
 
                         listMusicPlaylist.Add(playlistDTO);
@@ -309,12 +312,38 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Status does not support!");
                 }
 
+                var playlist = await _unitOfWork.PlaylistRepository.GetPlaylistById((int)music.PlaylistId);
+
+                if (playlist == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Playlist does not exist!");
+                }
+
                 music.Status = status;
 
                 var deleteRs = await _unitOfWork.MusicRepository.UpdateAsync(music);
 
                 if (deleteRs > 0)
                 {
+                    if (status.Equals(SD.GeneralStatus.INACTIVE))
+                    {
+                        var listMusic = playlist.Musics.ToList();
+
+                        bool allInactive = listMusic.All(musicItem => musicItem.Status.Equals(SD.ContentStatus.INACTIVE) || musicItem.Status.Equals(SD.ContentStatus.ADMINDELETE));
+
+                        if (allInactive)
+                        {
+                            playlist.Status = SD.ContentStatus.INACTIVE;
+
+                            var inactiveRs = await _unitOfWork.PlaylistRepository.UpdateAsync(playlist);
+
+                            if (inactiveRs < 1)
+                            {
+                                return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
+                            }
+                        }
+                    }
+
                     return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
                 }
 
@@ -337,12 +366,35 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Music does not exist!");
                 }
 
+                var playlist = await _unitOfWork.PlaylistRepository.GetPlaylistById((int)music.PlaylistId);
+
+                if (playlist == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Playlist does not exist!");
+                }
+
                 music.Status = SD.ContentStatus.ADMINDELETE;
 
                 var deleteRs = await _unitOfWork.MusicRepository.UpdateAsync(music);
 
                 if (deleteRs > 0)
                 {
+                    var listMusic = playlist.Musics.ToList();
+
+                    bool allInactive = listMusic.All(musicItem => musicItem.Status.Equals(SD.ContentStatus.INACTIVE) || musicItem.Status.Equals(SD.ContentStatus.ADMINDELETE));
+
+                    if (allInactive)
+                    {
+                        playlist.Status = SD.ContentStatus.INACTIVE;
+
+                        var inactiveRs = await _unitOfWork.PlaylistRepository.UpdateAsync(playlist);
+
+                        if (inactiveRs < 1)
+                        {
+                            return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
+                        }
+                    }
+
                     return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
                 }
 
@@ -567,12 +619,38 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Status does not support!");
                 }
 
+                var playlist = await _unitOfWork.PlaylistRepository.GetPlaylistById((int)lesson.PlaylistId);
+
+                if (playlist == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Playlist does not exist!");
+                }
+
                 lesson.Status = status;
 
                 var deleteRs = await _unitOfWork.LessonRepository.UpdateAsync(lesson);
 
                 if (deleteRs > 0)
                 {
+                    if (status.Equals(SD.GeneralStatus.INACTIVE))
+                    {
+                        var listLesson = playlist.Musics.ToList();
+
+                        bool allInactive = listLesson.All(lessonItem => lessonItem.Status.Equals(SD.ContentStatus.INACTIVE) || lessonItem.Status.Equals(SD.ContentStatus.ADMINDELETE));
+
+                        if (allInactive)
+                        {
+                            playlist.Status = SD.ContentStatus.INACTIVE;
+
+                            var inactiveRs = await _unitOfWork.PlaylistRepository.UpdateAsync(playlist);
+
+                            if (inactiveRs < 1)
+                            {
+                                return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
+                            }
+                        }
+                    }
+
                     return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
                 }
 
@@ -595,12 +673,35 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Lesson does not exist!");
                 }
 
+                var playlist = await _unitOfWork.PlaylistRepository.GetPlaylistById((int)lesson.PlaylistId);
+
+                if (playlist == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Playlist does not exist!");
+                }
+
                 lesson.Status = SD.ContentStatus.ADMINDELETE;
 
                 var deleteRs = await _unitOfWork.LessonRepository.UpdateAsync(lesson);
 
                 if (deleteRs > 0)
                 {
+                    var listLesson = playlist.Musics.ToList();
+
+                    bool allInactive = listLesson.All(lessonItem => lessonItem.Status.Equals(SD.ContentStatus.INACTIVE) || lessonItem.Status.Equals(SD.ContentStatus.ADMINDELETE));
+
+                    if (allInactive)
+                    {
+                        playlist.Status = SD.ContentStatus.INACTIVE;
+
+                        var inactiveRs = await _unitOfWork.PlaylistRepository.UpdateAsync(playlist);
+
+                        if (inactiveRs < 1)
+                        {
+                            return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
+                        }
+                    }
+
                     return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
                 }
 
@@ -679,7 +780,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var playlistExist = await _unitOfWork.PlaylistRepository.GetByIdAsync(playlistId);
+                var playlistExist = await _unitOfWork.PlaylistRepository.GetPlaylistById(playlistId);
 
                 if (playlistExist == null)
                 {
@@ -718,6 +819,33 @@ namespace SE.Service.Services
                 if (!status.Equals(SD.GeneralStatus.ACTIVE) && !status.Equals(SD.ContentStatus.INACTIVE))
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Status does not support!");
+                }
+
+                if (status.Equals(SD.GeneralStatus.ACTIVE))
+                {
+                    var listMusic = playlistExist.Musics.ToList();
+
+                    if (listMusic.Any())
+                    {
+                        bool allActiveMusic = listMusic.All(musicItem => musicItem.Status.Equals(SD.ContentStatus.ACTIVE));
+
+                        if (!allActiveMusic)
+                        {
+                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "PLAYLIST HIỆN KHÔNG CÓ BÀI HÁT NÀO ĐƯỢC ACTIVE!");
+                        }                        
+                    }
+
+                    var listLesson = playlistExist.Lessons.ToList();
+
+                    if (listLesson.Any())
+                    {
+                        bool allActiveLesson = listLesson.All(lessonItem => lessonItem.Status.Equals(SD.ContentStatus.ACTIVE));
+
+                        if (!allActiveLesson)
+                        {
+                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "DANH SÁCH BÀI HỌC HIỆN KHÔNG CÓ BÀI HỌC NÀO ĐƯỢC ACTIVE!");
+                        }
+                    }
                 }
 
                 playlistExist.Status = status;
