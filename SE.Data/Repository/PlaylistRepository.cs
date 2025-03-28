@@ -19,7 +19,7 @@ namespace SE.Data.Repository
 
         public async Task<Playlist> GetPlaylistById(int playlistId)
         {
-            var result = await _context.Playlists.Include(p => p.Musics).Include(p => p.Lessons).Where(p => p.IsLesson == false && p.PlaylistId == playlistId).FirstOrDefaultAsync();
+            var result = await _context.Playlists.Include(p => p.Musics).Include(p => p.Lessons).Where(p => p.PlaylistId == playlistId).FirstOrDefaultAsync();
             return result;
         }
 

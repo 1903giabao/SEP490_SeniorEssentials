@@ -635,7 +635,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var lesson = await _unitOfWork.LessonRepository.GetByIdAsync(lessonId);
+                var lesson = await _unitOfWork.LessonRepository.GetLessonsByIdAsync(lessonId);
 
                 if (lesson == null)
                 {

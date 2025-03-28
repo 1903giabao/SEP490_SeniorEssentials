@@ -161,7 +161,7 @@ namespace SE.Service.Services
                         Qualification = req.Qualification,
                         Specialization = req.Specialization,
                         Status = SD.GeneralStatus.ACTIVE,
-                        Rating = null
+                        Rating = 0
                     };
 
                     var createProfessorRs = await _unitOfWork.ProfessorRepository.CreateAsync(newProfessor);
