@@ -99,10 +99,12 @@ namespace SE.Service.Services
                     var professor = new GetAllProfessorReponse();
                     var professorInfor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(item.AccountId);
 
+                    professor.ProfessorAvatar = professorInfor.Avatar;
                     professor.ProfessorName = professorInfor.FullName;
                     professor.ProfessorId = professorInfor.Professor.ProfessorId;
                     professor.Major = professorInfor.Professor.Knowledge;
                     professor.Rating = (decimal)professorInfor.Professor.Rating;
+                    professor.TotalRating = 0;
 
                     // Fetch the professor's schedule
                     var professorSchedules = await _unitOfWork.ProfessorScheduleRepository.GetByProfessorIdAsync(professor.ProfessorId);
@@ -250,9 +252,11 @@ namespace SE.Service.Services
                     var professorInfor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(item.AccountId);
 
                     professor.ProfessorName = professorInfor.FullName;
+                    professor.ProfessorAvatar = professorInfor.Avatar;
                     professor.ProfessorId = professorInfor.Professor.ProfessorId;
                     professor.Major = professorInfor.Professor.Knowledge;
-                    professor.Rating = (decimal)professorInfor.Professor.Rating;
+                    professor.Rating = professorInfor.Professor == null ? 0 : (decimal)professorInfor.Professor.Rating;
+                    professor.TotalRating = 0;
 
                     // Fetch the professor's schedule
                     var professorSchedules = await _unitOfWork.ProfessorScheduleRepository.GetByProfessorIdAsync(professor.ProfessorId);
@@ -295,7 +299,6 @@ namespace SE.Service.Services
 
                     result.Add(professor);
                 }
-
                 // Apply filters
                 if (!string.IsNullOrEmpty(request.NameSortOrder))
                 {
