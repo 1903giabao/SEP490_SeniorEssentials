@@ -16,5 +16,20 @@ namespace SE.Common.Setting
         }
     }
 
-    
+    public class TokenResponse
+    {
+        public string AccessToken { get; set; }
+        public string RefreshToken { get; set; }
+    }
+
+    public class RefreshToken
+    {
+        public string Token { get; set; }
+        public DateTime Expires { get; set; }
+        public DateTime Created { get; set; }
+        public string CreatedByIp { get; set; }
+        public bool IsExpired => DateTime.UtcNow >= Expires;
+        public bool IsActive => !IsExpired;
+        public int AccountId { get; set; }
+    }
 }

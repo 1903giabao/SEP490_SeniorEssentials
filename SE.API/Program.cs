@@ -60,6 +60,7 @@ builder.Services.AddScoped<IVideoCallService, VideoCallService>();
 builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddScoped<ISmsService, SmsService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
 
 /*Log.Logger = new LoggerConfiguration()
             .WriteTo.Console() // Log to console
@@ -209,7 +210,7 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JwtSettings"))),
         ValidateIssuer = false,
         ValidateAudience = false,
-        ValidateLifetime = false,
+        ValidateLifetime = true,
         ValidateIssuerSigningKey = true
     };
 });
