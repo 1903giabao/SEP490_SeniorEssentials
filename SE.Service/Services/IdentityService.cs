@@ -304,7 +304,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid email or phone number format!");
                 }
                 var user = _unitOfWork.AccountRepository
-                                            .FindByCondition(u => u.Email == email || u.PhoneNumber == email)
+                                            .FindByCondition(u => u.Email == email || u.PhoneNumber == email && u.Status.Equals(SD.GeneralStatus.ACTIVE))
                                             .FirstOrDefault();
                 var hash = SecurityUtil.Hash(password);
 
