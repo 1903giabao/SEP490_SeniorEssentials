@@ -22,5 +22,11 @@ namespace SE.Data.Repository
             var result = await _context.Lessons.Include(l => l.Playlist).Where(l => l.PlaylistId == playlistId && l.Status.Equals("Active")).ToListAsync();
             return result;
         }
+
+        public async Task<Lesson> GetLessonsByIdAsync(int lessonId)
+        {
+            var result = await _context.Lessons.Include(l => l.Playlist).Where(l => l.LessonId == lessonId && l.Status.Equals("Active")).FirstOrDefaultAsync();
+            return result;
+        }
     }
 }
