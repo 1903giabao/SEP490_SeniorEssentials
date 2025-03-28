@@ -13,5 +13,6 @@ namespace SE.Common.Request.Content
         public int PlaylistId { get; set; }
         public string LessonName { get; set; }
         public IFormFile? LessonFile { get; set; }
+        public IFormFile? ThumbnailImage { get; set; }
     }
 }

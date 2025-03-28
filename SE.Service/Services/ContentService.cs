@@ -531,68 +531,37 @@ namespace SE.Service.Services
                 }
 
                 var file = req.LessonFile;
-                using (var stream = file.OpenReadStream())
-                using (var memoryStream = new MemoryStream())
+
+                var lessonURL = ("", "");
+
+                if (file != null)
                 {
-                    stream.CopyTo(memoryStream);
-                    memoryStream.Position = 0;
+                    lessonURL = await CloudinaryHelper.UploadVideoAsync(file);
+                }
 
-                    var tagLibFile = TagLib.File.Create(new StreamFileAbstraction(file.FileName, memoryStream, null));
+                var imageURL = ("", "");
 
-                    var lessonURL = ("", "");
+                if (req.ThumbnailImage != null)
+                {
+                    imageURL = await CloudinaryHelper.UploadImageAsync(req.ThumbnailImage);
+                }
 
-                    if (file != null)
-                    {
-                        lessonURL = await CloudinaryHelper.UploadVideoAsync(file);
-                    }
+                var lesson = new Lesson
+                {
+                    AccountId = req.AccountId,
+                    PlaylistId = playlistExist.PlaylistId,
+                    LessonName = req.LessonName,
+                    LessonUrl = lessonURL.Item2,
+                    ImageUrl = imageURL.Item2,
+                    CreatedDate = DateTime.UtcNow.AddHours(7),
+                    Status = SD.ContentStatus.ACTIVE,
+                };
 
-                    var imageURL = ("", "");
+                var createRs = await _unitOfWork.LessonRepository.CreateAsync(lesson);
 
-                    var pictures = tagLibFile.Tag.Pictures;
-                    if (pictures != null && pictures.Length > 0)
-                    {
-                        var picture = pictures[0];
-
-                        using (var memoryStreamImage = new MemoryStream(picture.Data.Data))
-                        {
-                            string fileName = "cover" + GetFileExtension(picture.MimeType);
-
-                            IFormFile formFile = new FormFile(
-                                baseStream: memoryStreamImage,
-                                baseStreamOffset: 0,
-                                length: picture.Data.Data.Length,
-                                name: "file",
-                                fileName: fileName
-                            )
-                            {
-                                Headers = new HeaderDictionary(),
-                                ContentType = picture.MimeType
-                            };
-
-                            if (formFile != null)
-                            {
-                                imageURL = await CloudinaryHelper.UploadImageAsync(formFile);
-                            }
-                        }
-                    }
-
-                    var lesson = new Lesson
-                    {
-                        AccountId = req.AccountId,
-                        PlaylistId = playlistExist.PlaylistId,
-                        LessonName = req.LessonName,
-                        LessonUrl = lessonURL.Item2,
-                        ImageUrl = imageURL.Item2,
-                        CreatedDate = DateTime.UtcNow.AddHours(7),
-                        Status = SD.ContentStatus.ACTIVE,
-                    };
-
-                    var createRs = await _unitOfWork.LessonRepository.CreateAsync(lesson);
-
-                    if (createRs < 1)
-                    {
-                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
-                    }
+                if (createRs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
                 }
 
                 return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
