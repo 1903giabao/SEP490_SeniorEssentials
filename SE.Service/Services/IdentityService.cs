@@ -34,7 +34,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> SendOtpToUser(string email,string password, int role);
         Task<IBusinessResult> SubmitOTP(CreateUserRequest req);
         Task<IBusinessResult> Signup(SignUpModel req);
-        Task<IBusinessResult> Login(string email, string password, string deviceToken);
+        Task<IBusinessResult> Login(string email, string password, string deviceToken, string ipAddress);
         Task<UserModel> GetUserInToken(string token);
         Task<IBusinessResult> GetUserByEmail(string username);
 
@@ -43,6 +43,7 @@ namespace SE.Service.Services
     public class IdentityService : IIdentityService
     {
         private readonly JwtSettings _jwtSettings;
+        private readonly IJwtService _jwtService;
         private readonly UnitOfWork _unitOfWork;
         private readonly IFirebaseService _firebaseService;
         private readonly string _confirmUrl;
@@ -54,7 +55,7 @@ namespace SE.Service.Services
 
         private readonly IAccountService _accountService;
 
-        public IdentityService(IMapper mapper, UnitOfWork unitOfWork, IOptions<JwtSettings> jwtSettingsOptions, IFirebaseService firebaseService, IEmailService emailService, IAccountService accountService, ISmsService smsService, FirestoreDb firestoreDb)
+        public IdentityService(IMapper mapper, UnitOfWork unitOfWork, IOptions<JwtSettings> jwtSettingsOptions, IFirebaseService firebaseService, IEmailService emailService, IAccountService accountService, ISmsService smsService, FirestoreDb firestoreDb, IJwtService jwtService)
         {
             _unitOfWork = unitOfWork;
             _jwtSettings = jwtSettingsOptions.Value;
@@ -64,6 +65,7 @@ namespace SE.Service.Services
             _mapper = mapper;
             _smsService = smsService;
             _firestoreDb = firestoreDb;
+            _jwtService = jwtService;
         }
 
         public async Task<IBusinessResult> SendOtpToUser(string account, string password, int role)
@@ -293,7 +295,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> Login(string email, string password, string deviceToken)
+        public async Task<IBusinessResult> Login(string email, string password, string deviceToken, string ipAddress)
         {
             try
             {
@@ -326,50 +328,14 @@ namespace SE.Service.Services
                 }
                 _unitOfWork.AccountRepository.Update(user);
 
-                return new BusinessResult(Const.SUCCESS_LOGIN, Const.SUCCESS_LOGIN_MSG, CreateJwtToken(user));
+                var tokenResponse = await _jwtService.GenerateTokens(user, ipAddress);
+
+                return new BusinessResult(Const.SUCCESS_LOGIN, Const.SUCCESS_LOGIN_MSG, tokenResponse);
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.Message, ex);
             }
-        }
-
-        private string CreateJwtToken(Account user)
-        {
-            var utcNow = DateTime.UtcNow;
-            var userRole = _unitOfWork.RoleRepository.FindByCondition(u => u.RoleId == user.RoleId).FirstOrDefault();
-            var isInformation = _unitOfWork.AccountRepository
-                .FindByCondition(u => u.FullName != null && u.Email.Equals(user.Email))
-                .FirstOrDefault();
-            var authClaims = new List<Claim>
-            {
-                new(JwtRegisteredClaimNames.NameId, user.AccountId.ToString()),
-                new(JwtRegisteredClaimNames.Email, user.Email),
-                new(ClaimTypes.Role, userRole.RoleName),
-                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new(JwtRegisteredClaimNames.Name, user.FullName ?? "null"),
-                new("Avatar", user.Avatar ?? "null"),
-                new("IsInformation", isInformation != null ? "true" : "false")
-            };
-
-            //            var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
-
-
-            var key = Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JwtSettings"));
-            var tokenDescriptor = new SecurityTokenDescriptor()
-            {
-                Subject = new ClaimsIdentity(authClaims),
-                SigningCredentials =
-                    new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
-            };
-
-            var handler = new JwtSecurityTokenHandler();
-
-            var token = handler.CreateToken(tokenDescriptor);
-
-            var writeToken = new JwtSecurityTokenHandler().WriteToken(token);
-
-            return writeToken;
         }
 
         public async Task<UserModel> GetUserInToken(string token)
