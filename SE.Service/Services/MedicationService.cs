@@ -899,37 +899,53 @@ namespace SE.Service.Services
                 }
 
                 var medicationDtos = new List<UpdateMedicationModel>();
-                var today = DateOnly.FromDateTime(System.DateTime.UtcNow.AddHours(7));
 
                 foreach (var medication in prescription.Medications)
                 {
-                    string frequencyEvery = null;
-                    var medicationSchedule = _unitOfWork.MedicationScheduleRepository.FindByCondition(ms => ms.MedicationId == medication.MedicationId).FirstOrDefault();
-                    if (medication.FrequencyType.StartsWith("Every ") && medication.FrequencyType.EndsWith(" day"))
-                    {
-                        string numberStr = medication.FrequencyType.Replace("Every ", "").Replace(" day", "").Trim();
-                        if (int.TryParse(numberStr, out int day))
-                        {
-                            frequencyEvery = day.ToString();
-                        }
+                    List<string> frequencySelect = null;
+                    List<string> scheduleTimes = null;
 
+                    if (medication.FrequencyType == "Select")
+                    {
+                        // Lấy tất cả các ngày trong tuần từ lịch uống thuốc
+                        var daysOfWeek = medication.MedicationSchedules
+                            .Where(ms => ms.DateTaken.HasValue)
+                            .Select(ms => ms.DateTaken.Value.DayOfWeek.ToString())
+                            .Distinct()
+                            .ToList();
+
+                        frequencySelect = daysOfWeek;
+
+                        // Lấy tất cả các giờ uống thuốc (không trùng lặp)
+                        scheduleTimes = medication.MedicationSchedules
+                            .Where(ms => ms.DateTaken.HasValue)
+                            .Select(ms => ms.DateTaken.Value.ToString("HH:mm"))
+                            .Distinct()
+                            .ToList();
                     }
-                    var date = medication.MedicationSchedules.FirstOrDefault();
+                    else
+                    {
+                        // Với các loại tần suất khác, lấy tất cả các giờ uống thuốc
+                        scheduleTimes = medication.MedicationSchedules
+                            .Where(ms => ms.DateTaken.HasValue)
+                            .Select(ms => ms.DateTaken.Value.ToString("HH:mm"))
+                            .Distinct()
+                            .ToList();
+                    }
 
                     var medicationDto = new UpdateMedicationModel
                     {
                         MedicationId = medication.MedicationId,
                         MedicationName = medication.MedicationName,
+                        Treatment = medication.Treatment,
                         Dosage = medication.Dosage,
                         Shape = medication.Shape,
                         Remaining = medication.Remaining,
                         FrequencyType = medication.FrequencyType,
-                        FrequencySelect = GetWeeklyMedicationScheduleForMedication(medication.MedicationId, today),
+                        FrequencySelect = frequencySelect,
                         IsBeforeMeal = medication.IsBeforeMeal,
-                        Schedule = medication.MedicationSchedules
-                                      .Where(ms => ms.DateTaken?.ToString("yyyy-MM-dd") == today.ToString("yyyy-MM-dd"))
-                                      .Select(ms => ms.DateTaken.HasValue ? ms.DateTaken.Value.ToString("HH:mm:ss") : null)
-                                      .ToList()
+                        Note = medication.Note,
+                        Schedule = scheduleTimes
                     };
 
                     medicationDtos.Add(medicationDto);
@@ -953,6 +969,7 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
         }
+
     }
 }
 

@@ -1404,28 +1404,28 @@ namespace SE.Service.Services
             new GetHealthIndicatorDetailReponse
             {
                 Tabs = "Ngày",
-                Average = dailyAverage,
+                Average = Math.Round(dailyAverage,2),
                 Evaluation = bmiForCurrentDay.ToString(),
                 ChartDatabase = dailyRecords
             },
             new GetHealthIndicatorDetailReponse
             {
                 Tabs = "Tuần",
-                Average = weeklyAverage,
+                Average = Math.Round(weeklyAverage, 2),
                 Evaluation = bmiForCurrentWeek.ToString(),
                 ChartDatabase = weeklyRecords
             },
             new GetHealthIndicatorDetailReponse
             {
                 Tabs = "Tháng",
-                Average = monthlyAverage,
+                Average = Math.Round(monthlyAverage,2),
                 Evaluation = bmiForCurrentMonth.ToString(),
                 ChartDatabase = monthlyRecords
             },
             new GetHealthIndicatorDetailReponse
             {
                 Tabs = "Năm",
-                Average = yearlyAverage,
+                Average = Math.Round(yearlyAverage,2),
                 Evaluation = bmiForCurrentYear.ToString(),
                 ChartDatabase = yearlyRecords
             }
