@@ -855,6 +855,30 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Playlist does not exist!");
                 }
 
+                var listMusic = playlistExist.Musics.ToList();
+
+                if (listMusic.Any())
+                {
+                    bool allActiveMusic = listMusic.All(musicItem => musicItem.Status.Equals(SD.ContentStatus.INACTIVE) || musicItem.Status.Equals(SD.ContentStatus.ADMINDELETE));
+
+                    if (allActiveMusic)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "PLAYLIST HIỆN KHÔNG CÓ BÀI HÁT NÀO ĐƯỢC ACTIVE!");
+                    }
+                }
+
+                var listLesson = playlistExist.Lessons.ToList();
+
+                if (listLesson.Any())
+                {
+                    bool allActiveLesson = listLesson.All(lessonItem => lessonItem.Status.Equals(SD.ContentStatus.INACTIVE) || lessonItem.Status.Equals(SD.ContentStatus.ADMINDELETE));
+
+                    if (allActiveLesson)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "DANH SÁCH BÀI HỌC HIỆN KHÔNG CÓ BÀI HỌC NÀO ĐƯỢC ACTIVE!");
+                    }
+                }
+
                 playlistExist.PlaylistName = req.PlaylistName;
 
                 var updateRs = await _unitOfWork.PlaylistRepository.UpdateAsync(playlistExist);
@@ -882,35 +906,6 @@ namespace SE.Service.Services
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Playlist does not exist!");
                 }
-
-                /*                var listLesson = await _unitOfWork.LessonRepository.GetLessonsByPlaylist(playlistId);
-
-                                foreach (var lesson in listLesson)
-                                {
-                                    lesson.Playlist = null;
-                                    lesson.PlaylistId = null;
-                                    var updateRs = await _unitOfWork.LessonRepository.UpdateAsync(lesson);
-
-                                    if (updateRs < 1)
-                                    {
-                                        return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
-                                    }
-                                }
-
-                                var listMusic = await _unitOfWork.MusicRepository.GetMusicsByPlaylist(playlistId);
-
-                                foreach (var music in listMusic)
-                                {
-                                    music.Playlist = null;
-                                    music.PlaylistId = null;
-                                    var updateRs = await _unitOfWork.MusicRepository.UpdateAsync(music);
-
-                                    if (updateRs < 1)
-                                    {
-                                        return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
-                                    }
-                                }*/
-
 
                 if (!status.Equals(SD.GeneralStatus.ACTIVE) && !status.Equals(SD.ContentStatus.INACTIVE))
                 {

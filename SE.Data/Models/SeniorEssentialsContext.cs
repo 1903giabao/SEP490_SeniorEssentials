@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 
 namespace SE.Data.Models;
 
@@ -98,6 +97,8 @@ public partial class SeniorEssentialsContext : DbContext
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<Subscription> Subscriptions { get; set; }
+
+    public virtual DbSet<SystemReport> SystemReports { get; set; }
 
     public virtual DbSet<TimeSlot> TimeSlots { get; set; }
 
@@ -341,7 +342,13 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.Property(e => e.DateTime).HasColumnType("datetime");
             entity.Property(e => e.Latitude).HasMaxLength(50);
+            entity.Property(e => e.LatitudeIot)
+                .HasMaxLength(50)
+                .HasColumnName("LatitudeIOT");
             entity.Property(e => e.Longitude).HasMaxLength(50);
+            entity.Property(e => e.LongitudeIot)
+                .HasMaxLength(50)
+                .HasColumnName("LongitudeIOT");
             entity.Property(e => e.Status).HasMaxLength(20);
 
             entity.HasOne(d => d.EmergencyConfirmation).WithMany(p => p.EmergencyInformations)
@@ -837,6 +844,29 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.Subscriptions)
                 .HasForeignKey(d => d.AccountId)
                 .HasConstraintName("FK__Subscript__Accou__0C50D423");
+        });
+
+        modelBuilder.Entity<SystemReport>(entity =>
+        {
+            entity.HasKey(e => e.ReportId).HasName("PK__SystemRe__D5BD48051F46884C");
+
+            entity.ToTable("SystemReport");
+
+            entity.Property(e => e.AttachmentUrl).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.PriorityLevel).HasMaxLength(20);
+            entity.Property(e => e.ReportContent)
+                .IsRequired()
+                .HasMaxLength(500);
+            entity.Property(e => e.ReportTitle)
+                .IsRequired()
+                .HasMaxLength(255);
+            entity.Property(e => e.ReportType).HasMaxLength(50);
+            entity.Property(e => e.Status).HasMaxLength(20);
+
+            entity.HasOne(d => d.Account).WithMany(p => p.SystemReports)
+                .HasForeignKey(d => d.AccountId)
+                .HasConstraintName("FK__SystemRep__Accou__59904A2C");
         });
 
         modelBuilder.Entity<TimeSlot>(entity =>

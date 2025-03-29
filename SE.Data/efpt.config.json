@@ -151,6 +151,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[SystemReport]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[TimeSlot]",
          "ObjectType": 0
       },
