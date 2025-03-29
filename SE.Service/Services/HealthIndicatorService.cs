@@ -4045,16 +4045,7 @@ namespace SE.Service.Services
                 responses.Add(response);
             }
 
-            if (!responses.Any())
-            {
-                responses.Add(new LogBookReponse
-                {
-                    Tabs = "BloodGlucose",
-                    DateRecorded = System.DateTime.Now.ToString(),
-                    Indicator = "N/A",
-                    Evaluation = "N/A"
-                });
-            }
+
 
             return responses;
         }
@@ -4079,16 +4070,7 @@ namespace SE.Service.Services
                 responses.Add(response);
             }
 
-            if (!responses.Any())
-            {
-                responses.Add(new LogBookReponse
-                {
-                    Tabs = "BloodPressure",
-                    DateRecorded = System.DateTime.Now.ToString(),
-                    Indicator = "N/A",
-                    Evaluation = "N/A"
-                });
-            }
+       
 
             return responses;
         }
@@ -4113,16 +4095,6 @@ namespace SE.Service.Services
                 responses.Add(response);
             }
 
-            if (!responses.Any())
-            {
-                responses.Add(new LogBookReponse
-                {
-                    Tabs = "HeartRate",
-                    DateRecorded = System.DateTime.Now.ToString(),
-                    Indicator = "N/A",
-                    Evaluation = "N/A"
-                });
-            }
 
             return responses;
         }
@@ -4147,17 +4119,7 @@ namespace SE.Service.Services
                 responses.Add(response);
             }
 
-            if (!responses.Any())
-            {
-                responses.Add(new LogBookReponse
-                {
-                    Tabs = "Height",
-                    DateRecorded = System.DateTime.Now.ToString(),
-                    Indicator = "N/A",
-                    Evaluation = "N/A"
-                });
-            }
-
+         
             return responses;
         }
 
@@ -4181,16 +4143,7 @@ namespace SE.Service.Services
                 responses.Add(response);
             }
 
-            if (!responses.Any())
-            {
-                responses.Add(new LogBookReponse
-                {
-                    Tabs = "Weight",
-                    DateRecorded = System.DateTime.Now.ToString(),
-                    Indicator = "N/A",
-                    Evaluation = "N/A"
-                });
-            }
+       
 
             return responses;
         }
@@ -4261,16 +4214,6 @@ namespace SE.Service.Services
                 responses.Add(response);
             }
 
-            if (!responses.Any())
-            {
-                responses.Add(new LogBookReponse
-                {
-                    Tabs = "LipidProfile",
-                    DateRecorded = System.DateTime.Now.ToString(),
-                    Indicator = "N/A",
-                    Evaluation = "N/A"
-                });
-            }
 
             return responses;
         }
@@ -4301,16 +4244,6 @@ namespace SE.Service.Services
                 responses.Add(response);
             }
 
-            if (!responses.Any())
-            {
-                responses.Add(new LogBookReponse
-                {
-                    Tabs = "LiverEnzyme",
-                    DateRecorded = System.DateTime.Now.ToString(),
-                    Indicator = "N/A",
-                    Evaluation = "N/A"
-                });
-            }
 
             return responses;
         }
