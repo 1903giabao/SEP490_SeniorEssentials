@@ -25,6 +25,8 @@ public partial class Subscription
 
     public int? AccountId { get; set; }
 
+    public int? NumberOfMeeting { get; set; }
+
     public virtual Account Account { get; set; }
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();

@@ -23,5 +23,9 @@ public partial class EmergencyInformation
 
     public string Status { get; set; }
 
+    public string LongitudeIot { get; set; }
+
+    public string LatitudeIot { get; set; }
+
     public virtual EmergencyConfirmation EmergencyConfirmation { get; set; }
 }
