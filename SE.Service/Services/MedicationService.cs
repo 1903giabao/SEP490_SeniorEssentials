@@ -425,6 +425,7 @@ namespace SE.Service.Services
             }
         }
 
+
         public async Task<int> GenerateMedicationSchedules(Medication medication, List<string> scheduleTimes, List<string> frequencySelect = null)
         {
             if (scheduleTimes == null || !scheduleTimes.Any())
@@ -435,74 +436,134 @@ namespace SE.Service.Services
             var currentDate = ConvertToDateTime(medication.StartDate).Value;
             var remaining = medication.Remaining;
             var rs = 0;
+            var maxDate = currentDate.AddMonths(6); // Giới hạn 6 tháng
+            const int maxSchedules = 1000; // Giới hạn tổng số lịch
 
             if (!int.TryParse(medication.Dosage.Split(' ')[0], out int dosage))
             {
                 throw new InvalidOperationException("Sai format của liều lượng, ví dụ '1 Viên'.");
             }
 
-            while (remaining > 0)
+            // Chỉ xử lý nếu là FrequencyType = "Select" và có chọn ngày
+            if (medication.FrequencyType == "Select" && frequencySelect != null && frequencySelect.Any())
             {
-                if (medication.FrequencyType == "Select" && frequencySelect != null && frequencySelect.Any())
+                // Chuyển đổi ngày trong tuần từ tiếng Việt sang DayOfWeek
+                var selectedDays = frequencySelect.Select(day =>
                 {
-                    var dayOfWeek = GetVietnameseDayOfWeek(currentDate.DayOfWeek);
-                    if (!frequencySelect.Contains(dayOfWeek))
+                    return day switch
                     {
-                        currentDate = currentDate.AddDays(1);
-                        continue;
-                    }
-                }
-
-                foreach (var time in scheduleTimes)
-                {
-                    if (remaining <= 0)
-                    {
-                        break;
-                    }
-
-                    var timeOfDay = TimeSpan.Parse(time);
-
-                    var schedule = new MedicationSchedule
-                    {
-                        MedicationId = medication.MedicationId,
-                        Dosage = medication.Dosage,
-                        Status = "Unused",
-                        DateTaken = new DateTime(currentDate.Year, currentDate.Month, currentDate.Day)
-                                    .Add(timeOfDay),
-                        IsTaken = false
+                        "Monday" => DayOfWeek.Monday,
+                        "Tuesday" => DayOfWeek.Tuesday,
+                        "Wednesday" => DayOfWeek.Wednesday,
+                        "Thursday" => DayOfWeek.Thursday,
+                        "Friday" => DayOfWeek.Friday,
+                        "Saturday" => DayOfWeek.Saturday,
+                        "Sunday" => DayOfWeek.Sunday,
+                        "Thứ 2" => DayOfWeek.Monday,
+                        "Thứ 3" => DayOfWeek.Tuesday,
+                        "Thứ 4" => DayOfWeek.Wednesday,
+                        "Thứ 5" => DayOfWeek.Thursday,
+                        "Thứ 6" => DayOfWeek.Friday,
+                        "Thứ 7" => DayOfWeek.Saturday,
+                        "Chủ nhật" => DayOfWeek.Sunday,
+                        _ => throw new InvalidOperationException($"Ngày không hợp lệ: {day}")
                     };
-                    var result = await _unitOfWork.MedicationScheduleRepository.CreateAsync(schedule);
-                    if (result > 0)
-                    {
-                        rs++;
-                        remaining -= dosage;
-                    }
-                }
+                }).ToList();
 
-                if (medication.FrequencyType.StartsWith("Every ") && medication.FrequencyType.EndsWith(" day"))
+                // Tìm ngày tiếp theo phù hợp với ngày đã chọn
+                while (remaining > 0 && currentDate <= maxDate && rs < maxSchedules)
                 {
-                    string numberStr = medication.FrequencyType.Replace("Every ", "").Replace(" day", "").Trim();
-                    if (int.TryParse(numberStr, out int day))
+                    if (selectedDays.Contains(currentDate.DayOfWeek))
                     {
-                        currentDate = currentDate.AddDays(day);
+                        foreach (var time in scheduleTimes)
+                        {
+                            if (remaining <= 0) break;
+
+                            if (!TimeSpan.TryParse(time, out var timeOfDay))
+                            {
+                                throw new InvalidOperationException($"Thời gian không hợp lệ: {time}");
+                            }
+
+                            var schedule = new MedicationSchedule
+                            {
+                                MedicationId = medication.MedicationId,
+                                Dosage = medication.Dosage,
+                                Status = "Unused",
+                                DateTaken = currentDate.Date.Add(timeOfDay),
+                                IsTaken = false
+                            };
+
+                            var result = await _unitOfWork.MedicationScheduleRepository.CreateAsync(schedule);
+                            if (result > 0)
+                            {
+                                rs++;
+                                remaining -= dosage;
+                            }
+                        }
                     }
-                }
-                else if (medication.FrequencyType == "Select")
-                {
+
+                    // Chuyển sang ngày tiếp theo
                     currentDate = currentDate.AddDays(1);
                 }
-                else
+            }
+            else
+            {
+                // Xử lý các FrequencyType khác (Every X day)
+                while (remaining > 0 && currentDate <= maxDate && rs < maxSchedules)
                 {
-                    throw new InvalidOperationException("Sai FrequencyType or thiếu DateFrequency.");
+                    foreach (var time in scheduleTimes)
+                    {
+                        if (remaining <= 0) break;
+
+                        if (!TimeSpan.TryParse(time, out var timeOfDay))
+                        {
+                            throw new InvalidOperationException($"Thời gian không hợp lệ: {time}");
+                        }
+
+                        var schedule = new MedicationSchedule
+                        {
+                            MedicationId = medication.MedicationId,
+                            Dosage = medication.Dosage,
+                            Status = "Unused",
+                            DateTaken = currentDate.Date.Add(timeOfDay),
+                            IsTaken = false
+                        };
+
+                        var result = await _unitOfWork.MedicationScheduleRepository.CreateAsync(schedule);
+                        if (result > 0)
+                        {
+                            rs++;
+                            remaining -= dosage;
+                        }
+                    }
+
+                    // Xác định ngày tiếp theo dựa trên FrequencyType
+                    if (medication.FrequencyType.StartsWith("Every "))
+                    {
+                        string numberStr = medication.FrequencyType.Replace("Every ", "").Replace(" day", "").Trim();
+                        if (int.TryParse(numberStr, out int day))
+                        {
+                            currentDate = currentDate.AddDays(day);
+                        }
+                        else
+                        {
+                            currentDate = currentDate.AddDays(1);
+                        }
+                    }
+                    else
+                    {
+                        currentDate = currentDate.AddDays(1);
+                    }
                 }
             }
 
-            // Cập nhật EndDate của medication dựa trên currentDate
+            // Cập nhật EndDate
             medication.EndDate = DateOnly.FromDateTime(currentDate);
             await _unitOfWork.MedicationRepository.UpdateAsync(medication);
 
-            return rs; // Return the total number of schedules created
+            return rs;
         }
+
         private string GetVietnameseDayOfWeek(System.DayOfWeek dayOfWeek)
         {
             switch (dayOfWeek)
@@ -646,106 +707,106 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateMedicationInPrescription(int prescriptionId, UpdateMedicationInPrescriptionRequest req)
-        {
-            try
+            public async Task<IBusinessResult> UpdateMedicationInPrescription(int prescriptionId, UpdateMedicationInPrescriptionRequest req)
             {
-                var existingPrescription = _unitOfWork.PrescriptionRepository.FindByCondition(p => p.PrescriptionId == prescriptionId && p.Status == "Active").FirstOrDefault();
-                if (existingPrescription == null)
+                try
                 {
-                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Đơn thuốc không tồn tại.");
+                    var existingPrescription = _unitOfWork.PrescriptionRepository.FindByCondition(p => p.PrescriptionId == prescriptionId && p.Status == "Active").FirstOrDefault();
+                    if (existingPrescription == null)
+                    {
+                        return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Đơn thuốc không tồn tại.");
+                    }
+                    var today = DateTime.Now;
+                    existingPrescription.Treatment = req.Treatment;
+                    var updatePrescriptionResult = await _unitOfWork.PrescriptionRepository.UpdateAsync(existingPrescription);
+                    if (updatePrescriptionResult < 1)
+                    {
+                        return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Cập nhật không thành công");
+                    }
+                    var existingMedications = await _unitOfWork.MedicationRepository.GetByPrescriptionIdAsync(prescriptionId);
+
+                    foreach (var medicationReq in req.Medication)
+                    {
+                        var existingMedication = new Medication();
+                        if (medicationReq.MedicationId == null)
+                        {
+                            existingMedication = null;
+                        }
+                        else
+                        {
+                            existingMedication = existingMedications.FirstOrDefault(m => medicationReq.MedicationId != null && m.MedicationId == medicationReq.MedicationId && m.PrescriptionId == prescriptionId && m.Status == "Active");
+                        }
+                        if (existingMedication != null)
+                        {
+                            existingMedication.Treatment = medicationReq.Treatment;
+                            existingMedication.MedicationName = medicationReq.MedicationName;
+                            existingMedication.Dosage = medicationReq.Dosage;
+                            existingMedication.FrequencyType = medicationReq.FrequencyType;
+                            existingMedication.Shape = medicationReq.Shape;
+                            existingMedication.Remaining = medicationReq.Remaining;
+                            existingMedication.Note = medicationReq.Note;
+                            existingMedication.IsBeforeMeal = medicationReq.IsBeforeMeal;
+
+                            var updateMedicationResult = await _unitOfWork.MedicationRepository.UpdateAsync(existingMedication);
+                            if (updateMedicationResult < 1)
+                            {
+                                return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Cập nhật không thành công");
+                            }
+
+                            var deleteSchedulesResult = await _unitOfWork.MedicationScheduleRepository.DeleteByMedicationIdAsync(existingMedication.MedicationId, today);
+                            if (deleteSchedulesResult < 0)
+                            {
+                                return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Xóa lịch thuốc không thành công");
+                            }
+
+                            var createScheduleResult = await GenerateMedicationSchedules(existingMedication, medicationReq.Schedule, medicationReq.FrequencySelect);
+                            if (createScheduleResult < 1)
+                            {
+                                return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Tạo mới lịch trình không thành công.");
+                            }
+                        }
+                        else
+                        {
+                            var newMedication = new Medication
+                            {
+                                Dosage = medicationReq.Dosage,
+                                CreatedDate = DateTime.UtcNow.AddHours(7),
+                                EndDate = null,
+                                FrequencyType = medicationReq.FrequencyType,
+                                StartDate = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)),
+                                Shape = medicationReq.Shape,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                MedicationName = medicationReq.MedicationName,
+                                Remaining = medicationReq.Remaining,
+                                PrescriptionId = prescriptionId,
+                                ElderlyId = existingPrescription.Elderly,
+                                Note = medicationReq.Note,
+                                IsBeforeMeal = medicationReq.IsBeforeMeal,
+                                Treatment = medicationReq.Treatment
+                            };
+
+                            var createMedicationResult = await _unitOfWork.MedicationRepository.CreateAsync(newMedication);
+                            if (createMedicationResult < 1)
+                            {
+                                return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Tạo thuốc không thành công.");
+                            }
+
+                            var createScheduleResult = await GenerateMedicationSchedules(newMedication, medicationReq.Schedule, medicationReq.FrequencySelect);
+                            if (createScheduleResult < 1)
+                            {
+                                return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Tạo lịch cho đơn thuốc không thành công.");
+                            }
+                        }
+                    }
+
+                    return new BusinessResult(Const.SUCCESS_UPDATE, "Cập nhật thuốc thành công.", req);
                 }
-                var today = DateTime.Now;
-                existingPrescription.Treatment = req.Treatment;
-                var updatePrescriptionResult = await _unitOfWork.PrescriptionRepository.UpdateAsync(existingPrescription);
-                if (updatePrescriptionResult < 1)
+                catch (Exception ex)
                 {
-                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Cập nhật không thành công");
+                    return new BusinessResult(Const.FAIL_UPDATE, ex.Message);
                 }
-                var existingMedications = await _unitOfWork.MedicationRepository.GetByPrescriptionIdAsync(prescriptionId);
-
-                foreach (var medicationReq in req.Medication)
-                {
-                    var existingMedication = new Medication();
-                    if (medicationReq.MedicationId == null)
-                    {
-                        existingMedication = null;
-                    }
-                    else
-                    {
-                        existingMedication = existingMedications.FirstOrDefault(m => medicationReq.MedicationId != null && m.MedicationId == medicationReq.MedicationId && m.PrescriptionId == prescriptionId && m.Status == "Active");
-                    }
-                    if (existingMedication != null)
-                    {
-                        existingMedication.Treatment = medicationReq.Treatment;
-                        existingMedication.MedicationName = medicationReq.MedicationName;
-                        existingMedication.Dosage = medicationReq.Dosage;
-                        existingMedication.FrequencyType = medicationReq.FrequencyType;
-                        existingMedication.Shape = medicationReq.Shape;
-                        existingMedication.Remaining = medicationReq.Remaining;
-                        existingMedication.Note = medicationReq.Note;
-                        existingMedication.IsBeforeMeal = medicationReq.IsBeforeMeal;
-
-                        var updateMedicationResult = await _unitOfWork.MedicationRepository.UpdateAsync(existingMedication);
-                        if (updateMedicationResult < 1)
-                        {
-                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Cập nhật không thành công");
-                        }
-
-                        var deleteSchedulesResult = await _unitOfWork.MedicationScheduleRepository.DeleteByMedicationIdAsync(existingMedication.MedicationId, today);
-                        if (deleteSchedulesResult < 0)
-                        {
-                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Xóa lịch thuốc không thành công");
-                        }
-
-                        var createScheduleResult = await GenerateMedicationSchedules(existingMedication, medicationReq.Schedule, medicationReq.FrequencySelect);
-                        if (createScheduleResult < 1)
-                        {
-                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Tạo mới lịch trình không thành công.");
-                        }
-                    }
-                    else
-                    {
-                        var newMedication = new Medication
-                        {
-                            Dosage = medicationReq.Dosage,
-                            CreatedDate = DateTime.UtcNow.AddHours(7),
-                            EndDate = null,
-                            FrequencyType = medicationReq.FrequencyType,
-                            StartDate = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)),
-                            Shape = medicationReq.Shape,
-                            Status = SD.GeneralStatus.ACTIVE,
-                            MedicationName = medicationReq.MedicationName,
-                            Remaining = medicationReq.Remaining,
-                            PrescriptionId = prescriptionId,
-                            ElderlyId = existingPrescription.Elderly,
-                            Note = medicationReq.Note,
-                            IsBeforeMeal = medicationReq.IsBeforeMeal,
-                            Treatment = medicationReq.Treatment
-                        };
-
-                        var createMedicationResult = await _unitOfWork.MedicationRepository.CreateAsync(newMedication);
-                        if (createMedicationResult < 1)
-                        {
-                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Tạo thuốc không thành công.");
-                        }
-
-                        var createScheduleResult = await GenerateMedicationSchedules(newMedication, medicationReq.Schedule, medicationReq.FrequencySelect);
-                        if (createScheduleResult < 1)
-                        {
-                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Tạo lịch cho đơn thuốc không thành công.");
-                        }
-                    }
-                }
-
-                return new BusinessResult(Const.SUCCESS_UPDATE, "Cập nhật thuốc thành công.", req);
             }
-            catch (Exception ex)
-            {
-                return new BusinessResult(Const.FAIL_UPDATE, ex.Message);
-            }
-        }
-        public async Task<IBusinessResult> ConfirmMedicationDrinking(ConfirmMedicationDrinkingReq request)
+            public async Task<IBusinessResult> ConfirmMedicationDrinking(ConfirmMedicationDrinkingReq request)
         {
             try
             {
