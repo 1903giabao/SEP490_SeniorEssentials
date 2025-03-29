@@ -78,6 +78,13 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
+        [HttpPut("book")]
+        public async Task<IActionResult> UpdateBook([FromBody] UpdateBookRequest req)
+        {
+            var result = await _contentService.UpdateBook(req);
+            return Ok(result);
+        }        
+        
         [HttpPut("book-status")]
         public async Task<IActionResult> ChangeBookStatus([FromQuery] int bookId, [FromQuery] string status)
         {

@@ -50,6 +50,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> AddLessonToPlayList(int lessonId, int playlistId);
         Task<IBusinessResult> AddMusicToPlayList(int musicId, int playlistId);
         Task<IBusinessResult> DeletePlaylistByAdmin(int playlistId);
+        Task<IBusinessResult> UpdateBook(UpdateBookRequest req);
     }
 
     public class ContentService : IContentService
@@ -344,10 +345,10 @@ namespace SE.Service.Services
                         }
                     }
 
-                    return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
+                    return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
                 }
 
-                return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
+                return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
             }
             catch (Exception ex)
             {
@@ -451,6 +452,37 @@ namespace SE.Service.Services
             }
         }
 
+        public async Task<IBusinessResult> UpdateBook(UpdateBookRequest req)
+        {
+            try
+            {
+                var book = await _unitOfWork.BookRepository.GetByIdAsync(req.BookId);
+
+                if (book == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Book does not exist!");
+                }
+
+                book.BookName = req.BookName;
+                book.BookType = req.BookType;
+                book.PublishDate = req.PublishDate;
+                book.Author = req.Author;
+
+                var updateRs = await _unitOfWork.BookRepository.UpdateAsync(book);
+
+                if (updateRs > 0)
+                {
+                    return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }            
+        
         public async Task<IBusinessResult> ChangeBookStatus(int bookId, string status)
         {
             try
@@ -473,10 +505,10 @@ namespace SE.Service.Services
 
                 if (deleteRs > 0)
                 {
-                    return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
+                    return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
                 }
 
-                return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
+                return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
             }
             catch (Exception ex)
             {
@@ -620,10 +652,10 @@ namespace SE.Service.Services
                         }
                     }
 
-                    return new BusinessResult(Const.SUCCESS_DELETE, Const.SUCCESS_DELETE_MSG);
+                    return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
                 }
 
-                return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
+                return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
             }
             catch (Exception ex)
             {
@@ -796,9 +828,9 @@ namespace SE.Service.Services
 
                     if (listMusic.Any())
                     {
-                        bool allActiveMusic = listMusic.All(musicItem => musicItem.Status.Equals(SD.ContentStatus.ACTIVE));
+                        bool allActiveMusic = listMusic.All(musicItem => musicItem.Status.Equals(SD.ContentStatus.INACTIVE) || musicItem.Status.Equals(SD.ContentStatus.ADMINDELETE));
 
-                        if (!allActiveMusic)
+                        if (allActiveMusic)
                         {
                             return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "PLAYLIST HIỆN KHÔNG CÓ BÀI HÁT NÀO ĐƯỢC ACTIVE!");
                         }                        
@@ -808,9 +840,9 @@ namespace SE.Service.Services
 
                     if (listLesson.Any())
                     {
-                        bool allActiveLesson = listLesson.All(lessonItem => lessonItem.Status.Equals(SD.ContentStatus.ACTIVE));
+                        bool allActiveLesson = listLesson.All(lessonItem => lessonItem.Status.Equals(SD.ContentStatus.INACTIVE) || lessonItem.Status.Equals(SD.ContentStatus.ADMINDELETE));
 
-                        if (!allActiveLesson)
+                        if (allActiveLesson)
                         {
                             return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "DANH SÁCH BÀI HỌC HIỆN KHÔNG CÓ BÀI HỌC NÀO ĐƯỢC ACTIVE!");
                         }
