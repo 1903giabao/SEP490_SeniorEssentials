@@ -25,11 +25,13 @@ using ATL;
 using TagLib;
 using TagLib.Flac;
 using ATL.Playlist;
+using SE.Common.Response.Content;
 
 namespace SE.Service.Services
 {
     public interface IContentService
     {
+        Task<IBusinessResult> GetAllContents();
         Task<IBusinessResult> GetAllMusics(int playlistId);
         Task<IBusinessResult> GetAllLessons(int playlistId);
         Task<IBusinessResult> GetAllBooks();
@@ -63,6 +65,80 @@ namespace SE.Service.Services
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+        }
+
+        public async Task<IBusinessResult> GetAllContents()
+        {
+            try
+            {
+                var musics = _unitOfWork.MusicRepository.GetAll().ToList();
+
+                var musicRs = _mapper.Map<List<MusicDTO>>(musics);
+
+                var lessons = _unitOfWork.LessonRepository.GetAll().ToList();
+
+                var lessonRs = _mapper.Map<List<LessonDTO>>(lessons);
+
+                var books = _unitOfWork.BookRepository.GetAll();
+
+                var bookRs = _mapper.Map<List<BookDTO>>(books);
+
+                var lessonPlaylists = await _unitOfWork.PlaylistRepository.GetAllLessonsPlaylist();
+
+                var listLessonPlaylist = new List<PlaylistDTO>();
+
+                if (lessonPlaylists != null && lessonPlaylists.Any())
+                {
+                    foreach (var playlist in lessonPlaylists)
+                    {
+                        var playlistDTO = new PlaylistDTO
+                        {
+                            PlaylistId = playlist.PlaylistId,
+                            PlaylistName = playlist.PlaylistName,
+                            ImageUrl = playlist.ImageUrl,
+                            NumberOfContent = playlist.Lessons.Count,
+                            Status = playlist.Status,
+                        };
+
+                        listLessonPlaylist.Add(playlistDTO);
+                    }
+                }
+
+                var musicPlaylists = await _unitOfWork.PlaylistRepository.GetAllMusicsPlaylist();
+
+                var listMusicPlaylist = new List<PlaylistDTO>();
+
+                if (musicPlaylists != null && musicPlaylists.Any())
+                {
+                    foreach (var playlist in musicPlaylists)
+                    {
+                        var playlistDTO = new PlaylistDTO
+                        {
+                            PlaylistId = playlist.PlaylistId,
+                            PlaylistName = playlist.PlaylistName,
+                            NumberOfContent = playlist.Musics.Count,
+                            Status = playlist.Status,
+                        };
+
+                        listMusicPlaylist.Add(playlistDTO);
+                    }
+                }
+
+                var rs = new GetAllContentResponse
+                {
+                    Books = bookRs.Count,
+                    Musics = musicRs.Count,
+                    Lessons = lessonRs.Count,
+                    MusicPlaylists = listMusicPlaylist.Count,
+                    LessonPlaylists = listLessonPlaylist.Count,
+                };
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
         }
 
         public async Task<IBusinessResult> GetAllMusics(int playlistId)
@@ -164,6 +240,7 @@ namespace SE.Service.Services
                             PlaylistName = playlist.PlaylistName,
                             NumberOfContent = playlist.Musics.Count,
                             Status = playlist.Status,
+                            ImageUrl = playlist.ImageUrl
                         };
 
                         listMusicPlaylist.Add(playlistDTO);
@@ -725,11 +802,29 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
                 }
 
+                var imageURL = ("", "");
+
+                if (req.PlaylistImage != null)
+                {
+                    imageURL = await CloudinaryHelper.UploadImageAsync(req.PlaylistImage);
+                }
+                else if (req.PlaylistImage == null && req.IsLesson)
+                {
+                    imageURL.Item2 = "https://res.cloudinary.com/drtn3fqci/image/upload/v1743231522/q3varo58nxkz_etly2b.webp";
+                }                
+                else
+                {
+                    imageURL.Item2 = "https://res.cloudinary.com/drtn3fqci/image/upload/v1743231326/31Fq-eqH4bL._AC_UF1000_1000_QL80__szbqew.jpg";
+                }
+
+
+
                 var playlist = new Playlist
                 {
                     AccountId = req.AccountId,
                     PlaylistName = req.PlaylistName,
                     CreatedDate = DateTime.UtcNow.AddHours(7),
+                    ImageUrl = imageURL.Item2,
                     Status = SD.ContentStatus.ACTIVE,
                     IsLesson = req.IsLesson,
                 };

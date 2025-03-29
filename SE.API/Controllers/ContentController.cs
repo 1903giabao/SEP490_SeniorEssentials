@@ -15,6 +15,13 @@ namespace SE.API.Controllers
             _contentService = contentService;
         }
 
+        [HttpGet("all-content")]
+        public async Task<IActionResult> GetAllContents()
+        {
+            var result = await _contentService.GetAllContents();
+            return Ok(result);
+        }         
+        
         [HttpGet("all-music/{playlistId}")]
         public async Task<IActionResult> GetAllMusics(int playlistId)
         {
