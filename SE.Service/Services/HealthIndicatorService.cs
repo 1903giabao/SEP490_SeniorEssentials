@@ -1107,8 +1107,8 @@ namespace SE.Service.Services
                         Week = week,
                         Records = weightRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
-                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek.Date &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek.Date)
                             .ToList()
                     })
                     .Select(x => new ChartDataModel
@@ -1125,8 +1125,8 @@ namespace SE.Service.Services
                         Month = month,
                         Records = weightRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
-                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth.Date &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth.Date)
                             .ToList()
                     })
                     .Select(x => new ChartDataModel
@@ -1315,8 +1315,8 @@ namespace SE.Service.Services
                         Week = week,
                         Records = heightRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
-                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek.Date &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek.Date)
                             .ToList()
                     })
                     .Select(x => new ChartDataModel
@@ -1334,8 +1334,8 @@ namespace SE.Service.Services
                         Month = month,
                         Records = heightRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
-                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth.Date &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth.Date)
                             .ToList()
                     })
                     .Select(x => new ChartDataModel
@@ -1377,27 +1377,29 @@ namespace SE.Service.Services
                     .Where(y => y.Indicator.HasValue)
                     .DefaultIfEmpty(new ChartDataModel { Indicator = 0 }) // Default to 0 if all are null
                     .Average(y => y.Indicator.Value);
-
-                // Calculate BMI for each period using the newest weight
-                var bmiForCurrentDay = CalculateBMI(newestWeight, (decimal)dailyRecords
-                    .Where(d => d.Indicator.HasValue)
-                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
-                    .Average(d => d.Indicator.Value) / 100);
-
-                var bmiForCurrentWeek = CalculateBMI(newestWeight, (decimal)weeklyRecords
+                        var bmiForCurrentDay = dailyRecords.Any(d => d.Indicator.HasValue)
+                                     ? CalculateBMI(newestWeight, (decimal)dailyRecords
+                     .Where(d => d.Indicator.HasValue)
+                     .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                     .Average(d => d.Indicator.Value) / 100)
+                                    : 0; 
+                var bmiForCurrentWeek = weeklyRecords.Any(d => d.Indicator.HasValue)
+                                     ? CalculateBMI(newestWeight, (decimal)weeklyRecords
                     .Where(w => w.Indicator.HasValue)
                     .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
-                    .Average(w => w.Indicator.Value) / 100);
+                    .Average(w => w.Indicator.Value) / 100) : 0;
 
-                var bmiForCurrentMonth = CalculateBMI(newestWeight, (decimal)monthlyRecords
+                var bmiForCurrentMonth = monthlyRecords.Any(d => d.Indicator.HasValue)
+                                     ? CalculateBMI(newestWeight, (decimal)monthlyRecords
                     .Where(m => m.Indicator.HasValue)
                     .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
-                    .Average(m => m.Indicator.Value) / 100);
+                    .Average(m => m.Indicator.Value) / 100) : 0;
 
-                var bmiForCurrentYear = CalculateBMI(newestWeight, (decimal)yearlyRecords
+                var bmiForCurrentYear = yearlyRecords.Any(d => d.Indicator.HasValue)
+                                     ? CalculateBMI(newestWeight, (decimal)yearlyRecords
                     .Where(y => y.Indicator.HasValue)
                     .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
-                    .Average(y => y.Indicator.Value) / 100);
+                    .Average(y => y.Indicator.Value) / 100) : 0;
 
                 var responseList = new List<GetHealthIndicatorDetailReponse>
         {
@@ -1508,8 +1510,8 @@ namespace SE.Service.Services
                         Week = week,
                         Records = heartRateRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
-                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek.Date &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek.Date)
                             .ToList()
                     })
                     .Select(x => new ChartDataModel
@@ -1526,8 +1528,8 @@ namespace SE.Service.Services
                         Month = month,
                         Records = heartRateRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
-                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth.Date &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth.Date)
                             .ToList()
                     })
                     .Select(x => new ChartDataModel
@@ -1702,8 +1704,8 @@ namespace SE.Service.Services
                         Week = week,
                         Records = bloodPressureRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
-                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek.Date &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek.Date)
                             .ToList()
                     })
                     .Select(x => new ChartBloodPressureModel
@@ -1721,8 +1723,8 @@ namespace SE.Service.Services
                         Month = month,
                         Records = bloodPressureRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
-                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth.Date &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth.Date)
                             .ToList()
                     })
                     .Select(x => new ChartBloodPressureModel
@@ -2003,8 +2005,8 @@ namespace SE.Service.Services
                         Week = week,
                         Records = bloodGlucoseRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
-                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek.Date &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek.Date)
                             .ToList()
                     })
                     .Select(x => new ChartBloodGlucoseModel
@@ -2025,8 +2027,8 @@ namespace SE.Service.Services
                         Month = month,
                         Records = bloodGlucoseRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
-                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth.Date &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth.Date)
                             .ToList()
                     })
                     .Select(x => new ChartBloodGlucoseModel
@@ -2183,8 +2185,8 @@ namespace SE.Service.Services
                         Week = week,
                         Records = lipidProfileRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
-                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek.Date.Date &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek.Date.Date)
                             .ToList()
                     })
                     .Select(x => new CharLipidProfileModel
@@ -2205,8 +2207,8 @@ namespace SE.Service.Services
                         Month = month,
                         Records = lipidProfileRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
-                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth.Date &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth.Date)
                             .ToList()
                     })
                     .Select(x => new CharLipidProfileModel
@@ -2526,8 +2528,8 @@ namespace SE.Service.Services
                         Week = week,
                         Records = liverEnzymeRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
-                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek.Date &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek.Date)
                             .ToList()
                     })
                     .Select(x => new CharLiverEnzymesModel
@@ -2548,8 +2550,8 @@ namespace SE.Service.Services
                         Month = month,
                         Records = liverEnzymeRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
-                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth.Date &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth.Date)
                             .ToList()
                     })
                     .Select(x => new CharLiverEnzymesModel
@@ -2856,8 +2858,8 @@ namespace SE.Service.Services
                         Week = week,
                         Records = kidneyFunctionRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= week.StartOfWeek &&
-                                             record.DateRecorded.Value.Date <= week.EndOfWeek)
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek.Date &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek.Date)
                             .ToList()
                     })
                     .Select(x => new CharKidneyFunctionModel
@@ -2877,8 +2879,8 @@ namespace SE.Service.Services
                         Month = month,
                         Records = kidneyFunctionRecords
                             .Where(record => record.DateRecorded.HasValue &&
-                                             record.DateRecorded.Value.Date >= month.StartOfMonth &&
-                                             record.DateRecorded.Value.Date <= month.EndOfMonth)
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth.Date &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth.Date)
                             .ToList()
                     })
                     .Select(x => new CharKidneyFunctionModel
