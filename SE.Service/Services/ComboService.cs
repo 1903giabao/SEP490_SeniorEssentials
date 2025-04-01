@@ -60,7 +60,7 @@ namespace SE.Service.Services
                 combo.CreatedDate = DateTime.UtcNow;
                 combo.UpdatedDate = DateTime.UtcNow;
 
-                var result = await _unitOfWork.ComboRepository.CreateAsync(combo);
+                var result = await _unitOfWork.SubscriptionRepository.CreateAsync(combo);
 
                 if (result > 0)
                 {
@@ -94,7 +94,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "DESCRIPTION MUST NOT BE EMPTY");
                 }
 
-                var combo = await _unitOfWork.ComboRepository.GetByIdAsync(comboId);
+                var combo = await _unitOfWork.SubscriptionRepository.GetByIdAsync(comboId);
 
                 if (combo == null)
                 {
@@ -106,7 +106,7 @@ namespace SE.Service.Services
                 combo.Fee = req.Fee;
                 combo.UpdatedDate = DateTime.UtcNow;
 
-                var result = await _unitOfWork.ComboRepository.UpdateAsync(combo);
+                var result = await _unitOfWork.SubscriptionRepository.UpdateAsync(combo);
 
                 if (result > 0)
                 {
@@ -125,7 +125,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var combos = await _unitOfWork.ComboRepository.GetAllAsync(); 
+                var combos = await _unitOfWork.SubscriptionRepository.GetAllAsync(); 
                 var comboDtos = _mapper.Map<List<ComboDto>>(combos); 
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, comboDtos);
@@ -145,7 +145,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "Invalid combo ID.");
                 }
 
-                var combo = await _unitOfWork.ComboRepository.GetByIdAsync(comboId);
+                var combo = await _unitOfWork.SubscriptionRepository.GetByIdAsync(comboId);
                 if (combo == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, "Combo not found.");
@@ -166,7 +166,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var checkComboExisted = _unitOfWork.ComboRepository.FindByCondition(c => c.SubscriptionId == comboId).FirstOrDefault();
+                var checkComboExisted = _unitOfWork.SubscriptionRepository.FindByCondition(c => c.SubscriptionId == comboId).FirstOrDefault();
 
                 if (checkComboExisted == null)
                 {
@@ -175,7 +175,7 @@ namespace SE.Service.Services
 
                 checkComboExisted.Status = SD.GeneralStatus.INACTIVE;
 
-                var result = await _unitOfWork.ComboRepository.UpdateAsync(checkComboExisted);
+                var result = await _unitOfWork.SubscriptionRepository.UpdateAsync(checkComboExisted);
 
                 if (result > 0)
                 {
