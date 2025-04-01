@@ -49,6 +49,10 @@ namespace SE.Data.UnitOfWork
         private WeightRepository _weightRepository;
         private HeightRepository _heightRepository;
         private HealthIndicatorBaseRepository _healthIndicatorBaseRepository;
+        private SleepTimeRepository _sleepTimeRepository;
+        private CaloriesConsumptionRepository _caloriesConsumptionRepository;
+        private BloodOxygenRepository _bloodOxygenRepository;
+        private FootStepRepository _footStepRepository;
 
 
         public UnitOfWork()
@@ -66,6 +70,38 @@ namespace SE.Data.UnitOfWork
             get
             {
                 return _accountRepository ??= new AccountRepository(_unitOfWorkContext);
+            }
+        }          
+        
+        public SleepTimeRepository SleepTimeRepository
+        {
+            get
+            {
+                return _sleepTimeRepository ??= new SleepTimeRepository(_unitOfWorkContext);
+            }
+        }          
+        
+        public CaloriesConsumptionRepository CaloriesConsumptionRepository
+        {
+            get
+            {
+                return _caloriesConsumptionRepository ??= new CaloriesConsumptionRepository(_unitOfWorkContext);
+            }
+        }          
+        
+        public BloodOxygenRepository BloodOxygenRepository
+        {
+            get
+            {
+                return _bloodOxygenRepository ??= new BloodOxygenRepository(_unitOfWorkContext);
+            }
+        }         
+        
+        public FootStepRepository FootStepRepository
+        {
+            get
+            {
+                return _footStepRepository ??= new FootStepRepository(_unitOfWorkContext);
             }
         }        
         

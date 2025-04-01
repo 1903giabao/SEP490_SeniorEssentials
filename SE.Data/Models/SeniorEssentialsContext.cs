@@ -39,11 +39,15 @@ public partial class SeniorEssentialsContext : DbContext
 
     public virtual DbSet<BloodGlucose> BloodGlucoses { get; set; }
 
+    public virtual DbSet<BloodOxygen> BloodOxygens { get; set; }
+
     public virtual DbSet<BloodPressure> BloodPressures { get; set; }
 
     public virtual DbSet<Book> Books { get; set; }
 
     public virtual DbSet<Booking> Bookings { get; set; }
+
+    public virtual DbSet<CaloriesConsumption> CaloriesConsumptions { get; set; }
 
     public virtual DbSet<ContentProvider> ContentProviders { get; set; }
 
@@ -54,6 +58,8 @@ public partial class SeniorEssentialsContext : DbContext
     public virtual DbSet<EmergencyInformation> EmergencyInformations { get; set; }
 
     public virtual DbSet<FamilyMember> FamilyMembers { get; set; }
+
+    public virtual DbSet<FootStep> FootSteps { get; set; }
 
     public virtual DbSet<Group> Groups { get; set; }
 
@@ -96,6 +102,8 @@ public partial class SeniorEssentialsContext : DbContext
     public virtual DbSet<ProfessorSchedule> ProfessorSchedules { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
+
+    public virtual DbSet<SleepTime> SleepTimes { get; set; }
 
     public virtual DbSet<Subscription> Subscriptions { get; set; }
 
@@ -198,6 +206,26 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasConstraintName("FK__BloodGluc__Elder__6CD828CA");
         });
 
+        modelBuilder.Entity<BloodOxygen>(entity =>
+        {
+            entity.HasKey(e => e.BloodOxygenId).HasName("PK__BloodOxy__FD752DD7FB3DAAC5");
+
+            entity.ToTable("BloodOxygen");
+
+            entity.Property(e => e.BloodOxygenId).HasColumnName("BloodOxygenID");
+            entity.Property(e => e.BloodOxygen1)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("BloodOxygen");
+            entity.Property(e => e.CreatedBy).HasMaxLength(50);
+            entity.Property(e => e.DateRecorded).HasColumnType("datetime");
+            entity.Property(e => e.ElderlyId).HasColumnName("ElderlyID");
+            entity.Property(e => e.Status).HasMaxLength(50);
+
+            entity.HasOne(d => d.Elderly).WithMany(p => p.BloodOxygens)
+                .HasForeignKey(d => d.ElderlyId)
+                .HasConstraintName("FK__BloodOxyg__Elder__5C6CB6D7");
+        });
+
         modelBuilder.Entity<BloodPressure>(entity =>
         {
             entity.HasKey(e => e.BloodPressureId).HasName("PK__BloodPre__B6BB8B4E951D12AE");
@@ -272,6 +300,26 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Transaction).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.TransactionId)
                 .HasConstraintName("FK__Booking__Transac__11158940");
+        });
+
+        modelBuilder.Entity<CaloriesConsumption>(entity =>
+        {
+            entity.HasKey(e => e.CaloriesConsumptionId).HasName("PK__Calories__F6FC3D1C9F7A0152");
+
+            entity.ToTable("CaloriesConsumption");
+
+            entity.Property(e => e.CaloriesConsumptionId).HasColumnName("CaloriesConsumptionID");
+            entity.Property(e => e.CaloriesConsumption1)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("CaloriesConsumption");
+            entity.Property(e => e.CreatedBy).HasMaxLength(50);
+            entity.Property(e => e.DateRecorded).HasColumnType("datetime");
+            entity.Property(e => e.ElderlyId).HasColumnName("ElderlyID");
+            entity.Property(e => e.Status).HasMaxLength(50);
+
+            entity.HasOne(d => d.Elderly).WithMany(p => p.CaloriesConsumptions)
+                .HasForeignKey(d => d.ElderlyId)
+                .HasConstraintName("FK__CaloriesC__Elder__6225902D");
         });
 
         modelBuilder.Entity<ContentProvider>(entity =>
@@ -372,6 +420,26 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Account).WithOne(p => p.FamilyMember)
                 .HasForeignKey<FamilyMember>(d => d.AccountId)
                 .HasConstraintName("FK__FamilyMem__Accou__07C12930");
+        });
+
+        modelBuilder.Entity<FootStep>(entity =>
+        {
+            entity.HasKey(e => e.FootStepId).HasName("PK__FootStep__392C7E95EDAF3E52");
+
+            entity.ToTable("FootStep");
+
+            entity.Property(e => e.FootStepId).HasColumnName("FootStepID");
+            entity.Property(e => e.CreatedBy).HasMaxLength(50);
+            entity.Property(e => e.DateRecorded).HasColumnType("datetime");
+            entity.Property(e => e.ElderlyId).HasColumnName("ElderlyID");
+            entity.Property(e => e.FootStep1)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("FootStep");
+            entity.Property(e => e.Status).HasMaxLength(50);
+
+            entity.HasOne(d => d.Elderly).WithMany(p => p.FootSteps)
+                .HasForeignKey(d => d.ElderlyId)
+                .HasConstraintName("FK__FootStep__Elderl__5F492382");
         });
 
         modelBuilder.Entity<Group>(entity =>
@@ -821,6 +889,26 @@ public partial class SeniorEssentialsContext : DbContext
             entity.Property(e => e.Status)
                 .IsRequired()
                 .HasMaxLength(20);
+        });
+
+        modelBuilder.Entity<SleepTime>(entity =>
+        {
+            entity.HasKey(e => e.SleepTimeId).HasName("PK__SleepTim__889BDCACAC61C3AC");
+
+            entity.ToTable("SleepTime");
+
+            entity.Property(e => e.SleepTimeId).HasColumnName("SleepTimeID");
+            entity.Property(e => e.CreatedBy).HasMaxLength(50);
+            entity.Property(e => e.DateRecorded).HasColumnType("datetime");
+            entity.Property(e => e.ElderlyId).HasColumnName("ElderlyID");
+            entity.Property(e => e.SleepTime1)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("SleepTime");
+            entity.Property(e => e.Status).HasMaxLength(50);
+
+            entity.HasOne(d => d.Elderly).WithMany(p => p.SleepTimes)
+                .HasForeignKey(d => d.ElderlyId)
+                .HasConstraintName("FK__SleepTime__Elder__6501FCD8");
         });
 
         modelBuilder.Entity<Subscription>(entity =>

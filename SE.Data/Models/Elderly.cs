@@ -29,11 +29,17 @@ public partial class Elderly
 
     public virtual ICollection<BloodGlucose> BloodGlucoses { get; set; } = new List<BloodGlucose>();
 
+    public virtual ICollection<BloodOxygen> BloodOxygens { get; set; } = new List<BloodOxygen>();
+
     public virtual ICollection<BloodPressure> BloodPressures { get; set; } = new List<BloodPressure>();
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
+    public virtual ICollection<CaloriesConsumption> CaloriesConsumptions { get; set; } = new List<CaloriesConsumption>();
+
     public virtual ICollection<EmergencyConfirmation> EmergencyConfirmations { get; set; } = new List<EmergencyConfirmation>();
+
+    public virtual ICollection<FootStep> FootSteps { get; set; } = new List<FootStep>();
 
     public virtual ICollection<HeartRate> HeartRates { get; set; } = new List<HeartRate>();
 
@@ -54,6 +60,8 @@ public partial class Elderly
     public virtual ICollection<ProfessorAppointment> ProfessorAppointments { get; set; } = new List<ProfessorAppointment>();
 
     public virtual ICollection<ProfessorRating> ProfessorRatings { get; set; } = new List<ProfessorRating>();
+
+    public virtual ICollection<SleepTime> SleepTimes { get; set; } = new List<SleepTime>();
 
     public virtual ICollection<Weight> Weights { get; set; } = new List<Weight>();
 }

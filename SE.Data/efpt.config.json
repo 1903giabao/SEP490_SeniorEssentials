@@ -31,6 +31,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[BloodOxygen]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[BloodPressure]",
          "ObjectType": 0
       },
@@ -40,6 +44,10 @@
       },
       {
          "Name": "[dbo].[Booking]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[CaloriesConsumption]",
          "ObjectType": 0
       },
       {
@@ -60,6 +68,10 @@
       },
       {
          "Name": "[dbo].[FamilyMember]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[FootStep]",
          "ObjectType": 0
       },
       {
@@ -144,6 +156,10 @@
       },
       {
          "Name": "[dbo].[Role]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[SleepTime]",
          "ObjectType": 0
       },
       {
