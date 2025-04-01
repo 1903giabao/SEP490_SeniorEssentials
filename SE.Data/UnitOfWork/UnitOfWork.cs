@@ -15,7 +15,7 @@ namespace SE.Data.UnitOfWork
         private ActivityScheduleRepository _activityScheduleRepository;
         private BookRepository _bookRepository;
         private BookingRepository _bookingRepository;
-        private SubscriptionRepository _comboRepository;
+        private SubscriptionRepository _subscriptionRepository;
         private ContentProviderRepository _contentProviderRepository;
         private EmergencyInformationRepository _emergencyInformationRepository;
         private EmergencyConfirmationRepository _emergencyConfirmationRepository;
@@ -159,9 +159,9 @@ namespace SE.Data.UnitOfWork
             get => _bookingRepository ??= new BookingRepository(_unitOfWorkContext);
         }
 
-        public SubscriptionRepository ComboRepository
+        public SubscriptionRepository SubscriptionRepository
         {
-            get => _comboRepository ??= new SubscriptionRepository(_unitOfWorkContext);
+            get => _subscriptionRepository ??= new SubscriptionRepository(_unitOfWorkContext);
         }
 
         public ContentProviderRepository ContentProviderRepository

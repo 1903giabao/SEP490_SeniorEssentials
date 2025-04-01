@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace SE.Data.Repository
 {
@@ -14,6 +15,11 @@ namespace SE.Data.Repository
         public SubscriptionRepository(SeniorEssentialsContext context)
         {
             _context = context;
+        }
+
+        public async Task<List<Subscription>> GetAllSubscriptions()
+        {
+            return await _context.Subscriptions.Include(s => s.Bookings).ToListAsync();
         }
     }
 }
