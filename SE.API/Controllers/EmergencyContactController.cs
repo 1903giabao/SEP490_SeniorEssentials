@@ -22,6 +22,13 @@ namespace SE.API.Controllers
             _emergencyContactService = emergencyContactService;
         }
 
+        [HttpGet()]
+        public async Task<IActionResult> GetAllEmergencyConfirmation()
+        {
+            var result = await _emergencyContactService.GetAllEmergencyConfirmation();
+            return Ok(result);
+        }        
+
         [HttpGet("list-emergency-information/{emergencyId}")]
         public async Task<IActionResult> GetListEmergencyInformation(int emergencyId)
         {

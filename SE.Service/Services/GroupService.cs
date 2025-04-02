@@ -16,6 +16,7 @@ namespace SE.Service.Services
 {
     public interface IGroupService
     {
+        Task<IBusinessResult> GetAllElderlyByFamilyMemberId(int accountId);
         Task<IBusinessResult> CreateGroup(CreateGroupRequest request);
         Task<IBusinessResult> GetGroupsByAccountId(int accountId);
         Task<IBusinessResult> RemoveMemberFromGroup(int kickerId, int groupId, int accountId);
@@ -40,6 +41,66 @@ namespace SE.Service.Services
             _mapper = mapper;
             _firestoreDb = firestoreDb;
             _videoCallService = videoCallService;
+        }
+
+        public async Task<IBusinessResult> GetAllElderlyByFamilyMemberId(int accountId)
+        {
+            try
+            {
+                if (accountId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid account ID.");
+                }
+
+                var familyMember = _unitOfWork.AccountRepository.FindByCondition(a => a.AccountId == accountId && a.RoleId == 3 && a.Status.Equals(SD.GeneralStatus.ACTIVE)).FirstOrDefault();
+
+                if (familyMember == null) 
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Family Member does not existed");
+                }
+
+                var userGroups = _unitOfWork.GroupMemberRepository.GetAll()
+                    .Where(gm => gm.AccountId == accountId && gm.Status == SD.GeneralStatus.ACTIVE)
+                    .Select(gm => gm.GroupId)
+                    .ToList();
+
+                if (!userGroups.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "User is not a member of any group.");
+                }
+
+                var result = new List<GetAllGroupMembersDTO>();
+
+                foreach (var groupId in userGroups)
+                {
+                    var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
+
+                    var elders = await _unitOfWork.GroupMemberRepository.GetElderlyInGroupByGroupIdAsync(group.GroupId, SD.GeneralStatus.ACTIVE);
+
+                    if (elders.Any())
+                    {
+                        var users = elders.Select(e => _mapper.Map<UserDTO>(e.Account)).ToList();
+
+                        result.Add(new GetAllGroupMembersDTO
+                        {
+                            GroupId = groupId,
+                            GroupName = group.GroupName,
+                            Members = users
+                        });
+                    }
+                }
+
+                if (!result.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No active members found in any group.");
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
         }
 
         public async Task<IBusinessResult> CreateGroup(CreateGroupRequest request)

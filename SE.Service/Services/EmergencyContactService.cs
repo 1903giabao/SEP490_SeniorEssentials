@@ -20,11 +20,15 @@ using Org.BouncyCastle.Ocsp;
 using Microsoft.Identity.Client;
 using Newtonsoft.Json.Linq;
 using SE.Common.DTO.Emergency;
+using SE.Common.Response.Emergency;
+using SE.Common.Request;
+using System.Text.RegularExpressions;
 
 namespace SE.Service.Services
 {
     public interface IEmergencyContactService
     {
+        Task<IBusinessResult> GetAllEmergencyConfirmation();
         Task<IBusinessResult> FamilyEmergencyCall(int accountId);
         Task<IBusinessResult> GetCallStatus(string callId);
         Task<IBusinessResult> DoctorEmergencyCall(int accountId);
@@ -56,6 +60,106 @@ namespace SE.Service.Services
             _secretKey = Environment.GetEnvironmentVariable("VoiceCallSecretKey");
             _notificationService = notificationService;
             _smsService = smsService;
+        }
+
+        public async Task<IBusinessResult> GetAllEmergencyConfirmation()
+        {
+            try
+            {
+                var result = new List<GetAllEmergencyResponse>();
+
+                var emergencyList = await _unitOfWork.EmergencyConfirmationRepository.GetAllEmergencyConfirmationAsync();
+
+                foreach (var e in emergencyList)
+                {
+                    var listInformation = await _unitOfWork.EmergencyInformationRepository.GetListEmergencyInformation(e.EmergencyConfirmationId);
+
+                    var emergencyInformationResponseList = listInformation.Select(information => new GetAllEmergencyInformation
+                    {
+                        EmergencyInformationId = information.EmergencyInformationId,
+                        FrontCameraImage = information.FrontCameraImage,
+                        RearCameraImage = information.RearCameraImage,
+                        Latitude = information.Latitude,
+                        Longitude = information.Longitude,
+                        InformationDate = information.DateTime?.ToString("dd-MM-yyyy"),
+                        InformationTime = information.DateTime?.ToString("HH:mm"),
+                        Status = information.Status,
+                        LatitudeIot = information.LatitudeIot, 
+                        LongitudeIot = information.LongitudeIot
+                    }).ToList();
+
+                    var emergencyContacts = await GetAllFamilyMemberByElderlyId((int)e.Elderly.AccountId);
+
+                    var emergencyConfirmationResponse = new GetAllEmergencyResponse
+                    {
+                        EmergencyConfirmationId = e.EmergencyConfirmationId,
+                        ElderlyId = e.ElderlyId,
+                        EmergencyDate = e.EmergencyDate?.ToString("dd-MM-yyyy"),
+                        EmergencyTime = e.EmergencyDate?.ToString("HH:mm"),
+                        ConfirmationAccountName = e.ConfirmationAccount == null ? "" : e.ConfirmationAccount.FullName,
+                        ConfirmationDate = e.ConfirmationDate?.ToString("dd-MM-yyyy HH:mm"),
+                        IsConfirmed = (bool)(e.IsConfirm == null ? false : e.IsConfirm),
+                        EmergencyInformations = emergencyInformationResponseList,
+                        EmergencyDateTime = e.EmergencyDate,
+                        EmergencyContacts = emergencyContacts,
+                    };
+
+                    result.Add(emergencyConfirmationResponse);
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result.OrderByDescending(r => r.EmergencyDateTime).ToList());
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, $"An unexpected error occurred: {ex.Message}");
+            }
+        }
+
+        private async Task<List<GetAllEmergencyContact>> GetAllFamilyMemberByElderlyId(int accountId)
+        {
+            try
+            {
+                var elderly = _unitOfWork.AccountRepository.FindByCondition(a => a.AccountId == accountId && a.RoleId == 2 && a.Status.Equals(SD.GeneralStatus.ACTIVE)).FirstOrDefault();
+
+                if (elderly == null)
+                {
+                    return new List<GetAllEmergencyContact>();
+                }
+
+                var userGroup = _unitOfWork.GroupMemberRepository.GetAll()
+                    .Where(gm => gm.AccountId == accountId && gm.Status == SD.GeneralStatus.ACTIVE)
+                    .Select(gm => gm.GroupId)
+                    .FirstOrDefault();
+
+                var result = new List<GetAllEmergencyContact>();
+
+                var group = await _unitOfWork.GroupRepository.GetByIdAsync(userGroup);
+
+                if (group == null)
+                {
+                    return new List<GetAllEmergencyContact>();
+                }
+
+                var familyMembers = await _unitOfWork.GroupMemberRepository.GetAccountFamilyMemberInGroupByGroupIdAsync(group.GroupId, SD.GeneralStatus.ACTIVE);
+
+                if (familyMembers.Any())
+                {
+                    var users = familyMembers.Select(f => new GetAllEmergencyContact
+                    {
+                        AccountId = f.AccountId,
+                        FullName = f.FullName,
+                        PhoneNumber = f.PhoneNumber,
+                    }).ToList();
+
+                    result.AddRange(users);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
 
         public async Task<IBusinessResult> GetCallStatus(string callId)

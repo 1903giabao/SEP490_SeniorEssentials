@@ -24,6 +24,15 @@ namespace SE.Data.Repository
                     .Select(gm => gm.AccountId)
                     .Distinct()
                     .ToListAsync();
+        }         
+        
+        public async Task<List<Account>> GetAccountFamilyMemberInGroupByGroupIdAsync(int groupId, string status)
+        {
+            return await _context.GroupMembers.Include(gm => gm.Account)
+                    .Where(gm => gm.GroupId == groupId && gm.Status.Equals(status) && gm.Account.RoleId == 3)
+                    .Select(gm => gm.Account)
+                    .Distinct()
+                    .ToListAsync();
         }        
         
         public async Task<List<Elderly>> GetElderlyInGroupByGroupIdAsync(int groupId, string status)

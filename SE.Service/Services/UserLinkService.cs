@@ -463,7 +463,7 @@ namespace SE.Service.Services
 
                 if (requestUser == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot find request of user!");
+                    return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG);
                 }
 
                 var userLinks = await _unitOfWork.UserLinkRepository.GetByAccount1Async(requestUserId, SD.UserLinkStatus.PENDING);
@@ -510,7 +510,7 @@ namespace SE.Service.Services
 
                 if (requestUser == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot find request of user!");
+                    return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG);
                 }
 
 
