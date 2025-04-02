@@ -86,6 +86,11 @@ namespace SE.Common.Mapper
             CreateMap<LipidProfile, CreateLipidProfileRequest>().ReverseMap();
             CreateMap<LiverEnzyme, CreateLiverEnzymesRequest> ().ReverseMap();
             CreateMap<KidneyFunction, CreateKidneyFunctionRequest> ().ReverseMap();
+            CreateMap<CaloriesConsumption, CreateCaloriesConsumptionRequest>().ReverseMap();
+            CreateMap<FootStep, CreateFootStepRequest>().ReverseMap();
+            CreateMap<SleepTime, CreateSleepTimeRequest>().ReverseMap();
+            CreateMap<BloodOxygen, CreateBloodOxygenRequest>().ReverseMap();
+
 
             CreateMap<BloodPressure, GetBloodPressureDTO>().ReverseMap();
             CreateMap<BloodGlucose, GetBloodGlucoseDTO>().ReverseMap();

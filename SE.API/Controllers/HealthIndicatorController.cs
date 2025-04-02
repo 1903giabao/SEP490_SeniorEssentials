@@ -39,6 +39,34 @@ public class HealthIndicatorController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("healthIndicator/sleepTime/detail/{accountId}")]
+    public async Task<IActionResult> GetSleepTimeDetail(int accountId)
+    {
+        var result = await _healthIndicatorService.GetSleepTimeDetail(accountId);
+        return Ok(result);
+    }
+
+    [HttpGet("healthIndicator/bloodOxygen/detail/{accountId}")]
+    public async Task<IActionResult> GetBloodOxygenDetail(int accountId)
+    {
+        var result = await _healthIndicatorService.GetBloodOxygenDetail(accountId);
+        return Ok(result);
+    }
+
+    [HttpGet("healthIndicator/footStep/detail/{accountId}")]
+    public async Task<IActionResult> GetFootStepDetail(int accountId)
+    {
+        var result = await _healthIndicatorService.GetFootStepDetail(accountId);
+        return Ok(result);
+    }
+
+    [HttpGet("healthIndicator/caloriesConsumption/detail/{accountId}")]
+    public async Task<IActionResult> GetCaloriesConsumptionDetail(int accountId)
+    {
+        var result = await _healthIndicatorService.GetCaloriesConsumptionDetail(accountId);
+        return Ok(result);
+    }
+
     [HttpGet("healthIndicator/blood-pressure/detail/{accountId}")]
     public async Task<IActionResult> GetBloodPressureDetail(int accountId)
     {
@@ -84,6 +112,14 @@ public class HealthIndicatorController : ControllerBase
         var result = await _healthIndicatorService.EvaluateBMI(height,weight,accountId);
         return Ok(result);
     }
+
+    [HttpGet("healthIndicator/evaluation/blood-oxygen")]
+    public async Task<IActionResult> EvaluateBMI(decimal? bloodOxygen)
+    {
+        var result = await _healthIndicatorService.EvaluateBloodOxygen(bloodOxygen);
+        return Ok(result);
+    }
+
     [HttpGet("healthIndicator/evaluation/heart-rate")]
     public async Task<IActionResult> EvaluateHeartRate(int heartRate)
     {
@@ -128,6 +164,33 @@ public class HealthIndicatorController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("calories-consumption")]
+    public async Task<IActionResult> CreateCaloriesConsumption([FromBody] CreateCaloriesConsumptionRequest request)
+    {
+        var result = await _healthIndicatorService.CreateCaloriesComsumption(request);
+        return Ok(result);
+    }
+
+    [HttpPost("foot-step")]
+    public async Task<IActionResult> CreateFootStep([FromBody] CreateFootStepRequest request)
+    {
+        var result = await _healthIndicatorService.CreateFootstep(request);
+        return Ok(result);
+    }
+
+    [HttpPost("blood-oxygen")]
+    public async Task<IActionResult> CreateBloodOxygen([FromBody] CreateBloodOxygenRequest request)
+    {
+        var result = await _healthIndicatorService.CreateBloodOxygen(request);
+        return Ok(result);
+    }
+
+    [HttpPost("sleep-time")]
+    public async Task<IActionResult> CreateSleepTime([FromBody] CreateSleepTimeRequest request)
+    {
+        var result = await _healthIndicatorService.CreateSleepTime(request);
+        return Ok(result);
+    }
     [HttpPost("weight")]
     public async Task<IActionResult> CreateWeight([FromBody] CreateWeightRequest request)
     {
@@ -181,6 +244,33 @@ public class HealthIndicatorController : ControllerBase
     public async Task<IActionResult> CreateKidneyFunction([FromBody] CreateKidneyFunctionRequest request)
     {
         var result = await _healthIndicatorService.CreateKidneyFunction(request);
+        return Ok(result);
+    }
+    [HttpPut("update-status/sleepTime/{sleepTimeId}")]
+    public async Task<IActionResult> UpdateSleepTimeStatus(int sleepTimeId, [FromBody] string status)
+    {
+        var result = await _healthIndicatorService.UpdateSleepTimeStatus(sleepTimeId, status);
+        return Ok(result);
+    }
+
+    [HttpPut("update-status/bloodOxygen/{bloodOxygenId}")]
+    public async Task<IActionResult> UpdateBloodOxygenStatus(int bloodOxygenId, [FromBody] string status)
+    {
+        var result = await _healthIndicatorService.UpdateBloodOxygenStatus(bloodOxygenId, status);
+        return Ok(result);
+    }
+
+    [HttpPut("update-status/footStep/{footStepId}")]
+    public async Task<IActionResult> UpdateFootStepStatus(int footStepId, [FromBody] string status)
+    {
+        var result = await _healthIndicatorService.UpdateFootStepStatus(footStepId, status);
+        return Ok(result);
+    }
+
+    [HttpPut("update-status/caloriesConsumption/{caloriesConsumptionId}")]
+    public async Task<IActionResult> UpdateCaloriesConsumptionStatus(int caloriesConsumptionId, [FromBody] string status)
+    {
+        var result = await _healthIndicatorService.UpdateCaloriesConsumptionStatus(caloriesConsumptionId, status);
         return Ok(result);
     }
 
@@ -293,6 +383,8 @@ public class HealthIndicatorController : ControllerBase
         var result = await _healthIndicatorService.UpdateWeight(weightId, weightUpdate, createdBy);
         return Ok(result);
     }
+
+
 
 }
 

@@ -34,6 +34,13 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateLipidProfile(CreateLipidProfileRequest request);
         Task<IBusinessResult> CreateLiverEnzymes(CreateLiverEnzymesRequest request);
         Task<IBusinessResult> CreateKidneyFunction(CreateKidneyFunctionRequest request);
+        //4 more
+        Task<IBusinessResult> CreateCaloriesComsumption(CreateCaloriesConsumptionRequest request);
+        Task<IBusinessResult> CreateFootstep(CreateFootStepRequest request);
+        Task<IBusinessResult> CreateBloodOxygen(CreateBloodOxygenRequest request);
+        Task<IBusinessResult> CreateSleepTime(CreateSleepTimeRequest request);
+
+
 
         // Update status methods for each health indicator
         Task<IBusinessResult> UpdateWeightStatus(int weightId, string status);
@@ -44,6 +51,12 @@ namespace SE.Service.Services
         Task<IBusinessResult> UpdateLipidProfileStatus(int lipidProfileId, string status);
         Task<IBusinessResult> UpdateLiverEnzymesStatus(int liverEnzymesId, string status);
         Task<IBusinessResult> UpdateKidneyFunctionStatus(int kidneyFunctionId, string status);
+
+        Task<IBusinessResult> UpdateSleepTimeStatus(int sleepTimeId, string status);
+        Task<IBusinessResult> UpdateBloodOxygenStatus(int bloodOxygenId, string status);
+        Task<IBusinessResult> UpdateFootStepStatus(int footStepId, string status);
+        Task<IBusinessResult> UpdateCaloriesConsumptionStatus(int caloriesConsumptionId, string status);
+
 
         //update
 
@@ -58,11 +71,17 @@ namespace SE.Service.Services
 
 
         //tivo
+
+        Task<IBusinessResult> GetSleepTimeDetail(int accountId);
+        Task<IBusinessResult> GetBloodOxygenDetail(int accountId);
+        Task<IBusinessResult> GetFootStepDetail(int accountId);
+        Task<IBusinessResult> GetCaloriesConsumptionDetail(int accountId);
+
         Task<IBusinessResult> GetWeightDetail(int accountId);
         Task<IBusinessResult> GetHeightDetail(int accountId);
         Task<IBusinessResult> GetHeartRateDetail(int accountId);
         Task<IBusinessResult> GetBloodPressureDetail(int accountId);
-
+        
         Task<IBusinessResult> GetBloodGlucoseDetail(int accountId);
         Task<IBusinessResult> GetLipidProfileDetail(int accountId);
         Task<IBusinessResult> GetLiverEnzymesDetail(int accountId);
@@ -78,6 +97,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> EvaluateLipidProfile(decimal? totalCholesterol, decimal? ldlCholesterol, decimal? hdlCholesterol, decimal? triglycerides);
         Task<IBusinessResult> EvaluateKidneyFunction(decimal creatinine, decimal BUN, decimal eGFR);
         Task<IBusinessResult> EvaluateBloodGlusose(decimal bloodGlucose, string time);
+        Task<IBusinessResult> EvaluateBloodOxygen(decimal? bloodOxygen);
+
 
         Task<IBusinessResult> GetLogBookResponses(int accountId);
 
@@ -129,7 +150,7 @@ namespace SE.Service.Services
                 weightEntity.Status = SD.GeneralStatus.ACTIVE;
                 weightEntity.ElderlyId = getElderly.Elderly.ElderlyId;
 
-                if (getFamily.FullName != null) weightEntity.CreatedBy = getFamily.FullName;
+                if (getFamily!=null && getFamily.FullName != null) weightEntity.CreatedBy = getFamily.FullName;
                 else weightEntity.CreatedBy = getElderly.FullName;
 
                 await _unitOfWork.WeightRepository.CreateAsync(weightEntity);
@@ -141,6 +162,204 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
             }
         }
+
+        public async Task<IBusinessResult> CreateCaloriesComsumption(CreateCaloriesConsumptionRequest request)
+        {
+            try
+            {
+                var getElderly = new Account();
+                var getFamily = new Account();
+                var isExisted = new Elderly();
+                if (request.ElderlyId != 0)
+                {
+                    //id nguoi gia
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
+                    getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+
+                }
+                else
+                {
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                }
+
+                isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
+
+                if (isExisted == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                if (request.CaloriesConsumption1 <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, "Weight must be greater than 0.");
+                }
+
+                var caloriesEntity = _mapper.Map<CaloriesConsumption>(request);
+                caloriesEntity.DateRecorded = System.DateTime.UtcNow.AddHours(7);
+                caloriesEntity.Status = SD.GeneralStatus.ACTIVE;
+                caloriesEntity.ElderlyId = getElderly.Elderly.ElderlyId;
+
+                if (getFamily!=null && getFamily.FullName != null) caloriesEntity.CreatedBy = getFamily.FullName;
+                else caloriesEntity.CreatedBy = getElderly.FullName;
+
+                await _unitOfWork.CaloriesConsumptionRepository.CreateAsync(caloriesEntity);
+
+                return new BusinessResult(Const.SUCCESS_CREATE, "Weight created successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> CreateFootstep(CreateFootStepRequest request)
+        {
+            try
+            {
+                var getElderly = new Account();
+                var getFamily = new Account();
+                var isExisted = new Elderly();
+                if (request.ElderlyId != 0)
+                {
+                    //id nguoi gia
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
+                    getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+
+                }
+                else
+                {
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                }
+
+                isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
+
+                if (isExisted == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                if (request.FootStep1 <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, "Weight must be greater than 0.");
+                }
+
+                var caloriesEntity = _mapper.Map<FootStep>(request);
+                caloriesEntity.DateRecorded = System.DateTime.UtcNow.AddHours(7);
+                caloriesEntity.Status = SD.GeneralStatus.ACTIVE;
+                caloriesEntity.ElderlyId = getElderly.Elderly.ElderlyId;
+
+                if (getFamily!=null && getFamily.FullName != null) caloriesEntity.CreatedBy = getFamily.FullName;
+                else caloriesEntity.CreatedBy = getElderly.FullName;
+
+                await _unitOfWork.FootStepRepository.CreateAsync(caloriesEntity);
+
+                return new BusinessResult(Const.SUCCESS_CREATE, "Weight created successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+
+        public async Task<IBusinessResult> CreateSleepTime(CreateSleepTimeRequest request)
+        {
+            try
+            {
+                var getElderly = new Account();
+                var getFamily = new Account();
+                var isExisted = new Elderly();
+                if (request.ElderlyId != 0)
+                {
+                    //id nguoi gia
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
+                    getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+
+                }
+                else
+                {
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                }
+
+                isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
+
+                if (isExisted == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                if (request.SleepTime1 <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, "Weight must be greater than 0.");
+                }
+
+                var caloriesEntity = _mapper.Map<SleepTime>(request);
+                caloriesEntity.DateRecorded = System.DateTime.UtcNow.AddHours(7);
+                caloriesEntity.Status = SD.GeneralStatus.ACTIVE;
+                caloriesEntity.ElderlyId = getElderly.Elderly.ElderlyId;
+
+                if (getFamily!=null && getFamily.FullName != null) caloriesEntity.CreatedBy = getFamily.FullName;
+                else caloriesEntity.CreatedBy = getElderly.FullName;
+
+                await _unitOfWork.SleepTimeRepository.CreateAsync(caloriesEntity);
+
+                return new BusinessResult(Const.SUCCESS_CREATE, "Weight created successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> CreateBloodOxygen(CreateBloodOxygenRequest request)
+        {
+            try
+            {
+                var getElderly = new Account();
+                var getFamily = new Account();
+                var isExisted = new Elderly();
+                if (request.ElderlyId != 0)
+                {
+                    //id nguoi gia
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
+                    getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+
+                }
+                else
+                {
+                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                }
+
+                isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
+
+                if (isExisted == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                if (request.BloodOxygen1 <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, "Weight must be greater than 0.");
+                }
+
+                var caloriesEntity = _mapper.Map<BloodOxygen>(request);
+                caloriesEntity.DateRecorded = System.DateTime.UtcNow.AddHours(7);
+                caloriesEntity.Status = SD.GeneralStatus.ACTIVE;
+                caloriesEntity.ElderlyId = getElderly.Elderly.ElderlyId;
+
+                if (getFamily!=null && getFamily.FullName != null) caloriesEntity.CreatedBy = getFamily.FullName;
+                else caloriesEntity.CreatedBy = getElderly.FullName;
+
+                await _unitOfWork.BloodOxygenRepository.CreateAsync(caloriesEntity);
+
+                return new BusinessResult(Const.SUCCESS_CREATE, "Weight created successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
 
         public async Task<IBusinessResult> CreateHeight(CreateHeightRequest request)
         {
@@ -175,7 +394,7 @@ namespace SE.Service.Services
                 heightEntity.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 heightEntity.Status = SD.GeneralStatus.ACTIVE;
                 heightEntity.ElderlyId = getElderly.Elderly.ElderlyId;
-                if (getFamily.FullName != null) heightEntity.CreatedBy = getFamily.FullName;
+                if (getFamily!=null && getFamily.FullName != null) heightEntity.CreatedBy = getFamily.FullName;
                 else heightEntity.CreatedBy = getElderly.FullName;
 
                 await _unitOfWork.HeightRepository.CreateAsync(heightEntity);
@@ -226,7 +445,7 @@ namespace SE.Service.Services
                 bloodPressure.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 bloodPressure.Status = SD.GeneralStatus.ACTIVE;
                 bloodPressure.ElderlyId = getElderly.Elderly.ElderlyId;
-                if (getFamily.FullName != null) bloodPressure.CreatedBy = getFamily.FullName;
+                if (getFamily!=null && getFamily.FullName != null) bloodPressure.CreatedBy = getFamily.FullName;
                 else bloodPressure.CreatedBy = getElderly.FullName;
                 await _unitOfWork.BloodPressureRepository.CreateAsync(bloodPressure);
 
@@ -271,7 +490,7 @@ namespace SE.Service.Services
                 heartRate.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 heartRate.Status = SD.GeneralStatus.ACTIVE;
                 heartRate.ElderlyId = getElderly.Elderly.ElderlyId;
-                if (getFamily.FullName != null) heartRate.CreatedBy = getFamily.FullName;
+                if (getFamily!=null && getFamily.FullName != null) heartRate.CreatedBy = getFamily.FullName;
                 else heartRate.CreatedBy = getElderly.FullName;
                 await _unitOfWork.HeartRateRepository.CreateAsync(heartRate);
 
@@ -311,7 +530,7 @@ namespace SE.Service.Services
                 bloodGlucose.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 bloodGlucose.Status = SD.GeneralStatus.ACTIVE;
                 bloodGlucose.ElderlyId = getElderly.Elderly.ElderlyId;
-                if (getFamily.FullName != null) bloodGlucose.CreatedBy = getFamily.FullName;
+                if (getFamily!=null && getFamily.FullName != null) bloodGlucose.CreatedBy = getFamily.FullName;
                 else bloodGlucose.CreatedBy = getElderly.FullName;
                 await _unitOfWork.BloodGlucoseRepository.CreateAsync(bloodGlucose);
 
@@ -351,7 +570,7 @@ namespace SE.Service.Services
                 lipidProfile.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 lipidProfile.Status = SD.GeneralStatus.ACTIVE;
                 lipidProfile.ElderlyId = getElderly.Elderly.ElderlyId;
-                if (getFamily.FullName != null) lipidProfile.CreatedBy = getFamily.FullName;
+                if (getFamily!=null && getFamily.FullName != null) lipidProfile.CreatedBy = getFamily.FullName;
                 else lipidProfile.CreatedBy = getElderly.FullName;
                 await _unitOfWork.LipidProfileRepository.CreateAsync(lipidProfile);
 
@@ -391,7 +610,7 @@ namespace SE.Service.Services
                 liverEnzyme.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 liverEnzyme.Status = SD.GeneralStatus.ACTIVE;
                 liverEnzyme.ElderlyId = getElderly.Elderly.ElderlyId;
-                if (getFamily.FullName != null) liverEnzyme.CreatedBy = getFamily.FullName;
+                if (getFamily!=null && getFamily.FullName != null) liverEnzyme.CreatedBy = getFamily.FullName;
                 else liverEnzyme.CreatedBy = getElderly.FullName;
                 await _unitOfWork.LiverEnzymeRepository.CreateAsync(liverEnzyme);
 
@@ -431,7 +650,7 @@ namespace SE.Service.Services
                 kidneyFunction.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 kidneyFunction.Status = SD.GeneralStatus.ACTIVE;
                 kidneyFunction.ElderlyId = getElderly.Elderly.ElderlyId;
-                if (getFamily.FullName != null) kidneyFunction.CreatedBy = getFamily.FullName;
+                if (getFamily!=null && getFamily.FullName != null) kidneyFunction.CreatedBy = getFamily.FullName;
                 else kidneyFunction.CreatedBy = getElderly.FullName;
                 await _unitOfWork.KidneyFunctionRepository.CreateAsync(kidneyFunction);
 
@@ -473,6 +692,130 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
             }
         }
+
+        public async Task<IBusinessResult> UpdateCaloriesConsumptionStatus(int caloriesConsumptionId, string status)
+        {
+            try
+            {
+                if (caloriesConsumptionId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid Calories Consumption ID.");
+                }
+
+                var weight = await _unitOfWork.CaloriesConsumptionRepository.GetByIdAsync(caloriesConsumptionId);
+                if (weight == null)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Calories Consumption record not found.");
+                }
+
+                weight.Status = status;
+                var rs = await _unitOfWork.CaloriesConsumptionRepository.UpdateAsync(weight);
+
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Calories Consumption status updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateFootStepStatus(int footStepId, string status)
+        {
+            try
+            {
+                if (footStepId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid Foot Step ID.");
+                }
+
+                var weight = await _unitOfWork.FootStepRepository.GetByIdAsync(footStepId);
+                if (weight == null)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Foot Step record not found.");
+                }
+
+                weight.Status = status;
+                var rs = await _unitOfWork.FootStepRepository.UpdateAsync(weight);
+
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Foot Step status updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+        public async Task<IBusinessResult> UpdateBloodOxygenStatus(int bloodOxygenId, string status)
+        {
+            try
+            {
+                if (bloodOxygenId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid Blood Oxygen ID.");
+                }
+
+                var weight = await _unitOfWork.BloodOxygenRepository.GetByIdAsync(bloodOxygenId);
+                if (weight == null)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Blood Oxygen record not found.");
+                }
+
+                weight.Status = status;
+                var rs = await _unitOfWork.BloodOxygenRepository.UpdateAsync(weight);
+
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Blood Oxygen status updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateSleepTimeStatus(int sleepTimeId, string status)
+        {
+            try
+            {
+                if (sleepTimeId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Invalid Sleep Time ID.");
+                }
+
+                var weight = await _unitOfWork.SleepTimeRepository.GetByIdAsync(sleepTimeId);
+                if (weight == null)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Sleep Time record not found.");
+                }
+
+                weight.Status = status;
+                var rs = await _unitOfWork.SleepTimeRepository.UpdateAsync(weight);
+
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Sleep Time status updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
 
         public async Task<IBusinessResult> UpdateHeightStatus(int heightId, string status)
         {
@@ -1220,6 +1563,7 @@ namespace SE.Service.Services
             }
         }
 
+      
         private double CalculateBMI(decimal weight, decimal heightInMeters)
         {
             if (heightInMeters <= 0)
@@ -1632,6 +1976,699 @@ namespace SE.Service.Services
                 return "Cao";
             }
         }
+
+        public async Task<IBusinessResult> GetCaloriesConsumptionDetail(int accountId)
+        {
+            try
+            {
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                var caloriesConsumptionRecords = await _unitOfWork.CaloriesConsumptionRepository
+                    .FindByConditionAsync(h => h.ElderlyId == elderly.Elderly.ElderlyId && h.Status == SD.GeneralStatus.ACTIVE);
+
+                if (!caloriesConsumptionRecords.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No calories consumption records found for the elderly.");
+                }
+
+                var today = System.DateTime.UtcNow.AddHours(7);
+
+                var last7Days = Enumerable.Range(0, 7)
+                    .Select(offset => today.AddDays(-offset).Date)
+                    .OrderBy(date => date)
+                    .ToList();
+
+                var last6Weeks = Enumerable.Range(0, 6)
+                    .Select(offset => today.AddDays(-(offset * 7)))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
+                        EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}"
+                    })
+                    .ToList();
+
+                var last4Months = Enumerable.Range(0, 4)
+                    .Select(offset => today.AddMonths(-offset))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
+                        EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)}"
+                    })
+                    .ToList();
+
+                var dailyRecords = last7Days
+                    .Select(date => new
+                    {
+                        Date = date,
+                        Records = caloriesConsumptionRecords
+                            .Where(record => record.DateRecorded.HasValue && record.DateRecorded.Value.Date == date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = MapDayOfWeekToVietnamese(x.Date.DayOfWeek),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.CaloriesConsumption1 ?? 0)) : null
+                    })
+                    .ToList();
+
+                var weeklyRecords = last6Weeks
+                    .Select(week => new
+                    {
+                        Week = week,
+                        Records = caloriesConsumptionRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek.Date &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek.Date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = MapWeekToVietnamese(x.Week.WeekLabel),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.CaloriesConsumption1 ?? 0), 2) : null
+                    })
+
+                    .ToList();
+
+                var monthlyRecords = last4Months
+                    .Select(month => new
+                    {
+                        Month = month,
+                        Records = caloriesConsumptionRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth.Date &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth.Date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = MapMonthToVietnamese(x.Month.MonthLabel),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.CaloriesConsumption1 ?? 0), 2) : null
+                    })
+
+                    .ToList();
+
+                var yearlyRecords = caloriesConsumptionRecords
+                    .GroupBy(h => h.DateRecorded.Value.Year)
+                    .Select(g => new ChartDataModel
+                    {
+                        Type = g.Key.ToString(),
+                        Indicator = (double?)Math.Round(g.Average(h => h.CaloriesConsumption1 ?? 0), 2)
+                    })
+                    .OrderBy(record => int.Parse(record.Type))
+                    .ToList();
+
+                var dailyAverage = dailyRecords
+                    .Where(d => d.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(d => d.Indicator.Value);
+
+                var weeklyAverage = weeklyRecords
+                    .Where(w => w.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(w => w.Indicator.Value);
+
+                var monthlyAverage = monthlyRecords
+                    .Where(m => m.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(m => m.Indicator.Value);
+
+                var yearlyAverage = yearlyRecords
+                    .Where(y => y.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(y => y.Indicator.Value);
+
+                var responseList = new List<GetHealthIndicatorDetailReponse>
+        {
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Ngày",
+                Average = Math.Round(dailyAverage, 2),
+                Evaluation = "N/A",
+                ChartDatabase = dailyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Tuần",
+                Average = Math.Round(weeklyAverage, 2),
+                Evaluation = "N/A",
+                ChartDatabase = weeklyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Tháng",
+                Average = Math.Round(monthlyAverage, 2),
+                Evaluation = "N/A",
+                ChartDatabase = monthlyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Năm",
+                Average = Math.Round(yearlyAverage, 2),
+                Evaluation = "N/A",
+                ChartDatabase = yearlyRecords
+            }
+        };
+
+                return new BusinessResult(Const.SUCCESS_READ, "Heart rate details retrieved successfully.", responseList);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetFootStepDetail(int accountId)
+        {
+            try
+            {
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                var footStepRecords = await _unitOfWork.FootStepRepository
+                    .FindByConditionAsync(h => h.ElderlyId == elderly.Elderly.ElderlyId && h.Status == SD.GeneralStatus.ACTIVE);
+
+                if (!footStepRecords.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No foot step records found for the elderly.");
+                }
+
+                var today = System.DateTime.UtcNow.AddHours(7);
+
+                var last7Days = Enumerable.Range(0, 7)
+                    .Select(offset => today.AddDays(-offset).Date)
+                    .OrderBy(date => date)
+                    .ToList();
+
+                var last6Weeks = Enumerable.Range(0, 6)
+                    .Select(offset => today.AddDays(-(offset * 7)))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
+                        EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}"
+                    })
+                    .ToList();
+
+                var last4Months = Enumerable.Range(0, 4)
+                    .Select(offset => today.AddMonths(-offset))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
+                        EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)}"
+                    })
+                    .ToList();
+
+                var dailyRecords = last7Days
+                    .Select(date => new
+                    {
+                        Date = date,
+                        Records = footStepRecords
+                            .Where(record => record.DateRecorded.HasValue && record.DateRecorded.Value.Date == date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = MapDayOfWeekToVietnamese(x.Date.DayOfWeek),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.FootStep1 ?? 0)) : null
+                    })
+                    .ToList();
+
+                var weeklyRecords = last6Weeks
+                    .Select(week => new
+                    {
+                        Week = week,
+                        Records = footStepRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek.Date &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek.Date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = MapWeekToVietnamese(x.Week.WeekLabel),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.FootStep1 ?? 0), 2) : null
+                    })
+
+                    .ToList();
+
+                var monthlyRecords = last4Months
+                    .Select(month => new
+                    {
+                        Month = month,
+                        Records = footStepRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth.Date &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth.Date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = MapMonthToVietnamese(x.Month.MonthLabel),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.FootStep1 ?? 0), 2) : null
+                    })
+
+                    .ToList();
+
+                var yearlyRecords = footStepRecords
+                    .GroupBy(h => h.DateRecorded.Value.Year)
+                    .Select(g => new ChartDataModel
+                    {
+                        Type = g.Key.ToString(),
+                        Indicator = (double?)Math.Round(g.Average(h => h.FootStep1 ?? 0), 2)
+                    })
+                    .OrderBy(record => int.Parse(record.Type))
+                    .ToList();
+
+                var dailyAverage = dailyRecords
+                    .Where(d => d.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(d => d.Indicator.Value);
+
+                var weeklyAverage = weeklyRecords
+                    .Where(w => w.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(w => w.Indicator.Value);
+
+                var monthlyAverage = monthlyRecords
+                    .Where(m => m.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(m => m.Indicator.Value);
+
+                var yearlyAverage = yearlyRecords
+                    .Where(y => y.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(y => y.Indicator.Value);
+
+                var responseList = new List<GetHealthIndicatorDetailReponse>
+        {
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Ngày",
+                Average = Math.Round(dailyAverage, 2),
+                Evaluation = "N/A",
+                ChartDatabase = dailyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Tuần",
+                Average = Math.Round(weeklyAverage, 2),
+                Evaluation = "N/A",
+                ChartDatabase = weeklyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Tháng",
+                Average = Math.Round(monthlyAverage, 2),
+                Evaluation = "N/A",
+                ChartDatabase = monthlyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Năm",
+                Average = Math.Round(yearlyAverage, 2),
+                Evaluation = "N/A",
+                ChartDatabase = yearlyRecords
+            }
+        };
+
+                return new BusinessResult(Const.SUCCESS_READ, "Foot Step details retrieved successfully.", responseList);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetBloodOxygenDetail(int accountId)
+        {
+            try
+            {
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                var bloodOxygenRecords = await _unitOfWork.BloodOxygenRepository
+                    .FindByConditionAsync(h => h.ElderlyId == elderly.Elderly.ElderlyId && h.Status == SD.GeneralStatus.ACTIVE);
+
+                if (!bloodOxygenRecords.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No foot step records found for the elderly.");
+                }
+
+                var today = System.DateTime.UtcNow.AddHours(7);
+
+                var last7Days = Enumerable.Range(0, 7)
+                    .Select(offset => today.AddDays(-offset).Date)
+                    .OrderBy(date => date)
+                    .ToList();
+
+                var last6Weeks = Enumerable.Range(0, 6)
+                    .Select(offset => today.AddDays(-(offset * 7)))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
+                        EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}"
+                    })
+                    .ToList();
+
+                var last4Months = Enumerable.Range(0, 4)
+                    .Select(offset => today.AddMonths(-offset))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
+                        EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)}"
+                    })
+                    .ToList();
+
+                var dailyRecords = last7Days
+                    .Select(date => new
+                    {
+                        Date = date,
+                        Records = bloodOxygenRecords
+                            .Where(record => record.DateRecorded.HasValue && record.DateRecorded.Value.Date == date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = MapDayOfWeekToVietnamese(x.Date.DayOfWeek),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.BloodOxygen1 ?? 0)) : null
+                    })
+                    .ToList();
+
+                var weeklyRecords = last6Weeks
+                    .Select(week => new
+                    {
+                        Week = week,
+                        Records = bloodOxygenRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek.Date &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek.Date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = MapWeekToVietnamese(x.Week.WeekLabel),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.BloodOxygen1 ?? 0), 2) : null
+                    })
+
+                    .ToList();
+
+                var monthlyRecords = last4Months
+                    .Select(month => new
+                    {
+                        Month = month,
+                        Records = bloodOxygenRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth.Date &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth.Date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = MapMonthToVietnamese(x.Month.MonthLabel),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.BloodOxygen1 ?? 0), 2) : null
+                    })
+
+                    .ToList();
+
+                var yearlyRecords = bloodOxygenRecords
+                    .GroupBy(h => h.DateRecorded.Value.Year)
+                    .Select(g => new ChartDataModel
+                    {
+                        Type = g.Key.ToString(),
+                        Indicator = (double?)Math.Round(g.Average(h => h.BloodOxygen1 ?? 0), 2)
+                    })
+                    .OrderBy(record => int.Parse(record.Type))
+                    .ToList();
+
+                var dailyAverage = dailyRecords
+                    .Where(d => d.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(d => d.Indicator.Value);
+
+                var weeklyAverage = weeklyRecords
+                    .Where(w => w.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(w => w.Indicator.Value);
+
+                var monthlyAverage = monthlyRecords
+                    .Where(m => m.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(m => m.Indicator.Value);
+
+                var yearlyAverage = yearlyRecords
+                    .Where(y => y.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(y => y.Indicator.Value);
+
+                var responseList = new List<GetHealthIndicatorDetailReponse>
+        {
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Ngày",
+                Average = Math.Round(dailyAverage, 2),
+                Evaluation = GetBloodOxygenEvaluation(dailyAverage),
+                ChartDatabase = dailyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Tuần",
+                Average = Math.Round(weeklyAverage, 2),
+                Evaluation = GetBloodOxygenEvaluation(weeklyAverage),
+                ChartDatabase = weeklyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Tháng",
+                Average = Math.Round(monthlyAverage, 2),
+                Evaluation = GetBloodOxygenEvaluation(monthlyAverage),
+                ChartDatabase = monthlyRecords
+            },
+            new GetHealthIndicatorDetailReponse
+            {
+                Tabs = "Năm",
+                Average = Math.Round(yearlyAverage, 2),
+                Evaluation = GetBloodOxygenEvaluation(yearlyAverage),
+                ChartDatabase = yearlyRecords
+            }
+        };
+
+                return new BusinessResult(Const.SUCCESS_READ, "Blood Oxygen details retrieved successfully.", responseList);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+        private string GetBloodOxygenEvaluation(double averageBloodOxygen)
+
+        {
+            var baseHeal = _unitOfWork.HealthIndicatorBaseRepository.FindByCondition(x => x.Type == "BloodOxygen").FirstOrDefault();
+            if ((decimal)averageBloodOxygen < baseHeal.MinValue)
+            {
+                return "Trung bình cần cho thở thêm Oxy";
+            }
+            else if ((decimal)averageBloodOxygen >= baseHeal.MinValue && (decimal)averageBloodOxygen <= baseHeal.MaxValue)
+            {
+                return "Tốt";
+            }
+            else
+            {
+                return "Cao";
+            }
+        }
+        public async Task<IBusinessResult> GetSleepTimeDetail(int accountId)
+        {
+            try
+            {
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                var sleepTimeRecords = await _unitOfWork.SleepTimeRepository
+                    .FindByConditionAsync(h => h.ElderlyId == elderly.Elderly.ElderlyId && h.Status == SD.GeneralStatus.ACTIVE);
+
+                if (!sleepTimeRecords.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "No foot step records found for the elderly.");
+                }
+
+                var today = System.DateTime.UtcNow.AddHours(7);
+
+                var last7Days = Enumerable.Range(0, 7)
+                    .Select(offset => today.AddDays(-offset).Date)
+                    .OrderBy(date => date)
+                    .ToList();
+
+                var last6Weeks = Enumerable.Range(0, 6)
+                    .Select(offset => today.AddDays(-(offset * 7)))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday),
+                        EndOfWeek = date.AddDays(-(int)date.DayOfWeek + (int)System.DayOfWeek.Monday + 6),
+                        WeekLabel = $"Week {CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstDay, System.DayOfWeek.Monday)}"
+                    })
+                    .ToList();
+
+                var last4Months = Enumerable.Range(0, 4)
+                    .Select(offset => today.AddMonths(-offset))
+                    .OrderBy(date => date)
+                    .Select(date => new
+                    {
+                        StartOfMonth = new System.DateTime(date.Year, date.Month, 1),
+                        EndOfMonth = new System.DateTime(date.Year, date.Month, System.DateTime.DaysInMonth(date.Year, date.Month)),
+                        MonthLabel = $"{CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(date.Month)}"
+                    })
+                    .ToList();
+
+                var dailyRecords = last7Days
+                    .Select(date => new
+                    {
+                        Date = date,
+                        Records = sleepTimeRecords
+                            .Where(record => record.DateRecorded.HasValue && record.DateRecorded.Value.Date == date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = MapDayOfWeekToVietnamese(x.Date.DayOfWeek),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.SleepTime1 ?? 0)) : null
+                    })
+                    .ToList();
+
+                var weeklyRecords = last6Weeks
+                    .Select(week => new
+                    {
+                        Week = week,
+                        Records = sleepTimeRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= week.StartOfWeek.Date &&
+                                             record.DateRecorded.Value.Date <= week.EndOfWeek.Date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = MapWeekToVietnamese(x.Week.WeekLabel),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.SleepTime1 ?? 0), 2) : null
+                    })
+
+                    .ToList();
+
+                var monthlyRecords = last4Months
+                    .Select(month => new
+                    {
+                        Month = month,
+                        Records = sleepTimeRecords
+                            .Where(record => record.DateRecorded.HasValue &&
+                                             record.DateRecorded.Value.Date >= month.StartOfMonth.Date &&
+                                             record.DateRecorded.Value.Date <= month.EndOfMonth.Date)
+                            .ToList()
+                    })
+                    .Select(x => new ChartDataModel
+                    {
+                        Type = MapMonthToVietnamese(x.Month.MonthLabel),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.SleepTime1 ?? 0), 2) : null
+                    })
+
+                    .ToList();
+
+                var yearlyRecords = sleepTimeRecords
+                    .GroupBy(h => h.DateRecorded.Value.Year)
+                    .Select(g => new ChartDataModel
+                    {
+                        Type = g.Key.ToString(),
+                        Indicator = (double?)Math.Round(g.Average(h => h.SleepTime1 ?? 0), 2)
+                    })
+                    .OrderBy(record => int.Parse(record.Type))
+                    .ToList();
+
+                var dailyAverage = dailyRecords
+                    .Where(d => d.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(d => d.Indicator.Value);
+
+                var weeklyAverage = weeklyRecords
+                    .Where(w => w.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(w => w.Indicator.Value);
+
+                var monthlyAverage = monthlyRecords
+                    .Where(m => m.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(m => m.Indicator.Value);
+
+                var yearlyAverage = yearlyRecords
+                    .Where(y => y.Indicator.HasValue)
+                    .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+                    .Average(y => y.Indicator.Value);
+
+                var responseList = new List<GetHealthIndicatorDetailReponse>
+{
+    new GetHealthIndicatorDetailReponse
+    {
+        Tabs = "Ngày",
+        Average = Math.Round(dailyAverage, 2),
+        Evaluation = "N/A",
+        ChartDatabase = dailyRecords
+    },
+    new GetHealthIndicatorDetailReponse
+    {
+        Tabs = "Tuần",
+        Average = Math.Round(weeklyAverage, 2),
+        Evaluation = "N/A",
+        ChartDatabase = weeklyRecords
+    },
+    new GetHealthIndicatorDetailReponse
+    {
+        Tabs = "Tháng",
+        Average = Math.Round(monthlyAverage, 2),
+        Evaluation = "N/A",
+        ChartDatabase = monthlyRecords
+    },
+    new GetHealthIndicatorDetailReponse
+    {
+        Tabs = "Năm",
+        Average = Math.Round(yearlyAverage, 2),
+        Evaluation = "N/A",
+        ChartDatabase = yearlyRecords
+    }
+};
+
+                return new BusinessResult(Const.SUCCESS_READ, "Sleep Time details retrieved successfully.", responseList);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
 
         public async Task<IBusinessResult> GetBloodPressureDetail(int accountId)
         {
@@ -3184,24 +4221,19 @@ namespace SE.Service.Services
                     if (type == "KidneyFunction")
                     {
                         indicatorBase = indicators.FirstOrDefault(h => h.Type == "Creatinine");
-
                     }
                     else if (type == "LiverEnzyme")
                     {
                         indicatorBase = indicators.FirstOrDefault(h => h.Type == "ALT");
-
                     }
                     else if (type == "LipidProfile")
                     {
                         indicatorBase = indicators.FirstOrDefault(h => h.Type == "TotalCholesterol");
-
-                    }else
+                    }
+                    else
                     {
                         indicatorBase = indicators.FirstOrDefault(h => h.Type == type);
-
                     }
-                    if (indicatorBase == null)
-                        return null;
 
                     // Determine evaluation
                     string evaluation;
@@ -3212,12 +4244,16 @@ namespace SE.Service.Services
                                       (decimal)bmi > indicatorBase.MaxValue ? "Cao" :
                                       "Bình thường";
                     }
-                    else
+                    else if (indicatorBase != null)
                     {
                         // Use the indicator value for evaluation
                         evaluation = latestIndicator < indicatorBase.MinValue ? "Thấp" :
                                       latestIndicator > indicatorBase.MaxValue ? "Cao" :
                                       "Bình thường";
+                    }
+                    else
+                    {
+                        evaluation = "N/A"; // For types without evaluation criteria
                     }
 
                     // Calculate average for the last 30 days
@@ -3227,7 +4263,7 @@ namespace SE.Service.Services
 
                     var averageIndicator = Math.Round(last30DaysRecords.Any() ?
                         last30DaysRecords.Average(r => getIndicatorValue(r) ?? 0) :
-                        0,2);
+                        0, 2);
 
                     // For weight and height, calculate the difference with the previous indicator
                     string formattedAverageIndicator = averageIndicator.ToString();
@@ -3297,6 +4333,23 @@ namespace SE.Service.Services
                     .FindByCondition(kf => kf.ElderlyId == elderly.Elderly.ElderlyId && kf.Status == SD.GeneralStatus.ACTIVE)
                     .ToList();
 
+                // Add new records for the 4 additional indicators
+                var caloriesConsumptionRecords = _unitOfWork.CaloriesConsumptionRepository
+                    .FindByCondition(cc => cc.ElderlyId == elderly.Elderly.ElderlyId && cc.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
+                var footStepRecords = _unitOfWork.FootStepRepository
+                    .FindByCondition(fs => fs.ElderlyId == elderly.Elderly.ElderlyId && fs.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
+                var bloodOxygenRecords = _unitOfWork.BloodOxygenRepository
+                    .FindByCondition(bo => bo.ElderlyId == elderly.Elderly.ElderlyId && bo.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
+                var sleepTimeRecords = _unitOfWork.SleepTimeRepository
+                    .FindByCondition(st => st.ElderlyId == elderly.Elderly.ElderlyId && st.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
                 // Get the newest Height and Weight
                 var newestHeight = heightRecords
                     .OrderByDescending(h => h.DateRecorded)
@@ -3354,35 +4407,18 @@ namespace SE.Service.Services
                 var kidneyFunctionResponse = GetIndicatorResponse(
                     kidneyFunctionRecords,
                     kf => kf.DateRecorded,
-                    kf => kf.EGfr, 
+                    kf => kf.EGfr,
                     "KidneyFunction",
                     healthIndicators,
                     calculateDifference: true); // Enable difference calculation
 
                 var liverEnzymeResponse = GetIndicatorResponse(
                     liverEnzymeRecords,
-                    lz =>lz.DateRecorded,
-                    lz=>lz.Alt,
+                    lz => lz.DateRecorded,
+                    lz => lz.Alt,
                     "LiverEnzyme",
                     healthIndicators,
-                    calculateDifference : true
-                    
-                    );
-
-
-                /*var liverEnzymeResponse = liverEnzymeRecords
-                    .OrderByDescending(le => le.DateRecorded)
-                    .Select(le => new GetAllHealthIndicatorReponse
-                    {
-                        Tabs = "LiverEnzyme",
-                        Evaluation = "N/A",
-                        DateTime = le.DateRecorded?.ToString("dd-MM HH:mm") ?? "N/A",
-                        Indicator = "N/A",
-                        AverageIndicator = "N/A"
-                    })
-                    .FirstOrDefault();*/
-
-
+                    calculateDifference: true);
 
                 // Blood Glucose: Evaluate based on Time field
                 var bloodGlucoseResponse = bloodGlucoseRecords
@@ -3396,6 +4432,35 @@ namespace SE.Service.Services
                         AverageIndicator = GetDifferenceIndicator(bloodGlucoseRecords, bg => bg.BloodGlucose1) // Calculate difference for Blood Glucose
                     })
                     .FirstOrDefault();
+
+                // New indicators responses
+                var caloriesConsumptionResponse = GetIndicatorResponse(
+                    caloriesConsumptionRecords,
+                    cc => cc.DateRecorded,
+                    cc => cc.CaloriesConsumption1,
+                    "CaloriesConsumption",
+                    healthIndicators);
+
+                var footStepResponse = GetIndicatorResponse(
+                    footStepRecords,
+                    fs => fs.DateRecorded,
+                    fs => fs.FootStep1,
+                    "FootStep",
+                    healthIndicators);
+
+                var bloodOxygenResponse = GetIndicatorResponse(
+                    bloodOxygenRecords,
+                    bo => bo.DateRecorded,
+                    bo => bo.BloodOxygen1,
+                    "BloodOxygen",
+                    healthIndicators);
+
+                var sleepTimeResponse = GetIndicatorResponse(
+                    sleepTimeRecords,
+                    st => st.DateRecorded,
+                    st => st.SleepTime1,
+                    "SleepTime",
+                    healthIndicators);
 
                 // Combine responses
                 var responseList = new List<GetAllHealthIndicatorReponse>();
@@ -3424,6 +4489,19 @@ namespace SE.Service.Services
                 if (kidneyFunctionResponse != null)
                     responseList.Add(kidneyFunctionResponse);
 
+                // Add new indicators to response list
+                if (caloriesConsumptionResponse != null)
+                    responseList.Add(caloriesConsumptionResponse);
+
+                if (footStepResponse != null)
+                    responseList.Add(footStepResponse);
+
+                if (bloodOxygenResponse != null)
+                    responseList.Add(bloodOxygenResponse);
+
+                if (sleepTimeResponse != null)
+                    responseList.Add(sleepTimeResponse);
+
                 return new BusinessResult(Const.SUCCESS_READ, "Health indicators retrieved successfully.", responseList);
             }
             catch (Exception ex)
@@ -3431,7 +4509,6 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
         }
-
         // Function to calculate the difference indicator
         private string GetDifferenceIndicator<T>(List<T> records, Func<T, decimal?> getIndicatorValue)
         {
@@ -3619,13 +4696,42 @@ namespace SE.Service.Services
                 throw new Exception(ex.Message);
             }
         }
-
-        public async Task<IBusinessResult> EvaluateBloodPressure(int systolic, int diastolic)
+        public async Task<IBusinessResult> EvaluateBloodOxygen(decimal? bloodOxygen)
         {
 
             try
             {
 
+
+                var baseIndicator = _unitOfWork.HealthIndicatorBaseRepository.
+                                                    FindByCondition(i => i.Type == "BloodOxygen")
+                                                    .FirstOrDefault();
+                string result;
+                if (bloodOxygen > baseIndicator.MaxValue)
+                {
+                    result = "Bình thường, cần thở thêm Oxy";
+                }
+                else if (bloodOxygen < baseIndicator.MinValue)
+                {
+                    result = "Tốt";
+                }
+                else
+                {
+                    result = "Cao";
+                }
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> EvaluateBloodPressure(int systolic, int diastolic)
+        {
+            try
+            {
                 var baseSystolic = _unitOfWork.HealthIndicatorBaseRepository.
                                                     FindByCondition(i => i.Type == "Systolic")
                                                     .FirstOrDefault();
@@ -3971,9 +5077,9 @@ namespace SE.Service.Services
             }
         }
 
+
         public async Task<IBusinessResult> GetLogBookResponses(int accountId)
         {
-
             var elderlyId = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
             var responses = new List<LogBookReponse>();
 
@@ -3994,7 +5100,7 @@ namespace SE.Service.Services
                 .FindByCondition(h => h.ElderlyId == elderlyId.Elderly.ElderlyId && h.Status.Equals(SD.GeneralStatus.ACTIVE))
                 .ToList();
 
-            var height = heightRecords.Select(x=>x.HeightId).LastOrDefault();
+            var height = heightRecords.Select(x => x.HeightId).LastOrDefault();
 
             var weightRecords = _unitOfWork.WeightRepository
                 .FindByCondition(w => w.ElderlyId == elderlyId.Elderly.ElderlyId && w.Status.Equals(SD.GeneralStatus.ACTIVE))
@@ -4014,19 +5120,136 @@ namespace SE.Service.Services
                 .FindByCondition(le => le.ElderlyId == elderlyId.Elderly.ElderlyId && le.Status.Equals(SD.GeneralStatus.ACTIVE))
                 .ToList();
 
+            // Add new records for the 4 additional indicators
+            var caloriesConsumptionRecords = _unitOfWork.CaloriesConsumptionRepository
+                .FindByCondition(cc => cc.ElderlyId == elderlyId.Elderly.ElderlyId && cc.Status.Equals(SD.GeneralStatus.ACTIVE))
+                .ToList();
+
+            var footStepRecords = _unitOfWork.FootStepRepository
+                .FindByCondition(fs => fs.ElderlyId == elderlyId.Elderly.ElderlyId && fs.Status.Equals(SD.GeneralStatus.ACTIVE))
+                .ToList();
+
+            var bloodOxygenRecords = _unitOfWork.BloodOxygenRepository
+                .FindByCondition(bo => bo.ElderlyId == elderlyId.Elderly.ElderlyId && bo.Status.Equals(SD.GeneralStatus.ACTIVE))
+                .ToList();
+
+            var sleepTimeRecords = _unitOfWork.SleepTimeRepository
+                .FindByCondition(st => st.ElderlyId == elderlyId.Elderly.ElderlyId && st.Status.Equals(SD.GeneralStatus.ACTIVE))
+                .ToList();
+
             // Evaluate and add responses for each tab
             responses.AddRange(GetBloodGlucoseResponse(bloodGlucoseRecords));
             responses.AddRange(GetBloodPressureResponse(bloodPressureRecords));
             responses.AddRange(GetHeartRateResponse(heartRateRecords));
-            responses.AddRange(GetHeightResponse( heightRecords,(int)weight));
+            responses.AddRange(GetHeightResponse(heightRecords, (int)weight));
             responses.AddRange(GetWeightResponse(weightRecords, height));
             responses.AddRange(GetKidneyFunctionResponse(kidneyFunctionRecords));
             responses.AddRange(GetLipidProfileResponse(lipidProfileRecords));
             responses.AddRange(GetLiverEnzymeResponse(liverEnzymeRecords));
 
-            return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, responses.OrderByDescending(x=>x.DateRecorded));
+            // Add responses for new indicators
+            responses.AddRange(GetCaloriesConsumptionResponse(caloriesConsumptionRecords));
+            responses.AddRange(GetFootStepResponse(footStepRecords));
+            responses.AddRange(GetBloodOxygenResponse(bloodOxygenRecords));
+            responses.AddRange(GetSleepTimeResponse(sleepTimeRecords));
+
+            return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, responses.OrderByDescending(x => x.DateRecorded));
         }
 
+        // Add these new private methods for the additional indicators
+        private List<LogBookReponse> GetCaloriesConsumptionResponse(List<CaloriesConsumption> records)
+        {
+            var responses = new List<LogBookReponse>();
+
+            foreach (var record in records)
+            {
+                var response = new LogBookReponse
+                {
+                    Tabs = "CaloriesConsumption",
+                    Id = record.CaloriesConsumptionId,
+                    DataType = "IOT", // Adjust as needed based on your data
+                    DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                    TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
+                    DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
+                    Indicator = $"{record.CaloriesConsumption1}",
+                    Evaluation = "N/A" // No evaluation for calories consumption
+                };
+                responses.Add(response);
+            }
+
+            return responses;
+        }
+
+        private List<LogBookReponse> GetFootStepResponse(List<FootStep> records)
+        {
+            var responses = new List<LogBookReponse>();
+
+            foreach (var record in records)
+            {
+                var response = new LogBookReponse
+                {
+                    Tabs = "FootStep",
+                    Id = record.FootStepId,
+                    DataType = "IOT", // Adjust as needed based on your data
+                    DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                    TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
+                    DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
+                    Indicator = $"{record.FootStep1}",
+                    Evaluation = "N/A" // No evaluation for foot steps
+                };
+                responses.Add(response);
+            }
+
+            return responses;
+        }
+
+        private List<LogBookReponse> GetBloodOxygenResponse(List<BloodOxygen> records)
+        {
+            var responses = new List<LogBookReponse>();
+
+            foreach (var record in records)
+            {
+                var response = new LogBookReponse
+                {
+                    Tabs = "BloodOxygen",
+                    Id = record.BloodOxygenId,
+                    DataType = "IOT", // Adjust as needed based on your data
+                    DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                    TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
+                    DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
+                    Indicator = $"{record.BloodOxygen1}",
+                    Evaluation = GetBloodOxygenEvaluation((double)record.BloodOxygen1)
+                };
+                responses.Add(response);
+            }
+
+            return responses;
+        }
+
+        private List<LogBookReponse> GetSleepTimeResponse(List<SleepTime> records)
+        {
+            var responses = new List<LogBookReponse>();
+
+            foreach (var record in records)
+            {
+                var response = new LogBookReponse
+                {
+                    Tabs = "SleepTime",
+                    Id = record.SleepTimeId,
+                    DataType = "IOT", // Adjust as needed based on your data
+                    DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                    TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
+                    DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
+                    Indicator = $"{record.SleepTime1}",
+                    Evaluation = "N/A" // No evaluation for sleep time
+                };
+                responses.Add(response);
+            }
+
+            return responses;
+        }
+
+    
         private List<LogBookReponse> GetBloodGlucoseResponse(List<BloodGlucose> records)
         {
             var responses = new List<LogBookReponse>();
@@ -4176,17 +5399,7 @@ namespace SE.Service.Services
                 responses.Add(response);
             }
 
-            if (!responses.Any())
-            {
-                responses.Add(new LogBookReponse
-                {
-                    Tabs = "KidneyFunction",
-                    DateRecorded = System.DateTime.Now.ToString(),
-                    Indicator = "N/A",
-                    Evaluation = "N/A"
-                });
-            }
-
+           
             return responses;
         }
 
