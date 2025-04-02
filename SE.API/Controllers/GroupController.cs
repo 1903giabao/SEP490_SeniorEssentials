@@ -18,6 +18,13 @@ namespace SE.API.Controllers
             _groupService = groupService;
         }
 
+        [HttpGet("elderly/{accountId}")]
+        public async Task<IActionResult> GetAllElderlyByFamilyMemberId(int accountId)
+        {
+            var result = await _groupService.GetAllElderlyByFamilyMemberId(accountId);
+            return Ok(result);
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateGroup([FromBody] CreateGroupRequest request)
         {

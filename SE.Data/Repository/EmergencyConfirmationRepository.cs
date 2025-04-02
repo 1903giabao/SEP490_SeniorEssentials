@@ -25,6 +25,11 @@ namespace SE.Data.Repository
         public async Task<List<EmergencyConfirmation>> GetListEmergencyConfirmationByElderlyIdAsync(int id)
         {
             return await _context.EmergencyConfirmations.Include(ec => ec.ConfirmationAccount).Include(ec => ec.Elderly).ThenInclude(e => e.Account).Where(ec => ec.ElderlyId == id).ToListAsync();
+        }          
+        
+        public async Task<List<EmergencyConfirmation>> GetAllEmergencyConfirmationAsync()
+        {
+            return await _context.EmergencyConfirmations.Include(ec => ec.ConfirmationAccount).Include(ec => ec.Elderly).ThenInclude(e => e.Account).ToListAsync();
         }              
     }
 }

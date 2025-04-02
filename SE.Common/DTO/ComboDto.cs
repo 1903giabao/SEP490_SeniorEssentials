@@ -14,7 +14,6 @@ namespace SE.Common.DTO
         public decimal Fee { get; set; }
         public DateTime ValidityPeriod { get; set; }
         public int NumberOfMeeting { get; set; }
-        public int DurationPerMeeting { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime UpdatedDate { get; set; }
     }

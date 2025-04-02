@@ -8,6 +8,7 @@ using AutoMapper;
 using AutoMapper.Execution;
 using CloudinaryDotNet;
 using Firebase.Auth;
+using Google.Api;
 using Google.Cloud.Firestore;
 using Org.BouncyCastle.Ocsp;
 using SE.Common;
@@ -87,7 +88,7 @@ namespace SE.Service.Services
                     {
                         EmailToId = req.Email,
                         EmailToName = "Senior Essentials",
-                        EmailBody = "TÀI KHOẢN CỦA BẠN TRÊN SENIOR ESSENTIALS ĐÃ ĐƯỢC TẠO THÀNH CÔNG!",
+                        EmailBody = $"Chào {newAccount.FullName}, tài khoản của bạn trên Senior Essentials đã sẵn sàng! Thông tin đăng nhập: Email: {newAccount.Email}, Mật khẩu: {req.Password}. Hãy truy cập https://senior-essentials-manage.vercel.app/login để bắt đầu chia sẻ nội dung chất lượng. Nếu gặp vấn đề, vui lòng liên hệ senioressentialsco@gmail.com. Chúc bạn có trải nghiệm tuyệt vời!",
                         EmailSubject = "TẠO TÀI KHOẢN THÀNH CÔNG"
                     };
 
@@ -97,7 +98,7 @@ namespace SE.Service.Services
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Can not send email!");
                     }
 
-                    var result = await _smsService.SendSmsAsync(req.PhoneNumber, "TÀI KHOẢN CỦA BẠN TRÊN SENIOR ESSENTIALS ĐÃ ĐƯỢC TẠO THÀNH CÔNG!");
+                    var result = await _smsService.SendSmsAsync(req.PhoneNumber, $"Chào {newAccount.FullName}, tài khoản của bạn trên Senior Essentials đã sẵn sàng! Thông tin đăng nhập: Email: {newAccount.Email}, Mật khẩu: {req.Password}. Hãy truy cập https://senior-essentials-manage.vercel.app/login để bắt đầu chia sẻ nội dung chất lượng. Nếu gặp vấn đề, vui lòng liên hệ senioressentialsco@gmail.com. Chúc bạn có trải nghiệm tuyệt vời!");
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
                 }
@@ -175,7 +176,7 @@ namespace SE.Service.Services
                     {
                         EmailToId = req.Email,
                         EmailToName = "Senior Essentials",
-                        EmailBody = "TÀI KHOẢN CỦA BẠN TRÊN SENIOR ESSENTIALS ĐÃ ĐƯỢC TẠO THÀNH CÔNG!",
+                        EmailBody = $"Xin chào {newAccount.FullName}, tài khoản của bạn trên Senior Essentials đã được tạo thành công! Thông tin đăng nhập: Email: {newAccount.Email}, Mật khẩu: {req.Password}. Bạn có thể đăng nhập ngay tại https://senior-essentials-manage.vercel.app/login để bắt đầu sử dụng hệ thống, quản lý hồ sơ bệnh nhân và cập nhật thông tin. Nếu cần hỗ trợ, vui lòng liên hệ senioressentialsco@gmail.com. Cảm ơn bạn đã đồng hành cùng chúng tôi!",
                         EmailSubject = "TẠO TÀI KHOẢN THÀNH CÔNG"
                     };
 
@@ -185,7 +186,7 @@ namespace SE.Service.Services
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Can not send email!");
                     }
 
-                    var result = await _smsService.SendSmsAsync(req.PhoneNumber, "TÀI KHOẢN CỦA BẠN TRÊN SENIOR ESSENTIALS ĐÃ ĐƯỢC TẠO THÀNH CÔNG!");
+                    var result = await _smsService.SendSmsAsync(req.PhoneNumber, $"Xin chào {newAccount.FullName}, tài khoản của bạn trên Senior Essentials đã được tạo thành công! Thông tin đăng nhập: Email: {newAccount.Email}, Mật khẩu: {req.Password}. Bạn có thể đăng nhập ngay tại https://senior-essentials-manage.vercel.app/login để bắt đầu sử dụng hệ thống, quản lý hồ sơ bệnh nhân và cập nhật thông tin. Nếu cần hỗ trợ, vui lòng liên hệ senioressentialsco@gmail.com. Cảm ơn bạn đã đồng hành cùng chúng tôi!");
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
                 }

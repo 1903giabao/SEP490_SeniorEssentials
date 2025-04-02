@@ -68,6 +68,6 @@ namespace SE.Service.Services
                     throw new Exception("Failed to send SMS.");
                 }
             }
-        }
+        }               
     }
 }

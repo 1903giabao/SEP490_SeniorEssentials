@@ -41,9 +41,7 @@ namespace SE.Service.Services
                 if (req.Fee <= 0)
                 {
                     return new BusinessResult(Const.FAIL_READ, "FEE MUST > 0");
-                }
-
-              
+                }            
 
                 if (string.IsNullOrWhiteSpace(req.Name))
                 {
@@ -57,8 +55,8 @@ namespace SE.Service.Services
 
                 var combo = _mapper.Map<Subscription>(req);
 
-                combo.CreatedDate = DateTime.UtcNow;
-                combo.UpdatedDate = DateTime.UtcNow;
+                combo.CreatedDate = DateTime.UtcNow.AddHours(7);
+                combo.UpdatedDate = DateTime.UtcNow.AddHours(7);
 
                 var result = await _unitOfWork.SubscriptionRepository.CreateAsync(combo);
 
@@ -104,7 +102,7 @@ namespace SE.Service.Services
                 combo.Name = req.Name;
                 combo.Description = req.Description;
                 combo.Fee = req.Fee;
-                combo.UpdatedDate = DateTime.UtcNow;
+                combo.UpdatedDate = DateTime.UtcNow.AddHours(7);
 
                 var result = await _unitOfWork.SubscriptionRepository.UpdateAsync(combo);
 
