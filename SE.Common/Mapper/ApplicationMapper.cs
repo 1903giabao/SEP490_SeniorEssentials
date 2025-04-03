@@ -6,8 +6,10 @@ using SE.Common.DTO.HealthIndicator;
 using SE.Common.Request;
 using SE.Common.Request.Content;
 using SE.Common.Request.HealthIndicator;
+using SE.Common.Request.Report;
 using SE.Common.Request.SE.Common.Request;
 using SE.Common.Response.Professor;
+using SE.Common.Response.Report;
 using SE.Data.Models;
 using System;
 using System.Collections.Generic;
@@ -55,6 +57,9 @@ namespace SE.Common.Mapper
             CreateMap<CreateActivityModel, Activity>().ReverseMap();
 
             CreateMap<Subscription, ComboDto>().ReverseMap();
+
+            CreateMap<CreateReportRequest, SystemReport>().ReverseMap();
+            CreateMap<SystemReport, GetAllReportResponse>().ReverseMap();
             
             CreateMap<CreateGroupRequest, Group>().ReverseMap();
 
@@ -72,6 +77,7 @@ namespace SE.Common.Mapper
             CreateMap<IotDeviceDto, Iotdevice>();
 
             CreateMap<Subscription, ComboDto>();
+
 
             CreateMap<EmergencyInformation, GetEmergencyInformationDTO>().ReverseMap();
 
