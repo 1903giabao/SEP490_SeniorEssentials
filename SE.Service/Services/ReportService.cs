@@ -22,6 +22,7 @@ namespace SE.Service.Services
     {
         Task<IBusinessResult> CreateReport(CreateReportRequest req);
         Task<IBusinessResult> GetAll();
+        Task<IBusinessResult> GetAllReportOfAccountId(int accountId);
 
     }
     public class ReportService : IReportService
@@ -71,6 +72,20 @@ namespace SE.Service.Services
             try
             {
                 var report = await _unitOfWork.SystemReportRepository.GetAllAsync();
+                var reportDtos = _mapper.Map<List<GetAllReportResponse>>(report);
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, reportDtos);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, ex.Message);
+            }
+        }
+        public async Task<IBusinessResult> GetAllReportOfAccountId(int accountId)
+        {
+            try
+            {
+                var report = _unitOfWork.SystemReportRepository.FindByCondition(r=>r.AccountId == accountId).ToList();
                 var reportDtos = _mapper.Map<List<GetAllReportResponse>>(report);
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, reportDtos);

@@ -59,5 +59,18 @@ namespace SE.Data.Repository
                 .Where(a => a.AppointmentTime >= startOfDay && a.AppointmentTime <= endOfDay)
                 .ToListAsync();
         }
+        // In ProfessorAppointmentRepository
+        public async Task<List<ProfessorAppointment>> GetByProfessorIdAsync(int professorId)
+        {
+            var query = _context.ProfessorAppointments
+                .Include(pa => pa.TimeSlot)
+                .ThenInclude(ts => ts.ProfessorSchedule)
+                .Include(pa => pa.Elderly)
+                .ThenInclude(e => e.Account)
+                .Where(pa => pa.TimeSlot.ProfessorSchedule.ProfessorId == professorId)
+                ;
+
+            return await query.ToListAsync();
+        }
     }
 }
