@@ -15,8 +15,6 @@ public partial class Booking
 
     public int? SubscriptionId { get; set; }
 
-    public string Type { get; set; }
-
     public decimal Price { get; set; }
 
     public DateTime BookingDate { get; set; }

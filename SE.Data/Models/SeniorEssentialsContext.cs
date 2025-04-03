@@ -279,9 +279,6 @@ public partial class SeniorEssentialsContext : DbContext
             entity.Property(e => e.Status)
                 .IsRequired()
                 .HasMaxLength(20);
-            entity.Property(e => e.Type)
-                .IsRequired()
-                .HasMaxLength(20);
 
             entity.HasOne(d => d.Account).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.AccountId)
@@ -985,7 +982,7 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.Property(e => e.PaymentCode)
                 .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(100);
             entity.Property(e => e.PaymentDate).HasColumnType("datetime");
             entity.Property(e => e.PaymentLink)
                 .IsRequired()
@@ -994,9 +991,6 @@ public partial class SeniorEssentialsContext : DbContext
                 .IsRequired()
                 .HasMaxLength(20);
             entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasMaxLength(20);
 
             entity.HasOne(d => d.Account).WithMany(p => p.Transactions)
                 .HasForeignKey(d => d.AccountId)

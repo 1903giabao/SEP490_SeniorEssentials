@@ -76,7 +76,9 @@ namespace SE.Common.Mapper
             CreateMap<CreateIotDeviceRequest, Iotdevice>();
             CreateMap<IotDeviceDto, Iotdevice>();
 
-            CreateMap<Subscription, ComboDto>();
+            CreateMap<Subscription, ComboDto>()
+                .ForMember(dest => dest.ComboId, opt => opt.MapFrom(src => src.SubscriptionId))
+                .ReverseMap();
 
 
             CreateMap<EmergencyInformation, GetEmergencyInformationDTO>().ReverseMap();

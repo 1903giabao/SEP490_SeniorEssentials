@@ -15,15 +15,13 @@ public partial class Transaction
 
     public decimal Price { get; set; }
 
-    public string PaymentCode { get; set; }
-
     public string PaymentLink { get; set; }
 
     public string PaymentStatus { get; set; }
 
     public DateTime PaymentDate { get; set; }
 
-    public string Status { get; set; }
+    public string PaymentCode { get; set; }
 
     public virtual Account Account { get; set; }
 
