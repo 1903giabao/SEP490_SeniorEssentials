@@ -62,7 +62,7 @@ builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddScoped<ISmsService, SmsService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
-
+builder.Services.AddScoped<IReportService, ReportService>();
 /*Log.Logger = new LoggerConfiguration()
             .WriteTo.Console() // Log to console
             .WriteTo.File(@"E:\SEP490\worker_logs.txt", rollingInterval: RollingInterval.Day) // Log to file

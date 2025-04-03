@@ -53,7 +53,7 @@ namespace SE.Data.UnitOfWork
         private CaloriesConsumptionRepository _caloriesConsumptionRepository;
         private BloodOxygenRepository _bloodOxygenRepository;
         private FootStepRepository _footStepRepository;
-
+        private SystemReportRepository _systemReportRepository;
 
         public UnitOfWork()
         {
@@ -79,8 +79,16 @@ namespace SE.Data.UnitOfWork
             {
                 return _sleepTimeRepository ??= new SleepTimeRepository(_unitOfWorkContext);
             }
-        }          
-        
+        }
+
+        public SystemReportRepository SystemReportRepository
+        {
+            get
+            {
+                return _systemReportRepository ??= new SystemReportRepository(_unitOfWorkContext);
+            }
+        }
+
         public CaloriesConsumptionRepository CaloriesConsumptionRepository
         {
             get
