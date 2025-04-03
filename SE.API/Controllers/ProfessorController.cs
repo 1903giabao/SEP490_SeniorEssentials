@@ -63,6 +63,12 @@ namespace SE.API.Controllers
             var rs = await _professorScheduleService.GetProfessorSchedule(accountId,type);
             return Ok(rs);
         }
+        [HttpGet("appointment/{accountId}")]
+        public async Task<IActionResult> GetProfessorSchedule([FromRoute] int accountId)
+        {
+            var rs = await _professorScheduleService.GetScheduleOfElderlyByProfessorId(accountId);
+            return Ok(rs);
+        }
 
         [HttpGet("report/appointment/{appointmentId}")]
         public async Task<IActionResult> GetReportInAppointment([FromRoute] int appointmentId)
@@ -77,6 +83,8 @@ namespace SE.API.Controllers
             var rs = await _professorScheduleService.GetProfessorDetailOfElderly(elderlyId);
             return Ok(rs);
         }
+
+
         [HttpPut("cancel/{appoinmentId}")]
         public async Task<IActionResult> CancelProfessorAppointment([FromRoute] int appoinmentId)
         {

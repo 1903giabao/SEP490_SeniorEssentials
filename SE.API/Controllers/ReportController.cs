@@ -5,7 +5,7 @@ using SE.Service.Services;
 
 namespace SE.API.Controllers
 {
-    [Route("report-management")]
+    [Route("api/[controller]")]
     public class ReportController : Controller
     {
         private readonly IReportService _reportService;
@@ -25,6 +25,12 @@ namespace SE.API.Controllers
         public async Task<IActionResult> GetAll()
         {
             var result = await _reportService.GetAll();
+            return Ok(result);
+        }
+        [HttpGet("{accountId}")]
+        public async Task<IActionResult> GetAllReportOfAccountId(int accountId)
+        {
+            var result = await _reportService.GetAllReportOfAccountId(accountId);
             return Ok(result);
         }
     }

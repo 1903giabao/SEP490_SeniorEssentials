@@ -33,6 +33,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> CancelProfessorAppointment(int professorAppointmentId);
         Task<IBusinessResult> GetProfessorDetailByAccountId(int accountId);
         Task<IBusinessResult> UpdateProfessorInfor(UpdateProfessorRequest req);
+        Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId);
+
     }
 
     public class ProfessorService : IProfessorService
@@ -130,9 +132,9 @@ namespace SE.Service.Services
                         }
                     }
 
-                    
-                        result.Add(professor);
-                    
+
+                    result.Add(professor);
+
                 }
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
@@ -414,28 +416,28 @@ namespace SE.Service.Services
         }
         public async Task<List<int>> GetAllFamilyMemberByElderlyId(int userId)
         {
-           
-                var groupId = _unitOfWork.GroupMemberRepository.GetAll()
-                    .Where(gm => gm.AccountId == userId && gm.Status == SD.GeneralStatus.ACTIVE)
-                    .Select(gm => gm.GroupId)
-                    .FirstOrDefault();
 
-       
-                    var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
+            var groupId = _unitOfWork.GroupMemberRepository.GetAll()
+                .Where(gm => gm.AccountId == userId && gm.Status == SD.GeneralStatus.ACTIVE)
+                .Select(gm => gm.GroupId)
+                .FirstOrDefault();
 
-                    var groupMembers = _unitOfWork.GroupMemberRepository.GetAll()
-                        .Where(gm => gm.GroupId == groupId &&
-                                     gm.Status == SD.GeneralStatus.ACTIVE &&
-                                     gm.AccountId != userId)
-                        .Select(gm => gm.AccountId)
-                        .ToList();
 
-                   var users = _unitOfWork.AccountRepository.GetAll()
-                            .Where(a => groupMembers.Contains(a.AccountId) && a.RoleId == 3)
-                            .Select(a=>a.AccountId)
-                            .ToList();
+            var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
 
-                return users;
+            var groupMembers = _unitOfWork.GroupMemberRepository.GetAll()
+                .Where(gm => gm.GroupId == groupId &&
+                             gm.Status == SD.GeneralStatus.ACTIVE &&
+                             gm.AccountId != userId)
+                .Select(gm => gm.AccountId)
+                .ToList();
+
+            var users = _unitOfWork.AccountRepository.GetAll()
+                     .Where(a => groupMembers.Contains(a.AccountId) && a.RoleId == 3)
+                     .Select(a => a.AccountId)
+                     .ToList();
+
+            return users;
         }
 
         public async Task<IBusinessResult> CancelProfessorAppointment(int professorAppointmentId)
@@ -457,13 +459,13 @@ namespace SE.Service.Services
                 throw ex;
             }
         }
-         public async Task<IBusinessResult> GetProfessorDetailOfElderly(int elderlyId)
+        public async Task<IBusinessResult> GetProfessorDetailOfElderly(int elderlyId)
         {
             try
             {
-                var getElderlyInfor =await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(elderlyId);
-                var getElderlyEntity = _unitOfWork.ElderlyRepository.FindByCondition(e=>e.AccountId == elderlyId).FirstOrDefault();
-                var findProfessorId =await _unitOfWork.UserServiceRepository.GetProfessorByElderlyId(getElderlyEntity.ElderlyId);
+                var getElderlyInfor = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(elderlyId);
+                var getElderlyEntity = _unitOfWork.ElderlyRepository.FindByCondition(e => e.AccountId == elderlyId).FirstOrDefault();
+                var findProfessorId = await _unitOfWork.UserServiceRepository.GetProfessorByElderlyId(getElderlyEntity.ElderlyId);
 
                 var getProfessor = await _unitOfWork.ProfessorRepository.GetAccountByProfessorId((int)findProfessorId.ProfessorId);
 
@@ -491,7 +493,7 @@ namespace SE.Service.Services
                 var getAppointment = _unitOfWork.ProfessorAppointmentRepository.GetById(appointmentId);
                 var rs = new
                 {
-                    Content = (getAppointment.Content == null) ? "" : getAppointment.Content ,
+                    Content = (getAppointment.Content == null) ? "" : getAppointment.Content,
                     Solution = (getAppointment.Solution == null) ? "" : getAppointment.Solution
                 };
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
@@ -537,7 +539,7 @@ namespace SE.Service.Services
                     if (updateAccountRs < 1)
                     {
                         return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
-                    } 
+                    }
                 }
 
                 professor.Knowledge = req.Knowledge;
@@ -570,6 +572,61 @@ namespace SE.Service.Services
             }
         }
 
+
+        public async Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId)
+        {
+            try
+            {
+                // Get the professor by account ID
+                var professor = await _unitOfWork.ProfessorRepository
+                    .GetByAccountIdAsync(professorAccountId);
+
+                if (professor == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
+                }
+
+                // Get all appointments for this professor
+                var appointments = await _unitOfWork.ProfessorAppointmentRepository
+                    .GetByProfessorIdAsync(professor.ProfessorId);
+
+                var result = new List<GetScheduleOfElderlyByProfessorVM>();
+
+                foreach (var appointment in appointments)
+                {
+                    var elderly = await _unitOfWork.ElderlyRepository
+                        .GetByIdAsync(appointment.ElderlyId);
+
+                    var elderlyAccount = await _unitOfWork.AccountRepository
+                        .GetByIdAsync(elderly.AccountId);
+
+                    var userInAppointment = new List<int>();
+                    var schedule = new GetScheduleOfElderlyByProfessorVM
+                    {
+                        ElderlyId = elderly.ElderlyId,
+                        ElderlyName = elderlyAccount.FullName,
+                        Avatar = elderlyAccount.Avatar,
+                        PhoneNumber = elderlyAccount.PhoneNumber,
+                        DateTime = $"{appointment.AppointmentTime:dd/MM/yyyy HH:mm}",
+                        Status = appointment.Status,
+                        IsOnline = (bool)appointment.IsOnline
+                    };
+                    userInAppointment.Add(professorAccountId);
+                    userInAppointment.Add(elderly.AccountId);
+                    userInAppointment.AddRange(await GetAllFamilyMemberByElderlyId(elderly.AccountId));
+
+                    schedule.AccountId.AddRange(userInAppointment);
+
+                    result.Add(schedule);
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result.OrderBy(p => p.Status));
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 
 }

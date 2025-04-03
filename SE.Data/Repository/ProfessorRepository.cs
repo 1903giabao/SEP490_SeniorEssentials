@@ -21,7 +21,17 @@ namespace SE.Data.Repository
         {
             var rs = await _context.Professors.Include(p=>p.Account).FirstOrDefaultAsync(p=>p.ProfessorId == professorId);
             return rs;
-        } 
+        }
+
+        // In ProfessorRepository
+        public async Task<Professor> GetByAccountIdAsync(int accountId)
+        {
+            return await _context.Professors
+                .Include(p => p.Account)
+                .FirstOrDefaultAsync(p => p.AccountId == accountId);
+        }
+
+        
     }
 
 }
