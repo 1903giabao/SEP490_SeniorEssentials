@@ -1036,7 +1036,6 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.ToTable("UserSubscription");
 
-            entity.Property(e => e.UserSubscriptionId).ValueGeneratedNever();
             entity.Property(e => e.EndDate).HasColumnType("datetime");
             entity.Property(e => e.StartDate).HasColumnType("datetime");
             entity.Property(e => e.Status).HasMaxLength(10);

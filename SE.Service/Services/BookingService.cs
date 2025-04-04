@@ -22,6 +22,8 @@ using FirebaseAdmin.Messaging;
 using SE.Data.Models;
 using SE.Common.DTO.Content;
 using static Google.Cloud.Vision.V1.ProductSearchResults.Types;
+using Org.BouncyCastle.Ocsp;
+using CloudinaryDotNet;
 
 namespace SE.Service.Services
 {
@@ -30,6 +32,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateBookingOrder(BookingOrderRequest req);
         Task<IBusinessResult> CheckOrderStatus(string appTransId);
         Task<IBusinessResult> ConfirmOrder(string appTransId);
+        Task<IBusinessResult> CheckIfUserHasBooking(int accountId);
     }
 
     public class BookingService : IBookingService
@@ -167,6 +170,21 @@ namespace SE.Service.Services
                             return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot update booking");
                         }
 
+                        var userSubscription = new UserSubscription
+                        {
+                            BookingId = booking.BookingId,
+                            StartDate = booking.BookingDate,
+                            EndDate = booking.BookingDate.AddDays(subscription.ValidityPeriod),
+                            Status = SD.GeneralStatus.ACTIVE,
+                        };
+
+                        var createUserSubscription = await _unitOfWork.UserServiceRepository.CreateAsync(userSubscription);
+
+                        if (createUserSubscription < 1)
+                        {
+                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create user subscription");
+                        }
+
                         return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, result);
                     }
                     else
@@ -252,6 +270,42 @@ namespace SE.Service.Services
                 }
 
                 return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> CheckIfUserHasBooking(int accountId)
+        {
+            try
+            {
+                if (accountId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid account ID.");
+                }
+
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+                if (elderly == null || elderly.RoleId != 2 || !elderly.Status.Equals(SD.GeneralStatus.ACTIVE))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist.");
+                }
+
+                var bookings = _unitOfWork.BookingRepository.FindByCondition(b => b.ElderlyId == elderly.Elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                                                            .Select(b => b.BookingId).ToList();
+
+                if (bookings.Any())
+                {
+                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
+
+                    var mapperBooking = _mapper.Map<BookingDTO>(userSubscription.Booking);
+                    mapperBooking.ProfessorId = userSubscription.ProfessorId;
+
+                    return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, mapperBooking);
+                }
+
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
             }
             catch (Exception ex)
             {

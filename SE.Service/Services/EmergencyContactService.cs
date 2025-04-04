@@ -94,6 +94,7 @@ namespace SE.Service.Services
                     {
                         EmergencyConfirmationId = e.EmergencyConfirmationId,
                         ElderlyId = e.ElderlyId,
+                        ElderlyName = e.Elderly.Account.FullName,
                         EmergencyDate = e.EmergencyDate?.ToString("dd-MM-yyyy"),
                         EmergencyTime = e.EmergencyDate?.ToString("HH:mm"),
                         ConfirmationAccountName = e.ConfirmationAccount == null ? "" : e.ConfirmationAccount.FullName,

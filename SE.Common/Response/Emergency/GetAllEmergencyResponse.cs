@@ -10,6 +10,7 @@ namespace SE.Common.Response.Emergency
     {
         public int? EmergencyConfirmationId { get; set; }
         public int? ElderlyId { get; set; }
+        public string? ElderlyName { get; set; }
         public string? ConfirmationAccountName { get; set; }
         public string? EmergencyDate { get; set; }
         public string? EmergencyTime { get; set; }
