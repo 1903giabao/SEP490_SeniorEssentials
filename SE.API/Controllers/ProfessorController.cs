@@ -47,6 +47,13 @@ namespace SE.API.Controllers
             var result = await _professorScheduleService.GetTimeSlot(professorId, date);
             return Ok(result);
         }
+        [HttpGet("time-slot/week")]
+        public async Task<IActionResult> GetProfessorWeeklyTimeSlots(int professorId)
+        {
+            var result = await _professorScheduleService.GetProfessorWeeklyTimeSlots(professorId);
+            return Ok(result);
+        }
+
 
         [HttpPost("filter")]
         public async Task<IActionResult> GetFilteredProfessors([FromBody] FilterProfessorRequest request)
