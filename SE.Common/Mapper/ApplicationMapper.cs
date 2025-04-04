@@ -52,6 +52,8 @@ namespace SE.Common.Mapper
             CreateMap<LessonDTO, Lesson>().ReverseMap();
             CreateMap<MusicDTO, Music>().ReverseMap();
             CreateMap<BookDTO, Book>().ReverseMap();
+
+            CreateMap<BookingDTO, Booking>().ReverseMap();
                 
             CreateMap<CreateComboModel, Subscription>().ReverseMap();
             CreateMap<CreateActivityModel, Activity>().ReverseMap();

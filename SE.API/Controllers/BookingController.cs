@@ -26,10 +26,8 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("confirm")]
-        public async Task<IActionResult> ConfirmOrder([FromQuery] string? amount, [FromQuery] string? appid,
-                        [FromQuery] string? apptransid,[FromQuery] string? bankcode,[FromQuery] string? checksum, [FromQuery] string? discountamount,
-                        [FromQuery] string? pmcid, [FromQuery] string? status)
+        [HttpPut("confirm")]
+        public async Task<IActionResult> ConfirmOrder([FromQuery] string apptransid)
         {
             var result = await _bookingService.ConfirmOrder(apptransid);
             return Ok(result);
@@ -39,6 +37,13 @@ namespace SE.API.Controllers
         public async Task<IActionResult> CheckOrderStatus([FromRoute] string appTransId)
         {
             var result = await _bookingService.CheckOrderStatus(appTransId);
+            return Ok(result);
+        }        
+        
+        [HttpGet("user-booking/{accountId}")]
+        public async Task<IActionResult> CheckIfUserHasBooking([FromRoute] int accountId)
+        {
+            var result = await _bookingService.CheckIfUserHasBooking(accountId);
             return Ok(result);
         }
     }
