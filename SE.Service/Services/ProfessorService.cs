@@ -34,6 +34,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetProfessorDetailByAccountId(int accountId);
         Task<IBusinessResult> UpdateProfessorInfor(UpdateProfessorRequest req);
         Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId);
+        Task<IBusinessResult> GetProfessorWeeklyTimeSlots(int professorId);
 
     }
 
@@ -91,7 +92,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var getAllProfessor = _unitOfWork.ProfessorRepository.GetAll();
+                var getAllProfessor = _unitOfWork.ProfessorRepository.FindByCondition(p=>p.Status.Equals(SD.GeneralStatus.ACTIVE));
                 var result = new List<GetAllProfessorReponse>();
                 var currentDate = DateTime.Now;
                 var currentDayOfWeek = currentDate.DayOfWeek;
@@ -572,7 +573,6 @@ namespace SE.Service.Services
             }
         }
 
-
         public async Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId)
         {
             try
@@ -625,6 +625,76 @@ namespace SE.Service.Services
             catch (Exception ex)
             {
                 throw ex;
+            }
+        }
+
+
+        public async Task<IBusinessResult> GetProfessorWeeklyTimeSlots(int professorId)
+        {
+            try
+            {
+                // Get current date and calculate start (Monday) and end (Sunday) of current week
+                var today = DateOnly.FromDateTime(DateTime.Now);
+                var daysFromMonday = (int)today.DayOfWeek - (int)DayOfWeek.Monday;
+                var monday = today.AddDays(-daysFromMonday);
+                var sunday = monday.AddDays(6);
+
+                // Fetch all professor schedules
+                var professorSchedules = await _unitOfWork.ProfessorScheduleRepository.GetByProfessorIdAsync(professorId);
+
+                // Filter schedules that are active (EndDate is in future)
+                var activeSchedules = professorSchedules
+                    .Where(ps => ps.EndDate >= DateTime.Now.Date)
+                    .ToList();
+
+                var result = new List<ViewProfessorScheduleResponse>();
+
+                // Loop through each day from Monday to Sunday
+                for (var date = monday; date <= sunday; date = date.AddDays(1))
+                {
+                    var dayOfWeek = date.DayOfWeek.ToString();
+                    var schedulesForDay = activeSchedules
+                        .Where(ps => ps.DayOfWeek.Equals(dayOfWeek, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+
+                    var dayResult = new ViewProfessorScheduleResponse
+                    {
+                        Date = date.ToString("dddd dd-MM-yy"), // Format example: "Monday 01-04-24"
+                        TimeEachSlots = new List<TimeEachSlot>()
+                    };
+
+                    // Get appointments for this date
+                    var appointmentsOnDate = await _unitOfWork.ProfessorAppointmentRepository.GetByDateAsync(date);
+
+                    foreach (var schedule in schedulesForDay)
+                    {
+                        var timeSlots = await _unitOfWork.TimeSlotRepository.GetByProfessorScheduleIdAsync(schedule.ProfessorScheduleId);
+
+                        foreach (var timeSlot in timeSlots)
+                        {
+                            // Check if time slot is booked
+                            var isBooked = appointmentsOnDate.Any(a => a.TimeSlotId == timeSlot.TimeSlotId);
+
+                            if (!isBooked)
+                            {
+                                dayResult.TimeEachSlots.Add(new TimeEachSlot
+                                {
+                                    StartTime = timeSlot.StartTime.ToString(), // Format as "09:00"
+                                    EndTime = timeSlot.EndTime.ToString()      // Format as "10:00"
+                                });
+                            }
+                        }
+                    }
+
+                    // Always add the day to result, even if TimeEachSlots is empty
+                    result.Add(dayResult);
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
         }
     }

@@ -23,6 +23,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateReport(CreateReportRequest req);
         Task<IBusinessResult> GetAll();
         Task<IBusinessResult> GetAllReportOfAccountId(int accountId);
+        Task<IBusinessResult> UpdateStatusReport(int reportId);
+
 
     }
     public class ReportService : IReportService
@@ -43,7 +45,7 @@ namespace SE.Service.Services
                 var rs = _mapper.Map<SystemReport>(req);
                 
                 rs.CreatedAt = DateTime.UtcNow.AddHours(7);
-                rs.Status = SD.GeneralStatus.ACTIVE;
+                rs.Status = "Đang chờ xử lí";
                 rs.PriorityLevel = string.Empty;
 
                 if (req.Attachment != null)
@@ -71,8 +73,9 @@ namespace SE.Service.Services
         {
             try
             {
-                var report = await _unitOfWork.SystemReportRepository.GetAllAsync();
+                var report = await _unitOfWork.SystemReportRepository.GetAllIncludeAccount();
                 var reportDtos = _mapper.Map<List<GetAllReportResponse>>(report);
+                
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, reportDtos);
             }
@@ -89,6 +92,26 @@ namespace SE.Service.Services
                 var reportDtos = _mapper.Map<List<GetAllReportResponse>>(report);
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, reportDtos);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateStatusReport (int reportId)
+        {
+            try
+            {
+                var report = _unitOfWork.SystemReportRepository.GetById(reportId);
+                report.Status = "Đã xử lí";
+                var rs = await _unitOfWork.SystemReportRepository.UpdateAsync(report);
+                if (rs > 0)
+                {
+                    return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
+                }
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_UPDATE_MSG);
+
             }
             catch (Exception ex)
             {

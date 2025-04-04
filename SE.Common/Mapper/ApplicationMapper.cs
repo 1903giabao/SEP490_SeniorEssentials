@@ -61,8 +61,10 @@ namespace SE.Common.Mapper
             CreateMap<Subscription, ComboDto>().ReverseMap();
 
             CreateMap<CreateReportRequest, SystemReport>().ReverseMap();
-            CreateMap<SystemReport, GetAllReportResponse>().ReverseMap();
-            
+            CreateMap<SystemReport, GetAllReportResponse>()
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Account.FullName))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.Account.PhoneNumber))
+                .ReverseMap();
             CreateMap<CreateGroupRequest, Group>().ReverseMap();
 
             CreateMap<GroupMember, GroupMemberDTO>()

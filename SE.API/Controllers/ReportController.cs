@@ -33,5 +33,12 @@ namespace SE.API.Controllers
             var result = await _reportService.GetAllReportOfAccountId(accountId);
             return Ok(result);
         }
+        // PUT: combo-management/update/{id}
+        [HttpPut("update/{reportId}")]
+        public async Task<IActionResult> UpdateComboStatus(int reportId)
+        {
+            var result = await _reportService.UpdateStatusReport(reportId);
+            return Ok(result);
+        }
     }
 }
