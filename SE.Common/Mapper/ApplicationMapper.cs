@@ -58,7 +58,9 @@ namespace SE.Common.Mapper
             CreateMap<CreateComboModel, Subscription>().ReverseMap();
             CreateMap<CreateActivityModel, Activity>().ReverseMap();
 
-            
+            CreateMap<Account, AccountElderlyDTO>()
+                .ForMember(dest => dest.ElderlyId, opt => opt.MapFrom(src => src.Elderly.ElderlyId))
+                .ReverseMap();
 
             CreateMap<CreateReportRequest, SystemReport>().ReverseMap();
             CreateMap<SystemReport, GetAllReportResponse>()
