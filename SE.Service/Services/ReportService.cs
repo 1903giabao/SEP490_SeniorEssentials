@@ -88,7 +88,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var report = _unitOfWork.SystemReportRepository.FindByCondition(r=>r.AccountId == accountId).ToList();
+                var report = await _unitOfWork.SystemReportRepository.GetByIdIncludeAccount(accountId);
                 var reportDtos = _mapper.Map<List<GetAllReportResponse>>(report);
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, reportDtos);

@@ -118,15 +118,28 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_CREATE, ex.Message);
             }
         }
-
         public async Task<IBusinessResult> GetAllCombos()
         {
             try
             {
-                var combos = await _unitOfWork.SubscriptionRepository.GetAllAsync(); 
-                var comboDtos = _mapper.Map<List<ComboDto>>(combos); 
+                var subscriptions = await _unitOfWork.SubscriptionRepository.GetAllAsync();
+                var subscriptionDtos = subscriptions.Select(s => new ComboDto
+                {
+                    SubscriptionId = s.SubscriptionId,
+                    Name = s.Name,
+                    Description = s.Description,
+                    Fee = s.Fee,
+                    ValidityPeriod = s.ValidityPeriod,
+                    CreatedDate = s.CreatedDate.ToString("dd-MM-yyyy"),
+                    CreatedTime = s.CreatedDate.ToString("HH:mm"),
+                    UpdatedDate = s.UpdatedDate.ToString("dd-MM-yyyy"),
+                    UpdatedTime = s.UpdatedDate.ToString("HH:mm"),
+                    Status = s.Status,
+                    AccountId = s.AccountId,
+                    NumberOfMeeting = s.NumberOfMeeting
+                }).ToList();
 
-                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, comboDtos);
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, subscriptionDtos);
             }
             catch (Exception ex)
             {
@@ -134,31 +147,40 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> GetComboById(int comboId)
+        public async Task<IBusinessResult> GetComboById(int id)
         {
             try
             {
-                if (comboId <= 0)
+                var subscription = await _unitOfWork.SubscriptionRepository.GetByIdAsync(id);
+
+                if (subscription == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "Invalid combo ID.");
+                    return new BusinessResult(Const.FAIL_READ, "Subscription not found");
                 }
 
-                var combo = await _unitOfWork.SubscriptionRepository.GetByIdAsync(comboId);
-                if (combo == null)
+                var subscriptionDto = new ComboDto
                 {
-                    return new BusinessResult(Const.FAIL_READ, "Combo not found.");
-                }
+                    SubscriptionId = subscription.SubscriptionId,
+                    Name = subscription.Name,
+                    Description = subscription.Description,
+                    Fee = subscription.Fee,
+                    ValidityPeriod = subscription.ValidityPeriod,
+                    CreatedDate = subscription.CreatedDate.ToString("dd-MM-yyyy"),
+                    CreatedTime = subscription.CreatedDate.ToString("HH:mm"),
+                    UpdatedDate = subscription.UpdatedDate.ToString("dd-MM-yyyy"),
+                    UpdatedTime = subscription.UpdatedDate.ToString("HH:mm"),
+                    Status = subscription.Status,
+                    AccountId = subscription.AccountId,
+                    NumberOfMeeting = subscription.NumberOfMeeting
+                };
 
-                var comboDto = _mapper.Map<ComboDto>(combo);
-
-                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, comboDto);
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, subscriptionDto);
             }
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
         }
-
 
         public async Task<IBusinessResult> UpdateComboStatus(int comboId)
         {

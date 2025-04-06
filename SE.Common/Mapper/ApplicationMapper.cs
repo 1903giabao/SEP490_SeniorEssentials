@@ -58,7 +58,7 @@ namespace SE.Common.Mapper
             CreateMap<CreateComboModel, Subscription>().ReverseMap();
             CreateMap<CreateActivityModel, Activity>().ReverseMap();
 
-            CreateMap<Subscription, ComboDto>().ReverseMap();
+            
 
             CreateMap<CreateReportRequest, SystemReport>().ReverseMap();
             CreateMap<SystemReport, GetAllReportResponse>()
@@ -80,9 +80,6 @@ namespace SE.Common.Mapper
             CreateMap<CreateIotDeviceRequest, Iotdevice>();
             CreateMap<IotDeviceDto, Iotdevice>();
 
-            CreateMap<Subscription, ComboDto>()
-                .ForMember(dest => dest.ComboId, opt => opt.MapFrom(src => src.SubscriptionId))
-                .ReverseMap();
 
 
             CreateMap<EmergencyInformation, GetEmergencyInformationDTO>().ReverseMap();

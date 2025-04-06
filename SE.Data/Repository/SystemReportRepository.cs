@@ -21,5 +21,13 @@ namespace SE.Data.Repository
         {
             return await _context.SystemReports.Include(s=>s.Account).ToListAsync();
         }
+
+        public async Task<List<SystemReport>> GetByIdIncludeAccount(int accountId)
+        {
+            return await _context.SystemReports.Include(s => s.Account)
+                                               .Where(s=>s.Account.AccountId==accountId)
+                                               .OrderByDescending(s=>s.ReportId)
+                                               .ToListAsync();
+        }
     }
 }
