@@ -124,7 +124,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var subscriptions = _unitOfWork.SubscriptionRepository.FindByCondition(s=>s.Status.Equals(SD.GeneralStatus.ACTIVE)).ToList();
+                var subscriptions = _unitOfWork.SubscriptionRepository.GetAll();
                 var subscriptionDtos = subscriptions.Select(s => new ComboDto
                 {
                     SubscriptionId = s.SubscriptionId,
