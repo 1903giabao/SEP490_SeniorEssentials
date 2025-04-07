@@ -153,15 +153,18 @@ namespace SE.Service.Services
         {
             try
             {
-                var subscriptions =await _unitOfWork.UserServiceRepository.GetAllUserInSubscriptions(comboId);
+                var subscriptions = await _unitOfWork.UserServiceRepository.GetAllUserInSubscriptions(comboId);
                 var subscriptionDtos = subscriptions.Select(s => new UserInSubVM
                 {
                     SubscriptionId = (int)s.Booking.SubscriptionId,
-                    Name = s.Booking.Subscription.Name,
-                    Fee = s.Booking.Subscription.Fee,
-                    Status = s.Status,
-                    FamilyMemberId = s.Booking.AccountId,
-                    ElderlyId = s.Booking.ElderlyId,
+                    UsersInSubscriptions = new List<GetUsersInSubscription>
+                    {
+                        new GetUsersInSubscription
+                        {
+                            Buyer = _mapper.Map<UserDTO>(s.Booking.Account),
+                            Elderly = _mapper.Map<UserDTO>(s.Booking.Elderly.Account)
+                        }
+                    }
                 }).ToList();
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, subscriptionDtos);

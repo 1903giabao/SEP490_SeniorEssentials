@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SE.Common.DTO;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,13 +11,12 @@ namespace SE.Common.Response.Subscription
     {
         public int SubscriptionId { get; set; }
 
-        public string Name { get; set; }
-        public decimal Fee { get; set; }
-        public string Status { get; set; }
-    
-        public int FamilyMemberId { get; set; }
+        public List<GetUsersInSubscription> UsersInSubscriptions { get; set; }
+    }
 
-        public int ElderlyId { get; set; }
-
+    public class GetUsersInSubscription
+    {
+        public UserDTO Buyer { get; set; }
+        public UserDTO Elderly { get; set; }
     }
 }

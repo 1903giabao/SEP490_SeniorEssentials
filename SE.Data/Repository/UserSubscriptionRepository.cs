@@ -46,10 +46,9 @@ namespace SE.Data.Repository
 
         public async Task<List<UserSubscription>> GetAllUserInSubscriptions(int subId)
         {
-            return await _context.UserSubscriptions.Include(s => s.Booking)
-                                               .ThenInclude(b => b.Subscription)
-
-                                               .ThenInclude(b => b.Account)
+            return await _context.UserSubscriptions.Include(s => s.Booking).ThenInclude(b => b.Account)
+                                                .Include(s => s.Booking).ThenInclude(b => b.Elderly).ThenInclude(b => b.Account)
+                                               .Include(s => s.Booking).ThenInclude(b => b.Subscription)
                                                .Where(s => s.Booking.SubscriptionId == subId)
                                                .ToListAsync();
         }
