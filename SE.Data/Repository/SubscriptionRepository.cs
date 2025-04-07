@@ -22,11 +22,6 @@ namespace SE.Data.Repository
             return await _context.Subscriptions.Include(s => s.Bookings).ToListAsync();
         }
 
-        public async Task<List<Subscription>> GetAllUserInSubscriptions(int subId)
-        {
-            return await _context.Subscriptions.Include(s => s.Bookings)
-                                               .ThenInclude(b=>b.Account)
-                                               .ToListAsync();
-        }
+       
     }
 }

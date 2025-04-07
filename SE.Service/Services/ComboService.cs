@@ -7,6 +7,7 @@ using AutoMapper;
 using SE.Common;
 using SE.Common.DTO;
 using SE.Common.Enums;
+using SE.Common.Response.Subscription;
 using SE.Data.Models;
 using SE.Data.Repository;
 using SE.Data.UnitOfWork;
@@ -20,7 +21,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> UpdateCombo(int comboId, CreateComboModel req);
         Task<IBusinessResult> GetAllCombos();
         Task<IBusinessResult> GetComboById(int comboId);
-        Task<IBusinessResult> UpdateComboStatus(int comboId);
+        Task<IBusinessResult> UpdateComboStatus(int comboId, string status);
+        Task<IBusinessResult> GetAllUserInCombo(int comboId);
 
     }
 
@@ -151,21 +153,15 @@ namespace SE.Service.Services
         {
             try
             {
-                var subscriptions = _unitOfWork.SubscriptionRepository.FindByCondition(s => s.Status.Equals(SD.GeneralStatus.ACTIVE)).ToList();
-                var subscriptionDtos = subscriptions.Select(s => new ComboDto
+                var subscriptions =await _unitOfWork.UserServiceRepository.GetAllUserInSubscriptions(comboId);
+                var subscriptionDtos = subscriptions.Select(s => new UserInSubVM
                 {
-                    SubscriptionId = s.SubscriptionId,
-                    Name = s.Name,
-                    Description = s.Description,
-                    Fee = s.Fee,
-                    ValidityPeriod = s.ValidityPeriod,
-                    CreatedDate = s.CreatedDate.ToString("dd-MM-yyyy"),
-                    CreatedTime = s.CreatedDate.ToString("HH:mm"),
-                    UpdatedDate = s.UpdatedDate.ToString("dd-MM-yyyy"),
-                    UpdatedTime = s.UpdatedDate.ToString("HH:mm"),
+                    SubscriptionId = (int)s.Booking.SubscriptionId,
+                    Name = s.Booking.Subscription.Name,
+                    Fee = s.Booking.Subscription.Fee,
                     Status = s.Status,
-                    AccountId = s.AccountId,
-                    NumberOfMeeting = s.NumberOfMeeting
+                    FamilyMemberId = s.Booking.AccountId,
+                    ElderlyId = s.Booking.ElderlyId,
                 }).ToList();
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, subscriptionDtos);
@@ -211,7 +207,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> UpdateComboStatus(int comboId)
+        public async Task<IBusinessResult> UpdateComboStatus(int comboId, string status)
         {
             try
             {
@@ -221,8 +217,19 @@ namespace SE.Service.Services
                 {
                     return new BusinessResult(Const.FAIL_READ, "Combo not found.");
                 }
+                if (status == "Inactive")
+                {
+                    var currentDate = DateTime.Now;
+                    var activeUsers = _unitOfWork.UserServiceRepository.CheckIsAvailable(comboId);
 
-                checkComboExisted.Status = SD.GeneralStatus.INACTIVE;
+                    if (activeUsers)
+                    {
+                        return new BusinessResult(Const.FAIL_UPDATE, "Có người đang dùng, không thể chuyển trạng thái");
+                    }
+                }
+
+                checkComboExisted.Status = status;
+                checkComboExisted.UpdatedDate = DateTime.Now; 
 
                 var result = await _unitOfWork.SubscriptionRepository.UpdateAsync(checkComboExisted);
 
@@ -238,6 +245,5 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_UPDATE, ex.Message);
             }
         }
-
     }
 }
