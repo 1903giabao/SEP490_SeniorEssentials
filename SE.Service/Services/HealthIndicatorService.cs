@@ -175,7 +175,14 @@ namespace SE.Service.Services
                     //id nguoi gia
                     getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
                     getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
-
+                    if (getElderly == null)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                    }
+                    if (getFamily == null)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Family member does not exist!");
+                    }
                 }
                 else
                 {
@@ -4701,17 +4708,15 @@ namespace SE.Service.Services
 
             try
             {
-
-
                 var baseIndicator = _unitOfWork.HealthIndicatorBaseRepository.
                                                     FindByCondition(i => i.Type == "BloodOxygen")
                                                     .FirstOrDefault();
                 string result;
-                if (bloodOxygen > baseIndicator.MaxValue)
+                if (bloodOxygen < baseIndicator.MinValue)
                 {
-                    result = "Bình thường, cần thở thêm Oxy";
+                    result = "Thấp";
                 }
-                else if (bloodOxygen < baseIndicator.MinValue)
+                else if (bloodOxygen >= baseIndicator.MinValue && bloodOxygen <= baseIndicator.MaxValue )
                 {
                     result = "Tốt";
                 }
