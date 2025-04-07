@@ -34,7 +34,7 @@ namespace SE.API.Controllers
         }
 
         [HttpGet("order-status")]
-        public async Task<IActionResult> CheckOrderStatus([FromRoute] string appTransId)
+        public async Task<IActionResult> CheckOrderStatus([FromQuery] string appTransId)
         {
             var result = await _bookingService.CheckOrderStatus(appTransId);
             return Ok(result);
