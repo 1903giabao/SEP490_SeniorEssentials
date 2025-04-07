@@ -13,7 +13,6 @@ public partial class SeniorEssentialsContext : DbContext
         : base(options)
     {
     }
-
     public SeniorEssentialsContext()
     {
     }
@@ -30,7 +29,6 @@ public partial class SeniorEssentialsContext : DbContext
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer(GetConnectionString("DefaultConnection"));
-
     public virtual DbSet<Account> Accounts { get; set; }
 
     public virtual DbSet<Activity> Activities { get; set; }
@@ -307,7 +305,7 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.Property(e => e.CaloriesConsumptionId).HasColumnName("CaloriesConsumptionID");
             entity.Property(e => e.CaloriesConsumption1)
-                .HasColumnType("decimal(5, 2)")
+                .HasColumnType("decimal(10, 2)")
                 .HasColumnName("CaloriesConsumption");
             entity.Property(e => e.CreatedBy).HasMaxLength(50);
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
@@ -430,7 +428,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.Property(e => e.DateRecorded).HasColumnType("datetime");
             entity.Property(e => e.ElderlyId).HasColumnName("ElderlyID");
             entity.Property(e => e.FootStep1)
-                .HasColumnType("decimal(5, 2)")
+                .HasColumnType("decimal(10, 2)")
                 .HasColumnName("FootStep");
             entity.Property(e => e.Status).HasMaxLength(50);
 

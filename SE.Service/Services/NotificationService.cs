@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using FirebaseAdmin.Messaging;
 using SE.Data.UnitOfWork;
+using SE.Service.Base;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,12 +19,24 @@ namespace SE.Service.Services
     {
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+
         public NotificationService(UnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
+  /*      public async Task<IBusinessResult> GetAllNotiInAccount (int accountId)
+        {
+            try
+            {
+
+            }
+            catch (Exception ex) 
+            {
+            
+            }
+        }*/
         public async Task<string> SendNotification(string token, string title, string body)
         {
             var message = new Message()
