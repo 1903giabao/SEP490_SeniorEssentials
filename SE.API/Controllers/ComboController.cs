@@ -46,11 +46,18 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("user/{comboId}")]
+        public async Task<IActionResult> GetAllUserInCombo(int comboId)
+        {
+            var result = await _comboService.GetAllUserInCombo(comboId);
+            return Ok(result);
+        }
+
         // PUT: combo-management/update/{id}
         [HttpPut("update/{comboId}")]
-        public async Task<IActionResult> UpdateComboStatus(int comboId)
+        public async Task<IActionResult> UpdateComboStatus(int comboId, string status)
         {
-            var result = await _comboService.UpdateComboStatus(comboId);
+            var result = await _comboService.UpdateComboStatus(comboId,status);
             return Ok(result);
         }
     }

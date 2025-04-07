@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SE.Data.Base;
 using SE.Data.Models;
+using SE.Data.UnitOfWork;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,18 +22,53 @@ namespace SE.Data.Repository
         {
             var result = await _context.UserSubscriptions.Include(us => us.Professor).ThenInclude(us => us.Account).Where(us => bookingIds.Contains((int)us.BookingId) && us.Status.Equals(status)).Select(us => us.Professor).FirstOrDefaultAsync();
             return result;
-        }        
-        
+        }
+
         public async Task<UserSubscription> GetUserSubscriptionByBookingIdAsync(List<int> bookingIds, string status)
         {
-            var result = await _context.UserSubscriptions.Include(us => us.Professor).ThenInclude(us => us.Account).Include(us => us.Booking).Where(us => bookingIds.Contains((int)us.BookingId) && us.Status.Equals(status)).FirstOrDefaultAsync();
+            var currentDate = DateTime.Now;
+
+            var result = await _context.UserSubscriptions.Include(us => us.Professor)
+                               .ThenInclude(us => us.Account)
+                               .Include(us => us.Booking)
+                                .Where(us => bookingIds.Contains((int)us.BookingId) && us.Status.Equals(status)
+                                && us.StartDate <= currentDate &&
+                        us.EndDate >= currentDate)
+                                .FirstOrDefaultAsync();
             return result;
         }
 
         public async Task<UserSubscription> GetProfessorByElderlyId(int elderlyId)
         {
-            var rs = await _context.UserSubscriptions.Include(us => us.Booking).ThenInclude(b => b.Elderly).FirstOrDefaultAsync(us=>us.Booking.ElderlyId == elderlyId && us.Status == "Active");
+            var rs = await _context.UserSubscriptions.Include(us => us.Booking).ThenInclude(b => b.Elderly).FirstOrDefaultAsync(us => us.Booking.ElderlyId == elderlyId && us.Status == "Active");
             return rs;
+        }
+
+        public async Task<List<UserSubscription>> GetAllUserInSubscriptions(int subId)
+        {
+            return await _context.UserSubscriptions.Include(s => s.Booking)
+                                               .ThenInclude(b => b.Subscription)
+
+                                               .ThenInclude(b => b.Account)
+                                               .Where(s => s.Booking.SubscriptionId == subId)
+                                               .ToListAsync();
+        }
+
+        public bool CheckIsAvailable(int subId)
+        {
+            var currentDate = DateTime.Now;
+
+            var activeUsers = _context.UserSubscriptions.
+                                       Include(s => s.Booking)
+                                       .ThenInclude(b => b.Subscription)
+                                       .ThenInclude(b => b.Account)
+                                       .Where(us =>
+                        us.Booking.SubscriptionId == subId &&
+                        us.StartDate <= currentDate &&
+                        (us.EndDate == null || us.EndDate >= currentDate))
+                        .Any();
+            return activeUsers;
+
         }
     }
 }
