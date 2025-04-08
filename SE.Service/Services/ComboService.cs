@@ -101,6 +101,14 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "CANNOT FIND COMBO");
                 }
 
+                var currentDate = DateTime.Now;
+                var activeUsers = _unitOfWork.UserServiceRepository.CheckIsAvailable(comboId);
+
+                if (activeUsers)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Có người đang dùng, không thể chỉnh sửa");
+                }
+
                 combo.Name = req.Name;
                 combo.Description = req.Description;
                 combo.Fee = req.Fee;
@@ -110,7 +118,7 @@ namespace SE.Service.Services
 
                 if (result > 0)
                 {
-                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, req);
+                    return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
                 }
 
                 return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
@@ -125,6 +133,8 @@ namespace SE.Service.Services
             try
             {
                 var subscriptions = _unitOfWork.SubscriptionRepository.GetAll();
+                var bookings = _unitOfWork.BookingRepository.GetAll(); // Assuming you have access to bookings
+
                 var subscriptionDtos = subscriptions.Select(s => new ComboDto
                 {
                     SubscriptionId = s.SubscriptionId,
@@ -138,7 +148,11 @@ namespace SE.Service.Services
                     UpdatedTime = s.UpdatedDate.ToString("HH:mm"),
                     Status = s.Status,
                     AccountId = s.AccountId,
-                    NumberOfMeeting = s.NumberOfMeeting
+                    NumberOfMeeting = s.NumberOfMeeting,
+                    NumberOfUsers = bookings.Where(b => b.SubscriptionId == s.SubscriptionId)
+                                          .Select(b => b.AccountId)
+                                          .Distinct()
+                                          .Count()
                 }).ToList();
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, subscriptionDtos);
@@ -148,7 +162,6 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
         }
-
         public async Task<IBusinessResult> GetAllUserInCombo(int comboId)
         {
             try
@@ -157,6 +170,11 @@ namespace SE.Service.Services
                 var subscriptionDtos = subscriptions.Select(s => new UserInSubVM
                 {
                     SubscriptionId = (int)s.Booking.SubscriptionId,
+                    PurchaseDate = s.Booking.BookingDate.ToString("dd-MM-yyyy"),
+                    SubName = s.Booking.Subscription.Name,
+                    ValidityPeriod = s.Booking.Subscription.ValidityPeriod,
+                    NumberOfMeeting = (int)s.Booking.Subscription.NumberOfMeeting,
+                    NumberOfMeetingLeft = (int)s.NumberOfMeetingLeft,
                     UsersInSubscriptions = new List<GetUsersInSubscription>
                     {
                         new GetUsersInSubscription

@@ -21,8 +21,9 @@ namespace SE.Common.DTO
         public string CreatedDate { get; set; }
         public string CreatedTime { get; set; }
         public string UpdatedTime { get; set; }
+        public int NumberOfUsers { get; set; }
 
-
+        
         public string UpdatedDate { get; set; }
 
         public string Status { get; set; }
