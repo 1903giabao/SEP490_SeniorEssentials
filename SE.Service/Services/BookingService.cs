@@ -172,6 +172,7 @@ namespace SE.Service.Services
 
                         var userSubscription = new UserSubscription
                         {
+                            NumberOfMeetingLeft = subscription.NumberOfMeeting,
                             BookingId = booking.BookingId,
                             StartDate = booking.BookingDate,
                             EndDate = booking.BookingDate.AddDays(subscription.ValidityPeriod),
