@@ -12,5 +12,7 @@ namespace SE.Common.DTO
         public string Description { get; set; }
         public decimal Fee { get; set; }
         public int ValidityPeriod { get; set; }
+        public int? NumberOfMeeting { get; set; }
+
     }
 }

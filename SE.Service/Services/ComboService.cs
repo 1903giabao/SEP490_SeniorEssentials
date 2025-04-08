@@ -101,6 +101,14 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "CANNOT FIND COMBO");
                 }
 
+                var currentDate = DateTime.Now;
+                var activeUsers = _unitOfWork.UserServiceRepository.CheckIsAvailable(comboId);
+
+                if (activeUsers)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, "Có người đang dùng, không thể chỉnh sửa");
+                }
+
                 combo.Name = req.Name;
                 combo.Description = req.Description;
                 combo.Fee = req.Fee;
@@ -110,7 +118,7 @@ namespace SE.Service.Services
 
                 if (result > 0)
                 {
-                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, req);
+                    return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
                 }
 
                 return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
