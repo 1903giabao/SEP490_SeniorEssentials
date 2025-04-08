@@ -12,6 +12,7 @@ using SE.Common.DTO;
 using AutoMapper.Execution;
 using Org.BouncyCastle.Ocsp;
 using SE.Common.Response.Group;
+using Google.Cloud.Firestore.V1;
 
 namespace SE.Service.Services
 {
@@ -28,6 +29,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateRoomChat(List<GroupMemberRequest> groupMembers, string groupName);
         Task<IBusinessResult> AddMemberToGroup(AddMemberToGroupRequest req);
         Task<IBusinessResult> GetMembersNotInGroupChat(string groupChatId);
+        Task<List<int>> GetAllFamilyMembersByElderly(int accountId);
+
     }
 
     public class GroupService : IGroupService
@@ -43,7 +46,63 @@ namespace SE.Service.Services
             _firestoreDb = firestoreDb;
             _videoCallService = videoCallService;
         }
+        public async Task<List<int>> GetAllFamilyMembersByElderly(int accountId)
+        {
+            try
+            {
+                if (accountId <= 0)
+                {
+                    return new List<int>();
+                }
 
+                var userGroups = _unitOfWork.GroupMemberRepository.GetAll()
+                    .Where(gm => gm.AccountId == accountId && gm.Status == SD.GeneralStatus.ACTIVE)
+                    .Select(gm => gm.GroupId)
+                    .ToList();
+
+                if (!userGroups.Any())
+                {
+                    return new List<int>();
+                }
+
+                var result = new List<int>();
+
+                foreach (var groupId in userGroups)
+                {
+                    var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
+
+                    var groupMembers = _unitOfWork.GroupMemberRepository.GetAll()
+                        .Where(gm => gm.GroupId == groupId &&
+                                     gm.Status == SD.GeneralStatus.ACTIVE &&
+                                     gm.AccountId != accountId)
+                        .Distinct()
+                        .Select(gm => gm.AccountId)
+                        .ToList();
+
+                    if (groupMembers.Any())
+                    {
+                        var users = _unitOfWork.AccountRepository.GetAll()
+                            .Where(a => groupMembers.Contains(a.AccountId) && a.RoleId == 3)
+                            .Select(a => _mapper.Map<UserDTO>(a))
+                            .Distinct()
+                            .ToList();
+
+                        result.AddRange(users.Select(u => u.AccountId));
+                    }
+                }
+
+                if (!result.Any())
+                {
+                    return new List<int>();
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
         public async Task<IBusinessResult> GetAllElderlyByFamilyMemberId(int accountId)
         {
             try

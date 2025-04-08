@@ -739,15 +739,13 @@ namespace SE.Service.Services
 
                 foreach (var appointment in appointments)
                 {
-                    var userInAppointment = new List<int>();
+                    var peopleInAppointment = new List<PeopleOfSchedule>();
 
                     var professor = await _unitOfWork.ProfessorRepository
                         .GetByIdAsync(appointment.TimeSlot.ProfessorSchedule.ProfessorId);
 
                     var professorAccount = await _unitOfWork.AccountRepository
                         .GetByIdAsync(professor.AccountId);
-
-                    var professorId = professorAccount.AccountId;
 
                     var schedule = new GetProfessorScheduleOfElderly
                     {
@@ -756,18 +754,41 @@ namespace SE.Service.Services
                         Status = appointment.Status,
                         ProfessorAppointmentId = appointment.ProfessorAppointmentId,
                         ProfessorAvatar = professorAccount.Avatar,
-                        IsOnline = (bool)appointment.IsOnline
+                        IsOnline = (bool)appointment.IsOnline,
+                        People = new List<PeopleOfSchedule>()
                     };
 
                     if (schedule.Status == SD.ProfessorAppointmentStatus.NOTYET)
                     {
-                        var elderlyId = await _unitOfWork.ElderlyRepository.GetAccountByElderlyId(appointment.ElderlyId);
-                        userInAppointment.Add(professorId);
-                        userInAppointment.Add((int)elderlyId.Account.AccountId);
-                        userInAppointment.AddRange(await GetAllFamilyMemberByElderlyId(elderlyId.AccountId));
+                        // Add professor
+                        peopleInAppointment.Add(new PeopleOfSchedule
+                        {
+                            Id = professorAccount.AccountId,
+                            Name = professorAccount.FullName
+                        });
 
-                        // Now AccountId is initialized, so this won't throw an exception
-                        schedule.AccountId.AddRange(userInAppointment);
+                        // Add elderly
+                        var elderlyId = await _unitOfWork.ElderlyRepository.GetAccountByElderlyId(appointment.ElderlyId);
+                        peopleInAppointment.Add(new PeopleOfSchedule
+                        {
+                            Id = elderlyId.Account.AccountId,
+                            Name = elderlyId.Account.FullName
+                        });
+
+                        // Add family members
+                        var familyMemberAccountIds = await GetAllFamilyMemberByElderlyId(elderlyId.AccountId);
+                        var familyMembers = _unitOfWork.AccountRepository.GetAll()
+                            .Where(a => familyMemberAccountIds.Contains(a.AccountId))
+                            .Select(a => new PeopleOfSchedule
+                            {
+                                Id = a.AccountId,
+                                Name = a.FullName
+                            })
+                            .ToList();
+
+                        peopleInAppointment.AddRange(familyMembers);
+
+                        schedule.People.AddRange(peopleInAppointment);
                     }
 
                     result.Add(schedule);
@@ -780,8 +801,6 @@ namespace SE.Service.Services
                 throw ex;
             }
         }
-
-
         public async Task<IBusinessResult> GetProfessorScheduleInProfessor(int professorId)
         {
             try
@@ -1019,7 +1038,6 @@ namespace SE.Service.Services
                     var elderlyAccount = await _unitOfWork.AccountRepository
                         .GetByIdAsync(elderly.AccountId);
 
-                    var userInAppointment = new List<int>();
                     var schedule = new GetScheduleOfElderlyByProfessorVM
                     {
                         ElderlyId = elderly.ElderlyId,
@@ -1028,13 +1046,36 @@ namespace SE.Service.Services
                         PhoneNumber = elderlyAccount.PhoneNumber,
                         DateTime = $"{appointment.AppointmentTime:dd/MM/yyyy HH:mm}",
                         Status = appointment.Status,
-                        IsOnline = (bool)appointment.IsOnline
+                        IsOnline = (bool)appointment.IsOnline,
+                        People = new List<PeopleOfScheduleVM>()
                     };
-                    userInAppointment.Add(professorAccountId);
-                    userInAppointment.Add(elderly.AccountId);
-                    userInAppointment.AddRange(await GetAllFamilyMemberByElderlyId(elderly.AccountId));
 
-                    schedule.AccountId.AddRange(userInAppointment);
+                    // Add professor
+                    schedule.People.Add(new PeopleOfScheduleVM
+                    {
+                        Id = professorAccountId,
+                        Name = (await _unitOfWork.AccountRepository.GetByIdAsync(professorAccountId)).FullName
+                    });
+
+                    // Add elderly
+                    schedule.People.Add(new PeopleOfScheduleVM
+                    {
+                        Id = elderly.AccountId,
+                        Name = elderlyAccount.FullName
+                    });
+
+                    // Add family members
+                    var familyMemberAccountIds = await GetAllFamilyMemberByElderlyId(elderly.AccountId);
+                    var familyMembers =  _unitOfWork.AccountRepository.GetAll()
+                        .Where(a => familyMemberAccountIds.Contains(a.AccountId))
+                        .Select(a => new PeopleOfScheduleVM
+                        {
+                            Id = a.AccountId,
+                            Name = a.FullName
+                        })
+                        .ToList();
+
+                    schedule.People.AddRange(familyMembers);
 
                     result.Add(schedule);
                 }
@@ -1046,7 +1087,6 @@ namespace SE.Service.Services
                 throw ex;
             }
         }
-
 
         public async Task<IBusinessResult> GetProfessorWeeklyTimeSlots(int accountId)
         {

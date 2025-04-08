@@ -20,6 +20,7 @@ public partial class Notification
     public DateTime CreatedDate { get; set; }
 
     public string Status { get; set; }
+    public string Data { get; set; }
 
     public virtual Account Account { get; set; }
 }
