@@ -51,11 +51,23 @@ namespace SE.Data.Repository
                                                .Include(s => s.Booking).ThenInclude(b => b.Subscription)
                                                .Where(s => s.Booking.SubscriptionId == subId)
                                                .ToListAsync();
+        }        
+        
+        public async Task<List<UserSubscription>> GetAllUserInSubscriptionsInUse(int subId)
+        {
+            var currentDate = DateTime.UtcNow.AddHours(7);
+
+            return await _context.UserSubscriptions.Include(s => s.Booking).ThenInclude(b => b.Account)
+                                                .Include(s => s.Booking).ThenInclude(b => b.Elderly).ThenInclude(b => b.Account)
+                                               .Include(s => s.Booking).ThenInclude(b => b.Subscription)
+                                               .Where(s => s.Booking.SubscriptionId == subId && s.StartDate <= currentDate &&
+                        (s.EndDate == null || s.EndDate >= currentDate))
+                                               .ToListAsync();
         }
 
         public bool CheckIsAvailable(int subId)
         {
-            var currentDate = DateTime.Now;
+            var currentDate = DateTime.UtcNow.AddHours(7);
 
             var activeUsers = _context.UserSubscriptions.
                                        Include(s => s.Booking)
