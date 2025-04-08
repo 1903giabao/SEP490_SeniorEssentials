@@ -535,7 +535,10 @@ namespace SE.Service.Services
             try
             {
                 var getProfessorInfor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(accountId);
-
+                if (getProfessorInfor == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor does not existed!");
+                }
                 var professor = _mapper.Map<GetProfessorDetail>(getProfessorInfor.Professor);
 
                 professor.ProfessorId = getProfessorInfor.Professor.ProfessorId;

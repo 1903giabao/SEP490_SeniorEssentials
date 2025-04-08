@@ -42,7 +42,9 @@ namespace SE.Data.Repository
 
         public async Task<Account> GetProfessorByAccountIDAsync(int accID)
         {
-            var result = await _context.Accounts.Include(a => a.Professor).ThenInclude(a => a.Account).Include(a => a.Role).FirstOrDefaultAsync(e => e.AccountId == accID && e.RoleId == 4);
+            var result = await _context.Accounts
+                .Include(a => a.Professor)
+                .FirstOrDefaultAsync(e => e.AccountId == accID && e.RoleId == 4);
             return result;
         }
     }
