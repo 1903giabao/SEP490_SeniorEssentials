@@ -131,6 +131,27 @@ namespace SE.Data.Base
             return await _context.SaveChangesAsync();
         }
 
+        public async Task<int> UpdateRangeAsync(IEnumerable<T> entities)
+        {
+            if (entities == null || !entities.Any())
+                return 0;
+
+            foreach (var entity in entities)
+            {
+                var existing = _context.Set<T>().Local.FirstOrDefault(e => e.Equals(entity));
+                if (existing != null)
+                {
+                    _context.Entry(existing).CurrentValues.SetValues(entity);
+                }
+                else
+                {
+                    _context.Update(entity);
+                }
+            }
+
+            return await _context.SaveChangesAsync();
+        }
+
         public bool Remove(T entity)
         {
             _context.Remove(entity);

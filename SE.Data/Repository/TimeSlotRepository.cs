@@ -23,6 +23,15 @@ namespace SE.Data.Repository
                 .OrderBy(ts => ts.StartTime)
                 .ToListAsync();
             return rs;
+        }        
+        
+        public async Task<List<TimeSlot>> GetByAndContainProfessorScheduleIdAsync(List<ProfessorSchedule> existingSchedules, string status)
+        {
+            var rs = await _context.TimeSlots.Include(t => t.ProfessorSchedule)
+                .Where(t => existingSchedules.Select(s => s.ProfessorScheduleId).Contains(t.ProfessorScheduleId)
+                                              && t.Status == status)
+                .ToListAsync();
+            return rs;
         }
     }
 }
