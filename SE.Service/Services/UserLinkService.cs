@@ -305,6 +305,49 @@ namespace SE.Service.Services
                             }
                         }
                     }
+/*
+                    if (!string.IsNullOrEmpty(responseUser.DeviceToken) && responseUser.DeviceToken != "string")
+                    {
+                        if (userLink.RelationshipType.Equals("Friend"))
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                responseUser.DeviceToken,
+                                "Chấp nhận kết bạn",
+                                $"{responseUser.FullName} đã chấp nhận lời mời kết bạn.");
+
+                            var newNotification = new Data.Models.Notification
+                            {
+                                NotificationType = "Chấp nhận kết bạn",
+                                AccountId = responseUser.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Chấp nhận kết bạn",
+                                Message = $"{responseUser.FullName} đã chấp nhận lời mời kết bạn.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                        else
+                        {
+                            await _notificationService.SendNotification(
+                                responseUser.DeviceToken,
+                                "Xác Nhận Hỗ Trợ",
+                                $"{responseUser.FullName} đã chấp nhận yêu cầu hỗ trợ của bạn.");
+
+                            var newNotification = new Data.Models.Notification
+                            {
+                                NotificationType = "Xác Nhận Hỗ Trợ",
+                                AccountId = responseUser.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Xác Nhận Hỗ Trợ",
+                                Message = $"{responseUser.FullName} đã chấp nhận yêu cầu hỗ trợ của bạn."),
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }*/
 
                     return new BusinessResult(Const.SUCCESS_CREATE, $"Add friend request is {userLink.Status}.");
                 }

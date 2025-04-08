@@ -59,6 +59,7 @@ namespace SE.Service.Services
 
                 combo.CreatedDate = DateTime.UtcNow.AddHours(7);
                 combo.UpdatedDate = DateTime.UtcNow.AddHours(7);
+                combo.Status = SD.GeneralStatus.ACTIVE;
 
                 var result = await _unitOfWork.SubscriptionRepository.CreateAsync(combo);
 

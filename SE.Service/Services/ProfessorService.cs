@@ -590,6 +590,7 @@ namespace SE.Service.Services
                         {
                             result.TimeEachSlots.Add(new TimeEachSlot
                             {
+                                TimeSlotId = timeSlot.TimeSlotId,
                                 StartTime = timeSlot.StartTime.ToString(),
                                 EndTime = timeSlot.EndTime.ToString()
                             });
@@ -1139,6 +1140,7 @@ namespace SE.Service.Services
                             {
                                 dayResult.TimeEachSlots.Add(new TimeEachSlot
                                 {
+                                    TimeSlotId = timeSlot.TimeSlotId,
                                     StartTime = timeSlot.StartTime.ToString(), // Format as "09:00"
                                     EndTime = timeSlot.EndTime.ToString()      // Format as "10:00"
                                 });

@@ -13,6 +13,7 @@ using AutoMapper.Execution;
 using Org.BouncyCastle.Ocsp;
 using SE.Common.Response.Group;
 using Google.Cloud.Firestore.V1;
+using SE.Common.Response.HealthIndicator;
 
 namespace SE.Service.Services
 {
@@ -39,12 +40,14 @@ namespace SE.Service.Services
         private readonly IMapper _mapper;
         private readonly FirestoreDb _firestoreDb;
         private readonly IVideoCallService _videoCallService;
-        public GroupService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb, IVideoCallService videoCallService)
+        private readonly INotificationService _notificationService;
+        public GroupService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb, IVideoCallService videoCallService, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _firestoreDb = firestoreDb;
             _videoCallService = videoCallService;
+            _notificationService = notificationService;
         }
         public async Task<List<int>> GetAllFamilyMembersByElderly(int accountId)
         {
@@ -264,6 +267,55 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, roomCreateRs.Message);
                 }
 
+/*                var listFamilyMember = request.Members.Where(m => m.IsCreator == false).Select(m => m.AccountId).ToList();
+
+                foreach (var member in listFamilyMember)
+                {
+                    var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+
+                    if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                    {
+                        // Send notification
+                        await _notificationService.SendNotification(
+                            familyMember.DeviceToken,
+                            "Thêm Vào Gia Đình",
+                            $"Bạn đã được vào nhóm gia đình {group.GroupName}.");
+
+                        var newNotification = new Data.Models.Notification
+                        {
+                            NotificationType = "Thêm Vào Gia Đình",
+                            AccountId = familyMember.AccountId,
+                            Status = SD.GeneralStatus.ACTIVE,
+                            Title = "Thêm Vào Gia Đình",
+                            Message = $"Bạn đã được vào nhóm gia đình {group.GroupName}.",
+                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                        };
+
+                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                    }
+
+                    if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                    {
+                        // Send notification
+                        await _notificationService.SendNotification(
+                            familyMember.DeviceToken,
+                            "Thêm vào nhóm chat",
+                            $"Bạn đã được vào nhóm chat {group.GroupName}.");
+
+                        var newNotification = new Data.Models.Notification
+                        {
+                            NotificationType = "Thêm vào nhóm chat",
+                            AccountId = familyMember.AccountId,
+                            Status = SD.GeneralStatus.ACTIVE,
+                            Title = "Thêm vào nhóm chat",
+                            Message = $"Bạn đã được vào nhóm chat {group.GroupName}.",
+                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                        };
+
+                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                    }
+                }*/
+
                 return new BusinessResult(Const.SUCCESS_CREATE, "Group created successfully.");
             }
             catch (Exception ex)
@@ -455,6 +507,32 @@ namespace SE.Service.Services
                         return new BusinessResult(Const.FAIL_CREATE, "Failed to add member to the group.");
                     }
                 }
+
+/*                foreach (var member in newMemberIds)
+                {
+                    var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+
+                    if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                    {
+                        // Send notification
+                        await _notificationService.SendNotification(
+                            familyMember.DeviceToken,
+                            "Thêm Vào Gia Đình",
+                            $"Bạn đã được vào nhóm gia đình {group.GroupName}.");
+
+                        var newNotification = new Data.Models.Notification
+                        {
+                            NotificationType = "Thêm Vào Gia Đình",
+                            AccountId = familyMember.AccountId,
+                            Status = SD.GeneralStatus.ACTIVE,
+                            Title = "Thêm Vào Gia Đình",
+                            Message = $"Bạn đã được vào nhóm gia đình {group.GroupName}.",
+                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                        };
+
+                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                    }
+                }*/
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Members added to the group successfully.");
             }
