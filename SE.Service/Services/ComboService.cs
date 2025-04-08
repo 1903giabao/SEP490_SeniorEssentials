@@ -137,7 +137,7 @@ namespace SE.Service.Services
                 var subscriptionDtos = new List<ComboDto>();
                 foreach (var s in subscriptions)
                 {
-                    var users = await _unitOfWork.UserServiceRepository.GetAllUserInSubscriptions(s.SubscriptionId);
+                    var users = await _unitOfWork.UserServiceRepository.GetAllUserInSubscriptionsInUse(s.SubscriptionId);
                     subscriptionDtos.Add(new ComboDto
                     {
                         SubscriptionId = s.SubscriptionId,

@@ -188,7 +188,7 @@ namespace SE.Service.Services
                             return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create user subscription");
                         }
 
-                        if (!string.IsNullOrEmpty(elderly.DeviceToken) && elderly.DeviceToken != "string")
+/*                        if (!string.IsNullOrEmpty(elderly.DeviceToken) && elderly.DeviceToken != "string")
                         {
                             // Send notification
                             await _notificationService.SendNotification(
@@ -207,7 +207,7 @@ namespace SE.Service.Services
                             };
 
                             await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
-                        }
+                        }*/
 
                         return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, result);
                     }
@@ -316,15 +316,27 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist.");
                 }
 
-                var bookings = _unitOfWork.BookingRepository.FindByCondition(b => b.ElderlyId == elderly.Elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
-                                                            .Select(b => b.BookingId).ToList();
+                if (elderly.Elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly details not found.");
+                }
+
+                var bookings = _unitOfWork.BookingRepository
+                    .FindByCondition(b => b.ElderlyId == elderly.Elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                    .Select(b => b.BookingId)
+                    .ToList();
 
                 if (bookings.Any())
                 {
                     var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
 
+                    if (userSubscription?.Booking == null)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                    }
+
                     var mapperBooking = _mapper.Map<BookingDTO>(userSubscription.Booking);
-                    mapperBooking.ProfessorId = userSubscription.ProfessorId;
+                    mapperBooking.ProfessorId = userSubscription?.ProfessorId ?? 0; // Safe assignment
 
                     return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, mapperBooking);
                 }
