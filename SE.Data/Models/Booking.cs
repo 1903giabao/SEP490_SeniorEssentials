@@ -31,8 +31,6 @@ public partial class Booking
 
     public virtual Elderly Elderly { get; set; }
 
-    public virtual ICollection<ProfessorAppointment> ProfessorAppointments { get; set; } = new List<ProfessorAppointment>();
-
     public virtual Subscription Subscription { get; set; }
 
     public virtual Transaction Transaction { get; set; }

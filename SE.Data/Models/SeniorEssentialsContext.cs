@@ -814,11 +814,6 @@ public partial class SeniorEssentialsContext : DbContext
                 .IsRequired()
                 .HasMaxLength(20);
 
-            entity.HasOne(d => d.Booking).WithMany(p => p.ProfessorAppointments)
-                .HasForeignKey(d => d.BookingId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Professor__Booki__1BC821DD");
-
             entity.HasOne(d => d.Elderly).WithMany(p => p.ProfessorAppointments)
                 .HasForeignKey(d => d.ElderlyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -828,6 +823,10 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasForeignKey(d => d.TimeSlotId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Professor__TimeS__1DB06A4F");
+
+            entity.HasOne(d => d.UserSubscription).WithMany(p => p.ProfessorAppointments)
+                .HasForeignKey(d => d.UserSubscriptionId)
+                .HasConstraintName("FK_ProfessorAppointment_UserSubscription");
         });
 
         modelBuilder.Entity<ProfessorRating>(entity =>

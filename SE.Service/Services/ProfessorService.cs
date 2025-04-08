@@ -44,7 +44,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId);
         Task<IBusinessResult> GetProfessorWeeklyTimeSlots(int accountId);
         Task<IBusinessResult> GetProfessorScheduleInProfessor(int professorId);
-
+        Task<IBusinessResult> BookProfessorAppointment(BookProfessorAppointmentRequest req);
     }
 
     public class ProfessorService : IProfessorService
@@ -1176,6 +1176,109 @@ namespace SE.Service.Services
                 }
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> BookProfessorAppointment(BookProfessorAppointmentRequest req)
+        {
+            try
+            {
+                var accountElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(req.ElderlyId);
+
+                if (accountElderly == null || accountElderly.RoleId != 2)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly doesn't exist!");
+                }
+
+                // Verify professor exists
+                var elderly = _unitOfWork.ElderlyRepository
+                    .FindByCondition(p => p.ElderlyId == accountElderly.Elderly.ElderlyId).FirstOrDefault();
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly doesn't exist!");
+                }
+
+                var bookings = _unitOfWork.BookingRepository
+                    .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                    .Select(b => b.BookingId)
+                    .ToList();
+
+                if (!bookings.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Bookings of elderly not found.");
+                }
+
+                var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
+
+                if (userSubscription?.Booking == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                }
+
+                var professor = _unitOfWork.ProfessorRepository
+                    .FindByCondition(p => p.ProfessorId == userSubscription.Professor.ProfessorId).FirstOrDefault();
+
+                if (professor == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
+                }
+
+                var timeslot = await _unitOfWork.TimeSlotRepository.GetByTimeSlotIdAsync(req.TimeSlotId);
+
+                if (timeslot == null) 
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Time slot doesn't exist!");
+                }
+
+                var professorSchedule = timeslot.ProfessorSchedule;
+
+                // Parse the date from req.Day
+                DateTime appointmentDate;
+                if (!DateTime.TryParse(req.Day, out appointmentDate))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid date format!");
+                }
+
+                // Check if date is before schedule start
+                if (appointmentDate < professorSchedule.StartDate)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Date is before schedule start!");
+                }
+
+                // Check if day of week matches
+                if (appointmentDate.DayOfWeek.ToString().ToLower() != professorSchedule.DayOfWeek.ToString().ToLower())
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Day doesn't match professor's schedule!");
+                }
+
+                var professorAppointment = new ProfessorAppointment
+                {
+                    ElderlyId = elderly.ElderlyId,
+                    TimeSlotId = timeslot.TimeSlotId,
+                    UserSubscriptionId = userSubscription.UserSubscriptionId,
+                    AppointmentTime = (DateTime)(appointmentDate.Date + timeslot.StartTime?.ToTimeSpan()),
+                    StartTime = timeslot.StartTime,
+                    EndTime = timeslot.EndTime,
+                    Description = req.Description == null ? "Nothing" : req.Description,
+                    CreatedDate = DateTime.UtcNow.AddHours(7),
+                    Status = SD.ProfessorAppointmentStatus.NOTYET,
+                    IsOnline = true
+                };
+
+                var createRs = await _unitOfWork.ProfessorAppointmentRepository.CreateAsync(professorAppointment);
+
+                if (createRs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
+
             }
             catch (Exception ex)
             {
