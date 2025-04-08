@@ -56,7 +56,7 @@ namespace SE.API.Controllers
         }
 
         [HttpGet("time-slot")]
-        public async Task<IActionResult> GetAllProfessor(int professorId, DateOnly date)
+        public async Task<IActionResult> GetTimeSlot(int professorId, DateOnly date)
         {
             var result = await _professorScheduleService.GetTimeSlot(professorId, date);
             return Ok(result);
@@ -85,7 +85,7 @@ namespace SE.API.Controllers
             return Ok(rs);
         }
         [HttpGet("appointment/{accountId}")]
-        public async Task<IActionResult> GetProfessorSchedule([FromRoute] int accountId)
+        public async Task<IActionResult> GetScheduleOfElderlyByProfessorId([FromRoute] int accountId)
         {
             var rs = await _professorScheduleService.GetScheduleOfElderlyByProfessorId(accountId);
             return Ok(rs);

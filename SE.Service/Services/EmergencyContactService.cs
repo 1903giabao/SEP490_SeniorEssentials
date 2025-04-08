@@ -51,8 +51,9 @@ namespace SE.Service.Services
         private readonly ISmsService _smsService;
         private readonly string _apiKey;
         private readonly string _secretKey;
+        private readonly IGroupService _groupService;
 
-        public EmergencyContactService(UnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, ISmsService smsService)
+        public EmergencyContactService(UnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, ISmsService smsService, IGroupService groupService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -60,6 +61,7 @@ namespace SE.Service.Services
             _secretKey = Environment.GetEnvironmentVariable("VoiceCallSecretKey");
             _notificationService = notificationService;
             _smsService = smsService;
+            _groupService = groupService;
         }
 
         public async Task<IBusinessResult> GetAllEmergencyConfirmation()
@@ -721,6 +723,34 @@ namespace SE.Service.Services
                 {
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
                 }
+
+/*                var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(elderly.AccountId);
+
+                foreach (var member in listFamilyMember)
+                {
+                    var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+
+                    if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                    {
+                        // Send notification
+                        await _notificationService.SendNotification(
+                            familyMember.DeviceToken,
+                            "Tín hiệu cầu cứu khẩn cấp",
+                            $"Người già {elderly.FullName} đang gặp phải tình huống khẩn cấp, nhanh chóng truy cập vào ứng dụng Senior Essentials để xem thêm các thông tin chi tiết.");
+
+                        var newNotification = new Data.Models.Notification
+                        {
+                            NotificationType = "SOS",
+                            AccountId = familyMember.AccountId,
+                            Status = SD.GeneralStatus.ACTIVE,
+                            Title = "Tín hiệu cầu cứu khẩn cấp",
+                            Message = $"Người già {elderly.FullName} đang gặp phải tình huống khẩn cấp, nhanh chóng truy cập vào ứng dụng Senior Essentials để xem thêm các thông tin chi tiết.",
+                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                        };
+
+                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                    }
+                }*/
 
                 return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, new { EmergencyConfirmationId = emergencyConfirmation.EmergencyConfirmationId });
             }
