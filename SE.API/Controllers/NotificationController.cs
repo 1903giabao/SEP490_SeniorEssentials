@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SE.Service.Services;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace SE.API.Controllers
 {
@@ -24,6 +25,14 @@ namespace SE.API.Controllers
             }
 
             return BadRequest(new { message = "Failed to send notification" });
+        }
+
+        [HttpGet]
+
+        public async Task<IActionResult> GetAllActivities(int accountId)
+        {
+            var result = await _notificationService.GetAllNotiInAccount(accountId);
+            return Ok(result);
         }
     }
 }

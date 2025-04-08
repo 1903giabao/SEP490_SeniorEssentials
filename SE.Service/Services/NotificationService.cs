@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using FirebaseAdmin.Messaging;
+using SE.Common;
 using SE.Data.UnitOfWork;
 using SE.Service.Base;
 using System;
@@ -13,6 +14,8 @@ namespace SE.Service.Services
     public interface INotificationService
     {
         Task<string> SendNotification(string token, string title, string body);
+        Task<IBusinessResult> GetAllNotiInAccount(int accountId);
+
     }
 
     public class NotificationService : INotificationService
@@ -26,17 +29,19 @@ namespace SE.Service.Services
             _mapper = mapper;
         }
 
-  /*      public async Task<IBusinessResult> GetAllNotiInAccount (int accountId)
+        public Task<IBusinessResult> GetAllNotiInAccount (int accountId)
         {
             try
             {
-
+                var result = _unitOfWork.NotificationRepository.FindByCondition(n=>n.AccountId == accountId).ToList();
+                return Task.FromResult<IBusinessResult>(new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result));
             }
             catch (Exception ex) 
             {
-            
+                throw new Exception(ex.Message);
+
             }
-        }*/
+        }
         public async Task<string> SendNotification(string token, string title, string body)
         {
             var message = new Message()

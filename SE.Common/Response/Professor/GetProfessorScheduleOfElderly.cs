@@ -14,12 +14,13 @@ namespace SE.Common.Response.Professor
         public string DateTime { get; set; }
         public string Status { get; set; }
         public bool IsOnline { get; set; }
-        public List<int> AccountId { get; set; }
+       
+        public List<PeopleOfSchedule> People { get; set; }
+    }
 
-        // Add a constructor to initialize the AccountId list
-        public GetProfessorScheduleOfElderly()
-        {
-            AccountId = new List<int>();
-        }
+    public class PeopleOfSchedule
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 }

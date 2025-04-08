@@ -20,6 +20,7 @@ using Google.Type;
 using static Google.Cloud.Vision.V1.ProductSearchResults.Types;
 using Microsoft.EntityFrameworkCore.Storage;
 using SE.Common.Response.HealthIndicator;
+using System.Text.Json;
 
 namespace SE.Service.Services
 {
@@ -81,7 +82,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetHeightDetail(int accountId);
         Task<IBusinessResult> GetHeartRateDetail(int accountId);
         Task<IBusinessResult> GetBloodPressureDetail(int accountId);
-        
+
         Task<IBusinessResult> GetBloodGlucoseDetail(int accountId);
         Task<IBusinessResult> GetLipidProfileDetail(int accountId);
         Task<IBusinessResult> GetLiverEnzymesDetail(int accountId);
@@ -108,10 +109,14 @@ namespace SE.Service.Services
     {
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public HealthIndicatorService(UnitOfWork unitOfWork, IMapper mapper)
+        private readonly INotificationService _notificationService;
+        private readonly IGroupService _groupService;
+        public HealthIndicatorService(UnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IGroupService groupService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _notificationService = notificationService;
+            _groupService = groupService;
         }
 
         public async Task<IBusinessResult> CreateWeight(CreateWeightRequest request)
@@ -126,7 +131,7 @@ namespace SE.Service.Services
                     //id nguoi gia
                     getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
                     getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
-                
+
                 }
                 else
                 {
@@ -150,10 +155,11 @@ namespace SE.Service.Services
                 weightEntity.Status = SD.GeneralStatus.ACTIVE;
                 weightEntity.ElderlyId = getElderly.Elderly.ElderlyId;
 
-                if (getFamily!=null && getFamily.FullName != null) weightEntity.CreatedBy = getFamily.FullName;
+                if (getFamily != null && getFamily.FullName != null) weightEntity.CreatedBy = getFamily.FullName;
                 else weightEntity.CreatedBy = getElderly.FullName;
 
                 await _unitOfWork.WeightRepository.CreateAsync(weightEntity);
+
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Weight created successfully.");
             }
@@ -206,7 +212,7 @@ namespace SE.Service.Services
                 caloriesEntity.Status = SD.GeneralStatus.ACTIVE;
                 caloriesEntity.ElderlyId = getElderly.Elderly.ElderlyId;
 
-                if (getFamily!=null && getFamily.FullName != null) caloriesEntity.CreatedBy = getFamily.FullName;
+                if (getFamily != null && getFamily.FullName != null) caloriesEntity.CreatedBy = getFamily.FullName;
                 else caloriesEntity.CreatedBy = getElderly.FullName;
 
                 await _unitOfWork.CaloriesConsumptionRepository.CreateAsync(caloriesEntity);
@@ -255,7 +261,7 @@ namespace SE.Service.Services
                 caloriesEntity.Status = SD.GeneralStatus.ACTIVE;
                 caloriesEntity.ElderlyId = getElderly.Elderly.ElderlyId;
 
-                if (getFamily!=null && getFamily.FullName != null) caloriesEntity.CreatedBy = getFamily.FullName;
+                if (getFamily != null && getFamily.FullName != null) caloriesEntity.CreatedBy = getFamily.FullName;
                 else caloriesEntity.CreatedBy = getElderly.FullName;
 
                 await _unitOfWork.FootStepRepository.CreateAsync(caloriesEntity);
@@ -305,7 +311,7 @@ namespace SE.Service.Services
                 caloriesEntity.Status = SD.GeneralStatus.ACTIVE;
                 caloriesEntity.ElderlyId = getElderly.Elderly.ElderlyId;
 
-                if (getFamily!=null && getFamily.FullName != null) caloriesEntity.CreatedBy = getFamily.FullName;
+                if (getFamily != null && getFamily.FullName != null) caloriesEntity.CreatedBy = getFamily.FullName;
                 else caloriesEntity.CreatedBy = getElderly.FullName;
 
                 await _unitOfWork.SleepTimeRepository.CreateAsync(caloriesEntity);
@@ -322,52 +328,134 @@ namespace SE.Service.Services
         {
             try
             {
-                var getElderly = new Account();
-                var getFamily = new Account();
-                var isExisted = new Elderly();
-                if (request.ElderlyId != 0)
+                // Validate request
+                if (request.BloodOxygen1 <= 0)
                 {
-                    //id nguoi gia
-                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId);
-                    getFamily = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
-
-                }
-                else
-                {
-                    getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
+                    return new BusinessResult(Const.FAIL_CREATE, "Blood oxygen level must be greater than 0.");
                 }
 
-                isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
+                // Get elderly and family accounts
+                var getElderly = request.ElderlyId != 0
+                    ? await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.ElderlyId)
+                    : await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId);
 
+                var getFamily = request.ElderlyId != 0
+                    ? await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(request.AccountId)
+                    : null;
+
+                var isExisted = await _unitOfWork.ElderlyRepository.GetByIdAsync(getElderly.Elderly.ElderlyId);
                 if (isExisted == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
                 }
 
-                if (request.BloodOxygen1 <= 0)
+                // Create blood oxygen record
+                var bloodOxygenEntity = _mapper.Map<BloodOxygen>(request);
+                bloodOxygenEntity.DateRecorded = System.DateTime.UtcNow.AddHours(7);
+                bloodOxygenEntity.Status = SD.GeneralStatus.ACTIVE;
+                bloodOxygenEntity.ElderlyId = getElderly.Elderly.ElderlyId;
+                bloodOxygenEntity.CreatedBy = getFamily?.FullName ?? getElderly.FullName;
+
+                await _unitOfWork.BloodOxygenRepository.CreateAsync(bloodOxygenEntity);
+
+                // Check for high blood oxygen and notify family
+                var check = await EvaluateBloodOxygen(request.BloodOxygen1);
+                if (check.Data == "Cao")
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Weight must be greater than 0.");
+                    var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
+
+                    foreach (var member in listFamilyMember)
+                    {
+                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Cảnh báo sức khỏe",
+                                "Người thân của bạn có mức oxy trong máu cao hơn bình thường.");
+
+                            // Create notification record
+                            var response = new LogBookReponse
+                            {
+                                Tabs = "BloodOxygen",
+                                Id = bloodOxygenEntity.BloodOxygenId,
+                                DataType = "IOT",
+                                DateTime = bloodOxygenEntity.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                TimeRecorded = bloodOxygenEntity.DateRecorded?.ToString("HH:mm"),
+                                DateRecorded = bloodOxygenEntity.DateRecorded?.ToString("dd-MM-yyyy"),
+                                Indicator = $"{bloodOxygenEntity.BloodOxygen1}",
+                                Evaluation = GetBloodOxygenEvaluation((double)bloodOxygenEntity.BloodOxygen1)
+                            };
+
+                            var newNotification = new Notification
+                            {
+                                NotificationType = "Cảnh báo sức khỏe",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Cảnh báo sức khỏe",
+                                Message = "Người thân của bạn có mức oxy trong máu cao hơn bình thường.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                Data = JsonSerializer.Serialize(response)
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+                }
+                else if (check.Data == "Thấp")
+                        {
+                    var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
+
+                    foreach (var member in listFamilyMember)
+                    {
+                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Cảnh báo sức khỏe",
+                                "Người thân của bạn có mức oxy trong máu thấp hơn bình thường.");
+
+                            // Create notification record
+                            var response = new LogBookReponse
+                            {
+                                Tabs = "BloodOxygen",
+                                Id = bloodOxygenEntity.BloodOxygenId,
+                                DataType = "IOT",
+                                DateTime = bloodOxygenEntity.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                TimeRecorded = bloodOxygenEntity.DateRecorded?.ToString("HH:mm"),
+                                DateRecorded = bloodOxygenEntity.DateRecorded?.ToString("dd-MM-yyyy"),
+                                Indicator = $"{bloodOxygenEntity.BloodOxygen1}",
+                                Evaluation = GetBloodOxygenEvaluation((double)bloodOxygenEntity.BloodOxygen1)
+                            };
+
+                            var newNotification = new Notification
+                            {
+                                NotificationType = "Cảnh báo sức khỏe",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Cảnh báo sức khỏe",
+                                Message = "Người thân của bạn có mức oxy trong máu thấp hơn bình thường.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                Data = JsonSerializer.Serialize(response)
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+
                 }
 
-                var caloriesEntity = _mapper.Map<BloodOxygen>(request);
-                caloriesEntity.DateRecorded = System.DateTime.UtcNow.AddHours(7);
-                caloriesEntity.Status = SD.GeneralStatus.ACTIVE;
-                caloriesEntity.ElderlyId = getElderly.Elderly.ElderlyId;
-
-                if (getFamily!=null && getFamily.FullName != null) caloriesEntity.CreatedBy = getFamily.FullName;
-                else caloriesEntity.CreatedBy = getElderly.FullName;
-
-                await _unitOfWork.BloodOxygenRepository.CreateAsync(caloriesEntity);
-
-                return new BusinessResult(Const.SUCCESS_CREATE, "Weight created successfully.");
+                return new BusinessResult(Const.SUCCESS_CREATE, "Blood oxygen record created successfully.");
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+                // Log the exception here
+                return new BusinessResult(Const.FAIL_CREATE, $"An unexpected error occurred: {ex.Message}");
             }
         }
-
-
         public async Task<IBusinessResult> CreateHeight(CreateHeightRequest request)
         {
             try
@@ -401,7 +489,7 @@ namespace SE.Service.Services
                 heightEntity.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 heightEntity.Status = SD.GeneralStatus.ACTIVE;
                 heightEntity.ElderlyId = getElderly.Elderly.ElderlyId;
-                if (getFamily!=null && getFamily.FullName != null) heightEntity.CreatedBy = getFamily.FullName;
+                if (getFamily != null && getFamily.FullName != null) heightEntity.CreatedBy = getFamily.FullName;
                 else heightEntity.CreatedBy = getElderly.FullName;
 
                 await _unitOfWork.HeightRepository.CreateAsync(heightEntity);
@@ -452,9 +540,98 @@ namespace SE.Service.Services
                 bloodPressure.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 bloodPressure.Status = SD.GeneralStatus.ACTIVE;
                 bloodPressure.ElderlyId = getElderly.Elderly.ElderlyId;
-                if (getFamily!=null && getFamily.FullName != null) bloodPressure.CreatedBy = getFamily.FullName;
+                if (getFamily != null && getFamily.FullName != null) bloodPressure.CreatedBy = getFamily.FullName;
                 else bloodPressure.CreatedBy = getElderly.FullName;
                 await _unitOfWork.BloodPressureRepository.CreateAsync(bloodPressure);
+
+                var check = await EvaluateBloodPressure((int)request.Systolic, (int)request.Diastolic);
+                if (check.Data == "Huyết áp cao")
+                {
+                    var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
+
+                    foreach (var member in listFamilyMember)
+                    {
+                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Cảnh báo sức khỏe",
+                                "Người thân của bạn có huyết áp cao hơn bình thường.");
+
+                            // Create notification record
+                            var response = new LogBookReponse
+                            {
+                                Tabs = "BloodPressure",
+                                Id = bloodPressure.BloodPressureId,
+                                DataType = bloodPressure.SystolicSource,
+                                DateTime = bloodPressure.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                TimeRecorded = bloodPressure.DateRecorded?.ToString("HH:mm"),
+                                DateRecorded = bloodPressure.DateRecorded?.ToString("dd-MM-yyyy"),
+                                Indicator = $"{bloodPressure.Systolic}/{bloodPressure.Diastolic}",
+                                Evaluation = GetBloodPressureEvaluation((double)bloodPressure.Systolic, (double)bloodPressure.Diastolic)
+                            };
+
+                            var newNotification = new Notification
+                            {
+                                NotificationType = "Cảnh báo sức khỏe",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Cảnh báo sức khỏe",
+                                Message = "Người thân của bạn có huyết áp cao hơn bình thường.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                Data = JsonSerializer.Serialize(response)
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+                }
+                else if (check.Data == "Huyết áp thấp")
+                {
+                    var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
+
+                    foreach (var member in listFamilyMember)
+                    {
+                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Cảnh báo sức khỏe",
+                                "Người thân của bạn có huyết áp thấp hơn bình thường.");
+
+                            // Create notification record
+                            var response = new LogBookReponse
+                            {
+                                Tabs = "BloodPressure",
+                                Id = bloodPressure.BloodPressureId,
+                                DataType = bloodPressure.SystolicSource,
+                                DateTime = bloodPressure.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                TimeRecorded = bloodPressure.DateRecorded?.ToString("HH:mm"),
+                                DateRecorded = bloodPressure.DateRecorded?.ToString("dd-MM-yyyy"),
+                                Indicator = $"{bloodPressure.Systolic}/{bloodPressure.Diastolic}",
+                                Evaluation = GetBloodPressureEvaluation((double)bloodPressure.Systolic, (double)bloodPressure.Diastolic)
+                            };
+
+                            var newNotification = new Notification
+                            {
+                                NotificationType = "Cảnh báo sức khỏe",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Cảnh báo sức khỏe",
+                                Message = "Người thân của bạn có huyết áp thấp hơn bình thường.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                Data = JsonSerializer.Serialize(response)
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+
+                }
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Blood Pressure created successfully.");
             }
@@ -497,9 +674,99 @@ namespace SE.Service.Services
                 heartRate.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 heartRate.Status = SD.GeneralStatus.ACTIVE;
                 heartRate.ElderlyId = getElderly.Elderly.ElderlyId;
-                if (getFamily!=null && getFamily.FullName != null) heartRate.CreatedBy = getFamily.FullName;
+                if (getFamily != null && getFamily.FullName != null) heartRate.CreatedBy = getFamily.FullName;
                 else heartRate.CreatedBy = getElderly.FullName;
                 await _unitOfWork.HeartRateRepository.CreateAsync(heartRate);
+
+                var check = await EvaluateHeartRate(request.HeartRate1);
+                if (check.Data == "Nhịp tim nhanh")
+                {
+                    var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
+
+                    foreach (var member in listFamilyMember)
+                    {
+                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Cảnh báo sức khỏe",
+                                "Người thân của bạn có nhịp tim nhanh hơn bình thường.");
+
+                            // Create notification record
+                            var response = new LogBookReponse
+                            {
+                                Tabs = "HeartRate",
+                                Id = heartRate.HeartRateId,
+                                DataType = heartRate.HeartRateSource,
+                                DateTime = heartRate.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                TimeRecorded = heartRate.DateRecorded?.ToString("HH:mm"),
+                                DateRecorded = heartRate.DateRecorded?.ToString("dd-MM-yyyy"),
+                                Indicator = $"{heartRate.HeartRate1}",
+                                Evaluation = GetHeartRateEvaluation((double)heartRate.HeartRate1)
+                            };
+
+                            var newNotification = new Notification
+                            {
+                                NotificationType = "Cảnh báo sức khỏe",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Cảnh báo sức khỏe",
+                                Message = "Người thân của bạn có nhịp tim nhanh hơn bình thường.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                Data = JsonSerializer.Serialize(response)
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+                }
+                else if (check.Data == "Nhịp tim chậm")
+                {
+                    var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
+
+                    foreach (var member in listFamilyMember)
+                    {
+                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Cảnh báo sức khỏe",
+                                "Người thân của bạn có nhịp tim chậm hơn bình thường.");
+
+                            // Create notification record
+                            var response = new LogBookReponse
+                            {
+                                Tabs = "HeartRate",
+                                Id = heartRate.HeartRateId,
+                                DataType = heartRate.HeartRateSource,
+                                DateTime = heartRate.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                TimeRecorded = heartRate.DateRecorded?.ToString("HH:mm"),
+                                DateRecorded = heartRate.DateRecorded?.ToString("dd-MM-yyyy"),
+                                Indicator = $"{heartRate.HeartRate1}",
+                                Evaluation = GetHeartRateEvaluation((double)heartRate.HeartRate1)
+                            };
+
+                            var newNotification = new Notification
+                            {
+                                NotificationType = "Cảnh báo sức khỏe",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Cảnh báo sức khỏe",
+                                Message = "Người thân của bạn nhịp tim chậm hơn bình thường.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                Data = JsonSerializer.Serialize(response)
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+
+                }
+
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Heart Rate created successfully.");
             }
@@ -537,9 +804,98 @@ namespace SE.Service.Services
                 bloodGlucose.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 bloodGlucose.Status = SD.GeneralStatus.ACTIVE;
                 bloodGlucose.ElderlyId = getElderly.Elderly.ElderlyId;
-                if (getFamily!=null && getFamily.FullName != null) bloodGlucose.CreatedBy = getFamily.FullName;
+                if (getFamily != null && getFamily.FullName != null) bloodGlucose.CreatedBy = getFamily.FullName;
                 else bloodGlucose.CreatedBy = getElderly.FullName;
                 await _unitOfWork.BloodGlucoseRepository.CreateAsync(bloodGlucose);
+
+                var check = await EvaluateBloodGlusose(int.Parse(request.BloodGlucose1),request.Time);
+                if (check.Data == "Cao")
+                {
+                    var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
+
+                    foreach (var member in listFamilyMember)
+                    {
+                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Cảnh báo sức khỏe",
+                                "Người thân của bạn có đường máu cao hơn bình thường.");
+
+                            // Create notification record
+                            var response = new LogBookReponse
+                            {
+                                Tabs = "BloodGlucose",
+                                Id = bloodGlucose.BloodGlucoseId,
+                                DataType = bloodGlucose.BloodGlucoseSource,
+                                DateTime = bloodGlucose.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                TimeRecorded = bloodGlucose.DateRecorded?.ToString("HH:mm"),
+                                DateRecorded = bloodGlucose.DateRecorded?.ToString("dd-MM-yyyy"),
+                                Indicator = $"{bloodGlucose.BloodGlucose1}/{bloodGlucose.Time}",
+                                Evaluation = (string)EvaluateBloodGlusose((int)bloodGlucose.BloodGlucose1, bloodGlucose.Time).Result.Data
+                            };
+
+                            var newNotification = new Notification
+                            {
+                                NotificationType = "Cảnh báo sức khỏe",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Cảnh báo sức khỏe",
+                                Message = "Người thân của bạn có đường máu cao hơn bình thường.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                Data = JsonSerializer.Serialize(response)
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+                }
+                else if (check.Data == "Thấp")
+                {
+                    var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
+
+                    foreach (var member in listFamilyMember)
+                    {
+                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Cảnh báo sức khỏe",
+                                "Người thân của bạn có đường máu thấp hơn bình thường.");
+
+                            // Create notification record
+                            var response = new LogBookReponse
+                            {
+                                Tabs = "BloodGlucose",
+                                Id = bloodGlucose.BloodGlucoseId,
+                                DataType = bloodGlucose.BloodGlucoseSource,
+                                DateTime = bloodGlucose.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                TimeRecorded = bloodGlucose.DateRecorded?.ToString("HH:mm"),
+                                DateRecorded = bloodGlucose.DateRecorded?.ToString("dd-MM-yyyy"),
+                                Indicator = $"{bloodGlucose.BloodGlucose1}/{bloodGlucose.Time}",
+                                Evaluation = (string)EvaluateBloodGlusose((int)bloodGlucose.BloodGlucose1, bloodGlucose.Time).Result.Data
+                            };
+
+                            var newNotification = new Notification
+                            {
+                                NotificationType = "Cảnh báo sức khỏe",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Cảnh báo sức khỏe",
+                                Message = "Người thân của bạn có đường máu thấp hơn bình thường.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                Data = JsonSerializer.Serialize(response)
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+
+                }
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Blood Glucose created successfully.");
             }
@@ -577,9 +933,103 @@ namespace SE.Service.Services
                 lipidProfile.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 lipidProfile.Status = SD.GeneralStatus.ACTIVE;
                 lipidProfile.ElderlyId = getElderly.Elderly.ElderlyId;
-                if (getFamily!=null && getFamily.FullName != null) lipidProfile.CreatedBy = getFamily.FullName;
+                if (getFamily != null && getFamily.FullName != null) lipidProfile.CreatedBy = getFamily.FullName;
                 else lipidProfile.CreatedBy = getElderly.FullName;
                 await _unitOfWork.LipidProfileRepository.CreateAsync(lipidProfile);
+
+                var healthIndicator = _unitOfWork.HealthIndicatorBaseRepository.FindByCondition(h => h.Type == "TotalCholesterol").FirstOrDefault();
+                if (int.Parse( request.TotalCholesterol) > healthIndicator.MaxValue)
+                {
+                    var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
+
+                    foreach (var member in listFamilyMember)
+                    {
+                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Cảnh báo sức khỏe",
+                                "Người thân của bạn có mỡ máu cao hơn bình thường.");
+                            var evaluation = lipidProfile.TotalCholesterol < healthIndicator.MinValue ? "Thấp" :
+                              lipidProfile.TotalCholesterol > healthIndicator.MaxValue ? "Cao" :
+                              "Bình thường";
+                            // Create notification record
+                            var response = new LogBookReponse
+                            {
+                                Tabs = "LipidProfile",
+                                Id = lipidProfile.LipidProfileId,
+                                DataType = lipidProfile.LipidProfileSource,
+                                DateTime = lipidProfile.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                TimeRecorded = lipidProfile.DateRecorded?.ToString("HH:mm"),
+                                DateRecorded = lipidProfile.DateRecorded?.ToString("dd-MM-yyyy"),
+                                Indicator = $"{lipidProfile.TotalCholesterol}/{lipidProfile.Ldlcholesterol}/{lipidProfile.Hdlcholesterol}/{lipidProfile.Triglycerides}",
+                                Evaluation = evaluation
+                            };
+
+                            var newNotification = new Notification
+                            {
+                                NotificationType = "Cảnh báo sức khỏe",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Cảnh báo sức khỏe",
+                                Message = "Người thân của bạn có mỡ máu cao hơn bình thường.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                Data = JsonSerializer.Serialize(response)
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+                }
+                else if (int.Parse(request.TotalCholesterol) < healthIndicator.MinValue)
+                {
+                    var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
+
+                    foreach (var member in listFamilyMember)
+                    {
+                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Cảnh báo sức khỏe",
+                                "Người thân của bạn có mữo máu thấp hơn bình thường.");
+                            var evaluation = lipidProfile.TotalCholesterol < healthIndicator.MinValue ? "Thấp" :
+                              lipidProfile.TotalCholesterol > healthIndicator.MaxValue ? "Cao" :
+                              "Bình thường";
+                            // Create notification record
+                            var response = new LogBookReponse
+                            {
+                                Tabs = "LipidProfile",
+                                Id = lipidProfile.LipidProfileId,
+                                DataType = lipidProfile.LipidProfileSource,
+                                DateTime = lipidProfile.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                TimeRecorded = lipidProfile.DateRecorded?.ToString("HH:mm"),
+                                DateRecorded = lipidProfile.DateRecorded?.ToString("dd-MM-yyyy"),
+                                Indicator = $"{lipidProfile.TotalCholesterol}/{lipidProfile.Ldlcholesterol}/{lipidProfile.Hdlcholesterol}/{lipidProfile.Triglycerides}",
+                                Evaluation = evaluation
+                            };
+
+                            var newNotification = new Notification
+                            {
+                                NotificationType = "Cảnh báo sức khỏe",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Cảnh báo sức khỏe",
+                                Message = "Người thân của bạn có mỡ máu thấp hơn bình thường.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                Data = JsonSerializer.Serialize(response)
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+
+                }
+
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Lipid Profile created successfully.");
             }
@@ -617,9 +1067,105 @@ namespace SE.Service.Services
                 liverEnzyme.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 liverEnzyme.Status = SD.GeneralStatus.ACTIVE;
                 liverEnzyme.ElderlyId = getElderly.Elderly.ElderlyId;
-                if (getFamily!=null && getFamily.FullName != null) liverEnzyme.CreatedBy = getFamily.FullName;
+                if (getFamily != null && getFamily.FullName != null) liverEnzyme.CreatedBy = getFamily.FullName;
                 else liverEnzyme.CreatedBy = getElderly.FullName;
                 await _unitOfWork.LiverEnzymeRepository.CreateAsync(liverEnzyme);
+
+                var healthIndicator = _unitOfWork.HealthIndicatorBaseRepository.FindByCondition(h => h.Type == "ALT").FirstOrDefault();
+                if (int.Parse(request.Alt) > healthIndicator.MaxValue)
+                {
+                    var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
+
+                    foreach (var member in listFamilyMember)
+                    {
+                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Cảnh báo sức khỏe",
+                                "Người thân của bạn có men gan cao hơn bình thường.");
+                            var evaluation = liverEnzyme.Alt < healthIndicator.MinValue ? "Thấp" :
+                               liverEnzyme.Alt > healthIndicator.MaxValue ? "Cao" :
+                               "Bình thường";
+                            var response = new LogBookReponse
+                            {
+                                Tabs = "LiverEnzyme",
+                                Id = liverEnzyme.LiverEnzymesId,
+                                DataType = liverEnzyme.LiverEnzymesSource,
+                                DateTime = liverEnzyme.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                TimeRecorded = liverEnzyme.DateRecorded?.ToString("HH:mm"),
+                                DateRecorded = liverEnzyme.DateRecorded?.ToString("dd-MM-yyyy"),
+                                Indicator = $"{liverEnzyme.Alt}/{liverEnzyme.Ast}/{liverEnzyme.Alp}/{liverEnzyme.Ggt}",
+                                Evaluation = evaluation
+                            };
+
+                            var newNotification = new Notification
+                            {
+                                NotificationType = "Cảnh báo sức khỏe",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Cảnh báo sức khỏe",
+                                Message = "Người thân của bạn có men gan cao hơn bình thường.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                Data = JsonSerializer.Serialize(response)
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+                }
+                else if (int.Parse(request.Alt) < healthIndicator.MinValue)
+                {
+                    var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
+
+                    foreach (var member in listFamilyMember)
+                    {
+                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Cảnh báo sức khỏe",
+                                "Người thân của bạn có men gan thấp hơn bình thường.");
+
+                            // Create notification record
+                            var evaluation = liverEnzyme.Alt < healthIndicator.MinValue ? "Thấp" :
+                                liverEnzyme.Alt > healthIndicator.MaxValue ? "Cao" :
+                                "Bình thường";
+                            var response = new LogBookReponse
+                            {
+                                Tabs = "LiverEnzyme",
+                                Id = liverEnzyme.LiverEnzymesId,
+                                DataType = liverEnzyme.LiverEnzymesSource,
+                                DateTime = liverEnzyme.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                TimeRecorded = liverEnzyme.DateRecorded?.ToString("HH:mm"),
+                                DateRecorded = liverEnzyme.DateRecorded?.ToString("dd-MM-yyyy"),
+                                Indicator = $"{liverEnzyme.Alt}/{liverEnzyme.Ast}/{liverEnzyme.Alp}/{liverEnzyme.Ggt}",
+                                Evaluation = evaluation
+                            };
+
+
+                            var newNotification = new Notification
+                            {
+                                NotificationType = "Cảnh báo sức khỏe",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Cảnh báo sức khỏe",
+                                Message = "Người thân của bạn có men gan thấp hơn bình thường.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                Data = JsonSerializer.Serialize(response)
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+
+                }
+
+
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Liver Enzymes created successfully.");
             }
@@ -657,9 +1203,104 @@ namespace SE.Service.Services
                 kidneyFunction.DateRecorded = System.DateTime.UtcNow.AddHours(7);
                 kidneyFunction.Status = SD.GeneralStatus.ACTIVE;
                 kidneyFunction.ElderlyId = getElderly.Elderly.ElderlyId;
-                if (getFamily!=null && getFamily.FullName != null) kidneyFunction.CreatedBy = getFamily.FullName;
+                if (getFamily != null && getFamily.FullName != null) kidneyFunction.CreatedBy = getFamily.FullName;
                 else kidneyFunction.CreatedBy = getElderly.FullName;
                 await _unitOfWork.KidneyFunctionRepository.CreateAsync(kidneyFunction);
+
+                var healthIndicator = _unitOfWork.HealthIndicatorBaseRepository.FindByCondition(h => h.Type == "eGFR").FirstOrDefault();
+                if (int.Parse(request.EGFR) > healthIndicator.MaxValue)
+                {
+                    var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
+
+                    foreach (var member in listFamilyMember)
+                    {
+                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Cảnh báo sức khỏe",
+                                "Người thân của bạn có chức năng thận cao hơn bình thường.");
+                            var evaluation = kidneyFunction.EGfr < healthIndicator.MinValue ? "Thấp" :
+                               kidneyFunction.EGfr > healthIndicator.MaxValue ? "Cao" :
+                               "Bình thường";
+                            var response = new LogBookReponse
+                            {
+                                Tabs = "KidneyFunction",
+                                Id = kidneyFunction.KidneyFunctionId,
+                                DataType = kidneyFunction.KidneyFunctionSource,
+                                DateTime = kidneyFunction.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                TimeRecorded = kidneyFunction.DateRecorded?.ToString("HH:mm"),
+                                DateRecorded = kidneyFunction.DateRecorded?.ToString("dd-MM-yyyy"),
+                                Indicator = $"{kidneyFunction.EGfr}/{kidneyFunction.Bun}/{kidneyFunction.Creatinine}",
+                                Evaluation = evaluation
+                            };
+
+                            var newNotification = new Notification
+                            {
+                                NotificationType = "Cảnh báo sức khỏe",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Cảnh báo sức khỏe",
+                                Message = "Người thân của bạn có chức năng thận cao hơn bình thường.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                Data = JsonSerializer.Serialize(response)
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+                }
+                else if (int.Parse(request.EGFR) < healthIndicator.MinValue)
+                {
+                    var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
+
+                    foreach (var member in listFamilyMember)
+                    {
+                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Cảnh báo sức khỏe",
+                                "Người thân của bạn có chức năng thận thấp hơn bình thường.");
+
+                            // Create notification record
+                            var evaluation = kidneyFunction.EGfr < healthIndicator.MinValue ? "Thấp" :
+                               kidneyFunction.EGfr > healthIndicator.MaxValue ? "Cao" :
+                               "Bình thường";
+                            var response = new LogBookReponse
+                            {
+                                Tabs = "KidneyFunction",
+                                Id = kidneyFunction.KidneyFunctionId,
+                                DataType = kidneyFunction.KidneyFunctionSource,
+                                DateTime = kidneyFunction.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                TimeRecorded = kidneyFunction.DateRecorded?.ToString("HH:mm"),
+                                DateRecorded = kidneyFunction.DateRecorded?.ToString("dd-MM-yyyy"),
+                                Indicator = $"{kidneyFunction.EGfr}/{kidneyFunction.Bun}/{kidneyFunction.Creatinine}",
+                                Evaluation = evaluation
+                            };
+
+
+                            var newNotification = new Notification
+                            {
+                                NotificationType = "Cảnh báo sức khỏe",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Cảnh báo sức khỏe",
+                                Message = "Người thân của bạn có chức năng thận thấp hơn bình thường.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                Data = JsonSerializer.Serialize(response)
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+
+                }
+
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Kidney Function created successfully.");
             }
@@ -1463,7 +2104,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                        Type = MapWeekToVietnamese( x.Week.WeekLabel),
+                        Type = MapWeekToVietnamese(x.Week.WeekLabel),
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(w => w.Weight1 ?? 0), 2) : null
                     })
                     .ToList();
@@ -1481,7 +2122,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
+                        Type = MapMonthToVietnamese(x.Month.MonthLabel),
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(w => w.Weight1 ?? 0), 2) : null
                     })
                     .ToList();
@@ -1570,7 +2211,7 @@ namespace SE.Service.Services
             }
         }
 
-      
+
         private double CalculateBMI(decimal weight, decimal heightInMeters)
         {
             if (heightInMeters <= 0)
@@ -1602,7 +2243,7 @@ namespace SE.Service.Services
                 }
 
                 // Fetch the newest weight record
-                var newestWeightRecord =  _unitOfWork.WeightRepository
+                var newestWeightRecord = _unitOfWork.WeightRepository
                     .FindByCondition(w => w.ElderlyId == elderly.Elderly.ElderlyId && w.Status == SD.GeneralStatus.ACTIVE)
                     .OrderByDescending(w => w.DateRecorded)
                     .FirstOrDefault();
@@ -1672,7 +2313,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                                                Type = MapWeekToVietnamese( x.Week.WeekLabel),
+                        Type = MapWeekToVietnamese(x.Week.WeekLabel),
                         Indicator = x.Records.Any() ? (double?)x.Records.Average(h => h.Height1) : null // Keep null if no valid records
                     })
 
@@ -1691,7 +2332,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
+                        Type = MapMonthToVietnamese(x.Month.MonthLabel),
                         Indicator = x.Records.Any() ? (double?)x.Records.Average(h => h.Height1) : null // Keep null if no valid records
                     })
 
@@ -1728,12 +2369,12 @@ namespace SE.Service.Services
                     .Where(y => y.Indicator.HasValue)
                     .DefaultIfEmpty(new ChartDataModel { Indicator = 0 }) // Default to 0 if all are null
                     .Average(y => y.Indicator.Value);
-                        var bmiForCurrentDay = dailyRecords.Any(d => d.Indicator.HasValue)
-                                     ? CalculateBMI(newestWeight, (decimal)dailyRecords
-                     .Where(d => d.Indicator.HasValue)
-                     .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
-                     .Average(d => d.Indicator.Value) / 100)
-                                    : 0; 
+                var bmiForCurrentDay = dailyRecords.Any(d => d.Indicator.HasValue)
+                             ? CalculateBMI(newestWeight, (decimal)dailyRecords
+             .Where(d => d.Indicator.HasValue)
+             .DefaultIfEmpty(new ChartDataModel { Indicator = 0 })
+             .Average(d => d.Indicator.Value) / 100)
+                            : 0;
                 var bmiForCurrentWeek = weeklyRecords.Any(d => d.Indicator.HasValue)
                                      ? CalculateBMI(newestWeight, (decimal)weeklyRecords
                     .Where(w => w.Indicator.HasValue)
@@ -1867,8 +2508,8 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                                                Type = MapWeekToVietnamese( x.Week.WeekLabel),
-                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.HeartRate1 ?? 0),2) : null
+                        Type = MapWeekToVietnamese(x.Week.WeekLabel),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.HeartRate1 ?? 0), 2) : null
                     })
 
                     .ToList();
@@ -1885,8 +2526,8 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartDataModel
                     {
-                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
-                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.HeartRate1 ?? 0),2) : null
+                        Type = MapMonthToVietnamese(x.Month.MonthLabel),
+                        Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(h => h.HeartRate1 ?? 0), 2) : null
                     })
 
                     .ToList();
@@ -1896,7 +2537,7 @@ namespace SE.Service.Services
                     .Select(g => new ChartDataModel
                     {
                         Type = g.Key.ToString(),
-                        Indicator = (double?)Math.Round(g.Average(h => h.HeartRate1 ?? 0),2)
+                        Indicator = (double?)Math.Round(g.Average(h => h.HeartRate1 ?? 0), 2)
                     })
                     .OrderBy(record => int.Parse(record.Type))
                     .ToList();
@@ -2754,7 +3395,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartBloodPressureModel
                     {
-                                                Type = MapWeekToVietnamese( x.Week.WeekLabel),
+                        Type = MapWeekToVietnamese(x.Week.WeekLabel),
                         Indicator = x.Records.Any() ? $"{Math.Round(x.Records.Average(b => b.Systolic ?? 0), MidpointRounding.AwayFromZero)}/{Math.Round(x.Records.Average(b => b.Diastolic ?? 0), MidpointRounding.AwayFromZero)}" : null
                     })
 
@@ -2773,7 +3414,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartBloodPressureModel
                     {
-                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
+                        Type = MapMonthToVietnamese(x.Month.MonthLabel),
                         Indicator = x.Records.Any() ? $"{Math.Round(x.Records.Average(b => b.Systolic ?? 0), MidpointRounding.AwayFromZero)}/{Math.Round(x.Records.Average(b => b.Diastolic ?? 0), MidpointRounding.AwayFromZero)}" : null
                     })
 
@@ -3007,7 +3648,7 @@ namespace SE.Service.Services
                             highPercent += 100.0 - sum;
                     }
 
-                    return (Math.Round( lowPercent,2), Math.Round(normalPercent,2), Math.Round(highPercent,2));
+                    return (Math.Round(lowPercent, 2), Math.Round(normalPercent, 2), Math.Round(highPercent, 2));
                 }
                 // Function to calculate highest, lowest, and average
                 (double Highest, double Lowest, double Average) CalculateStatistics(List<BloodGlucose> records)
@@ -3055,7 +3696,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartBloodGlucoseModel
                     {
-                                                Type = MapWeekToVietnamese( x.Week.WeekLabel),
+                        Type = MapWeekToVietnamese(x.Week.WeekLabel),
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(b => b.BloodGlucose1 ?? 0), MidpointRounding.AwayFromZero) : null
                     })
 
@@ -3077,7 +3718,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new ChartBloodGlucoseModel
                     {
-                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
+                        Type = MapMonthToVietnamese(x.Month.MonthLabel),
                         Indicator = x.Records.Any() ? (double?)Math.Round(x.Records.Average(b => b.BloodGlucose1 ?? 0), MidpointRounding.AwayFromZero) : null
                     })
 
@@ -3235,7 +3876,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharLipidProfileModel
                     {
-                                                Type = MapWeekToVietnamese( x.Week.WeekLabel),
+                        Type = MapWeekToVietnamese(x.Week.WeekLabel),
                         TotalCholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.TotalCholesterol ?? 0), 2) : null,
                         Ldlcholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ldlcholesterol ?? 0), 2) : null,
                         Hdlcholesterol = x.Records.Any() ? (decimal?)x.Records.Average(l => l.Hdlcholesterol ?? 0) : null,
@@ -3257,7 +3898,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharLipidProfileModel
                     {
-                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
+                        Type = MapMonthToVietnamese(x.Month.MonthLabel),
                         TotalCholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.TotalCholesterol ?? 0), 2) : null,
                         Ldlcholesterol = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ldlcholesterol ?? 0), 2) : null,
                         Hdlcholesterol = x.Records.Any() ? (decimal?)x.Records.Average(l => l.Hdlcholesterol ?? 0) : null,
@@ -3405,7 +4046,7 @@ namespace SE.Service.Services
                     normalPercent += 100.0 - sum;
             }
 
-            return (Math.Round(highestPercent,2), Math.Round(lowestPercent,2), Math.Round(normalPercent,2));
+            return (Math.Round(highestPercent, 2), Math.Round(lowestPercent, 2), Math.Round(normalPercent, 2));
         }
         private string GetTotalCholesterolEvaluation(decimal averageTotalCholesterol)
         {
@@ -3421,7 +4062,7 @@ namespace SE.Service.Services
             {
                 return "Bình thường";
             }
-            else if (averageTotalCholesterol >= baseHealth.MaxValue )
+            else if (averageTotalCholesterol >= baseHealth.MaxValue)
             {
                 return "Cao";
             }
@@ -3445,7 +4086,7 @@ namespace SE.Service.Services
             {
                 return "Cao";
             }
-          
+
             else
             {
                 return "Không xác định";
@@ -3578,7 +4219,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharLiverEnzymesModel
                     {
-                                                Type = MapWeekToVietnamese( x.Week.WeekLabel),
+                        Type = MapWeekToVietnamese(x.Week.WeekLabel),
                         Alt = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alt ?? 0), 2) : null,
                         Ast = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ast ?? 0), 2) : null,
                         Alp = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alp ?? 0), 2) : null,
@@ -3600,7 +4241,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharLiverEnzymesModel
                     {
-                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
+                        Type = MapMonthToVietnamese(x.Month.MonthLabel),
                         Alt = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alt ?? 0), 2) : null,
                         Ast = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Ast ?? 0), 2) : null,
                         Alp = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(l => l.Alp ?? 0), 2) : null,
@@ -3639,7 +4280,7 @@ namespace SE.Service.Services
                 AstAverage = dailyRecords.Average(d => d.Ast ?? 0),
                 AlpAverage = dailyRecords.Average(d => d.Alp ?? 0),
                 GgtAverage = dailyRecords.Average(d => d.Ggt ?? 0),
-              
+
                 HighestPercent = dailyPercentages.HighestPercent,
                 LowestPercent = dailyPercentages.LowestPercent,
                 NormalPercent = dailyPercentages.NormalPercent,
@@ -3652,7 +4293,7 @@ namespace SE.Service.Services
                 AstAverage = weeklyRecords.Average(w => w.Ast ?? 0),
                 AlpAverage = weeklyRecords.Average(w => w.Alp ?? 0),
                 GgtAverage = weeklyRecords.Average(w => w.Ggt ?? 0),
-           
+
                 HighestPercent = weeklyPercentages.HighestPercent,
                 LowestPercent = weeklyPercentages.LowestPercent,
                 NormalPercent = weeklyPercentages.NormalPercent,
@@ -3665,7 +4306,7 @@ namespace SE.Service.Services
                 AstAverage = monthlyRecords.Average(m => m.Ast ?? 0),
                 AlpAverage = monthlyRecords.Average(m => m.Alp ?? 0),
                 GgtAverage = monthlyRecords.Average(m => m.Ggt ?? 0),
-         
+
                 HighestPercent = monthlyPercentages.HighestPercent,
                 LowestPercent = monthlyPercentages.LowestPercent,
                 NormalPercent = monthlyPercentages.NormalPercent,
@@ -3678,7 +4319,7 @@ namespace SE.Service.Services
                 AstAverage = yearlyRecords.Average(y => y.Ast ?? 0),
                 AlpAverage = yearlyRecords.Average(y => y.Alp ?? 0),
                 GgtAverage = yearlyRecords.Average(y => y.Ggt ?? 0),
-              
+
                 HighestPercent = yearlyPercentages.HighestPercent,
                 LowestPercent = yearlyPercentages.LowestPercent,
                 NormalPercent = yearlyPercentages.NormalPercent,
@@ -3752,7 +4393,7 @@ namespace SE.Service.Services
                     normalPercent += 100.0 - sum;
             }
 
-            return (Math.Round(highestPercent,2), Math.Round(lowestPercent,2), Math.Round(normalPercent,2));
+            return (Math.Round(highestPercent, 2), Math.Round(lowestPercent, 2), Math.Round(normalPercent, 2));
         }
         private string GetAltEvaluation(decimal averageAlt)
         {
@@ -3908,7 +4549,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharKidneyFunctionModel
                     {
-                                                Type = MapWeekToVietnamese( x.Week.WeekLabel),
+                        Type = MapWeekToVietnamese(x.Week.WeekLabel),
                         Creatinine = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Creatinine ?? 0), 2) : null,
                         Bun = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Bun ?? 0), 2) : null,
                         EGfr = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.EGfr ?? 0), 2) : null
@@ -3929,7 +4570,7 @@ namespace SE.Service.Services
                     })
                     .Select(x => new CharKidneyFunctionModel
                     {
-                        Type = MapMonthToVietnamese( x.Month.MonthLabel),
+                        Type = MapMonthToVietnamese(x.Month.MonthLabel),
                         Creatinine = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Creatinine ?? 0), 2) : null,
                         Bun = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.Bun ?? 0), 2) : null,
                         EGfr = x.Records.Any() ? (decimal?)Math.Round(x.Records.Average(k => k.EGfr ?? 0), 2) : null
@@ -3965,7 +4606,7 @@ namespace SE.Service.Services
                 CreatinineAverage = dailyRecords.Average(d => d.Creatinine ?? 0),
                 BunAverage = dailyRecords.Average(d => d.Bun ?? 0),
                 EGfrAverage = dailyRecords.Average(d => d.EGfr ?? 0),
-                
+
                 HighestPercent = dailyPercentages.HighestPercent,
                 LowestPercent = dailyPercentages.LowestPercent,
                 NormalPercent = dailyPercentages.NormalPercent,
@@ -3989,7 +4630,7 @@ namespace SE.Service.Services
                 CreatinineAverage = monthlyRecords.Average(m => m.Creatinine ?? 0),
                 BunAverage = monthlyRecords.Average(m => m.Bun ?? 0),
                 EGfrAverage = monthlyRecords.Average(m => m.EGfr ?? 0),
-           
+
                 HighestPercent = monthlyPercentages.HighestPercent,
                 LowestPercent = monthlyPercentages.LowestPercent,
                 NormalPercent = monthlyPercentages.NormalPercent,
@@ -4001,7 +4642,7 @@ namespace SE.Service.Services
                 CreatinineAverage = yearlyRecords.Average(y => y.Creatinine ?? 0),
                 BunAverage = yearlyRecords.Average(y => y.Bun ?? 0),
                 EGfrAverage = yearlyRecords.Average(y => y.EGfr ?? 0),
-              
+
                 HighestPercent = yearlyPercentages.HighestPercent,
                 LowestPercent = yearlyPercentages.LowestPercent,
                 NormalPercent = yearlyPercentages.NormalPercent,
@@ -4069,7 +4710,7 @@ namespace SE.Service.Services
                     normalPercent += 100.0 - sum;
             }
 
-            return (Math.Round(highestPercent,2), Math.Round(lowestPercent,2), Math.Round(normalPercent,2));
+            return (Math.Round(highestPercent, 2), Math.Round(lowestPercent, 2), Math.Round(normalPercent, 2));
         }
         private string GetCreatinineEvaluation(decimal averageCreatinine)
         {
@@ -4132,7 +4773,7 @@ namespace SE.Service.Services
         {
             try
             {
-                string result ="Không xác định";
+                string result = "Không xác định";
 
                 if (req.Indicators == null || !req.Indicators.Any())
                 {
@@ -4141,7 +4782,7 @@ namespace SE.Service.Services
 
                 var healthIndicatorBases = await _unitOfWork.HealthIndicatorBaseRepository.GetAllAsync();
 
-                
+
                 foreach (var indicator in req.Indicators)
                 {
                     var baseIndicator = _unitOfWork.HealthIndicatorBaseRepository.
@@ -4622,7 +5263,7 @@ namespace SE.Service.Services
             try
             {
 
-                double bmi =0.0;
+                double bmi = 0.0;
 
                 var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
                 if (height != null)
@@ -4630,7 +5271,7 @@ namespace SE.Service.Services
                     var getWeight = _unitOfWork.WeightRepository.FindByCondition(h => h.ElderlyId == elderly.Elderly.ElderlyId)
                                                  .OrderByDescending(x => x.DateRecorded)
                                                  .FirstOrDefault();
-                    bmi = CalculateBMI((decimal)getWeight.Weight1, (decimal)height/100);
+                    bmi = CalculateBMI((decimal)getWeight.Weight1, (decimal)height / 100);
 
                 }
                 else if (weight != null)
@@ -4638,7 +5279,7 @@ namespace SE.Service.Services
                     var getHeight = _unitOfWork.HeightRepository.FindByCondition(h => h.ElderlyId == elderly.Elderly.ElderlyId)
                                               .OrderByDescending(x => x.DateRecorded)
                                               .FirstOrDefault();
-                    bmi = CalculateBMI((decimal)weight, (decimal)getHeight.Height1/100);
+                    bmi = CalculateBMI((decimal)weight, (decimal)getHeight.Height1 / 100);
                 }
                 var baseIndicator = _unitOfWork.HealthIndicatorBaseRepository.
                                                     FindByCondition(i => i.Type == "Weight")
@@ -4657,7 +5298,7 @@ namespace SE.Service.Services
                     result = "Bình thường";
                 }
 
-                var final = new 
+                var final = new
                 {
                     Evaluation = result,
                     BMI = bmi
@@ -4677,8 +5318,8 @@ namespace SE.Service.Services
 
             try
             {
-               
-              
+
+
                 var baseIndicator = _unitOfWork.HealthIndicatorBaseRepository.
                                                     FindByCondition(i => i.Type == "HeartRate")
                                                     .FirstOrDefault();
@@ -4716,7 +5357,7 @@ namespace SE.Service.Services
                 {
                     result = "Thấp";
                 }
-                else if (bloodOxygen >= baseIndicator.MinValue && bloodOxygen <= baseIndicator.MaxValue )
+                else if (bloodOxygen >= baseIndicator.MinValue && bloodOxygen <= baseIndicator.MaxValue)
                 {
                     result = "Tốt";
                 }
@@ -4744,7 +5385,7 @@ namespace SE.Service.Services
                                                     FindByCondition(i => i.Type == "Diastolic")
                                                     .FirstOrDefault();
                 string result;
-                if (systolic<baseSystolic.MaxValue && diastolic<baseDiastolic.MaxValue)
+                if (systolic < baseSystolic.MaxValue && diastolic < baseDiastolic.MaxValue)
                 {
                     result = "Huyết áp bình thường";
                 }
@@ -5254,7 +5895,7 @@ namespace SE.Service.Services
             return responses;
         }
 
-    
+
         private List<LogBookReponse> GetBloodGlucoseResponse(List<BloodGlucose> records)
         {
             var responses = new List<LogBookReponse>();
@@ -5268,9 +5909,9 @@ namespace SE.Service.Services
                     DataType = record.BloodGlucoseSource,
                     DateTime = record.DateRecorded?.ToString("dd'-th'MM HH:mm"),
                     TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
-                    DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"), 
+                    DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
                     Indicator = $"{record.BloodGlucose1}/{record.Time}",
-                    Evaluation =(string) EvaluateBloodGlusose((int)record.BloodGlucose1,record.Time).Result.Data
+                    Evaluation = (string)EvaluateBloodGlusose((int)record.BloodGlucose1, record.Time).Result.Data
                 };
                 responses.Add(response);
             }
@@ -5300,7 +5941,7 @@ namespace SE.Service.Services
                 responses.Add(response);
             }
 
-       
+
 
             return responses;
         }
@@ -5334,7 +5975,7 @@ namespace SE.Service.Services
             var responses = new List<LogBookReponse>();
             foreach (var record in records)
             {
-                
+
                 var response = new LogBookReponse
                 {
                     Tabs = "Height",
@@ -5344,12 +5985,12 @@ namespace SE.Service.Services
                     TimeRecorded = record.DateRecorded?.ToString("HH:mm"),
                     DateRecorded = record.DateRecorded?.ToString("dd-MM-yyyy"),
                     Indicator = $"{record.Height1}",
-                    Evaluation = GetBmiEvaluation(weight,(decimal)record.Height1) 
+                    Evaluation = GetBmiEvaluation(weight, (decimal)record.Height1)
                 };
                 responses.Add(response);
             }
 
-         
+
             return responses;
         }
 
@@ -5373,7 +6014,7 @@ namespace SE.Service.Services
                 responses.Add(response);
             }
 
-       
+
 
             return responses;
         }
@@ -5404,7 +6045,7 @@ namespace SE.Service.Services
                 responses.Add(response);
             }
 
-           
+
             return responses;
         }
 
@@ -5445,8 +6086,8 @@ namespace SE.Service.Services
             foreach (var record in records)
             {
                 var healthIndicators = _unitOfWork.HealthIndicatorBaseRepository
-.FindByCondition(h => h.Status == SD.GeneralStatus.ACTIVE && h.Type == "ALT")
-.FirstOrDefault();
+                                        .FindByCondition(h => h.Status == SD.GeneralStatus.ACTIVE && h.Type == "ALT")
+                                        .FirstOrDefault();
                 var evaluation = record.Alt < healthIndicators.MinValue ? "Thấp" :
                               record.Alt > healthIndicators.MaxValue ? "Cao" :
                               "Bình thường";
