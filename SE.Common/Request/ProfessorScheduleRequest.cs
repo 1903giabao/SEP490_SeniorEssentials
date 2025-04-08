@@ -9,11 +9,15 @@ namespace SE.Common.Request
     public class ProfessorScheduleRequest
     {
         public int ProfessorId { get; set; }
+        public List<TimeRequest> ListTime {  get; set; }
+    }
+    public class TimeRequest
+    {
 
-        public DateOnly DayOfWeek { get; set; }
+        public string DayOfWeek { get; set; }
 
-        public DateOnly StartDate { get; set; }
+        public string StartTime { get; set; }
 
-        public DateOnly? EndDate { get; set; }
+        public string EndTime { get; set; }
     }
 }

@@ -24,5 +24,14 @@ namespace SE.Data.Repository
                 .ToListAsync();
             return rs;
         }
+
+        public async Task<List<ProfessorSchedule>> GetProfessorIncludeTimeSlot(int professorId)
+        {
+            var rs = await _context.ProfessorSchedules
+                .Where(ps => ps.ProfessorId == professorId && ps.Status == "Active")
+                .Include(ps=>ps.TimeSlots)
+                .ToListAsync();
+            return rs;
+        }
     }
 }

@@ -22,7 +22,7 @@ namespace SE.Service.Services
 {
     public interface IProfessorService
     {
-        Task<IBusinessResult> CreateSchedule(List<ProfessorScheduleRequest> req);
+        Task<IBusinessResult> CreateSchedule(ProfessorScheduleRequest req);
         Task<IBusinessResult> GetAllProfessor();
         Task<IBusinessResult> GetProfessorDetail(int professorId);
         Task<IBusinessResult> GetTimeSlot(int professorId, DateOnly date);
@@ -34,7 +34,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetProfessorDetailByAccountId(int accountId);
         Task<IBusinessResult> UpdateProfessorInfor(UpdateProfessorRequest req);
         Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId);
-        Task<IBusinessResult> GetProfessorWeeklyTimeSlots(int professorId);
+        Task<IBusinessResult> GetProfessorWeeklyTimeSlots(int accountId);
+        Task<IBusinessResult> GetProfessorScheduleInProfessor(int professorId);
 
     }
 
@@ -49,45 +50,112 @@ namespace SE.Service.Services
             _mapper = mapper;
         }
 
-        public async Task<IBusinessResult> CreateSchedule(List<ProfessorScheduleRequest> req)
+        public async Task<IBusinessResult> CreateSchedule(ProfessorScheduleRequest req)
         {
             try
             {
-                var professorIds = req.Select(r => r.ProfessorId).ToList();
-
-                var existingProfessors = _unitOfWork.ProfessorRepository
-                    .FindByCondition(p => professorIds.Contains(p.ProfessorId))
-                    .ToList();
-
-                if (!existingProfessors.Any())
+                // Check if request is valid
+                if (req == null || req.ListTime == null || !req.ListTime.Any())
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "NGƯỜI DÙNG KHÔNG TỒN TẠI!");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Invalid schedule data provided");
+                }
+
+                // Verify professor exists
+                var professor = await _unitOfWork.ProfessorRepository
+                    .FindByConditionAsync(p => p.ProfessorId == req.ProfessorId);
+
+                if (professor == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
                 }
 
                 var scheduleCreateList = new List<ProfessorSchedule>();
+                var timeSlotCreateList = new List<TimeSlot>();
 
-                foreach (var scheduleReq in req)
+                foreach (var timeReq in req.ListTime)
                 {
-                    var schedule = _mapper.Map<ProfessorSchedule>(scheduleReq);
-                    schedule.Status = SD.GeneralStatus.ACTIVE;
+                    // Create the schedule for each day
+                    var schedule = new ProfessorSchedule
+                    {
+                        ProfessorId = req.ProfessorId,
+                        DayOfWeek = timeReq.DayOfWeek, // Convert DateOnly to day name (e.g., "Monday")
+                        StartDate = DateTime.UtcNow.AddHours(7), // Set these as needed
+                        EndDate = null,
+                        Status = SD.GeneralStatus.ACTIVE
+                    };
+
+                    // Parse the time range
+                    if (TimeOnly.TryParse(timeReq.StartTime, out var startTime) &&
+                        TimeOnly.TryParse(timeReq.EndTime, out var endTime))
+                    {
+                        // Create 1-hour time slots between start and end time
+                        var currentSlotStart = startTime;
+
+                        while (currentSlotStart < endTime)
+                        {
+                            var currentSlotEnd = currentSlotStart.AddHours(1);
+                            // Ensure we don't go past the end time
+                            if (currentSlotEnd > endTime)
+                            {
+                                currentSlotEnd = endTime;
+                            }
+
+                            timeSlotCreateList.Add(new TimeSlot
+                            {
+                                ProfessorSchedule = schedule,
+                                StartTime = currentSlotStart,
+                                EndTime = currentSlotEnd,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Note = $"Auto-generated slot for {timeReq.DayOfWeek:dddd}"
+                            });
+
+                            currentSlotStart = currentSlotEnd;
+                        }
+                    }
+
                     scheduleCreateList.Add(schedule);
                 }
 
-                var result = await _unitOfWork.ProfessorScheduleRepository.CreateRangeAsync(scheduleCreateList);
+                // Begin transaction
 
-                if (result > 0)
+                try
                 {
-                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, req);
-                }
+                    // Create schedules
+                    var scheduleResult = await _unitOfWork.ProfessorScheduleRepository.CreateRangeAsync(scheduleCreateList);
 
-                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                    if (scheduleResult <= 0)
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                    }
+
+                    // Create time slots
+                    var timeSlotResult = await _unitOfWork.TimeSlotRepository.CreateRangeAsync(timeSlotCreateList);
+
+                    if (timeSlotResult <= 0)
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                    }
+
+                    // Commit transaction
+
+                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, new
+                    {
+                        ProfessorId = req.ProfessorId,
+                        SchedulesCreated = scheduleResult,
+                        TimeSlotsCreated = timeSlotResult
+                    });
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+
+                }
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                throw ex;
             }
         }
-
         public async Task<IBusinessResult> GetAllProfessor()
         {
             try
@@ -415,6 +483,60 @@ namespace SE.Service.Services
                 throw ex;
             }
         }
+
+
+        public async Task<IBusinessResult> GetProfessorScheduleInProfessor(int professorId)
+        {
+            try
+            {
+                // Verify professor exists
+                var professor = await _unitOfWork.ProfessorRepository
+                    .FindByConditionAsync(p => p.ProfessorId == professorId);
+
+                if (professor == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
+                }
+
+                // Get all schedules for this professor with their time slots
+                var schedules = await _unitOfWork.ProfessorScheduleRepository
+                    .GetProfessorIncludeTimeSlot(professorId);
+
+                // Prepare days of week in order
+                var daysOfWeek = new List<string> { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+                var result = new List<GetScheduleOfProfessorVM>();
+                // Process each day of week
+                foreach (var day in daysOfWeek)
+                {
+                    var newDay = new GetScheduleOfProfessorVM();
+                    newDay.DayOfWeek = day;
+                    var daySchedule = schedules.FirstOrDefault(s => s.DayOfWeek.Equals(day, StringComparison.OrdinalIgnoreCase));
+
+                    if (daySchedule != null && daySchedule.TimeSlots.Any())
+                    {
+                        // Add each time slot individually (sorted by time)
+                        foreach (var slot in daySchedule.TimeSlots.OrderBy(t => t.StartTime))
+                        {
+                            var newTime = new Time();
+                            newTime.Start = slot.StartTime.ToString();
+                            newTime.End = slot.EndTime.ToString();
+                            newDay.Times.Add(newTime);
+                        }
+                    }
+                    else
+                    {
+                        newDay.Times = [];
+                    }
+                    result.Add(newDay);
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, ex.Message);
+            }
+        }
         public async Task<List<int>> GetAllFamilyMemberByElderlyId(int userId)
         {
 
@@ -629,7 +751,7 @@ namespace SE.Service.Services
         }
 
 
-        public async Task<IBusinessResult> GetProfessorWeeklyTimeSlots(int professorId)
+        public async Task<IBusinessResult> GetProfessorWeeklyTimeSlots(int accountId)
         {
             try
             {
@@ -639,6 +761,7 @@ namespace SE.Service.Services
                 var monday = today.AddDays(-daysFromMonday);
                 var sunday = monday.AddDays(6);
 
+                var professorId = _unitOfWork.ProfessorRepository.FindByCondition(p=>p.AccountId == accountId).Select(p=>p.ProfessorId).FirstOrDefault();
                 // Fetch all professor schedules
                 var professorSchedules = await _unitOfWork.ProfessorScheduleRepository.GetByProfessorIdAsync(professorId);
 
