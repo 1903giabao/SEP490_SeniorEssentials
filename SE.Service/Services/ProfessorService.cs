@@ -806,9 +806,16 @@ namespace SE.Service.Services
         {
             try
             {
+                var accountProfessor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(professorId);
+
+                if (accountProfessor == null || accountProfessor.RoleId != 4)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
+                }
+
                 // Verify professor exists
-                var professor = await _unitOfWork.ProfessorRepository
-                    .FindByConditionAsync(p => p.ProfessorId == professorId);
+                var professor = _unitOfWork.ProfessorRepository
+                    .FindByCondition(p => p.ProfessorId == accountProfessor.Professor.ProfessorId).FirstOrDefault();
 
                 if (professor == null)
                 {
@@ -817,7 +824,7 @@ namespace SE.Service.Services
 
                 // Get all schedules for this professor with their time slots
                 var schedules = await _unitOfWork.ProfessorScheduleRepository
-                    .GetProfessorIncludeTimeSlot(professorId);
+                    .GetProfessorIncludeTimeSlot(professor.ProfessorId);
 
                 // Prepare days of week in order
                 var daysOfWeek = new List<string> { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
