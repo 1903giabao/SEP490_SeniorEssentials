@@ -24,4 +24,6 @@ public partial class UserSubscription
     public virtual Booking Booking { get; set; }
 
     public virtual Professor Professor { get; set; }
+
+    public virtual ICollection<ProfessorAppointment> ProfessorAppointments { get; set; } = new List<ProfessorAppointment>();
 }
