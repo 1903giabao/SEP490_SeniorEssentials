@@ -352,7 +352,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var user = await _unitOfWork.AccountRepository.GetByIdAsync(req.AccountId);
+                var user = await _unitOfWork.AccountRepository.GetAccountAsync(req.AccountId);
 
                 if (user == null)
                 {
@@ -370,6 +370,61 @@ namespace SE.Service.Services
 
                 if (updateRs > 0)
                 {
+                    if (user.RoleId == 2)
+                    {
+                        var elderly = await _unitOfWork.ElderlyRepository.GetByIdAsync(user.Elderly.ElderlyId);
+
+                        if (elderly == null)
+                        {
+                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                        }               
+                        
+                        elderly.Status = req.Status;
+
+                        var updateElderlyRs = await _unitOfWork.ElderlyRepository.UpdateAsync(elderly);
+
+                        if (updateElderlyRs < 1)
+                        {
+                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                        }
+                    }
+                    else if (user.RoleId == 5)
+                    {
+                        var contentProvider = await _unitOfWork.ContentProviderRepository.GetByIdAsync(user.ContentProvider.ContentProviderId);
+
+                        if (contentProvider == null)
+                        {
+                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Content does not exist!");
+                        }
+
+                        contentProvider.Status = req.Status;
+
+                        var updateContentProviderRs = await _unitOfWork.ContentProviderRepository.UpdateAsync(contentProvider);
+
+                        if (updateContentProviderRs < 1)
+                        {
+                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                        }
+                    }                    
+                    else if (user.RoleId == 4)
+                    {
+                        var professor = await _unitOfWork.ProfessorRepository.GetByIdAsync(user.Professor.ProfessorId);
+
+                        if (professor == null)
+                        {
+                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor does not exist!");
+                        }
+
+                        professor.Status = req.Status;
+
+                        var updateProfessorRs = await _unitOfWork.ProfessorRepository.UpdateAsync(professor);
+
+                        if (updateProfessorRs < 1)
+                        {
+                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                        }
+                    }
+
                     return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
                 }
 
@@ -377,7 +432,7 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
             }
         }
     }

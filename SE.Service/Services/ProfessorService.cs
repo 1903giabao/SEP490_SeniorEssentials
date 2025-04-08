@@ -17,12 +17,17 @@ using SE.Common.DTO;
 using Firebase.Auth;
 using SE.Service.Helper;
 using Microsoft.Identity.Client;
+using SE.Common.Request.Subscription;
 
 namespace SE.Service.Services
 {
     public interface IProfessorService
     {
+
         Task<IBusinessResult> CreateSchedule(ProfessorScheduleRequest req);
+
+        Task<IBusinessResult> AddProfessorToSubscriptionByElderly(AddProfessorToSubscriptionRequest req);
+
         Task<IBusinessResult> GetAllProfessor();
         Task<IBusinessResult> GetProfessorDetail(int professorId);
         Task<IBusinessResult> GetTimeSlot(int professorId, DateOnly date);
@@ -50,7 +55,60 @@ namespace SE.Service.Services
             _mapper = mapper;
         }
 
+
+
+        public async Task<IBusinessResult> AddProfessorToSubscriptionByElderly(AddProfessorToSubscriptionRequest req)
+        {
+            try
+            {
+                var getProfessorInfor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(req.ProfessorId);
+
+                if (getProfessorInfor == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor does not exist!");
+                }
+
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(req.ElderlyId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor does not exist!");
+                }
+
+                var bookings = _unitOfWork.BookingRepository.FindByCondition(b => b.ElderlyId == elderly.Elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                                                            .Select(b => b.BookingId).ToList();
+
+                if (bookings.Any())
+                {
+                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
+
+                    if (userSubscription.ProfessorId != null)
+                    {                        
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly already had professor!");
+                    }
+
+                    userSubscription.ProfessorId = getProfessorInfor.Professor.ProfessorId;
+
+                    var updateRs = await _unitOfWork.UserServiceRepository.UpdateAsync(userSubscription);
+
+                    if (updateRs < 1) 
+                    {
+                        return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                    }
+
+                    return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
+            }
+        }
+
         public async Task<IBusinessResult> CreateSchedule(ProfessorScheduleRequest req)
+
         {
             try
             {

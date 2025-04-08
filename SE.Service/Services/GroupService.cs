@@ -11,6 +11,7 @@ using Firebase.Auth;
 using SE.Common.DTO;
 using AutoMapper.Execution;
 using Org.BouncyCastle.Ocsp;
+using SE.Common.Response.Group;
 
 namespace SE.Service.Services
 {
@@ -69,7 +70,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "User is not a member of any group.");
                 }
 
-                var result = new List<GetAllGroupMembersDTO>();
+                var result = new List<GetAllElderlyInGroupResponse>();
 
                 foreach (var groupId in userGroups)
                 {
@@ -79,9 +80,9 @@ namespace SE.Service.Services
 
                     if (elders.Any())
                     {
-                        var users = elders.Select(e => _mapper.Map<UserDTO>(e.Account)).ToList();
+                        var users = elders.Select(e => _mapper.Map<AccountElderlyDTO>(e.Account)).ToList();
 
-                        result.Add(new GetAllGroupMembersDTO
+                        result.Add(new GetAllElderlyInGroupResponse
                         {
                             GroupId = groupId,
                             GroupName = group.GroupName,

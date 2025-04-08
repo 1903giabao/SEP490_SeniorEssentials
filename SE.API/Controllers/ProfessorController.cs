@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SE.Common.Request;
 using SE.Common.Request.Professor;
+using SE.Common.Request.Subscription;
 using SE.Service.Services;
 
 namespace SE.API.Controllers
@@ -16,6 +17,13 @@ namespace SE.API.Controllers
             _professorScheduleService = professorScheduleService;
         }
 
+        [HttpPut("user-subscription-professor")]
+        public async Task<IActionResult> AddProfessorToSubscriptionByElderly([FromBody] AddProfessorToSubscriptionRequest req)
+        {
+            var result = await _professorScheduleService.AddProfessorToSubscriptionByElderly(req);
+            return Ok(result);
+        }        
+        
         [HttpPost]
         public async Task<IActionResult> CreateSchedule([FromBody] ProfessorScheduleRequest req)
         {
