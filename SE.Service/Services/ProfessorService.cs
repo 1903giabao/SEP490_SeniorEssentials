@@ -18,6 +18,7 @@ using Firebase.Auth;
 using SE.Service.Helper;
 using Microsoft.Identity.Client;
 using SE.Common.Request.Subscription;
+using Google.Api.Gax;
 
 namespace SE.Service.Services
 {
@@ -25,6 +26,7 @@ namespace SE.Service.Services
     {
 
         Task<IBusinessResult> CreateSchedule(ProfessorScheduleRequest req);
+        Task<IBusinessResult> UpdateSchedule(ProfessorScheduleRequest req);
 
         Task<IBusinessResult> AddProfessorToSubscriptionByElderly(AddProfessorToSubscriptionRequest req);
 
@@ -207,6 +209,240 @@ namespace SE.Service.Services
                 {
                     throw ex;
 
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateSchedule(ProfessorScheduleRequest req)
+        {
+            try
+            {
+                // Check if request is valid
+                if (req == null || req.ListTime == null || !req.ListTime.Any())
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Invalid schedule data provided");
+                }
+
+                // Verify professor exists
+                var professor = await _unitOfWork.ProfessorRepository
+                    .FindByConditionAsync(p => p.ProfessorId == req.ProfessorId);
+
+                if (professor == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
+                }
+
+                // Get existing schedules for this professor
+                var existingSchedules = await _unitOfWork.ProfessorScheduleRepository
+                    .FindByConditionAsync(s => s.ProfessorId == req.ProfessorId && s.Status == SD.GeneralStatus.ACTIVE);
+
+                var existingTimeSlots = await _unitOfWork.TimeSlotRepository.GetByAndContainProfessorScheduleIdAsync(existingSchedules.ToList(), SD.GeneralStatus.ACTIVE);
+
+                // Convert request times to comparable format
+                var requestTimes = req.ListTime.Select(t => new
+                {
+                    DayOfWeek = t.DayOfWeek,
+                    StartTime = TimeOnly.Parse(t.StartTime),
+                    EndTime = TimeOnly.Parse(t.EndTime)
+                }).ToList();
+
+                // Convert existing schedules to comparable format
+                var existingScheduleGroups = existingTimeSlots
+                    .GroupBy(t => t.ProfessorScheduleId)
+                    .SelectMany(g => g.Select(t => new
+                    {
+                        ProfessorScheduleId = g.Key,
+                        DayOfWeek = existingSchedules.First(s => s.ProfessorScheduleId == g.Key).DayOfWeek,
+                        StartTime = t.StartTime,
+                        EndTime = t.EndTime,
+                        Status = t.Status
+                    }))
+                    .ToList();
+
+                // Identify schedules to add, keep, and remove
+                var schedulesToAdd = requestTimes
+                    .Where(rt => !existingScheduleGroups.Any(es =>
+                        es.DayOfWeek == rt.DayOfWeek &&
+                        es.Status.Equals(SD.GeneralStatus.ACTIVE) &&
+                        rt.StartTime == es.StartTime &&
+                        rt.EndTime == es.EndTime))
+                    .ToList();
+
+                var schedulesToKeep = existingScheduleGroups
+                    .Where(es => requestTimes.Any(rt =>
+                        rt.DayOfWeek == es.DayOfWeek &&
+                        rt.StartTime == es.StartTime &&
+                        rt.EndTime == es.EndTime))
+                    .ToList();
+
+                var schedulesToRemove = existingScheduleGroups
+                    .Where(es => !requestTimes.Any(rt =>
+                        rt.DayOfWeek == es.DayOfWeek))
+                    .ToList();
+
+                // Create new schedules and time slots (similar to CreateSchedule)
+                var scheduleCreateList = new List<ProfessorSchedule>();
+                var timeSlotCreateList = new List<TimeSlot>();
+
+                foreach (var timeReq in schedulesToAdd)
+                {
+                    var existedDayOfWeek = existingSchedules.Where(ps => ps.DayOfWeek.Equals(timeReq.DayOfWeek) && ps.Status.Equals(SD.GeneralStatus.ACTIVE)).FirstOrDefault();
+
+                    if (existedDayOfWeek == null)
+                    {
+                        var schedule = new ProfessorSchedule
+                        {
+                            ProfessorId = req.ProfessorId,
+                            DayOfWeek = timeReq.DayOfWeek,
+                            StartDate = DateTime.UtcNow.AddHours(7),
+                            EndDate = null,
+                            Status = SD.GeneralStatus.ACTIVE
+                        };
+
+                        var currentSlotStart = timeReq.StartTime;
+                        while (currentSlotStart < timeReq.EndTime)
+                        {
+                            var currentSlotEnd = currentSlotStart.AddHours(1);
+                            if (currentSlotEnd > timeReq.EndTime)
+                            {
+                                currentSlotEnd = timeReq.EndTime;
+                            }
+
+                            timeSlotCreateList.Add(new TimeSlot
+                            {
+                                ProfessorSchedule = schedule,
+                                StartTime = currentSlotStart,
+                                EndTime = currentSlotEnd,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Note = $"Auto-generated slot for {timeReq.DayOfWeek}"
+                            });
+                            currentSlotStart = currentSlotEnd;
+                        }
+
+                        scheduleCreateList.Add(schedule);
+                    }
+                    else
+                    {
+                        var currentSlotStart = timeReq.StartTime;
+                        while (currentSlotStart < timeReq.EndTime)
+                        {
+                            var currentSlotEnd = currentSlotStart.AddHours(1);
+                            if (currentSlotEnd > timeReq.EndTime)
+                            {
+                                currentSlotEnd = timeReq.EndTime;
+                            }
+
+                            timeSlotCreateList.Add(new TimeSlot
+                            {
+                                ProfessorScheduleId = existedDayOfWeek.ProfessorScheduleId,
+                                StartTime = currentSlotStart,
+                                EndTime = currentSlotEnd,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Note = $"Auto-generated slot for {timeReq.DayOfWeek}"
+                            });
+                            currentSlotStart = currentSlotEnd;
+                        }
+                    }
+                }
+
+                // Mark schedules to remove as inactive (soft delete)
+                var schedulesToRemoveIds = schedulesToRemove.Select(s => s.ProfessorScheduleId).ToList();
+                var schedulesToDeactivate = existingSchedules
+                    .Where(s => schedulesToRemoveIds.Contains(s.ProfessorScheduleId))
+                    .ToList();
+
+                foreach (var schedule in schedulesToDeactivate)
+                {
+                    schedule.Status = SD.GeneralStatus.INACTIVE;
+                    schedule.EndDate = DateTime.UtcNow.AddHours(7);
+                }
+
+                try
+                {
+                    // Create new schedules
+                    int scheduleResult = 0;
+                    if (scheduleCreateList.Any())
+                    {
+                        scheduleResult = await _unitOfWork.ProfessorScheduleRepository.CreateRangeAsync(scheduleCreateList);
+                        if (scheduleResult <= 0)
+                        {
+                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                        }
+                    }
+
+                    // Create new time slots
+                    int timeSlotResult = 0;
+                    if (timeSlotCreateList.Any())
+                    {
+                        timeSlotResult = await _unitOfWork.TimeSlotRepository.CreateRangeAsync(timeSlotCreateList);
+                        if (timeSlotResult <= 0 && timeSlotCreateList.Any())
+                        {
+                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                        }
+                    }
+
+                    // Update schedules to deactivate
+                    int deactivateResult = 0;
+                    if (schedulesToDeactivate.Any())
+                    {
+                        foreach (var schedule in schedulesToDeactivate)
+                        {
+                            var existingSchedule = await _unitOfWork.ProfessorScheduleRepository.GetByIdAsync(schedule.ProfessorScheduleId);
+                            if (existingSchedule != null)
+                            {
+                                existingSchedule.Status = schedule.Status;
+
+                                var result = await _unitOfWork.ProfessorScheduleRepository.UpdateAsync(existingSchedule);
+                                if (result <= 0)
+                                {
+                                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                                }
+                            }
+                        }
+                    }
+
+                    // Convert request times to TimeOnly for comparison
+                    var requestTimeSlots = req.ListTime.Select(rt => new {
+                        DayOfWeek = rt.DayOfWeek,
+                        StartTime = TimeOnly.Parse(rt.StartTime),
+                        EndTime = TimeOnly.Parse(rt.EndTime)
+                    }).ToList();
+
+                    // Find time slots to inactivate (exist in DB but not in request)
+                    var timeslotsToInactivate = existingTimeSlots
+                        .Where(ets =>
+                            ets.Status == SD.GeneralStatus.ACTIVE &&  // Only consider active slots
+                            !requestTimeSlots.Any(rts =>
+                                rts.DayOfWeek == ets.ProfessorSchedule.DayOfWeek &&
+                                rts.StartTime == ets.StartTime &&
+                                rts.EndTime == ets.EndTime))
+                        .ToList();
+
+                    if (timeslotsToInactivate.Any())
+                    {
+                        timeslotsToInactivate = timeslotsToInactivate.Select(ts => { ts.Status = SD.GeneralStatus.INACTIVE; return ts; } ).ToList();
+                        deactivateResult = await _unitOfWork.TimeSlotRepository.UpdateRangeAsync(timeslotsToInactivate);
+                        if (deactivateResult <= 0 && schedulesToDeactivate.Any())
+                        {
+                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                        }
+                    }
+
+                    return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, new
+                    {
+                        ProfessorId = req.ProfessorId,
+                        SchedulesAdded = scheduleResult,
+                        TimeSlotsAdded = timeSlotResult,
+                        SchedulesRemoved = deactivateResult
+                    });
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
                 }
             }
             catch (Exception ex)

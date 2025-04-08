@@ -29,6 +29,12 @@ namespace SE.API.Controllers
         {
             var result = await _professorScheduleService.CreateSchedule(req);
             return Ok(result);
+        }        
+        [HttpPut]
+        public async Task<IActionResult> UpdateSchedule([FromBody] ProfessorScheduleRequest req)
+        {
+            var result = await _professorScheduleService.UpdateSchedule(req);
+            return Ok(result);
         }
         [HttpGet]
         public async Task<IActionResult> GetAllProfessor()
