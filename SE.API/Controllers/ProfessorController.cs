@@ -25,7 +25,7 @@ namespace SE.API.Controllers
         }        
         
         [HttpPost]
-        public async Task<IActionResult> CreateSchedule([FromBody] List<ProfessorScheduleRequest> req)
+        public async Task<IActionResult> CreateSchedule([FromBody] ProfessorScheduleRequest req)
         {
             var result = await _professorScheduleService.CreateSchedule(req);
             return Ok(result);
@@ -56,9 +56,9 @@ namespace SE.API.Controllers
             return Ok(result);
         }
         [HttpGet("time-slot/week")]
-        public async Task<IActionResult> GetProfessorWeeklyTimeSlots(int professorId)
+        public async Task<IActionResult> GetProfessorWeeklyTimeSlots(int accountId)
         {
-            var result = await _professorScheduleService.GetProfessorWeeklyTimeSlots(professorId);
+            var result = await _professorScheduleService.GetProfessorWeeklyTimeSlots(accountId);
             return Ok(result);
         }
 
@@ -82,6 +82,13 @@ namespace SE.API.Controllers
         public async Task<IActionResult> GetProfessorSchedule([FromRoute] int accountId)
         {
             var rs = await _professorScheduleService.GetScheduleOfElderlyByProfessorId(accountId);
+            return Ok(rs);
+        }
+
+        [HttpGet("schedule/{professorId}")]
+        public async Task<IActionResult> GetProfessorScheduleInProfessor([FromRoute] int professorId)
+        {
+            var rs = await _professorScheduleService.GetProfessorScheduleInProfessor(professorId);
             return Ok(rs);
         }
 
