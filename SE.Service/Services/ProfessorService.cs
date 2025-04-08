@@ -19,6 +19,7 @@ using SE.Service.Helper;
 using Microsoft.Identity.Client;
 using SE.Common.Request.Subscription;
 using Google.Api.Gax;
+using TagLib.Ape;
 
 namespace SE.Service.Services
 {
@@ -120,9 +121,16 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Invalid schedule data provided");
                 }
 
+                var accountProfessor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(req.ProfessorId);
+
+                if (accountProfessor == null || accountProfessor.RoleId != 4)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
+                }
+
                 // Verify professor exists
-                var professor = await _unitOfWork.ProfessorRepository
-                    .FindByConditionAsync(p => p.ProfessorId == req.ProfessorId);
+                var professor = _unitOfWork.ProfessorRepository
+                    .FindByCondition(p => p.ProfessorId == accountProfessor.Professor.ProfessorId).FirstOrDefault();
 
                 if (professor == null)
                 {
@@ -137,7 +145,7 @@ namespace SE.Service.Services
                     // Create the schedule for each day
                     var schedule = new ProfessorSchedule
                     {
-                        ProfessorId = req.ProfessorId,
+                        ProfessorId = professor.ProfessorId,
                         DayOfWeek = timeReq.DayOfWeek, // Convert DateOnly to day name (e.g., "Monday")
                         StartDate = DateTime.UtcNow.AddHours(7), // Set these as needed
                         EndDate = null,
@@ -200,7 +208,7 @@ namespace SE.Service.Services
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, new
                     {
-                        ProfessorId = req.ProfessorId,
+                        ProfessorId = professor.ProfessorId,
                         SchedulesCreated = scheduleResult,
                         TimeSlotsCreated = timeSlotResult
                     });
@@ -228,8 +236,16 @@ namespace SE.Service.Services
                 }
 
                 // Verify professor exists
-                var professor = await _unitOfWork.ProfessorRepository
-                    .FindByConditionAsync(p => p.ProfessorId == req.ProfessorId);
+                var accountProfessor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(req.ProfessorId);
+
+                if (accountProfessor == null || accountProfessor.RoleId != 4)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
+                }
+
+                // Verify professor exists
+                var professor = _unitOfWork.ProfessorRepository
+                    .FindByCondition(p => p.ProfessorId == accountProfessor.Professor.ProfessorId).FirstOrDefault();
 
                 if (professor == null)
                 {
@@ -238,7 +254,7 @@ namespace SE.Service.Services
 
                 // Get existing schedules for this professor
                 var existingSchedules = await _unitOfWork.ProfessorScheduleRepository
-                    .FindByConditionAsync(s => s.ProfessorId == req.ProfessorId && s.Status == SD.GeneralStatus.ACTIVE);
+                    .FindByConditionAsync(s => s.ProfessorId == professor.ProfessorId && s.Status == SD.GeneralStatus.ACTIVE);
 
                 var existingTimeSlots = await _unitOfWork.TimeSlotRepository.GetByAndContainProfessorScheduleIdAsync(existingSchedules.ToList(), SD.GeneralStatus.ACTIVE);
 
@@ -296,7 +312,7 @@ namespace SE.Service.Services
                     {
                         var schedule = new ProfessorSchedule
                         {
-                            ProfessorId = req.ProfessorId,
+                            ProfessorId = professor.ProfessorId,
                             DayOfWeek = timeReq.DayOfWeek,
                             StartDate = DateTime.UtcNow.AddHours(7),
                             EndDate = null,
@@ -434,7 +450,7 @@ namespace SE.Service.Services
 
                     return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, new
                     {
-                        ProfessorId = req.ProfessorId,
+                        ProfessorId = professor.ProfessorId,
                         SchedulesAdded = scheduleResult,
                         TimeSlotsAdded = timeSlotResult,
                         SchedulesRemoved = deactivateResult
