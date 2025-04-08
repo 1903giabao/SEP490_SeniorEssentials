@@ -134,26 +134,27 @@ namespace SE.Service.Services
             {
                 var subscriptions = _unitOfWork.SubscriptionRepository.GetAll();
                 var bookings = _unitOfWork.BookingRepository.GetAll(); // Assuming you have access to bookings
-
-                var subscriptionDtos = subscriptions.Select(s => new ComboDto
+                var subscriptionDtos = new List<ComboDto>();
+                foreach (var s in subscriptions)
                 {
-                    SubscriptionId = s.SubscriptionId,
-                    Name = s.Name,
-                    Description = s.Description,
-                    Fee = s.Fee,
-                    ValidityPeriod = s.ValidityPeriod,
-                    CreatedDate = s.CreatedDate.ToString("dd-MM-yyyy"),
-                    CreatedTime = s.CreatedDate.ToString("HH:mm"),
-                    UpdatedDate = s.UpdatedDate.ToString("dd-MM-yyyy"),
-                    UpdatedTime = s.UpdatedDate.ToString("HH:mm"),
-                    Status = s.Status,
-                    AccountId = s.AccountId,
-                    NumberOfMeeting = s.NumberOfMeeting,
-                    NumberOfUsers = bookings.Where(b => b.SubscriptionId == s.SubscriptionId)
-                                          .Select(b => b.AccountId)
-                                          .Distinct()
-                                          .Count()
-                }).ToList();
+                    var users = await _unitOfWork.UserServiceRepository.GetAllUserInSubscriptions(s.SubscriptionId);
+                    subscriptionDtos.Add(new ComboDto
+                    {
+                        SubscriptionId = s.SubscriptionId,
+                        Name = s.Name,
+                        Description = s.Description,
+                        Fee = s.Fee,
+                        ValidityPeriod = s.ValidityPeriod,
+                        CreatedDate = s.CreatedDate.ToString("dd-MM-yyyy"),
+                        CreatedTime = s.CreatedDate.ToString("HH:mm"),
+                        UpdatedDate = s.UpdatedDate.ToString("dd-MM-yyyy"),
+                        UpdatedTime = s.UpdatedDate.ToString("HH:mm"),
+                        Status = s.Status,
+                        AccountId = s.AccountId,
+                        NumberOfMeeting = s.NumberOfMeeting,
+                        NumberOfUsers = users.Count
+                    });
+                }
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, subscriptionDtos);
             }

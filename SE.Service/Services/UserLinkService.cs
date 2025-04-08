@@ -33,13 +33,15 @@ namespace SE.Service.Services
         private readonly IMapper _mapper;
         private readonly FirestoreDb _firestoreDb;
         private readonly IVideoCallService _videoCallService;
+        private readonly INotificationService _notificationService;
 
-        public UserLinkService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb, IVideoCallService videoCallService)
+        public UserLinkService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb, IVideoCallService videoCallService, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _firestoreDb = firestoreDb;
             _videoCallService = videoCallService;
+            _notificationService = notificationService;
         }
 
         public async Task<IBusinessResult> SendAddFriend(SendAddFriendRequest req)
@@ -103,6 +105,49 @@ namespace SE.Service.Services
 
                 if (createUserLink > 0)
                 {
+                    if (!string.IsNullOrEmpty(responseUser.DeviceToken) && responseUser.DeviceToken != "string")
+                    {
+                        if (userLink.RelationshipType.Equals("Friend"))
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                responseUser.DeviceToken,
+                                "Lời mời kết bạn",
+                                $"Bạn nhận được lời mời kết bạn từ {requestUser.FullName}.");
+
+                            var newNotification = new Data.Models.Notification
+                            {
+                                NotificationType = "Kết Bạn Mới",
+                                AccountId = responseUser.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Lời mời kết bạn",
+                                Message = $"Bạn nhận được lời mời kết bạn từ {requestUser.FullName}.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                        else 
+                        {
+                            await _notificationService.SendNotification(
+                                responseUser.DeviceToken,
+                                "Gửi yêu cầu hỗ trợ",
+                                $"Bạn nhận được yêu cầu hỗ trợ từ {requestUser.FullName}.");
+
+                            var newNotification = new Data.Models.Notification
+                            {
+                                NotificationType = "Gửi Yêu Cầu Hỗ Trợ",
+                                AccountId = responseUser.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Lời mời kết bạn",
+                                Message = $"Bạn nhận được yêu cầu hỗ trợ từ {requestUser.FullName}.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
+                    }
+
                     return new BusinessResult(Const.SUCCESS_CREATE, "Add friend request sent.");
                 }
 

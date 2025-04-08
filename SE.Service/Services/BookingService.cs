@@ -42,13 +42,15 @@ namespace SE.Service.Services
         private readonly string _appId;
         private readonly string _key1;
         private readonly string _key2;
-        public BookingService(UnitOfWork unitOfWork, IMapper mapper)
+        private readonly INotificationService _notificationService;
+        public BookingService(UnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _appId = Environment.GetEnvironmentVariable("ZalopayAppId");
             _key1 = Environment.GetEnvironmentVariable("ZalopayKey1");
             _key2 = Environment.GetEnvironmentVariable("ZalopayKey2");
+            _notificationService = notificationService;
         }
 
         public async Task<IBusinessResult> CreateBookingOrder(BookingOrderRequest req)
@@ -184,6 +186,27 @@ namespace SE.Service.Services
                         if (createUserSubscription < 1)
                         {
                             return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create user subscription");
+                        }
+
+                        if (!string.IsNullOrEmpty(elderly.DeviceToken) && elderly.DeviceToken != "string")
+                        {
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                elderly.DeviceToken,
+                                "Đăng ký gói dịch vụ thành công",
+                                $"Người hỗ trợ đã đăng ký gói dịch vụ {subscription.Name} cho tài khoản của bạn. Cảm ơn bạn đã đồng hành cùng Senior Essentials.");
+
+                            var newNotification = new Data.Models.Notification
+                            {
+                                NotificationType = "Mua Gói Dịch Vụ",
+                                AccountId = elderly.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Đăng ký gói dịch vụ thành công",
+                                Message = $"Người hỗ trợ đã đăng ký gói dịch vụ {subscription.Name} cho tài khoản của bạn. Cảm ơn bạn đã đồng hành cùng Senior Essentials.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
                         }
 
                         return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, result);
