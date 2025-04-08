@@ -133,6 +133,8 @@ namespace SE.Service.Services
             try
             {
                 var subscriptions = _unitOfWork.SubscriptionRepository.GetAll();
+                var bookings = _unitOfWork.BookingRepository.GetAll(); // Assuming you have access to bookings
+
                 var subscriptionDtos = subscriptions.Select(s => new ComboDto
                 {
                     SubscriptionId = s.SubscriptionId,
@@ -146,7 +148,11 @@ namespace SE.Service.Services
                     UpdatedTime = s.UpdatedDate.ToString("HH:mm"),
                     Status = s.Status,
                     AccountId = s.AccountId,
-                    NumberOfMeeting = s.NumberOfMeeting
+                    NumberOfMeeting = s.NumberOfMeeting,
+                    NumberOfUsers = bookings.Where(b => b.SubscriptionId == s.SubscriptionId)
+                                          .Select(b => b.AccountId)
+                                          .Distinct()
+                                          .Count()
                 }).ToList();
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, subscriptionDtos);
@@ -156,7 +162,6 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
         }
-
         public async Task<IBusinessResult> GetAllUserInCombo(int comboId)
         {
             try
@@ -165,6 +170,11 @@ namespace SE.Service.Services
                 var subscriptionDtos = subscriptions.Select(s => new UserInSubVM
                 {
                     SubscriptionId = (int)s.Booking.SubscriptionId,
+                    PurchaseDate = s.Booking.BookingDate.ToString("dd-MM-yyyy"),
+                    SubName = s.Booking.Subscription.Name,
+                    ValidityPeriod = s.Booking.Subscription.ValidityPeriod,
+                    NumberOfMeeting = (int)s.Booking.Subscription.NumberOfMeeting,
+                    NumberOfMeetingLeft = (int)s.NumberOfMeetingLeft,
                     UsersInSubscriptions = new List<GetUsersInSubscription>
                     {
                         new GetUsersInSubscription

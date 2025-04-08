@@ -11,6 +11,12 @@ namespace SE.Common.Response.Subscription
     {
         public int SubscriptionId { get; set; }
 
+        public string PurchaseDate { get; set; }
+        public string SubName { get; set; }
+        public int ValidityPeriod { get; set; }
+        public int NumberOfMeeting { get; set; }
+        public int NumberOfMeetingLeft { get; set; }
+
         public List<GetUsersInSubscription> UsersInSubscriptions { get; set; }
     }
 

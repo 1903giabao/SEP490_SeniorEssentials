@@ -19,6 +19,8 @@ public partial class UserSubscription
 
     public string Status { get; set; }
 
+    public int? NumberOfMeetingLeft { get; set; }
+
     public virtual Booking Booking { get; set; }
 
     public virtual Professor Professor { get; set; }
