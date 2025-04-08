@@ -26,7 +26,7 @@ namespace SE.Data.Repository
 
         public async Task<UserSubscription> GetUserSubscriptionByBookingIdAsync(List<int> bookingIds, string status)
         {
-            var currentDate = DateTime.Now;
+            var currentDate = DateTime.UtcNow.AddHours(7);
 
             var result = await _context.UserSubscriptions.Include(us => us.Professor)
                                .ThenInclude(us => us.Account)
