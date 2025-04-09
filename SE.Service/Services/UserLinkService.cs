@@ -106,7 +106,7 @@ namespace SE.Service.Services
 
                 if (createUserLink > 0)
                 {
-/*                    if (!string.IsNullOrEmpty(responseUser.DeviceToken) && responseUser.DeviceToken != "string")
+                    if (!string.IsNullOrEmpty(responseUser.DeviceToken) && responseUser.DeviceToken != "string")
                     {
                         if (userLink.RelationshipType.Equals("Friend"))
                         {
@@ -147,7 +147,7 @@ namespace SE.Service.Services
 
                             await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
                         }
-                    }*/
+                    }
 
                     return new BusinessResult(Const.SUCCESS_CREATE, "Add friend request sent.");
                 }
@@ -306,7 +306,7 @@ namespace SE.Service.Services
                             }
                         }
                     }
-/*
+
                     if (!string.IsNullOrEmpty(responseUser.DeviceToken) && responseUser.DeviceToken != "string")
                     {
                         if (userLink.RelationshipType.Equals("Friend"))
@@ -342,13 +342,13 @@ namespace SE.Service.Services
                                 AccountId = responseUser.AccountId,
                                 Status = SD.GeneralStatus.ACTIVE,
                                 Title = "Xác Nhận Hỗ Trợ",
-                                Message = $"{responseUser.FullName} đã chấp nhận yêu cầu hỗ trợ của bạn."),
+                                Message = $"{responseUser.FullName} đã chấp nhận yêu cầu hỗ trợ của bạn.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                             };
 
                             await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
                         }
-                    }*/
+                    }
 
                     return new BusinessResult(Const.SUCCESS_CREATE, $"Add friend request is {userLink.Status}.");
                 }

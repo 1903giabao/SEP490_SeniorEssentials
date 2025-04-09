@@ -172,7 +172,7 @@ namespace SE.Service.Services
                             return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot update booking");
                         }
 
-/*                        if (!string.IsNullOrEmpty(elderly.DeviceToken) && elderly.DeviceToken != "string")
+                        if (!string.IsNullOrEmpty(elderly.DeviceToken) && elderly.DeviceToken != "string")
                         {
                             // Send notification
                             await _notificationService.SendNotification(
@@ -191,7 +191,7 @@ namespace SE.Service.Services
                             };
 
                             await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
-                        }*/
+                        }
 
                         return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, result);
                     }

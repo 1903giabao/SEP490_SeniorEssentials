@@ -35,6 +35,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetMembersNotInGroupChat(string groupChatId);
         Task<List<int>> GetAllFamilyMembersByElderly(int accountId);
         Task<IBusinessResult> CheckIfElderlyInGroup(int elderly);
+        Task<IBusinessResult> GetGroupAndRelationshipInforByElderly(int elderlyId);
+        Task<IBusinessResult> GetGroupAndRelationshipInforByFamily(int familyMemberId);
     }
 
     public class GroupService : IGroupService
@@ -272,7 +274,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, roomCreateRs.Message);
                 }
 
-/*                var listFamilyMember = request.Members.Where(m => m.IsCreator == false).Select(m => m.AccountId).ToList();
+                var listFamilyMember = request.Members.Where(m => m.IsCreator == false).Select(m => m.AccountId).ToList();
 
                 foreach (var member in listFamilyMember)
                 {
@@ -319,7 +321,7 @@ namespace SE.Service.Services
 
                         await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
                     }
-                }*/
+                }
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Group created successfully.");
             }
@@ -560,7 +562,7 @@ namespace SE.Service.Services
 
                         currentMembers.Add(memberIdStr, true);
                         var membersRef = groupRef.Collection("Members").Document(memberIdStr);
-                        await membersRef.SetAsync(false);
+                        await membersRef.SetAsync(new { IsCreator = false });
                     }
 
                     var updateData = new Dictionary<string, object>
@@ -613,31 +615,31 @@ namespace SE.Service.Services
                     await onlineMembersRef.Document(member.ToString()).SetAsync(onlineMemberData);
                 }
 
-                /*                foreach (var member in newMemberIds)
-                                {
-                                    var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                foreach (var member in newMemberIds)
+                {
+                    var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
 
-                                    if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
-                                    {
-                                        // Send notification
-                                        await _notificationService.SendNotification(
-                                            familyMember.DeviceToken,
-                                            "Thêm Vào Gia Đình",
-                                            $"Bạn đã được vào nhóm gia đình {group.GroupName}.");
+                    if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                    {
+                        // Send notification
+                        await _notificationService.SendNotification(
+                            familyMember.DeviceToken,
+                            "Thêm Vào Gia Đình",
+                            $"Bạn đã được vào nhóm gia đình {group.GroupName}.");
 
-                                        var newNotification = new Data.Models.Notification
-                                        {
-                                            NotificationType = "Thêm Vào Gia Đình",
-                                            AccountId = familyMember.AccountId,
-                                            Status = SD.GeneralStatus.ACTIVE,
-                                            Title = "Thêm Vào Gia Đình",
-                                            Message = $"Bạn đã được vào nhóm gia đình {group.GroupName}.",
-                                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                        };
+                        var newNotification = new Data.Models.Notification
+                        {
+                            NotificationType = "Thêm Vào Gia Đình",
+                            AccountId = familyMember.AccountId,
+                            Status = SD.GeneralStatus.ACTIVE,
+                            Title = "Thêm Vào Gia Đình",
+                            Message = $"Bạn đã được vào nhóm gia đình {group.GroupName}.",
+                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                        };
 
-                                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
-                                    }
-                                }*/
+                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                    }
+                }
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Members added to the group successfully.");
             }
@@ -990,6 +992,155 @@ namespace SE.Service.Services
                 }
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetGroupAndRelationshipInforByElderly(int elderlyId)
+        {
+            try
+            {
+                var elderlyAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(elderlyId);
+
+                if (elderlyAccount == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                var requestUser = await _unitOfWork.UserLinkRepository.GetByAccount1Async(elderlyId, SD.UserLinkStatus.PENDING);
+                var requestUserAccount = requestUser.Where(r => r.AccountId2 != elderlyAccount.AccountId && r.RelationshipType.Equals("Family")).Select(r => r.AccountId2Navigation).ToList();
+                var mapRequestUser = _mapper.Map<List<UserDTO>>(requestUserAccount);                
+                
+                var responseUser = await _unitOfWork.UserLinkRepository.GetByAccount2Async(elderlyId, SD.UserLinkStatus.PENDING);
+                var responseUserAccount = requestUser.Where(r => r.AccountId1 != elderlyAccount.AccountId && r.RelationshipType.Equals("Family")).Select(r => r.AccountId1Navigation).ToList();
+                var mapResponseUser = _mapper.Map<List<UserDTO>>(responseUserAccount);
+
+                var group = await _unitOfWork.GroupMemberRepository.GetGroupOfElderly(elderlyAccount.AccountId);
+
+                var groupMember = await _unitOfWork.GroupMemberRepository.GetByGroupIdAsync(group.GroupId);
+
+                var userInGroup = groupMember.Select(gm => gm.Account).ToList();
+
+                var mapUserInGroup = _mapper.Map<List<UserDTO>>(userInGroup);
+
+                var familyInGroup = groupMember.Where(gm => gm.Account.AccountId != elderlyAccount.AccountId).Select(gm => gm.Account).ToList();
+
+                var familyInGroupIds = familyInGroup.Select(a => a.AccountId).ToList();
+
+                var allElderlyUserLinks = await _unitOfWork.UserLinkRepository.GetByUserIdAsync(elderlyAccount.AccountId, SD.UserLinkStatus.ACCEPTED);
+
+                var familyNotInGroup = allElderlyUserLinks
+                    .SelectMany(link => new[] { link.AccountId1, link.AccountId2 })
+                    .Distinct()
+                    .Where(accountId => !familyInGroupIds.Contains(accountId) && accountId != elderlyAccount.AccountId)
+                    .ToList();
+
+                var accountFamilyNotInGroup = _unitOfWork.AccountRepository.GetAll().Where(a => familyNotInGroup.Contains(a.AccountId) && a.RoleId == 3).ToList();
+
+                var mapFamilyNotInGroup = _mapper.Map<List<UserDTO>>(accountFamilyNotInGroup);
+
+                if (allElderlyUserLinks == null)
+                {
+                    allElderlyUserLinks = new List<UserLink>();
+                }
+
+                var result = new GetGroupAndRelationshipInforByElderly
+                {
+                    RequestUsers = mapRequestUser,
+                    ResponseUsers = mapResponseUser,
+                    FamilyNotInGroup = mapFamilyNotInGroup,
+                    GroupInfor = new GroupInfor
+                    {
+                        GroupId = group.GroupId,
+                        GroupName = group.GroupName,
+                        UsersInGroup = mapUserInGroup
+                    }
+                };
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetGroupAndRelationshipInforByFamily(int familyMemberId)
+        {
+            try
+            {
+                var familyMemberAccount = await _unitOfWork.AccountRepository.GetFamilyMemberByAccountIDAsync(familyMemberId);
+
+                if (familyMemberAccount == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                var requestUser = await _unitOfWork.UserLinkRepository.GetByAccount1Async(familyMemberAccount.AccountId, SD.UserLinkStatus.PENDING);
+                var requestUserAccount = requestUser.Where(r => r.AccountId2 != familyMemberAccount.AccountId && r.RelationshipType.Equals("Family")).Select(r => r.AccountId2Navigation).ToList();
+                var mapRequestUser = _mapper.Map<List<UserDTO>>(requestUserAccount);
+
+                var responseUser = await _unitOfWork.UserLinkRepository.GetByAccount2Async(familyMemberAccount.AccountId, SD.UserLinkStatus.PENDING);
+                var responseUserAccount = requestUser.Where(r => r.AccountId1 != familyMemberAccount.AccountId && r.RelationshipType.Equals("Family")).Select(r => r.AccountId1Navigation).ToList();
+                var mapResponseUser = _mapper.Map<List<UserDTO>>(responseUserAccount);
+
+                var groups = await _unitOfWork.GroupMemberRepository.GetGroupOfFamilyMember(familyMemberAccount.AccountId);
+
+                var listGroupInfor = new List<GroupInfor>();
+
+                var listTotalUserNotInGroup = new List<UserDTO>();
+
+                foreach (var group in groups)
+                {
+                    var groupMember = await _unitOfWork.GroupMemberRepository.GetByGroupIdAsync(group.GroupId);
+
+                    var userInGroup = groupMember.Select(gm => gm.Account).ToList();
+
+                    var mapUserInGroup = _mapper.Map<List<UserDTO>>(userInGroup);
+
+                    listGroupInfor.Add(new GroupInfor
+                    {
+                        GroupId = group.GroupId,
+                        GroupName = group.GroupName,
+                        UsersInGroup = mapUserInGroup
+                    });
+
+                    var familyInGroup = groupMember.Where(gm => gm.Account.AccountId != familyMemberAccount.AccountId).Select(gm => gm.Account).ToList();
+
+                    var familyInGroupIds = familyInGroup.Select(a => a.AccountId).ToList();
+
+                    var allElderlyUserLinks = await _unitOfWork.UserLinkRepository.GetByUserIdAsync(familyMemberAccount.AccountId, SD.UserLinkStatus.ACCEPTED);
+
+                    var familyNotInGroup = allElderlyUserLinks
+                        .SelectMany(link => new[] { link.AccountId1, link.AccountId2 })
+                        .Distinct()
+                        .Where(accountId => !familyInGroupIds.Contains(accountId) && accountId != familyMemberAccount.AccountId)
+                        .ToList();
+
+                    var accountFamilyNotInGroup = _unitOfWork.AccountRepository.GetAll().Where(a => familyNotInGroup.Contains(a.AccountId)).ToList();
+
+                    var mapFamilyNotInGroup = _mapper.Map<List<UserDTO>>(accountFamilyNotInGroup);
+
+                    if (allElderlyUserLinks == null)
+                    {
+                        allElderlyUserLinks = new List<UserLink>();
+                    }
+
+                    listTotalUserNotInGroup.AddRange(mapFamilyNotInGroup);
+                }
+
+                var result = new GetGroupAndRelationshipInforByFamilyMember
+                {
+                    RequestUsers = mapRequestUser,
+                    ResponseUsers = mapResponseUser,
+                    FamilyNotInGroup = listTotalUserNotInGroup,
+                    GroupInfors = listGroupInfor
+                };
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
             }
             catch (Exception ex)
             {
