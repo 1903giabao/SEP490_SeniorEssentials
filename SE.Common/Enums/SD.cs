@@ -39,6 +39,13 @@ namespace SE.Common.Enums
 
         }
 
+        public class NotificationStatus
+        {
+            public static string SEEN = "Chưa đọc";
+            public static string SEND = "Đã đọc";
+
+        }
+
         public class UserLinkStatus
         {
             public static string PENDING = "Pending";

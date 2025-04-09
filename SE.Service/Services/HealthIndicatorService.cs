@@ -392,7 +392,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Cảnh báo sức khỏe",
                                 AccountId = familyMember.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
                                 Message = "Người thân của bạn có mức oxy trong máu cao hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -435,7 +435,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Cảnh báo sức khỏe",
                                 AccountId = familyMember.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
                                 Message = "Người thân của bạn có mức oxy trong máu thấp hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -577,7 +577,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Cảnh báo sức khỏe",
                                 AccountId = familyMember.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
                                 Message = "Người thân của bạn có huyết áp cao hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -620,7 +620,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Cảnh báo sức khỏe",
                                 AccountId = familyMember.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
                                 Message = "Người thân của bạn có huyết áp thấp hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -711,7 +711,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Cảnh báo sức khỏe",
                                 AccountId = familyMember.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
                                 Message = "Người thân của bạn có nhịp tim nhanh hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -754,7 +754,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Cảnh báo sức khỏe",
                                 AccountId = familyMember.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
                                 Message = "Người thân của bạn nhịp tim chậm hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -841,7 +841,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Cảnh báo sức khỏe",
                                 AccountId = familyMember.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
                                 Message = "Người thân của bạn có đường máu cao hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -884,7 +884,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Cảnh báo sức khỏe",
                                 AccountId = familyMember.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
                                 Message = "Người thân của bạn có đường máu thấp hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -972,7 +972,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Cảnh báo sức khỏe",
                                 AccountId = familyMember.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
                                 Message = "Người thân của bạn có mỡ máu cao hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -1017,7 +1017,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Cảnh báo sức khỏe",
                                 AccountId = familyMember.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
                                 Message = "Người thân của bạn có mỡ máu thấp hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -1105,7 +1105,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Cảnh báo sức khỏe",
                                 AccountId = familyMember.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
                                 Message = "Người thân của bạn có men gan cao hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -1152,7 +1152,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Cảnh báo sức khỏe",
                                 AccountId = familyMember.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
                                 Message = "Người thân của bạn có men gan thấp hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -1241,7 +1241,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Cảnh báo sức khỏe",
                                 AccountId = familyMember.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
                                 Message = "Người thân của bạn có chức năng thận cao hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -1288,7 +1288,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Cảnh báo sức khỏe",
                                 AccountId = familyMember.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
                                 Message = "Người thân của bạn có chức năng thận thấp hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),

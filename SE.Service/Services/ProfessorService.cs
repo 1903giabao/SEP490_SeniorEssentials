@@ -30,9 +30,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetListElderlyByProfessorId(int professorId);
         Task<IBusinessResult> CreateSchedule(ProfessorScheduleRequest req);
         Task<IBusinessResult> UpdateSchedule(ProfessorScheduleRequest req);
-
         Task<IBusinessResult> AddProfessorToSubscriptionByElderly(AddProfessorToSubscriptionRequest req);
-
         Task<IBusinessResult> GetAllProfessor();
         Task<IBusinessResult> GetProfessorDetail(int professorId);
         Task<IBusinessResult> GetTimeSlot(int professorId, DateOnly date);
@@ -40,7 +38,6 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetProfessorSchedule(int accountId, string type);
         Task<IBusinessResult> GetReportInAppointment(int appointmentId);
         Task<IBusinessResult> GetProfessorDetailOfElderly(int elderlyId);
-        Task<IBusinessResult> CancelProfessorAppointment(int professorAppointmentId);
         Task<IBusinessResult> GetProfessorDetailByAccountId(int accountId);
         Task<IBusinessResult> UpdateProfessorInfor(UpdateProfessorRequest req);
         Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId);
@@ -50,6 +47,9 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateAppointmentReport(CreateReportRequest request);
         Task<IBusinessResult> GiveProfessorFeedbackByAccount(GiveProfessorFeedbackByAccountVM request);
         Task<IBusinessResult> GetAllRatingsByProfessorId(int professorId);
+        Task<IBusinessResult> CancelMeeting(int appointmentId);
+        Task<IBusinessResult> ConfirmMeeting(int appointmentId);
+
 
     }
 
@@ -63,6 +63,71 @@ namespace SE.Service.Services
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
+
+        public async Task<IBusinessResult> CancelMeeting(int appointmentId)
+        {
+            try
+            {
+                var appointment = await _unitOfWork.ProfessorAppointmentRepository.GetByIdAsync(appointmentId);
+                if (appointment == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Appointment not found.");
+                }
+
+                // Kiểm tra thời gian hủy có trước 6 tiếng so với thời gian hẹn không
+                var currentTime = DateTime.UtcNow.AddHours(7);
+                var timeDifference = appointment.AppointmentTime - currentTime;
+
+                if (timeDifference.TotalHours < 6)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG,
+                        "Chỉ có thể hủy lịch trước 6 tiếng");
+                }
+
+                // Kiểm tra nếu cuộc hẹn đã bị hủy rồi
+                if (appointment.Status == SD.ProfessorAppointmentStatus.CANCELLED)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Appointment already cancelled.");
+                }
+
+                appointment.Status = SD.ProfessorAppointmentStatus.CANCELLED;
+                var rs = await _unitOfWork.ProfessorAppointmentRepository.UpdateAsync(appointment);
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Failed to cancel");
+                }
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Cancel successfully");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> ConfirmMeeting(int appointmentId)
+        {
+            try
+            {
+                var appointment = await _unitOfWork.ProfessorAppointmentRepository.GetByIdAsync(appointmentId);
+                if (appointment == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Appointment not found.");
+                }
+
+                appointment.Status = SD.ProfessorAppointmentStatus.JOINED;
+                var rs = await _unitOfWork.ProfessorAppointmentRepository.UpdateAsync(appointment);
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Failed to cancel");
+                }
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Confirm joined successfully");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
+            }
+        }
+
 
         public async Task<IBusinessResult> GetNumberOfMeetingLeftByElderly(int elderlyId)
         {
@@ -1119,25 +1184,7 @@ namespace SE.Service.Services
             return users;
         }
 
-        public async Task<IBusinessResult> CancelProfessorAppointment(int professorAppointmentId)
-        {
-            try
-            {
-                var getAppointment = await _unitOfWork.ProfessorAppointmentRepository.GetByIdAsync(professorAppointmentId);
-                getAppointment.Status = SD.ProfessorAppointmentStatus.CANCELLED;
-                var rs = await _unitOfWork.ProfessorAppointmentRepository.UpdateAsync(getAppointment);
-                if (rs == 0)
-                {
-                    return new BusinessResult(Const.FAIL_UNACTIVATE, Const.FAIL_UNACTIVATE_MSG, "Không thể hủy lịch hẹn bác sĩ");
-                }
-                return new BusinessResult(Const.SUCCESS_UNACTIVATE, Const.SUCCESS_UNACTIVATE_MSG, "Hủy lịch hẹn bác sĩ thành công");
-
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
+       
         public async Task<IBusinessResult> GetProfessorDetailOfElderly(int elderlyId)
         {
             try

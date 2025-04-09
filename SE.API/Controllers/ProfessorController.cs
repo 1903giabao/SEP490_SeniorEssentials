@@ -142,12 +142,19 @@ namespace SE.API.Controllers
 
 
         [HttpPut("cancel/{appoinmentId}")]
-        public async Task<IActionResult> CancelProfessorAppointment([FromRoute] int appoinmentId)
+        public async Task<IActionResult> CancelMeeting([FromRoute] int appoinmentId)
         {
-            var rs = await _professorScheduleService.CancelProfessorAppointment(appoinmentId);
+            var rs = await _professorScheduleService.CancelMeeting(appoinmentId);
             return Ok(rs);
-        }        
-        
+        }
+
+        [HttpPut("confirm/{appoinmentId}")]
+        public async Task<IActionResult> ConfirmMeeting([FromRoute] int appoinmentId)
+        {
+            var rs = await _professorScheduleService.ConfirmMeeting(appoinmentId);
+            return Ok(rs);
+        }
+
         [HttpPut("professor-detail")]
         public async Task<IActionResult> UpdateProfessorInfor([FromForm] UpdateProfessorRequest req)
         {
