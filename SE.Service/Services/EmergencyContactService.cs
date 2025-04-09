@@ -724,7 +724,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
                 }
 
-/*                var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(elderly.AccountId);
+                var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(elderly.AccountId);
 
                 foreach (var member in listFamilyMember)
                 {
@@ -750,7 +750,7 @@ namespace SE.Service.Services
 
                         await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
                     }
-                }*/
+                }
 
                 return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, new { EmergencyConfirmationId = emergencyConfirmation.EmergencyConfirmationId });
             }

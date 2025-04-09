@@ -25,6 +25,16 @@ namespace SE.Data.Repository
                         .Where(gm => gm.AccountId == elderlyId)
                         .Select(gm => gm.Group)
                         .FirstOrDefaultAsync();
+        }          
+        
+        public async Task<List<Group>> GetGroupOfFamilyMember(int elderlyId)
+        {
+            return await _context.GroupMembers
+                        .Include(gm => gm.Account)
+                        .Include(gm => gm.Group)
+                        .Where(gm => gm.AccountId == elderlyId)
+                        .Select(gm => gm.Group)
+                        .ToListAsync();
         }           
         
         public async Task<List<Account>> GetFamilyMemberInGroup(int groupId)

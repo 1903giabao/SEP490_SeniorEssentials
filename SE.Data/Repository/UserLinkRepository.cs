@@ -21,7 +21,7 @@ namespace SE.Data.Repository
         {
             var result = await _context.UserLinks.Include(u => u.AccountId1Navigation).Include(u => u.AccountId2Navigation).Where(ul => ul.AccountId1 == accountId && ul.Status.Equals(status)).ToListAsync();
             return result;
-        }        
+        }                 
         
         public async Task<List<UserLink>> GetByAccount2Async(int accountId, string status)
         {
@@ -36,6 +36,15 @@ namespace SE.Data.Repository
                 .Include(u => u.AccountId2Navigation)
                 .FirstOrDefaultAsync(u => (u.AccountId1 == userId1 && u.AccountId2 == userId2) ||
                                            (u.AccountId1 == userId2 && u.AccountId2 == userId1));
+            return result;
+        }         
+        
+        public async Task<List<UserLink>> GetByUserIdAsync(int userId, string status)
+        {
+            var result = await _context.UserLinks
+                .Include(u => u.AccountId1Navigation)
+                .Include(u => u.AccountId2Navigation)
+                .Where(u => (u.AccountId1 == userId || u.AccountId2 == userId) && u.Status.Equals(status)).ToListAsync();
             return result;
         }               
     }

@@ -86,6 +86,20 @@ namespace SE.API.Controllers
         {
             var result = await _groupService.CheckIfElderlyInGroup(elderlyId);
             return Ok(result);
+        }        
+        
+        [HttpGet("relationship-information/elderly/{elderlyId}")]
+        public async Task<IActionResult> GetGroupAndRelationshipInforByElderly(int elderlyId)
+        {
+            var result = await _groupService.GetGroupAndRelationshipInforByElderly(elderlyId);
+            return Ok(result);
+        }        
+        
+        [HttpGet("relationship-information/family-member/{familyMemberId}")]
+        public async Task<IActionResult> GetGroupAndRelationshipInforByFamily(int familyMemberId)
+        {
+            var result = await _groupService.GetGroupAndRelationshipInforByFamily(familyMemberId);
+            return Ok(result);
         }
     }
 }

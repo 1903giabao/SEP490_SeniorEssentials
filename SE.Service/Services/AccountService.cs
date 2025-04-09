@@ -32,6 +32,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateSystemAccount(CreateSystemAccountRequest req);
         Task<IBusinessResult> CreateProfessorAccount(CreateProfessorAccountRequest req);
         Task<IBusinessResult> ChangeAccountStatus(ChangeAccountStatusReq req);
+        Task<IBusinessResult> GetUserByPhoneNumberNotFriend(string phoneNumber, int userId);
     }
 
     public class AccountService : IAccountService
@@ -321,6 +322,61 @@ namespace SE.Service.Services
                     if (userLink.RelationshipType.Equals("Friend") && userLink.Status.Equals(SD.UserLinkStatus.ACCEPTED))
                     {
                         return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, new { isFriend = true });
+                    }
+
+                    if (userLink.RelationshipType.Equals("Family") && userLink.Status.Equals(SD.UserLinkStatus.ACCEPTED))
+                    {
+                        return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, new { isFamily = true });
+                    }
+
+                    if (userLink.Status.Equals(SD.UserLinkStatus.PENDING))
+                    {
+                        var result = _mapper.Map<GetUserPhoneNumberDTO>(userPhone);
+                        result.RequestUserId = userLink.AccountId1;
+                        
+                        return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+                    }
+                }
+
+                var rs = _mapper.Map<UserDTO>(userPhone);
+
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }        
+        
+        public async Task<IBusinessResult> GetUserByPhoneNumberNotFriend(string phoneNumber, int userId)
+        {
+            try
+            {
+                if (!FunctionCommon.IsValidPhoneNumber(phoneNumber))
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Wrong phone number format!");
+                }
+
+                var userPhone = await _unitOfWork.AccountRepository.GetByPhoneNumberAsync(phoneNumber);
+
+                if (userPhone == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
+                }
+
+                if (userPhone.AccountId == userId)
+                {
+                    return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, new { isMe = true });
+                }
+
+                var userLink = await _unitOfWork.UserLinkRepository.GetByUserIdsAsync(userId, userPhone.AccountId);
+
+                if (userLink != null)
+                {
+                    if (userLink.RelationshipType.Equals("Friend") && userLink.Status.Equals(SD.UserLinkStatus.ACCEPTED))
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
                     }
 
                     if (userLink.RelationshipType.Equals("Family") && userLink.Status.Equals(SD.UserLinkStatus.ACCEPTED))

@@ -64,5 +64,13 @@ namespace SE.API.Controllers
             var result = await _accountService.ChangeAccountStatus(req);
             return Ok(result);
         }
+
+        [HttpGet("phoneNumber/family/{phoneNumber}/{userId}")]
+
+        public async Task<IActionResult> GetUserByPhoneNumberNotFriend(string phoneNumber, int userId)
+        {
+            var result = await _accountService.GetUserByPhoneNumberNotFriend(phoneNumber, userId);
+            return Ok(result);
+        }
     }
 }
