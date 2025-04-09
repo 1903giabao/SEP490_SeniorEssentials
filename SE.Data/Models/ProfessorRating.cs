@@ -19,7 +19,13 @@ public partial class ProfessorRating
 
     public string Status { get; set; }
 
+    public string CreatedBy { get; set; }
+
+    public int? ProfessorAppointmentId { get; set; }
+
     public virtual Elderly Elderly { get; set; }
 
     public virtual Professor Professor { get; set; }
+
+    public virtual ProfessorAppointment ProfessorAppointment { get; set; }
 }

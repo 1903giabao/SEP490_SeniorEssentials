@@ -13,6 +13,7 @@ public partial class SeniorEssentialsContext : DbContext
         : base(options)
     {
     }
+
     public SeniorEssentialsContext()
     {
     }
@@ -835,6 +836,8 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.ToTable("ProfessorRating");
 
+            entity.HasIndex(e => e.ProfessorAppointmentId, "UQ_ProfessorRating_Appointment").IsUnique();
+
             entity.Property(e => e.Rating).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.RatingComment).HasMaxLength(255);
             entity.Property(e => e.Status)
@@ -845,6 +848,10 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasForeignKey(d => d.ElderlyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Professor__Elder__1EA48E88");
+
+            entity.HasOne(d => d.ProfessorAppointment).WithOne(p => p.ProfessorRating)
+                .HasForeignKey<ProfessorRating>(d => d.ProfessorAppointmentId)
+                .HasConstraintName("FK_ProfessorRating_Appointment");
 
             entity.HasOne(d => d.Professor).WithMany(p => p.ProfessorRatings)
                 .HasForeignKey(d => d.ProfessorId)

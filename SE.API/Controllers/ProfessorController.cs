@@ -29,7 +29,21 @@ namespace SE.API.Controllers
         {
             var result = await _professorScheduleService.CreateSchedule(req);
             return Ok(result);
-        }        
+        }
+
+        [HttpPost("feedback")]
+        public async Task<IActionResult> GiveProfessorFeedbackByAccount([FromBody] GiveProfessorFeedbackByAccountVM req)
+        {
+            var result = await _professorScheduleService.GiveProfessorFeedbackByAccount(req);
+            return Ok(result);
+        }
+        [HttpGet("feedback/{professorId}")]
+        public async Task<IActionResult> GetAllProfessor([FromRoute] int professorId)
+        {
+            var result = await _professorScheduleService.GetAllRatingsByProfessorId(professorId);
+            return Ok(result);
+        }
+
         [HttpPut]
         public async Task<IActionResult> UpdateSchedule([FromBody] ProfessorScheduleRequest req)
         {
@@ -131,6 +145,13 @@ namespace SE.API.Controllers
         public async Task<IActionResult> BookProfessorAppointment([FromBody] BookProfessorAppointmentRequest req)
         {
             var rs = await _professorScheduleService.BookProfessorAppointment(req);
+            return Ok(rs);
+        }
+
+        [HttpPost("professor-appointment/report")]
+        public async Task<IActionResult> CreateAppointmentReport([FromBody] CreateReportRequest req)
+        {
+            var rs = await _professorScheduleService.CreateAppointmentReport(req);
             return Ok(rs);
         }
     }

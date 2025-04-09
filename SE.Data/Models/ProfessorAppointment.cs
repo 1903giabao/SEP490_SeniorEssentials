@@ -35,6 +35,8 @@ public partial class ProfessorAppointment
 
     public virtual Elderly Elderly { get; set; }
 
+    public virtual ProfessorRating ProfessorRating { get; set; }
+
     public virtual TimeSlot TimeSlot { get; set; }
 
     public virtual UserSubscription UserSubscription { get; set; }
