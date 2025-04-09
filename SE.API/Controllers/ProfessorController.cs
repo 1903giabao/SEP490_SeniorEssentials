@@ -17,6 +17,13 @@ namespace SE.API.Controllers
             _professorScheduleService = professorScheduleService;
         }
 
+        [HttpGet("elderly/{professorId}")]
+        public async Task<IActionResult> GetListElderlyByProfessorId([FromRoute] int professorId)
+        {
+            var result = await _professorScheduleService.GetListElderlyByProfessorId(professorId);
+            return Ok(result);
+        }
+
         [HttpPut("user-subscription-professor")]
         public async Task<IActionResult> AddProfessorToSubscriptionByElderly([FromBody] AddProfessorToSubscriptionRequest req)
         {

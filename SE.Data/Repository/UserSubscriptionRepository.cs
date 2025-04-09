@@ -81,5 +81,14 @@ namespace SE.Data.Repository
             return activeUsers;
 
         }
+
+        public async Task<List<Account>> GetListElderlyByProfessorId(int professorId)
+        {
+            var result = await _context.UserSubscriptions
+                .Include(us => us.Professor).ThenInclude(us => us.Account)
+                .Include(us => us.Booking).ThenInclude(us => us.Elderly).ThenInclude(us => us.Account).ThenInclude(us => us.Elderly)
+                .Where(us => us.ProfessorId == professorId).Select(us => us.Booking.Elderly.Account).ToListAsync();
+            return result;
+        }
     }
 }

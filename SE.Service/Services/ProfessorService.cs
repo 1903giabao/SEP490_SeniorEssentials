@@ -20,12 +20,13 @@ using Microsoft.Identity.Client;
 using SE.Common.Request.Subscription;
 using Google.Api.Gax;
 using TagLib.Ape;
+using Org.BouncyCastle.Ocsp;
 
 namespace SE.Service.Services
 {
     public interface IProfessorService
     {
-
+        Task<IBusinessResult> GetListElderlyByProfessorId(int professorId);
         Task<IBusinessResult> CreateSchedule(ProfessorScheduleRequest req);
         Task<IBusinessResult> UpdateSchedule(ProfessorScheduleRequest req);
 
@@ -63,6 +64,29 @@ namespace SE.Service.Services
         }
 
 
+        public async Task<IBusinessResult> GetListElderlyByProfessorId(int professorId)
+        {
+            try
+            {
+                var getProfessorInfor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(professorId);
+
+                if (getProfessorInfor == null || getProfessorInfor.RoleId != 4)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor does not exist!");
+                }
+
+                var listUserElderly = await _unitOfWork.UserServiceRepository.GetListElderlyByProfessorId(getProfessorInfor.Professor.ProfessorId);
+
+                var result = _mapper.Map<List<AccountElderlyDTO>>(listUserElderly);
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
+            }
+        }        
+        
         public async Task<IBusinessResult> CreateAppointmentReport(CreateReportRequest request)
         {
             try
