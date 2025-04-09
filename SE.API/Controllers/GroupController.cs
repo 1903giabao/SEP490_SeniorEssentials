@@ -80,5 +80,12 @@ namespace SE.API.Controllers
             var result = await _groupService.GetMembersNotInGroupChat(groupChatId);
             return Ok(result);
         }
+
+        [HttpGet("elderly-in-group/{elderlyId}")]
+        public async Task<IActionResult> CheckIfElderlyInGroup(int elderlyId)
+        {
+            var result = await _groupService.CheckIfElderlyInGroup(elderlyId);
+            return Ok(result);
+        }
     }
 }

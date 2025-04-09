@@ -20,7 +20,7 @@ namespace SE.Service.Services
     public interface IVideoCallService
     {
         Task<IBusinessResult> VideoCall(VideoCallRequest req);
-        Task<string> FindChatRoomContainingAllUsers(List<int> listUserInRoomChat);
+        Task<string> FindChatRoomContainingAllUsers(List<int> listUserInRoomChat, bool isGroup);
     }
 
     public class VideoCallService : IVideoCallService
@@ -63,7 +63,9 @@ namespace SE.Service.Services
 
                 listUserInRoomChat.AddRange(req.ListReceiverId);
 
-                var roomChatId = await FindChatRoomContainingAllUsers(listUserInRoomChat);
+                var isGroup = req.ListReceiverId.Count() > 2;
+
+                var roomChatId = await FindChatRoomContainingAllUsers(listUserInRoomChat, isGroup);
 
                 var sentTime = DateTime.UtcNow.AddHours(7);
 
@@ -105,7 +107,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<string> FindChatRoomContainingAllUsers(List<int> listUserInRoomChat)
+        public async Task<string> FindChatRoomContainingAllUsers(List<int> listUserInRoomChat, bool isGroup)
         {
             try
             {
@@ -124,7 +126,15 @@ namespace SE.Service.Services
 
                         if (roomUserSet.SetEquals(userSet))
                         {
-                            return chatRoomDoc.Id;
+                            var chatRoomData = chatRoomDoc.ToDictionary();
+
+                            if (chatRoomData.TryGetValue("IsGroupChat", out var isGroupChat))
+                            {
+                                if ((bool)isGroupChat == isGroup)
+                                {
+                                    return chatRoomDoc.Id;
+                                }
+                            }
                         }
                     }
                 }
