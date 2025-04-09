@@ -35,9 +35,9 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpPut("update/status")]
+        [HttpPut("update")]
 
-        public async Task<IActionResult> UpdateStatusNotificaction([FromQuery] int notiId, string status)
+        public async Task<IActionResult> UpdateStatusNotificaction( int notiId, string status)
         {
             var result = await _notificationService.UpdateStatusNotificaction(notiId, status);
             return Ok(result);
