@@ -176,6 +176,7 @@ namespace SE.Service.Services
                     SubName = s.Booking.Subscription.Name,
                     ValidityPeriod = s.Booking.Subscription.ValidityPeriod,
                     NumberOfMeeting = (int)s.Booking.Subscription.NumberOfMeeting,
+                    PaymentCode = s.Booking.Transaction.PaymentCode,
                     NumberOfMeetingLeft = (int)s.NumberOfMeetingLeft,
                     UsersInSubscriptions = new List<GetUsersInSubscription>
                     {

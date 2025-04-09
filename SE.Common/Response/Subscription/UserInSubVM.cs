@@ -16,7 +16,7 @@ namespace SE.Common.Response.Subscription
         public int ValidityPeriod { get; set; }
         public int NumberOfMeeting { get; set; }
         public int NumberOfMeetingLeft { get; set; }
-
+        public string PaymentCode { get; set; }
         public List<GetUsersInSubscription> UsersInSubscriptions { get; set; }
     }
 

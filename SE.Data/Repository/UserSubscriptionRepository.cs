@@ -49,6 +49,7 @@ namespace SE.Data.Repository
             return await _context.UserSubscriptions.Include(s => s.Booking).ThenInclude(b => b.Account)
                                                 .Include(s => s.Booking).ThenInclude(b => b.Elderly).ThenInclude(b => b.Account)
                                                .Include(s => s.Booking).ThenInclude(b => b.Subscription)
+                                               .Include(s => s.Booking).ThenInclude(b => b.Transaction)
                                                .Where(s => s.Booking.SubscriptionId == subId)
                                                .ToListAsync();
         }        

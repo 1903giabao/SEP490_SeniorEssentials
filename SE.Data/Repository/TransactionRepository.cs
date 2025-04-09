@@ -16,5 +16,14 @@ namespace SE.Data.Repository
         {
             _context = context;
         }
+
+        public async Task<List<Transaction>> GetAllTransaction()
+        {
+            return await _context.Transactions
+                    .Include(gm => gm.Booking).ThenInclude(t => t.Account)
+                    .Include(gm => gm.Booking).ThenInclude(t => t.Subscription)
+                    .Include(t => t.Account)
+                    .ToListAsync();
+        }
     }
 }

@@ -25,6 +25,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetAllByRequestUserId(int requestUserId);
         Task<IBusinessResult> GetAllByResponseUserId(int responseUserId);
         Task<IBusinessResult> RemoveFriend(RemoveFriendRequest req);
+        Task<IBusinessResult> CreatePairRoomChat(List<GroupMemberRequest> groupMembers);
     }
 
     public class UserLinkService : IUserLinkService
@@ -483,7 +484,7 @@ namespace SE.Service.Services
                 }
 
                 var listUserInChat = new List<int> { requestUser.AccountId, responseUser.AccountId };
-                var chatRoomId = await _videoCallService.FindChatRoomContainingAllUsers(listUserInChat);
+                var chatRoomId = await _videoCallService.FindChatRoomContainingAllUsers(listUserInChat, false);
 
                 var roomRef = _firestoreDb.Collection("ChatRooms").Document(chatRoomId);
                 await roomRef.DeleteAsync();

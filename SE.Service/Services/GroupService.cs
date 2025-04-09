@@ -14,6 +14,9 @@ using Org.BouncyCastle.Ocsp;
 using SE.Common.Response.Group;
 using Google.Cloud.Firestore.V1;
 using SE.Common.Response.HealthIndicator;
+using Microsoft.Identity.Client;
+using System.Text.RegularExpressions;
+using CloudinaryDotNet;
 
 namespace SE.Service.Services
 {
@@ -31,7 +34,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> AddMemberToGroup(AddMemberToGroupRequest req);
         Task<IBusinessResult> GetMembersNotInGroupChat(string groupChatId);
         Task<List<int>> GetAllFamilyMembersByElderly(int accountId);
-
+        Task<IBusinessResult> CheckIfElderlyInGroup(int elderly);
     }
 
     public class GroupService : IGroupService
@@ -41,13 +44,15 @@ namespace SE.Service.Services
         private readonly FirestoreDb _firestoreDb;
         private readonly IVideoCallService _videoCallService;
         private readonly INotificationService _notificationService;
-        public GroupService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb, IVideoCallService videoCallService, INotificationService notificationService)
+        private readonly IUserLinkService _userLinkService;
+        public GroupService(UnitOfWork unitOfWork, IMapper mapper, FirestoreDb firestoreDb, IVideoCallService videoCallService, INotificationService notificationService, IUserLinkService userLinkService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _firestoreDb = firestoreDb;
             _videoCallService = videoCallService;
             _notificationService = notificationService;
+            _userLinkService = userLinkService;
         }
         public async Task<List<int>> GetAllFamilyMembersByElderly(int accountId)
         {
@@ -237,7 +242,7 @@ namespace SE.Service.Services
                     }
                 }
 
-                var group = _mapper.Map<Group>(request);
+                var group = _mapper.Map<Data.Models.Group>(request);
                 group.CreatedDate = DateTime.UtcNow.AddHours(7);
                 group.Status = SD.GeneralStatus.ACTIVE;
 
@@ -421,7 +426,7 @@ namespace SE.Service.Services
 
                 foreach (var memberId in req.MemberIds)
                 {
-                    var elderlyCheck = await _unitOfWork.AccountRepository.GetByIdAsync(memberId);
+                    var elderlyCheck = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(memberId);
 
                     if (elderlyCheck.RoleId == 2)
                     {
@@ -429,7 +434,7 @@ namespace SE.Service.Services
 
                         if (elderly != null)
                         {
-                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Người già đã ở trong nhóm gia đình khác!");
+                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Người già {elderlyCheck.FullName} đã ở trong nhóm gia đình khác!");
                         }
                     }
                 }
@@ -477,7 +482,7 @@ namespace SE.Service.Services
                             AccountId2 = pair.Item2,
                             CreatedAt = DateTime.UtcNow.AddHours(7),
                             UpdatedAt = DateTime.UtcNow.AddHours(7),
-                            Status = SD.GeneralStatus.ACTIVE,
+                            Status = "Accepted",
                             RelationshipType = "Family"
                         };
 
@@ -508,31 +513,131 @@ namespace SE.Service.Services
                     }
                 }
 
-/*                foreach (var member in newMemberIds)
+                var isCreator = _unitOfWork.GroupMemberRepository.GetAll().Where(gm => gm.GroupId == group.GroupId && gm.IsCreator == true).Select(gm => gm.AccountId).FirstOrDefault();
+
+                var listGroupMembers = new List<GroupMemberRequest>();
+
+                foreach (var memberId in allMemberIds)
                 {
-                    var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
-
-                    if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                    listGroupMembers.Add(new GroupMemberRequest
                     {
-                        // Send notification
-                        await _notificationService.SendNotification(
-                            familyMember.DeviceToken,
-                            "Thêm Vào Gia Đình",
-                            $"Bạn đã được vào nhóm gia đình {group.GroupName}.");
+                        AccountId = memberId,
+                        IsCreator = memberId == isCreator ? true : false,
+                    });
+                }
 
-                        var newNotification = new Data.Models.Notification
-                        {
-                            NotificationType = "Thêm Vào Gia Đình",
-                            AccountId = familyMember.AccountId,
-                            Status = SD.GeneralStatus.ACTIVE,
-                            Title = "Thêm Vào Gia Đình",
-                            Message = $"Bạn đã được vào nhóm gia đình {group.GroupName}.",
-                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                        };
+                var roomCreateRs = await _userLinkService.CreatePairRoomChat(listGroupMembers);
 
-                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                if (roomCreateRs.Status < 1)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, roomCreateRs.Message);
+                }
+
+                var allGroupMembers = existingMembers.Select(m => m.AccountId).ToList();
+
+                var roomChatId = await _videoCallService.FindChatRoomContainingAllUsers(allGroupMembers, true);
+
+                if (roomChatId != null)
+                {
+                    var groupRef = _firestoreDb.Collection("ChatRooms").Document(roomChatId);
+                    var groupDoc = await groupRef.GetSnapshotAsync();
+
+                    if (!groupDoc.Exists)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat does not exist!");
                     }
-                }*/
+
+                    var currentMembers = groupDoc.GetValue<Dictionary<string, object>>("MemberIds") ?? new Dictionary<string, object>();
+
+                    foreach (var member in req.MemberIds)
+                    {
+                        var memberIdStr = member.ToString();
+
+                        if (currentMembers.ContainsKey(memberIdStr))
+                        {
+                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Member is already in this group!");
+                        }
+
+                        currentMembers.Add(memberIdStr, true);
+                        var membersRef = groupRef.Collection("Members").Document(memberIdStr);
+                        await membersRef.SetAsync(false);
+                    }
+
+                    var updateData = new Dictionary<string, object>
+                    {
+                        { "MemberIds", currentMembers }
+                    };
+
+                    await groupRef.UpdateAsync(updateData);
+                }
+                else
+                {
+                    DocumentReference groupChatRoomRef = _firestoreDb.Collection("ChatRooms").Document();
+
+                    var currentTime = DateTime.UtcNow.AddHours(7);
+
+                    var groupChatRoomData = new Dictionary<string, object>
+                    {
+                        { "CreatedAt", currentTime.ToString("dd-MM-yyyy HH:mm") },
+                        { "IsGroupChat", true },
+                        { "RoomName", group.GroupName },
+                        { "RoomAvatar", "https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png" },
+                        { "SenderId", 0 },
+                        { "LastMessage", "" },
+                        { "SentDate", currentTime.ToString("dd-MM-yyyy") },
+                        { "SentTime", currentTime.ToString("HH:mm") },
+                        { "SentDateTime", currentTime.ToString("dd-MM-yyyy HH:mm") },
+                            {
+                                "MemberIds", allMemberIds
+                                    .ToDictionary(m => m.ToString(), m => (object)true)
+                            }
+                    };
+
+                    await groupChatRoomRef.SetAsync(groupChatRoomData);
+
+                    foreach (var member in listGroupMembers)
+                    {
+                        await groupChatRoomRef.Collection("Members").Document(member.AccountId.ToString()).SetAsync(new { IsCreator = member.IsCreator });
+                    }
+                }
+
+                var onlineMembersRef = _firestoreDb.Collection("OnlineMembers");
+
+                foreach (var member in req.MemberIds)
+                {
+                    var onlineMemberData = new Dictionary<string, object>
+                            {
+                                { "IsOnline", true }
+                            };
+
+                    await onlineMembersRef.Document(member.ToString()).SetAsync(onlineMemberData);
+                }
+
+                /*                foreach (var member in newMemberIds)
+                                {
+                                    var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+
+                                    if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                                    {
+                                        // Send notification
+                                        await _notificationService.SendNotification(
+                                            familyMember.DeviceToken,
+                                            "Thêm Vào Gia Đình",
+                                            $"Bạn đã được vào nhóm gia đình {group.GroupName}.");
+
+                                        var newNotification = new Data.Models.Notification
+                                        {
+                                            NotificationType = "Thêm Vào Gia Đình",
+                                            AccountId = familyMember.AccountId,
+                                            Status = SD.GeneralStatus.ACTIVE,
+                                            Title = "Thêm Vào Gia Đình",
+                                            Message = $"Bạn đã được vào nhóm gia đình {group.GroupName}.",
+                                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                        };
+
+                                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                    }
+                                }*/
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Members added to the group successfully.");
             }
@@ -612,7 +717,7 @@ namespace SE.Service.Services
 
                 var allGroupMembers = _unitOfWork.GroupMemberRepository.FindByCondition(gm => gm.GroupId == groupId).Select(gm => gm.AccountId).ToList();
 
-                var roomChatId = await _videoCallService.FindChatRoomContainingAllUsers(allGroupMembers);
+                var roomChatId = await _videoCallService.FindChatRoomContainingAllUsers(allGroupMembers, true);
 
                 if (roomChatId != null)
                 {
@@ -855,6 +960,40 @@ namespace SE.Service.Services
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+
+        public async Task<IBusinessResult> CheckIfElderlyInGroup(int elderly)
+        {
+            try
+            {
+                var elderlyAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(elderly);
+
+                if (elderlyAccount == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                var group = await _unitOfWork.GroupMemberRepository.GetGroupOfElderly(elderly);
+
+                if (group == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
+                }
+
+                var groupMember = await _unitOfWork.GroupMemberRepository.GetFamilyMemberInGroup(group.GroupId);
+
+                if (!groupMember.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
             }
         }
     }

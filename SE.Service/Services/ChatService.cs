@@ -617,7 +617,7 @@ namespace SE.Service.Services
 
                 if (string.IsNullOrEmpty(req.GroupId))
                 {
-                    var findRoomChat = await _videoCallService.FindChatRoomContainingAllUsers(newMembers);
+                    var findRoomChat = await _videoCallService.FindChatRoomContainingAllUsers(newMembers, true);
 
                     if (findRoomChat != null)
                     {
@@ -681,7 +681,7 @@ namespace SE.Service.Services
 
                         var memberIdsList = currentMembersList.Concat(newMembers).ToList();
 
-                        var findRoomChat = await _videoCallService.FindChatRoomContainingAllUsers(memberIdsList);
+                        var findRoomChat = await _videoCallService.FindChatRoomContainingAllUsers(memberIdsList, true);
 
                         if (findRoomChat != null)
                         {
