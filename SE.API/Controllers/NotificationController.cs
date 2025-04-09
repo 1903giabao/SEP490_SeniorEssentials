@@ -34,5 +34,13 @@ namespace SE.API.Controllers
             var result = await _notificationService.GetAllNotiInAccount(accountId);
             return Ok(result);
         }
+
+        [HttpPut("update/status")]
+
+        public async Task<IActionResult> UpdateStatusNotificaction([FromQuery] int notiId, string status)
+        {
+            var result = await _notificationService.UpdateStatusNotificaction(notiId, status);
+            return Ok(result);
+        }
     }
 }
