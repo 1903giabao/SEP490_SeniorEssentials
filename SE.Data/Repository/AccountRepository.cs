@@ -39,7 +39,6 @@ namespace SE.Data.Repository
             var result = await _context.Accounts.Include(a => a.Elderly).Include(a => a.Role).FirstOrDefaultAsync(e => e.AccountId == accID);
             return result;
         }
-
         public async Task<Account> GetProfessorByAccountIDAsync(int accID)
         {
             var result = await _context.Accounts

@@ -358,6 +358,7 @@ namespace SE.Service.Services
 
                 await _unitOfWork.BloodOxygenRepository.CreateAsync(bloodOxygenEntity);
 
+
                 // Check for high blood oxygen and notify family
                 var check = await EvaluateBloodOxygen(request.BloodOxygen1);
                 if (check.Data == "Cao")
@@ -373,7 +374,7 @@ namespace SE.Service.Services
                             await _notificationService.SendNotification(
                                 familyMember.DeviceToken,
                                 "Cảnh báo sức khỏe",
-                                "Người thân của bạn có mức oxy trong máu cao hơn bình thường.");
+                                $"Người thân của bạn {getElderly.FullName} có mức oxy trong máu cao hơn bình thường.");
 
                             // Create notification record
                             var response = new LogBookReponse
@@ -394,7 +395,7 @@ namespace SE.Service.Services
                                 AccountId = familyMember.AccountId,
                                 Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
-                                Message = "Người thân của bạn có mức oxy trong máu cao hơn bình thường.",
+                                Message = $"Người thân của bạn {getElderly.FullName} có mức oxy trong máu cao hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 Data = JsonSerializer.Serialize(response)
                             };
@@ -416,7 +417,7 @@ namespace SE.Service.Services
                             await _notificationService.SendNotification(
                                 familyMember.DeviceToken,
                                 "Cảnh báo sức khỏe",
-                                "Người thân của bạn có mức oxy trong máu thấp hơn bình thường.");
+                                $"Người thân của bạn {getElderly.FullName} có mức oxy trong máu thấp hơn bình thường.");
 
                             // Create notification record
                             var response = new LogBookReponse
@@ -437,7 +438,7 @@ namespace SE.Service.Services
                                 AccountId = familyMember.AccountId,
                                 Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
-                                Message = "Người thân của bạn có mức oxy trong máu thấp hơn bình thường.",
+                                Message = $"Người thân của bạn {getElderly.FullName} có mức oxy trong máu thấp hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 Data = JsonSerializer.Serialize(response)
                             };
@@ -558,7 +559,7 @@ namespace SE.Service.Services
                             await _notificationService.SendNotification(
                                 familyMember.DeviceToken,
                                 "Cảnh báo sức khỏe",
-                                "Người thân của bạn có huyết áp cao hơn bình thường.");
+                                $"Người thân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.");
 
                             // Create notification record
                             var response = new LogBookReponse
@@ -579,7 +580,7 @@ namespace SE.Service.Services
                                 AccountId = familyMember.AccountId,
                                 Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
-                                Message = "Người thân của bạn có huyết áp cao hơn bình thường.",
+                                Message = $"Người thân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 Data = JsonSerializer.Serialize(response)
                             };
@@ -601,7 +602,7 @@ namespace SE.Service.Services
                             await _notificationService.SendNotification(
                                 familyMember.DeviceToken,
                                 "Cảnh báo sức khỏe",
-                                "Người thân của bạn có huyết áp thấp hơn bình thường.");
+                                $"Người thân của bạn {getElderly.FullName} có huyết áp thấp hơn bình thường.");
 
                             // Create notification record
                             var response = new LogBookReponse
@@ -622,7 +623,7 @@ namespace SE.Service.Services
                                 AccountId = familyMember.AccountId,
                                 Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
-                                Message = "Người thân của bạn có huyết áp thấp hơn bình thường.",
+                                Message = $"Người thân của bạn {getElderly.FullName} có huyết áp thấp hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 Data = JsonSerializer.Serialize(response)
                             };
@@ -692,7 +693,7 @@ namespace SE.Service.Services
                             await _notificationService.SendNotification(
                                 familyMember.DeviceToken,
                                 "Cảnh báo sức khỏe",
-                                "Người thân của bạn có nhịp tim nhanh hơn bình thường.");
+                                $"Người thân của bạn {getElderly.FullName} có nhịp tim nhanh hơn bình thường.");
 
                             // Create notification record
                             var response = new LogBookReponse
@@ -713,7 +714,7 @@ namespace SE.Service.Services
                                 AccountId = familyMember.AccountId,
                                 Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
-                                Message = "Người thân của bạn có nhịp tim nhanh hơn bình thường.",
+                                Message = $"Người thân của bạn {getElderly.FullName} có nhịp tim nhanh hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 Data = JsonSerializer.Serialize(response)
                             };
@@ -735,7 +736,7 @@ namespace SE.Service.Services
                             await _notificationService.SendNotification(
                                 familyMember.DeviceToken,
                                 "Cảnh báo sức khỏe",
-                                "Người thân của bạn có nhịp tim chậm hơn bình thường.");
+                                $"Người thân của bạn {getElderly.FullName} có nhịp tim chậm hơn bình thường.");
 
                             // Create notification record
                             var response = new LogBookReponse
@@ -756,7 +757,7 @@ namespace SE.Service.Services
                                 AccountId = familyMember.AccountId,
                                 Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
-                                Message = "Người thân của bạn nhịp tim chậm hơn bình thường.",
+                                Message = $"Người thân của bạn {getElderly.FullName} nhịp tim chậm hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 Data = JsonSerializer.Serialize(response)
                             };
@@ -822,7 +823,7 @@ namespace SE.Service.Services
                             await _notificationService.SendNotification(
                                 familyMember.DeviceToken,
                                 "Cảnh báo sức khỏe",
-                                "Người thân của bạn có đường máu cao hơn bình thường.");
+                                $"Người thân của bạn {getElderly.FullName} có đường máu cao hơn bình thường.");
 
                             // Create notification record
                             var response = new LogBookReponse
@@ -843,7 +844,7 @@ namespace SE.Service.Services
                                 AccountId = familyMember.AccountId,
                                 Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
-                                Message = "Người thân của bạn có đường máu cao hơn bình thường.",
+                                Message = $"Người thân của bạn {getElderly.FullName} có đường máu cao hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 Data = JsonSerializer.Serialize(response)
                             };
@@ -865,7 +866,7 @@ namespace SE.Service.Services
                             await _notificationService.SendNotification(
                                 familyMember.DeviceToken,
                                 "Cảnh báo sức khỏe",
-                                "Người thân của bạn có đường máu thấp hơn bình thường.");
+                                $"Người thân của bạn {getElderly.FullName} có đường máu thấp hơn bình thường.");
 
                             // Create notification record
                             var response = new LogBookReponse
@@ -886,7 +887,7 @@ namespace SE.Service.Services
                                 AccountId = familyMember.AccountId,
                                 Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
-                                Message = "Người thân của bạn có đường máu thấp hơn bình thường.",
+                                Message = $"Người thân của bạn {getElderly.FullName} có đường máu thấp hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 Data = JsonSerializer.Serialize(response)
                             };
@@ -951,7 +952,7 @@ namespace SE.Service.Services
                             await _notificationService.SendNotification(
                                 familyMember.DeviceToken,
                                 "Cảnh báo sức khỏe",
-                                "Người thân của bạn có mỡ máu cao hơn bình thường.");
+                                $"Người thân của bạn {getElderly.FullName} có mỡ máu cao hơn bình thường.");
                             var evaluation = lipidProfile.TotalCholesterol < healthIndicator.MinValue ? "Thấp" :
                               lipidProfile.TotalCholesterol > healthIndicator.MaxValue ? "Cao" :
                               "Bình thường";
@@ -974,7 +975,7 @@ namespace SE.Service.Services
                                 AccountId = familyMember.AccountId,
                                 Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
-                                Message = "Người thân của bạn có mỡ máu cao hơn bình thường.",
+                                Message = $"Người thân của bạn {getElderly.FullName} có mỡ máu cao hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 Data = JsonSerializer.Serialize(response)
                             };
@@ -996,7 +997,7 @@ namespace SE.Service.Services
                             await _notificationService.SendNotification(
                                 familyMember.DeviceToken,
                                 "Cảnh báo sức khỏe",
-                                "Người thân của bạn có mữo máu thấp hơn bình thường.");
+                                $"Người thân của bạn {getElderly.FullName} có mữo máu thấp hơn bình thường.");
                             var evaluation = lipidProfile.TotalCholesterol < healthIndicator.MinValue ? "Thấp" :
                               lipidProfile.TotalCholesterol > healthIndicator.MaxValue ? "Cao" :
                               "Bình thường";
@@ -1019,7 +1020,7 @@ namespace SE.Service.Services
                                 AccountId = familyMember.AccountId,
                                 Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
-                                Message = "Người thân của bạn có mỡ máu thấp hơn bình thường.",
+                                Message = $"Người thân của bạn {getElderly.FullName} có mỡ máu thấp hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 Data = JsonSerializer.Serialize(response)
                             };
@@ -1085,7 +1086,7 @@ namespace SE.Service.Services
                             await _notificationService.SendNotification(
                                 familyMember.DeviceToken,
                                 "Cảnh báo sức khỏe",
-                                "Người thân của bạn có men gan cao hơn bình thường.");
+                                $"Người thân của bạn {getElderly.FullName} có men gan cao hơn bình thường.");
                             var evaluation = liverEnzyme.Alt < healthIndicator.MinValue ? "Thấp" :
                                liverEnzyme.Alt > healthIndicator.MaxValue ? "Cao" :
                                "Bình thường";
@@ -1107,7 +1108,7 @@ namespace SE.Service.Services
                                 AccountId = familyMember.AccountId,
                                 Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
-                                Message = "Người thân của bạn có men gan cao hơn bình thường.",
+                                Message = $"Người thân của bạn {getElderly.FullName} có men gan cao hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 Data = JsonSerializer.Serialize(response)
                             };
@@ -1129,7 +1130,7 @@ namespace SE.Service.Services
                             await _notificationService.SendNotification(
                                 familyMember.DeviceToken,
                                 "Cảnh báo sức khỏe",
-                                "Người thân của bạn có men gan thấp hơn bình thường.");
+                                $"Người thân của bạn {getElderly.FullName} có men gan thấp hơn bình thường.");
 
                             // Create notification record
                             var evaluation = liverEnzyme.Alt < healthIndicator.MinValue ? "Thấp" :
@@ -1154,7 +1155,7 @@ namespace SE.Service.Services
                                 AccountId = familyMember.AccountId,
                                 Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
-                                Message = "Người thân của bạn có men gan thấp hơn bình thường.",
+                                Message = $"Người thân của bạn {getElderly.FullName} có men gan thấp hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 Data = JsonSerializer.Serialize(response)
                             };
@@ -1221,7 +1222,7 @@ namespace SE.Service.Services
                             await _notificationService.SendNotification(
                                 familyMember.DeviceToken,
                                 "Cảnh báo sức khỏe",
-                                "Người thân của bạn có chức năng thận cao hơn bình thường.");
+                                $"Người thân của bạn {getElderly.FullName} có chức năng thận cao hơn bình thường.");
                             var evaluation = kidneyFunction.EGfr < healthIndicator.MinValue ? "Thấp" :
                                kidneyFunction.EGfr > healthIndicator.MaxValue ? "Cao" :
                                "Bình thường";
@@ -1243,7 +1244,7 @@ namespace SE.Service.Services
                                 AccountId = familyMember.AccountId,
                                 Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
-                                Message = "Người thân của bạn có chức năng thận cao hơn bình thường.",
+                                Message = $"Người thân của bạn {getElderly.FullName} có chức năng thận cao hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 Data = JsonSerializer.Serialize(response)
                             };
@@ -1265,7 +1266,7 @@ namespace SE.Service.Services
                             await _notificationService.SendNotification(
                                 familyMember.DeviceToken,
                                 "Cảnh báo sức khỏe",
-                                "Người thân của bạn có chức năng thận thấp hơn bình thường.");
+                                $"Người thân của bạn {getElderly.FullName} có chức năng thận thấp hơn bình thường.");
 
                             // Create notification record
                             var evaluation = kidneyFunction.EGfr < healthIndicator.MinValue ? "Thấp" :
@@ -1290,7 +1291,7 @@ namespace SE.Service.Services
                                 AccountId = familyMember.AccountId,
                                 Status = SD.NotificationStatus.SEND,
                                 Title = "Cảnh báo sức khỏe",
-                                Message = "Người thân của bạn có chức năng thận thấp hơn bình thường.",
+                                Message = $"Người thân của bạn {getElderly.FullName} có chức năng thận thấp hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 Data = JsonSerializer.Serialize(response)
                             };
