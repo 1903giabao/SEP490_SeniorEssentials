@@ -549,9 +549,11 @@ namespace SE.Service.Services
             {
                 var requestUser = _unitOfWork.UserLinkRepository.GetAll().Where(u => u.AccountId1 == requestUserId).FirstOrDefault();
 
+                List<int> emptyList = new List<int>();
+
                 if (requestUser == null)
                 {
-                    return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG);
+                    return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, emptyList);
                 }
 
                 var userLinks = await _unitOfWork.UserLinkRepository.GetByAccount1Async(requestUserId, SD.UserLinkStatus.PENDING);
@@ -596,11 +598,12 @@ namespace SE.Service.Services
             {
                 var requestUser = _unitOfWork.UserLinkRepository.GetAll().Where(u => u.AccountId2 == responseUserId).FirstOrDefault();
 
+                List<int> emptyList = new List<int>();
+
                 if (requestUser == null)
                 {
-                    return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG);
+                    return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, emptyList);
                 }
-
 
                 var userLinks = await _unitOfWork.UserLinkRepository.GetByAccount2Async(responseUserId, SD.UserLinkStatus.PENDING);
 
