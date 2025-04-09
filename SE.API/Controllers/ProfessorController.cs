@@ -133,5 +133,12 @@ namespace SE.API.Controllers
             var rs = await _professorScheduleService.BookProfessorAppointment(req);
             return Ok(rs);
         }
+
+        [HttpPost("professor-appointment/report")]
+        public async Task<IActionResult> CreateAppointmentReport([FromBody] CreateReportRequest req)
+        {
+            var rs = await _professorScheduleService.CreateAppointmentReport(req);
+            return Ok(rs);
+        }
     }
 }

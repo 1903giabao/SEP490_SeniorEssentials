@@ -45,6 +45,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetProfessorWeeklyTimeSlots(int accountId);
         Task<IBusinessResult> GetProfessorScheduleInProfessor(int professorId);
         Task<IBusinessResult> BookProfessorAppointment(BookProfessorAppointmentRequest req);
+        Task<IBusinessResult> CreateAppointmentReport(CreateReportRequest request);
+
     }
 
     public class ProfessorService : IProfessorService
@@ -59,6 +61,34 @@ namespace SE.Service.Services
         }
 
 
+        public async Task<IBusinessResult> CreateAppointmentReport(CreateReportRequest request)
+        {
+            try
+            {
+                var getAppointment =await _unitOfWork.ProfessorAppointmentRepository.GetByIdAsync(request.ProfessorAppointmentId);
+                if (getAppointment == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot find appointment");
+                }
+
+                getAppointment.Content = request.Content;
+                getAppointment.Solution = request.Solution;
+
+                var rs = await _unitOfWork.ProfessorAppointmentRepository.UpdateAsync(getAppointment);
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot create report");
+
+                }
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Created report succesfully!");
+
+
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
+            }
+        }
 
         public async Task<IBusinessResult> AddProfessorToSubscriptionByElderly(AddProfessorToSubscriptionRequest req)
         {
