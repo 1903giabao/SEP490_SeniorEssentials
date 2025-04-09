@@ -46,6 +46,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetProfessorScheduleInProfessor(int professorId);
         Task<IBusinessResult> BookProfessorAppointment(BookProfessorAppointmentRequest req);
         Task<IBusinessResult> CreateAppointmentReport(CreateReportRequest request);
+        Task<IBusinessResult> GiveProfessorFeedbackByAccount(GiveProfessorFeedbackByAccountVM request);
+        Task<IBusinessResult> GetAllRatingsByProfessorId(int professorId);
 
     }
 
@@ -89,6 +91,31 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
             }
         }
+
+        public async Task<IBusinessResult> GetAllRatingsByProfessorId(int professorId)
+        {
+            try
+            {
+                var ratings = new List<GetProfessorRatingVM>();
+                ratings = _unitOfWork.ProfessorRatingRepository
+                    .FindByCondition(r => r.ProfessorId == professorId && r.Status == SD.GeneralStatus.ACTIVE)
+                    .Select(r => new GetProfessorRatingVM
+                    {
+                        CreatedBy = r.CreatedBy,
+                        Content = r.RatingComment,
+                        Star = (int)r.Rating
+                    })
+                    .ToList();
+
+               
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, ratings);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
 
         public async Task<IBusinessResult> AddProfessorToSubscriptionByElderly(AddProfessorToSubscriptionRequest req)
         {
@@ -140,6 +167,7 @@ namespace SE.Service.Services
             }
         }
 
+      
         public async Task<IBusinessResult> CreateSchedule(ProfessorScheduleRequest req)
 
         {
@@ -254,7 +282,89 @@ namespace SE.Service.Services
                 throw ex;
             }
         }
+        public async Task<IBusinessResult> GiveProfessorFeedbackByAccount(GiveProfessorFeedbackByAccountVM request)
+        {
+            try
+            {
+                // Get the appointment by ID
+                var appointment =  _unitOfWork.ProfessorAppointmentRepository
+                    .FindByCondition(a => a.ProfessorAppointmentId == request.AppointmentId)
+                    .FirstOrDefault();
+                var rs = 0;
+                if (appointment == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cuộc hẹn không tồn tại!");
+                }
 
+                // Get TimeSlot
+                var timeSlot = _unitOfWork.TimeSlotRepository
+                    .FindByCondition(t => t.TimeSlotId == appointment.TimeSlotId)
+                    .FirstOrDefault();
+
+                if (timeSlot == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Khung giờ không tồn tại!");
+                }
+
+                // Get ProfessorSchedule
+                var professorSchedule =  _unitOfWork.ProfessorScheduleRepository
+                    .FindByCondition(ps => ps.ProfessorScheduleId == timeSlot.ProfessorScheduleId)
+                    .FirstOrDefault();
+
+                if (professorSchedule == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Lịch làm việc không tồn tại!");
+                }
+
+                var professorId = professorSchedule.ProfessorId;
+                var elderlyId = appointment.ElderlyId;
+
+                // Create feedback
+                var feedback = new ProfessorRating
+                {
+                    ProfessorId = professorId,
+                    ElderlyId = elderlyId,
+                    RatingComment = request.Content,
+                    Rating = request.Star,
+                    Status = SD.GeneralStatus.ACTIVE,
+                    CreatedBy = request.CreatedBy,
+                    ProfessorAppointmentId = request.AppointmentId
+                };
+
+                await _unitOfWork.ProfessorRatingRepository.CreateAsync(feedback);
+
+                // Update professor average rating
+                var allRatings = _unitOfWork.ProfessorRatingRepository
+                    .FindByCondition(r => r.ProfessorId == professorId && r.Status == SD.GeneralStatus.ACTIVE)
+                    .ToList();
+
+                if (allRatings.Any())
+                {
+                    var averageRating = allRatings.Average(r => r.Rating);
+                    var professor =  _unitOfWork.ProfessorRepository
+                        .FindByCondition(p => p.ProfessorId == professorId)
+                        .FirstOrDefault();
+
+                    if (professor != null)
+                    {
+                        professor.Rating = averageRating;
+                        rs = await _unitOfWork.ProfessorRepository.UpdateAsync(professor);
+                    }
+                }
+
+
+                if (rs > 0)
+                {
+                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, "Create succesffuly");
+                }
+
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Fail to create");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
         public async Task<IBusinessResult> UpdateSchedule(ProfessorScheduleRequest req)
         {
             try
@@ -782,6 +892,7 @@ namespace SE.Service.Services
                 var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
                 var appointments = await _unitOfWork.ProfessorAppointmentRepository
                     .GetByElderlyIdAsync(getElderly.Elderly.ElderlyId, type);
+
                 var result = new List<GetProfessorScheduleOfElderly>();
 
                 foreach (var appointment in appointments)
@@ -794,6 +905,14 @@ namespace SE.Service.Services
                     var professorAccount = await _unitOfWork.AccountRepository
                         .GetByIdAsync(professor.AccountId);
 
+                    // Check if there is a report (Content in ProfessorAppointment)
+                    bool isReport = !string.IsNullOrEmpty(appointment.Content);
+
+                    // Check if feedback exists for this appointment
+                    bool isFeedback = _unitOfWork.ProfessorRatingRepository
+                        .FindByCondition(r => r.ProfessorAppointmentId == appointment.ProfessorAppointmentId)
+                        .Any();
+
                     var schedule = new GetProfessorScheduleOfElderly
                     {
                         ProfessorName = professorAccount.FullName,
@@ -802,6 +921,8 @@ namespace SE.Service.Services
                         ProfessorAppointmentId = appointment.ProfessorAppointmentId,
                         ProfessorAvatar = professorAccount.Avatar,
                         IsOnline = (bool)appointment.IsOnline,
+                        IsReport = isReport,   // Set IsReport
+                        IsFeedback = isFeedback,  // Set IsFeedback
                         People = new List<PeopleOfSchedule>()
                     };
 
@@ -1092,6 +1213,14 @@ namespace SE.Service.Services
                     var elderlyAccount = await _unitOfWork.AccountRepository
                         .GetByIdAsync(elderly.AccountId);
 
+                    // Check if there is a report (Content in ProfessorAppointment)
+                    bool isReport = !string.IsNullOrEmpty(appointment.Content);
+
+                    // Check if feedback exists for this appointment
+                    bool isFeedback =  _unitOfWork.ProfessorRatingRepository
+                        .FindByCondition(r => r.ProfessorAppointmentId == appointment.ProfessorAppointmentId)
+                        .Any();
+
                     var schedule = new GetScheduleOfElderlyByProfessorVM
                     {
                         ElderlyId = elderly.ElderlyId,
@@ -1101,6 +1230,8 @@ namespace SE.Service.Services
                         DateTime = $"{appointment.AppointmentTime:dd/MM/yyyy HH:mm}",
                         Status = appointment.Status,
                         IsOnline = (bool)appointment.IsOnline,
+                        IsReport = isReport,  // Set IsReport
+                        IsFeedback = isFeedback,  // Set IsFeedback
                         People = new List<PeopleOfScheduleVM>()
                     };
 
@@ -1120,7 +1251,7 @@ namespace SE.Service.Services
 
                     // Add family members
                     var familyMemberAccountIds = await GetAllFamilyMemberByElderlyId(elderly.AccountId);
-                    var familyMembers =  _unitOfWork.AccountRepository.GetAll()
+                    var familyMembers = _unitOfWork.AccountRepository.GetAll()
                         .Where(a => familyMemberAccountIds.Contains(a.AccountId))
                         .Select(a => new PeopleOfScheduleVM
                         {

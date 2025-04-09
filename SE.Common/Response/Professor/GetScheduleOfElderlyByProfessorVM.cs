@@ -15,6 +15,10 @@ namespace SE.Common.Response.Professor
         public string DateTime { get; set; }
         public string Status { get; set; }
         public bool IsOnline { get; set; }
+        public bool IsReport { get; set; }
+
+        public bool IsFeedback { get; set; }
+
         public List<PeopleOfScheduleVM> People { get; set; }
     }
 

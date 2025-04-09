@@ -29,7 +29,21 @@ namespace SE.API.Controllers
         {
             var result = await _professorScheduleService.CreateSchedule(req);
             return Ok(result);
-        }        
+        }
+
+        [HttpPost("feedback")]
+        public async Task<IActionResult> GiveProfessorFeedbackByAccount([FromBody] GiveProfessorFeedbackByAccountVM req)
+        {
+            var result = await _professorScheduleService.GiveProfessorFeedbackByAccount(req);
+            return Ok(result);
+        }
+        [HttpGet("feedback/{professorId}")]
+        public async Task<IActionResult> GetAllProfessor([FromRoute] int professorId)
+        {
+            var result = await _professorScheduleService.GetAllRatingsByProfessorId(professorId);
+            return Ok(result);
+        }
+
         [HttpPut]
         public async Task<IActionResult> UpdateSchedule([FromBody] ProfessorScheduleRequest req)
         {
