@@ -15,6 +15,7 @@ namespace SE.Service.Services
     {
         Task<string> SendNotification(string token, string title, string body);
         Task<IBusinessResult> GetAllNotiInAccount(int accountId);
+        Task<IBusinessResult> UpdateStatusNotificaction(int notiId, string status);
 
     }
 
@@ -37,6 +38,31 @@ namespace SE.Service.Services
                 return Task.FromResult<IBusinessResult>(new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result));
             }
             catch (Exception ex) 
+            {
+                throw new Exception(ex.Message);
+
+            }
+        }
+
+        public async Task<IBusinessResult> UpdateStatusNotificaction(int notiId, string status)
+        {
+            try
+            {
+                var getNoti =await _unitOfWork.NotificationRepository.GetByIdAsync(notiId);
+                if (getNoti == null) 
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Notification not found!");
+                }
+                getNoti.Status = status;
+                var rs = await _unitOfWork.NotificationRepository.UpdateAsync(getNoti);
+                if (rs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot update");
+
+                }
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Update sucessfully");
+            }
+            catch (Exception ex)
             {
                 throw new Exception(ex.Message);
 
