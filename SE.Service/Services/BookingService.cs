@@ -172,22 +172,6 @@ namespace SE.Service.Services
                             return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot update booking");
                         }
 
-                        var userSubscription = new UserSubscription
-                        {
-                            NumberOfMeetingLeft = subscription.NumberOfMeeting,
-                            BookingId = booking.BookingId,
-                            StartDate = booking.BookingDate,
-                            EndDate = booking.BookingDate.AddDays(subscription.ValidityPeriod),
-                            Status = SD.GeneralStatus.ACTIVE,
-                        };
-
-                        var createUserSubscription = await _unitOfWork.UserServiceRepository.CreateAsync(userSubscription);
-
-                        if (createUserSubscription < 1)
-                        {
-                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create user subscription");
-                        }
-
 /*                        if (!string.IsNullOrEmpty(elderly.DeviceToken) && elderly.DeviceToken != "string")
                         {
                             // Send notification
@@ -277,7 +261,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Cannot update transaction");
                 }
 
-                var booking = _unitOfWork.BookingRepository.FindByCondition(b => b.TransactionId == transaction.TransactionId).FirstOrDefault();
+                var booking = await _unitOfWork.BookingRepository.GetByTransactionIdAsync(transaction.TransactionId);
 
                 if (booking == null)
                 {
@@ -291,6 +275,22 @@ namespace SE.Service.Services
                 if (updateBookingRs < 1)
                 {
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Cannot update booking");
+                }
+
+                var userSubscription = new UserSubscription
+                {
+                    NumberOfMeetingLeft = booking.Subscription.NumberOfMeeting,
+                    BookingId = booking.BookingId,
+                    StartDate = booking.BookingDate,
+                    EndDate = booking.BookingDate.AddDays(booking.Subscription.ValidityPeriod),
+                    Status = SD.GeneralStatus.ACTIVE,
+                };
+
+                var createUserSubscription = await _unitOfWork.UserServiceRepository.CreateAsync(userSubscription);
+
+                if (createUserSubscription < 1)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot create user subscription");
                 }
 
                 return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);

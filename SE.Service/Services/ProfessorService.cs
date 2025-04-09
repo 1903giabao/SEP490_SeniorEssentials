@@ -26,6 +26,7 @@ namespace SE.Service.Services
 {
     public interface IProfessorService
     {
+        Task<IBusinessResult> GetNumberOfMeetingLeftByElderly(int elderlyId);
         Task<IBusinessResult> GetListElderlyByProfessorId(int professorId);
         Task<IBusinessResult> CreateSchedule(ProfessorScheduleRequest req);
         Task<IBusinessResult> UpdateSchedule(ProfessorScheduleRequest req);
@@ -63,6 +64,43 @@ namespace SE.Service.Services
             _mapper = mapper;
         }
 
+        public async Task<IBusinessResult> GetNumberOfMeetingLeftByElderly(int elderlyId)
+        {
+            try
+            {
+                var elderlyAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(elderlyId);
+
+                if (elderlyAccount == null || elderlyAccount.RoleId != 2)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                var bookings = _unitOfWork.BookingRepository
+                                .FindByCondition(b => b.ElderlyId == elderlyAccount.Elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                                .Select(b => b.BookingId)
+                                .ToList();
+
+                if (!bookings.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Bookings of elderly not found.");
+                }
+
+                var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
+
+                if (userSubscription?.Booking == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                }
+
+                var result = userSubscription.NumberOfMeetingLeft;
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
+            }
+        }
 
         public async Task<IBusinessResult> GetListElderlyByProfessorId(int professorId)
         {
@@ -516,14 +554,17 @@ namespace SE.Service.Services
                                 currentSlotEnd = timeReq.EndTime;
                             }
 
-                            timeSlotCreateList.Add(new TimeSlot
+                            if (!existingTimeSlots.Where(et => et.StartTime == currentSlotStart && et.EndTime == currentSlotEnd).Any())
                             {
-                                ProfessorScheduleId = existedDayOfWeek.ProfessorScheduleId,
-                                StartTime = currentSlotStart,
-                                EndTime = currentSlotEnd,
-                                Status = SD.GeneralStatus.ACTIVE,
-                                Note = $"Auto-generated slot for {timeReq.DayOfWeek}"
-                            });
+                                timeSlotCreateList.Add(new TimeSlot
+                                {
+                                    ProfessorScheduleId = existedDayOfWeek.ProfessorScheduleId,
+                                    StartTime = currentSlotStart,
+                                    EndTime = currentSlotEnd,
+                                    Status = SD.GeneralStatus.ACTIVE,
+                                    Note = $"Auto-generated slot for {timeReq.DayOfWeek}"
+                                });
+                            }
                             currentSlotStart = currentSlotEnd;
                         }
                     }
@@ -593,11 +634,11 @@ namespace SE.Service.Services
                     }).ToList();
 
                     // Find time slots to inactivate (exist in DB but not in request)
-                    var timeslotsToInactivate = existingTimeSlots
+                    var timeslotsToInactivate = timeSlotCreateList
                         .Where(ets =>
                             ets.Status == SD.GeneralStatus.ACTIVE &&  // Only consider active slots
-                            !requestTimeSlots.Any(rts =>
-                                rts.DayOfWeek == ets.ProfessorSchedule.DayOfWeek &&
+                            !timeSlotCreateList.Any(rts =>
+                                /*rts.DayOfWeek == ets.ProfessorSchedule.DayOfWeek &&*/
                                 rts.StartTime == ets.StartTime &&
                                 rts.EndTime == ets.EndTime))
                         .ToList();
@@ -1403,6 +1444,15 @@ namespace SE.Service.Services
                 if (userSubscription?.Booking == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                }
+
+                userSubscription.NumberOfMeetingLeft = userSubscription.NumberOfMeetingLeft - 1;
+
+                var updateUserSubscriptionRs = await _unitOfWork.UserServiceRepository.UpdateAsync(userSubscription);
+
+                if (updateUserSubscriptionRs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
                 }
 
                 var professor = _unitOfWork.ProfessorRepository

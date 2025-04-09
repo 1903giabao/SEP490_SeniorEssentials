@@ -35,7 +35,5 @@ public partial class Booking
 
     public virtual Transaction Transaction { get; set; }
 
-    public virtual Transaction TransactionNavigation { get; set; }
-
     public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
 }

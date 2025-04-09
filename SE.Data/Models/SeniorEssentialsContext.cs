@@ -292,10 +292,6 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Subscription).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.SubscriptionId)
                 .HasConstraintName("FK__Booking__SubscriptionId__00200768");
-
-            entity.HasOne(d => d.Transaction).WithMany(p => p.Bookings)
-                .HasForeignKey(d => d.TransactionId)
-                .HasConstraintName("FK__Booking__Transac__11158940");
         });
 
         modelBuilder.Entity<CaloriesConsumption>(entity =>
@@ -1001,7 +997,7 @@ public partial class SeniorEssentialsContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Transacti__Accou__22751F6C");
 
-            entity.HasOne(d => d.Booking).WithOne(p => p.TransactionNavigation)
+            entity.HasOne(d => d.Booking).WithOne(p => p.Transaction)
                 .HasForeignKey<Transaction>(d => d.BookingId)
                 .HasConstraintName("FK__Transacti__Booki__236943A5");
         });

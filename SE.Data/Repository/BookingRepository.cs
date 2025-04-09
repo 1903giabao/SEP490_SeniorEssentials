@@ -16,5 +16,11 @@ namespace SE.Data.Repository
         {
             _context = context;
         }
+
+        public async Task<Booking> GetByTransactionIdAsync(int transactionId)
+        {
+            var result = await _context.Bookings.Include(a => a.Subscription).FirstOrDefaultAsync(e => e.TransactionId == transactionId);
+            return result;
+        }
     }
 }

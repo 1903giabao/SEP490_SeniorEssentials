@@ -17,6 +17,13 @@ namespace SE.API.Controllers
             _professorScheduleService = professorScheduleService;
         }
 
+        [HttpGet("number-of-meeting/elderly/{elderlyId}")]
+        public async Task<IActionResult> GetNumberOfMeetingLeftByElderly([FromRoute] int elderlyId)
+        {
+            var result = await _professorScheduleService.GetNumberOfMeetingLeftByElderly(elderlyId);
+            return Ok(result);
+        }        
+        
         [HttpGet("elderly/{professorId}")]
         public async Task<IActionResult> GetListElderlyByProfessorId([FromRoute] int professorId)
         {
@@ -31,12 +38,12 @@ namespace SE.API.Controllers
             return Ok(result);
         }        
         
-        [HttpPost]
+/*        [HttpPost]
         public async Task<IActionResult> CreateSchedule([FromBody] ProfessorScheduleRequest req)
         {
             var result = await _professorScheduleService.CreateSchedule(req);
             return Ok(result);
-        }
+        }*/
 
         [HttpPost("feedback")]
         public async Task<IActionResult> GiveProfessorFeedbackByAccount([FromBody] GiveProfessorFeedbackByAccountVM req)
@@ -51,7 +58,7 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpPut]
+        [HttpPost]
         public async Task<IActionResult> UpdateSchedule([FromBody] ProfessorScheduleRequest req)
         {
             var result = await _professorScheduleService.UpdateSchedule(req);
