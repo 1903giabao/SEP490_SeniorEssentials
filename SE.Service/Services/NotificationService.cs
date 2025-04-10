@@ -34,7 +34,8 @@ namespace SE.Service.Services
         {
             try
             {
-                var result = _unitOfWork.NotificationRepository.FindByCondition(n=>n.AccountId == accountId).ToList();
+                var result = _unitOfWork.NotificationRepository.FindByCondition(n=>n.AccountId == accountId)
+                    .OrderByDescending(n=>n.NotificationId).ToList();
                 return Task.FromResult<IBusinessResult>(new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result));
             }
             catch (Exception ex) 

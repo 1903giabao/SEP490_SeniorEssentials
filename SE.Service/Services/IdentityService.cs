@@ -253,7 +253,7 @@ namespace SE.Service.Services
                         Status  = SD.GeneralStatus.ACTIVE,
                         Weight1 = Decimal.Parse(req.Weight),
                         WeightSource = "Manually",
-                        CreatedBy = req.CreatedBy
+                        CreatedBy = req.FullName
                     };
 
                     var saveWeight = await _unitOfWork.WeightRepository.CreateAsync(weight);
@@ -265,7 +265,7 @@ namespace SE.Service.Services
                         Status = SD.GeneralStatus.ACTIVE,
                         Height1 = Decimal.Parse(req.Height),
                         HeightSource = "Manually",
-                        CreatedBy = req.CreatedBy
+                        CreatedBy = req.FullName
                     };
 
                     var saveHeight = await _unitOfWork.HeightRepository.CreateAsync(height);
