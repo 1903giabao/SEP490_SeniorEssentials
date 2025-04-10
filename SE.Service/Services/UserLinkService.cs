@@ -120,7 +120,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Kết Bạn Mới",
                                 AccountId = responseUser.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Lời mời kết bạn",
                                 Message = $"Bạn nhận được lời mời kết bạn từ {requestUser.FullName}.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -139,7 +139,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Gửi Yêu Cầu Hỗ Trợ",
                                 AccountId = responseUser.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Lời mời kết bạn",
                                 Message = $"Bạn nhận được yêu cầu hỗ trợ từ {requestUser.FullName}.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -321,7 +321,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Chấp nhận kết bạn",
                                 AccountId = responseUser.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Chấp nhận kết bạn",
                                 Message = $"{responseUser.FullName} đã chấp nhận lời mời kết bạn.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -340,7 +340,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Xác Nhận Hỗ Trợ",
                                 AccountId = responseUser.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Xác Nhận Hỗ Trợ",
                                 Message = $"{responseUser.FullName} đã chấp nhận yêu cầu hỗ trợ của bạn.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
