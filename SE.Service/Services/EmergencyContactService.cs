@@ -742,7 +742,7 @@ namespace SE.Service.Services
                         {
                             NotificationType = "SOS",
                             AccountId = familyMember.AccountId,
-                            Status = SD.GeneralStatus.ACTIVE,
+                            Status = SD.NotificationStatus.SEND,
                             Title = "Tín hiệu cầu cứu khẩn cấp",
                             Message = $"Người già {elderly.FullName} đang gặp phải tình huống khẩn cấp, nhanh chóng truy cập vào ứng dụng Senior Essentials để xem thêm các thông tin chi tiết.",
                             CreatedDate = System.DateTime.UtcNow.AddHours(7),

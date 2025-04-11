@@ -35,7 +35,5 @@ public partial class Professor
 
     public virtual ICollection<ProfessorRating> ProfessorRatings { get; set; } = new List<ProfessorRating>();
 
-    public virtual ICollection<ProfessorSchedule> ProfessorSchedules { get; set; } = new List<ProfessorSchedule>();
-
     public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
 }

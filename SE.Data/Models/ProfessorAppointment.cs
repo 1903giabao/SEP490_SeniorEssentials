@@ -11,8 +11,6 @@ public partial class ProfessorAppointment
 
     public int ElderlyId { get; set; }
 
-    public int TimeSlotId { get; set; }
-
     public int? UserSubscriptionId { get; set; }
 
     public DateTime AppointmentTime { get; set; }
@@ -36,8 +34,6 @@ public partial class ProfessorAppointment
     public virtual Elderly Elderly { get; set; }
 
     public virtual ProfessorRating ProfessorRating { get; set; }
-
-    public virtual TimeSlot TimeSlot { get; set; }
 
     public virtual UserSubscription UserSubscription { get; set; }
 }

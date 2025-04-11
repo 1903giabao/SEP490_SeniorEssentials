@@ -151,10 +151,6 @@
          "ObjectType": 0
       },
       {
-         "Name": "[dbo].[ProfessorSchedule]",
-         "ObjectType": 0
-      },
-      {
          "Name": "[dbo].[Role]",
          "ObjectType": 0
       },
@@ -168,10 +164,6 @@
       },
       {
          "Name": "[dbo].[SystemReport]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[TimeSlot]",
          "ObjectType": 0
       },
       {
