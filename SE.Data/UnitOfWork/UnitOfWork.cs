@@ -32,10 +32,8 @@ namespace SE.Data.UnitOfWork
         private MusicRepository _musicRepository;
         private ProfessorAppointmentRepository _professorAppointmentRepository;
         private ProfessorRatingRepository _professorRatingRepository;
-        private ProfessorScheduleRepository _professorScheduleRepository;
         private ProfessorRepository _professorRepository;
         private RoleRepository _roleRepository;
-        private TimeSlotRepository _timeSlotRepository;
         private TransactionRepository _transactionRepository;
         private UserSubscriptionRepository _userServiceRepository;
         private PrescriptionRepository _prescriptionRepository;
@@ -240,11 +238,6 @@ namespace SE.Data.UnitOfWork
         {
             get => _professorRatingRepository ??= new ProfessorRatingRepository(_unitOfWorkContext);
         }
-
-        public ProfessorScheduleRepository ProfessorScheduleRepository
-        {
-            get => _professorScheduleRepository ??= new ProfessorScheduleRepository(_unitOfWorkContext);
-        }
         public ProfessorRepository ProfessorRepository
         {
             get => _professorRepository ??= new ProfessorRepository(_unitOfWorkContext);
@@ -252,10 +245,6 @@ namespace SE.Data.UnitOfWork
         public RoleRepository RoleRepository
         {
             get => _roleRepository ??= new RoleRepository(_unitOfWorkContext);
-        }
-        public TimeSlotRepository TimeSlotRepository
-        {
-            get => _timeSlotRepository ??= new TimeSlotRepository(_unitOfWorkContext);
         }
         public TransactionRepository TransactionRepository
         {

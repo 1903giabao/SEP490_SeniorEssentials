@@ -292,7 +292,7 @@ namespace SE.Service.Services
                         {
                             NotificationType = "Thêm Vào Gia Đình",
                             AccountId = familyMember.AccountId,
-                            Status = SD.GeneralStatus.ACTIVE,
+                            Status = SD.NotificationStatus.SEND,
                             Title = "Thêm Vào Gia Đình",
                             Message = $"Bạn đã được vào nhóm gia đình {group.GroupName}.",
                             CreatedDate = System.DateTime.UtcNow.AddHours(7),
@@ -631,7 +631,7 @@ namespace SE.Service.Services
                         {
                             NotificationType = "Thêm Vào Gia Đình",
                             AccountId = familyMember.AccountId,
-                            Status = SD.GeneralStatus.ACTIVE,
+                            Status = SD.NotificationStatus.SEND,
                             Title = "Thêm Vào Gia Đình",
                             Message = $"Bạn đã được vào nhóm gia đình {group.GroupName}.",
                             CreatedDate = System.DateTime.UtcNow.AddHours(7),

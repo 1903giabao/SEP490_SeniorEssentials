@@ -184,7 +184,7 @@ namespace SE.Service.Services
                             {
                                 NotificationType = "Mua Gói Dịch Vụ",
                                 AccountId = elderly.AccountId,
-                                Status = SD.GeneralStatus.ACTIVE,
+                                Status = SD.NotificationStatus.SEND,
                                 Title = "Đăng ký gói dịch vụ thành công",
                                 Message = $"Người hỗ trợ đã đăng ký gói dịch vụ {subscription.Name} cho tài khoản của bạn. Cảm ơn bạn đã đồng hành cùng Senior Essentials.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),

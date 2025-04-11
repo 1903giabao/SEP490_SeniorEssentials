@@ -30,6 +30,7 @@ public partial class SeniorEssentialsContext : DbContext
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer(GetConnectionString("DefaultConnection"));
+
     public virtual DbSet<Account> Accounts { get; set; }
 
     public virtual DbSet<Activity> Activities { get; set; }
@@ -98,8 +99,6 @@ public partial class SeniorEssentialsContext : DbContext
 
     public virtual DbSet<ProfessorRating> ProfessorRatings { get; set; }
 
-    public virtual DbSet<ProfessorSchedule> ProfessorSchedules { get; set; }
-
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<SleepTime> SleepTimes { get; set; }
@@ -107,8 +106,6 @@ public partial class SeniorEssentialsContext : DbContext
     public virtual DbSet<Subscription> Subscriptions { get; set; }
 
     public virtual DbSet<SystemReport> SystemReports { get; set; }
-
-    public virtual DbSet<TimeSlot> TimeSlots { get; set; }
 
     public virtual DbSet<Transaction> Transactions { get; set; }
 
@@ -816,11 +813,6 @@ public partial class SeniorEssentialsContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Professor__Elder__1CBC4616");
 
-            entity.HasOne(d => d.TimeSlot).WithMany(p => p.ProfessorAppointments)
-                .HasForeignKey(d => d.TimeSlotId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Professor__TimeS__1DB06A4F");
-
             entity.HasOne(d => d.UserSubscription).WithMany(p => p.ProfessorAppointments)
                 .HasForeignKey(d => d.UserSubscriptionId)
                 .HasConstraintName("FK_ProfessorAppointment_UserSubscription");
@@ -853,25 +845,6 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasForeignKey(d => d.ProfessorId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Professor__Profe__1F98B2C1");
-        });
-
-        modelBuilder.Entity<ProfessorSchedule>(entity =>
-        {
-            entity.HasKey(e => e.ProfessorScheduleId).HasName("PK__Professo__A283D5B48DC576EB");
-
-            entity.ToTable("ProfessorSchedule");
-
-            entity.Property(e => e.DayOfWeek).HasMaxLength(50);
-            entity.Property(e => e.EndDate).HasColumnType("datetime");
-            entity.Property(e => e.StartDate).HasColumnType("datetime");
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasMaxLength(20);
-
-            entity.HasOne(d => d.Professor).WithMany(p => p.ProfessorSchedules)
-                .HasForeignKey(d => d.ProfessorId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Professor__Profe__208CD6FA");
         });
 
         modelBuilder.Entity<Role>(entity =>
@@ -953,23 +926,6 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.SystemReports)
                 .HasForeignKey(d => d.AccountId)
                 .HasConstraintName("FK__SystemRep__Accou__59904A2C");
-        });
-
-        modelBuilder.Entity<TimeSlot>(entity =>
-        {
-            entity.HasKey(e => e.TimeSlotId).HasName("PK__TimeSlot__41CC1F32052FCAA7");
-
-            entity.ToTable("TimeSlot");
-
-            entity.Property(e => e.Note).HasMaxLength(50);
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasMaxLength(20);
-
-            entity.HasOne(d => d.ProfessorSchedule).WithMany(p => p.TimeSlots)
-                .HasForeignKey(d => d.ProfessorScheduleId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TimeSlot__Profes__2180FB33");
         });
 
         modelBuilder.Entity<Transaction>(entity =>
