@@ -17,10 +17,6 @@ public partial class Elderly
 
     public string MedicalRecord { get; set; }
 
-    public decimal Weight { get; set; }
-
-    public decimal Height { get; set; }
-
     public string Status { get; set; }
 
     public virtual Account Account { get; set; }

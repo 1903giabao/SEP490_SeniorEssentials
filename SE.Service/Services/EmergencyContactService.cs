@@ -105,6 +105,7 @@ namespace SE.Service.Services
                         EmergencyInformations = emergencyInformationResponseList,
                         EmergencyDateTime = e.EmergencyDate,
                         EmergencyContacts = emergencyContacts,
+                        Status = e.Status
                     };
 
                     result.Add(emergencyConfirmationResponse);
@@ -452,7 +453,8 @@ namespace SE.Service.Services
                     EmergencyTime = e.EmergencyDate?.ToString("HH:mm"),
                     ConfirmationAccountName = e.ConfirmationAccount == null ? "" : e.ConfirmationAccount.FullName,
                     ConfirmationDate = e.ConfirmationDate?.ToString("dd-MM-yyyy HH:mm"),
-                    IsConfirmed = (bool)(e.IsConfirm == null ? false : e.IsConfirm)
+                    IsConfirmed = (bool)(e.IsConfirm == null ? false : e.IsConfirm),
+                    Status = e.Status
                 });
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
@@ -504,7 +506,8 @@ namespace SE.Service.Services
                         EmergencyTime = e.EmergencyDate?.ToString("HH:mm"),
                         ConfirmationAccountName = e.ConfirmationAccount == null ? "" : e.ConfirmationAccount.FullName,
                         ConfirmationDate = e.ConfirmationDate?.ToString("dd-MM-yyyy HH:mm"),
-                        IsConfirmed = (e.IsConfirm == null ? false : e.IsConfirm)
+                        IsConfirmed = (e.IsConfirm == null ? false : e.IsConfirm),
+                        Status = e.Status,
                     }).ToList();
 
                     totalResult.Add(new GetListEmergencyConfirmationByFamilyMemberDTO
@@ -538,7 +541,8 @@ namespace SE.Service.Services
                     EmergencyTime = e.EmergencyDate?.ToString("HH:mm"),
                     ConfirmationAccountName = e.ConfirmationAccount == null ? "" : e.ConfirmationAccount.FullName,
                     ConfirmationDate = e.ConfirmationDate?.ToString("dd-MM-yyyy HH:mm"),
-                    IsConfirmed = (bool)(e.IsConfirm == null ? false : e.IsConfirm)
+                    IsConfirmed = (bool)(e.IsConfirm == null ? false : e.IsConfirm),
+                    Status = e.Status
                 };
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
@@ -714,7 +718,7 @@ namespace SE.Service.Services
                     ConfirmationDate = null,
                     IsConfirm = false,
                     EmergencyDate = DateTime.UtcNow.AddHours(7),
-                    Status = SD.GeneralStatus.ACTIVE,
+                    Status = SD.EmergencyStatus.PENDING,
                 };
 
                 var createRs = await _unitOfWork.EmergencyConfirmationRepository.CreateAsync(emergencyConfirmation);
@@ -764,7 +768,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var account = await _unitOfWork.AccountRepository.GetByIdAsync(accountId);
+                var account = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
 
                 if (account == null)
                 {
@@ -781,6 +785,15 @@ namespace SE.Service.Services
                 emergencyConfirmation.ConfirmationAccountId = account.AccountId;
                 emergencyConfirmation.IsConfirm = true;
                 emergencyConfirmation.ConfirmationDate = DateTime.UtcNow.AddHours(7);
+
+                if (emergencyConfirmation.ElderlyId == account.Elderly.ElderlyId)
+                {
+                    emergencyConfirmation.Status = SD.EmergencyStatus.CANCELLED;
+                }
+                else
+                {
+                    emergencyConfirmation.Status = SD.EmergencyStatus.CONFIRMED;
+                }
 
                 var updateRs = await _unitOfWork.EmergencyConfirmationRepository.UpdateAsync(emergencyConfirmation);
 

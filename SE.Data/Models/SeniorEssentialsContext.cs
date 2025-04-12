@@ -340,13 +340,11 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasIndex(e => e.AccountId, "UQ__Elderly__349DA5A7A2068C0F").IsUnique();
 
             entity.Property(e => e.Allergy).HasMaxLength(100);
-            entity.Property(e => e.Height).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.LivingSituation).HasMaxLength(50);
             entity.Property(e => e.MedicalRecord).HasMaxLength(255);
             entity.Property(e => e.Status)
                 .IsRequired()
                 .HasMaxLength(20);
-            entity.Property(e => e.Weight).HasColumnType("decimal(10, 2)");
 
             entity.HasOne(d => d.Account).WithOne(p => p.Elderly)
                 .HasForeignKey<Elderly>(d => d.AccountId)

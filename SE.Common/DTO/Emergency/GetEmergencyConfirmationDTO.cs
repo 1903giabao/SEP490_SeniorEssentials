@@ -15,5 +15,6 @@ namespace SE.Common.DTO.Emergency
         public string? EmergencyTime { get; set; }
         public string? ConfirmationDate { get; set; }
         public bool? IsConfirmed { get; set; }
+        public string? Status { get; set; }
     }
 }
