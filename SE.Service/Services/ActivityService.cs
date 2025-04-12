@@ -121,11 +121,50 @@ namespace SE.Service.Services
         {
             try
             {
+                // Kiểm tra tài khoản người cao tuổi
                 var elderlyAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(model.AccountId);
                 if (elderlyAccount == null || elderlyAccount.Elderly == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, "Không thể tìm thấy người già");
                 }
+
+                // Lấy tất cả lịch trình hiện có của người cao tuổi
+                var existingSchedules = await _unitOfWork.ActivityScheduleRepository
+                    .GetByElderlyIdAsync(elderlyAccount.Elderly.ElderlyId);
+
+                var startDate = model.StartDate;
+
+                // Kiểm tra trùng lịch trước khi tạo
+                for (int i = 0; i < model.Duration; i++)
+                {
+                    var scheduleDate = startDate.AddDays(i);
+                    foreach (var schedule in model.Schedules)
+                    {
+                        var newStartTime = new DateTime(scheduleDate.Year, scheduleDate.Month, scheduleDate.Day,
+                                                      schedule.StartTime.Hour, schedule.StartTime.Minute, 0);
+                        var newEndTime = new DateTime(scheduleDate.Year, scheduleDate.Month, scheduleDate.Day,
+                                                    schedule.EndTime.Hour, schedule.EndTime.Minute, 0);
+
+                        // Kiểm tra trùng lịch với các hoạt động hiện có
+                        bool isConflict = existingSchedules.Any(existing =>
+                            existing.StartTime < newEndTime &&
+                            existing.EndTime > newStartTime);
+
+                        if (isConflict)
+                        {
+                            var conflictActivity = existingSchedules.First(existing =>
+                                existing.StartTime < newEndTime &&
+                                existing.EndTime > newStartTime).Activity;
+
+                            return new BusinessResult(Const.FAIL_CREATE,
+                                $"Lịch trình bị trùng với hoạt động '{conflictActivity.ActivityName}' " +
+                                $"({conflictActivity.ActivityId}) từ {conflictActivity.ActivitySchedules.First().StartTime:HH:mm} " +
+                                $"đến {conflictActivity.ActivitySchedules.First().EndTime:HH:mm}");
+                        }
+                    }
+                }
+
+                // Tạo hoạt động mới nếu không có lịch trùng
                 var newActivity = new Activity
                 {
                     ElderlyId = elderlyAccount.Elderly.ElderlyId,
@@ -136,7 +175,7 @@ namespace SE.Service.Services
                 };
                 await _unitOfWork.ActivityRepository.CreateAsync(newActivity);
 
-                var startDate = model.StartDate;
+                // Tạo lịch trình mới
                 for (int i = 0; i < model.Duration; i++)
                 {
                     var scheduleDate = startDate.AddDays(i);
@@ -145,22 +184,23 @@ namespace SE.Service.Services
                         var newSchedule = new ActivitySchedule
                         {
                             ActivityId = newActivity.ActivityId,
-                            StartTime = new DateTime(scheduleDate.Year, scheduleDate.Month, scheduleDate.Day, schedule.StartTime.Hour, schedule.StartTime.Minute, 0),
-                            EndTime = new DateTime(scheduleDate.Year, scheduleDate.Month, scheduleDate.Day, schedule.EndTime.Hour, schedule.EndTime.Minute, 0),
+                            StartTime = new DateTime(scheduleDate.Year, scheduleDate.Month, scheduleDate.Day,
+                                                  schedule.StartTime.Hour, schedule.StartTime.Minute, 0),
+                            EndTime = new DateTime(scheduleDate.Year, scheduleDate.Month, scheduleDate.Day,
+                                                schedule.EndTime.Hour, schedule.EndTime.Minute, 0),
                             Status = SD.GeneralStatus.ACTIVE
                         };
                         await _unitOfWork.ActivityScheduleRepository.CreateAsync(newSchedule);
                     }
                 }
+
                 return new BusinessResult(Const.SUCCESS_CREATE, "Tạo mới hoạt động và lịch trình thành công");
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
         }
-
-
         public async Task<IBusinessResult> UpdateActivityWithSchedules(UpdateScheduleModel model)
         {
             try

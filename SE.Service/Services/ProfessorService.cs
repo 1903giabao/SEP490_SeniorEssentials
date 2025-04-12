@@ -71,7 +71,15 @@ namespace SE.Service.Services
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Appointment not found.");
                 }
+                var getSubcription = _unitOfWork.SubscriptionRepository.FindByCondition(s => s.NumberOfMeeting == 1 && s.ValidityPeriod ==0 && s.Status=="Active").FirstOrDefault();
 
+                var getUserSub =await _unitOfWork.ProfessorAppointmentRepository.GetUserSubcriptionByAppointmentAsync(appointmentId);
+
+                if (getUserSub.UserSubscription.Booking.Subscription.SubscriptionId == getSubcription.SubscriptionId)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, $"Không thể hủy lịch gói đăng kí {getSubcription.Name}.");
+
+                }
                 // Kiểm tra thời gian hủy có trước 6 tiếng so với thời gian hẹn không
                 var currentTime = DateTime.UtcNow.AddHours(7);
                 var timeDifference = appointment.AppointmentTime - currentTime;
@@ -801,9 +809,24 @@ namespace SE.Service.Services
             try
             {
                 var getElderlyInfor = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(elderlyId);
-                var getElderlyEntity = _unitOfWork.ElderlyRepository.FindByCondition(e => e.AccountId == elderlyId).FirstOrDefault();
-                var findProfessorId = await _unitOfWork.UserServiceRepository.GetProfessorByElderlyId(getElderlyEntity.ElderlyId);
 
+                if (getElderlyInfor == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Account not found");
+                }
+                var getElderlyEntity = _unitOfWork.ElderlyRepository.FindByCondition(e => e.AccountId == elderlyId).FirstOrDefault();
+                if (getElderlyEntity == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly not found!");
+
+                }
+
+                var findProfessorId = await _unitOfWork.UserServiceRepository.GetProfessorByElderlyId(getElderlyEntity.ElderlyId);
+                if (findProfessorId == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor not found");
+
+                }
                 var getProfessor = await _unitOfWork.ProfessorRepository.GetAccountByProfessorId((int)findProfessorId.ProfessorId);
 
                 var getProfessorInfor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(getProfessor.AccountId);
@@ -828,6 +851,10 @@ namespace SE.Service.Services
             try
             {
                 var getAppointment = _unitOfWork.ProfessorAppointmentRepository.GetById(appointmentId);
+                if (getAppointment == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Appointment not found");
+                }
                 var rs = new
                 {
                     Content = (getAppointment.Content == null) ? "" : getAppointment.Content,
@@ -1001,7 +1028,7 @@ namespace SE.Service.Services
             try
             {
                 // Kiểm tra và lấy ProfessorId từ AccountId
-                var professor = _unitOfWork.ProfessorRepository
+                var professor =  _unitOfWork.ProfessorRepository
                     .FindByCondition(p => p.AccountId == accountId)
                     .FirstOrDefault();
 
@@ -1022,10 +1049,6 @@ namespace SE.Service.Services
 
                 var result = new List<ViewProfessorScheduleResponse>();
 
-                // Giả định thời gian làm việc mỗi ngày (7h-19h)
-                TimeOnly workStart = new TimeOnly(7, 0);
-                TimeOnly workEnd = new TimeOnly(19, 0);
-
                 // Duyệt qua từng ngày trong tuần
                 for (var date = monday; date <= sunday; date = date.AddDays(1))
                 {
@@ -1040,38 +1063,45 @@ namespace SE.Service.Services
                         TimeEachSlots = new List<TimeEachSlot>()
                     };
 
-                    TimeOnly currentStart = workStart;
-
-                    // Tìm các khoảng thời gian rảnh
-                    foreach (var appointment in dayAppointments)
+                    // Tạo danh sách tất cả các slot 1 tiếng trong ngày (7h-19h)
+                    var allSlots = new List<(TimeOnly Start, TimeOnly End)>();
+                    for (var hour = 7; hour < 19; hour++)
                     {
-                        if (appointment.StartTime.HasValue && appointment.EndTime.HasValue)
-                        {
-                            var apptStart = appointment.StartTime.Value;
-                            var apptEnd = appointment.EndTime.Value;
-
-                            // Thêm khoảng trống trước cuộc hẹn
-                            if (currentStart < apptStart)
-                            {
-                                dayResult.TimeEachSlots.Add(new TimeEachSlot
-                                {
-                                    StartTime = currentStart.ToString("HH:mm"),
-                                    EndTime = apptStart.ToString("HH:mm")
-                                });
-                            }
-
-                            currentStart = apptEnd;
-                        }
+                        allSlots.Add((
+                            new TimeOnly(hour, 0),
+                            new TimeOnly(hour + 1, 0)
+                        ));
                     }
 
-                    // Thêm khoảng thời gian sau cuộc hẹn cuối cùng
-                    if (currentStart < workEnd)
+                    // Lọc các slot trống (không bị cuộc hẹn nào chiếm)
+                    foreach (var slot in allSlots)
                     {
-                        dayResult.TimeEachSlots.Add(new TimeEachSlot
+                        bool isSlotAvailable = true;
+
+                        foreach (var appointment in dayAppointments)
                         {
-                            StartTime = currentStart.ToString("HH:mm"),
-                            EndTime = workEnd.ToString("HH:mm")
-                        });
+                            if (appointment.StartTime.HasValue && appointment.EndTime.HasValue)
+                            {
+                                var apptStart = appointment.StartTime.Value;
+                                var apptEnd = appointment.EndTime.Value;
+
+                                // Kiểm tra slot có bị trùng với cuộc hẹn không
+                                if (!(slot.End <= apptStart || slot.Start >= apptEnd))
+                                {
+                                    isSlotAvailable = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (isSlotAvailable)
+                        {
+                            dayResult.TimeEachSlots.Add(new TimeEachSlot
+                            {
+                                StartTime = slot.Start.ToString("HH:mm"),
+                                EndTime = slot.End.ToString("HH:mm")
+                            });
+                        }
                     }
 
                     result.Add(dayResult);

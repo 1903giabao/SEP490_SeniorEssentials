@@ -41,6 +41,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetPrescriptionOfElderly(int accountId);
         Task<IBusinessResult> ScanByGoogle(IFormFile file);
 
+        Task<IBusinessResult> GetUsedPrescriptionsOfElderly(int accountId);
 
     }
 
@@ -969,7 +970,103 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
         }
+        public async Task<IBusinessResult> GetUsedPrescriptionsOfElderly(int accountId)
+        {
+            try
+            {
+                // Kiểm tra tài khoản người cao tuổi
+                var checkAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+                if (checkAccount == null || checkAccount.Elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "Không tìm thấy thông tin người cao tuổi");
+                }
 
+                // Lấy tất cả toa thuốc đã sử dụng (status Inactive)
+                var prescriptions = await _unitOfWork.PrescriptionRepository
+                    .GetInactivePrescriptionsByElderlyId(checkAccount.Elderly.ElderlyId);
+
+                if (prescriptions == null || !prescriptions.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, "Không tìm thấy toa thuốc đã sử dụng");
+                }
+
+                var result = new List<object>();
+
+                foreach (var prescription in prescriptions)
+                {
+                    var medicationDtos = new List<UpdateMedicationModel>();
+
+                    foreach (var medication in prescription.Medications)
+                    {
+                        List<string> frequencySelect = null;
+                        List<string> scheduleTimes = null;
+
+                        if (medication.FrequencyType == "Select")
+                        {
+                            // Lấy các ngày trong tuần từ lịch uống thuốc
+                            var daysOfWeek = medication.MedicationSchedules
+                                .Where(ms => ms.DateTaken.HasValue)
+                                .Select(ms => ms.DateTaken.Value.DayOfWeek.ToString())
+                                .Distinct()
+                                .ToList();
+
+                            frequencySelect = daysOfWeek;
+
+                            // Lấy các giờ uống thuốc
+                            scheduleTimes = medication.MedicationSchedules
+                                .Where(ms => ms.DateTaken.HasValue)
+                                .Select(ms => ms.DateTaken.Value.ToString("HH:mm"))
+                                .Distinct()
+                                .ToList();
+                        }
+                        else
+                        {
+                            // Lấy tất cả các giờ uống thuốc
+                            scheduleTimes = medication.MedicationSchedules
+                                .Where(ms => ms.DateTaken.HasValue)
+                                .Select(ms => ms.DateTaken.Value.ToString("HH:mm"))
+                                .Distinct()
+                                .ToList();
+                        }
+
+                        var medicationDto = new UpdateMedicationModel
+                        {
+                            MedicationId = medication.MedicationId,
+                            MedicationName = medication.MedicationName,
+                            Treatment = medication.Treatment,
+                            Dosage = medication.Dosage,
+                            Shape = medication.Shape,
+                            Remaining = medication.Remaining,
+                            FrequencyType = medication.FrequencyType,
+                            FrequencySelect = frequencySelect,
+                            IsBeforeMeal = medication.IsBeforeMeal,
+                            Note = medication.Note,
+                            Schedule = scheduleTimes
+                        };
+
+                        medicationDtos.Add(medicationDto);
+                    }
+
+                    result.Add(new
+                    {
+                        Id = prescription.PrescriptionId,
+                        MedicationImage = prescription.Url,
+                        CreatedBy = prescription.CreatedBy,
+                        Treatment = prescription.Treatment,
+                        EndDate = prescription.EndDate?.ToString("yyyy-MM-dd"),
+                        StartDate = prescription.CreatedAt.ToString("yyyy-MM-dd"),
+                        Status = prescription.Status,
+                        Medicines = medicationDtos
+                    });
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, "Lấy danh sách toa thuốc đã sử dụng thành công", result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, ex.Message);
+            }
+        }
     }
 }
 

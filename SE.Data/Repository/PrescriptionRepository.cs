@@ -24,5 +24,14 @@ namespace SE.Data.Repository
                 .FirstOrDefaultAsync(p => p.Elderly == elderlyID && p.CreatedAt.Date <= DateTime.UtcNow.AddHours(7) && p.Status.Equals("Active"));
             return prescription;
         }
+        public async Task<List<Prescription>> GetInactivePrescriptionsByElderlyId(int elderlyId)
+        {
+            return await _context.Prescriptions
+                .Include(p => p.Medications)
+                    .ThenInclude(m => m.MedicationSchedules)
+                .Where(p => p.Elderly == elderlyId && p.Status == "Inactive")
+                .OrderByDescending(p => p.EndDate)
+                .ToListAsync();
+        }
     }
 }
