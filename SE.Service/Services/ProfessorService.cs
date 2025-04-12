@@ -28,12 +28,10 @@ namespace SE.Service.Services
     {
         Task<IBusinessResult> GetNumberOfMeetingLeftByElderly(int elderlyId);
         Task<IBusinessResult> GetListElderlyByProfessorId(int professorId);
-        Task<IBusinessResult> CreateSchedule(ProfessorScheduleRequest req);
-        Task<IBusinessResult> UpdateSchedule(ProfessorScheduleRequest req);
         Task<IBusinessResult> AddProfessorToSubscriptionByElderly(AddProfessorToSubscriptionRequest req);
         Task<IBusinessResult> GetAllProfessor();
         Task<IBusinessResult> GetProfessorDetail(int professorId);
-        Task<IBusinessResult> GetTimeSlot(int professorId, DateOnly date);
+        Task<IBusinessResult> GetTimeSlot(int professorId, DateTime date);
         Task<IBusinessResult> GetFilteredProfessors(FilterProfessorRequest request);
         Task<IBusinessResult> GetProfessorSchedule(int accountId, string type);
         Task<IBusinessResult> GetReportInAppointment(int appointmentId);
@@ -188,13 +186,13 @@ namespace SE.Service.Services
             {
                 return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
             }
-        }        
-        
+        }
+
         public async Task<IBusinessResult> CreateAppointmentReport(CreateReportRequest request)
         {
             try
             {
-                var getAppointment =await _unitOfWork.ProfessorAppointmentRepository.GetByIdAsync(request.ProfessorAppointmentId);
+                var getAppointment = await _unitOfWork.ProfessorAppointmentRepository.GetByIdAsync(request.ProfessorAppointmentId);
                 if (getAppointment == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot find appointment");
@@ -234,7 +232,7 @@ namespace SE.Service.Services
                     })
                     .ToList();
 
-               
+
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, ratings);
             }
             catch (Exception ex)
@@ -270,7 +268,7 @@ namespace SE.Service.Services
                     var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
 
                     if (userSubscription.ProfessorId != null)
-                    {                        
+                    {
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly already had professor!");
                     }
 
@@ -278,7 +276,7 @@ namespace SE.Service.Services
 
                     var updateRs = await _unitOfWork.UserServiceRepository.UpdateAsync(userSubscription);
 
-                    if (updateRs < 1) 
+                    if (updateRs < 1)
                     {
                         return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
                     }
@@ -294,127 +292,13 @@ namespace SE.Service.Services
             }
         }
 
-      
-        public async Task<IBusinessResult> CreateSchedule(ProfessorScheduleRequest req)
 
-        {
-            try
-            {
-                // Check if request is valid
-                if (req == null || req.ListTime == null || !req.ListTime.Any())
-                {
-                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Invalid schedule data provided");
-                }
-
-                var accountProfessor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(req.ProfessorId);
-
-                if (accountProfessor == null || accountProfessor.RoleId != 4)
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
-                }
-
-                // Verify professor exists
-                var professor = _unitOfWork.ProfessorRepository
-                    .FindByCondition(p => p.ProfessorId == accountProfessor.Professor.ProfessorId).FirstOrDefault();
-
-                if (professor == null)
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
-                }
-
-                var scheduleCreateList = new List<ProfessorSchedule>();
-                var timeSlotCreateList = new List<TimeSlot>();
-
-                foreach (var timeReq in req.ListTime)
-                {
-                    // Create the schedule for each day
-                    var schedule = new ProfessorSchedule
-                    {
-                        ProfessorId = professor.ProfessorId,
-                        DayOfWeek = timeReq.DayOfWeek, // Convert DateOnly to day name (e.g., "Monday")
-                        StartDate = DateTime.UtcNow.AddHours(7), // Set these as needed
-                        EndDate = null,
-                        Status = SD.GeneralStatus.ACTIVE
-                    };
-
-                    // Parse the time range
-                    if (TimeOnly.TryParse(timeReq.StartTime, out var startTime) &&
-                        TimeOnly.TryParse(timeReq.EndTime, out var endTime))
-                    {
-                        // Create 1-hour time slots between start and end time
-                        var currentSlotStart = startTime;
-
-                        while (currentSlotStart < endTime)
-                        {
-                            var currentSlotEnd = currentSlotStart.AddHours(1);
-                            // Ensure we don't go past the end time
-                            if (currentSlotEnd > endTime)
-                            {
-                                currentSlotEnd = endTime;
-                            }
-
-                            timeSlotCreateList.Add(new TimeSlot
-                            {
-                                ProfessorSchedule = schedule,
-                                StartTime = currentSlotStart,
-                                EndTime = currentSlotEnd,
-                                Status = SD.GeneralStatus.ACTIVE,
-                                Note = $"Auto-generated slot for {timeReq.DayOfWeek:dddd}"
-                            });
-
-                            currentSlotStart = currentSlotEnd;
-                        }
-                    }
-
-                    scheduleCreateList.Add(schedule);
-                }
-
-                // Begin transaction
-
-                try
-                {
-                    // Create schedules
-                    var scheduleResult = await _unitOfWork.ProfessorScheduleRepository.CreateRangeAsync(scheduleCreateList);
-
-                    if (scheduleResult <= 0)
-                    {
-                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
-                    }
-
-                    // Create time slots
-                    var timeSlotResult = await _unitOfWork.TimeSlotRepository.CreateRangeAsync(timeSlotCreateList);
-
-                    if (timeSlotResult <= 0)
-                    {
-                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
-                    }
-
-                    // Commit transaction
-
-                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, new
-                    {
-                        ProfessorId = professor.ProfessorId,
-                        SchedulesCreated = scheduleResult,
-                        TimeSlotsCreated = timeSlotResult
-                    });
-                }
-                catch (Exception ex)
-                {
-                    throw ex;
-
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
         public async Task<IBusinessResult> GiveProfessorFeedbackByAccount(GiveProfessorFeedbackByAccountVM request)
         {
             try
             {
                 // Get the appointment by ID
-                var appointment =  _unitOfWork.ProfessorAppointmentRepository
+                var appointment = _unitOfWork.ProfessorAppointmentRepository
                     .FindByCondition(a => a.ProfessorAppointmentId == request.AppointmentId)
                     .FirstOrDefault();
                 var rs = 0;
@@ -423,33 +307,15 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cuộc hẹn không tồn tại!");
                 }
 
-                // Get TimeSlot
-                var timeSlot = _unitOfWork.TimeSlotRepository
-                    .FindByCondition(t => t.TimeSlotId == appointment.TimeSlotId)
-                    .FirstOrDefault();
+                var getUseSub = _unitOfWork.UserServiceRepository.FindByCondition(us => us.UserSubscriptionId == appointment.UserSubscriptionId).FirstOrDefault();
 
-                if (timeSlot == null)
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Khung giờ không tồn tại!");
-                }
-
-                // Get ProfessorSchedule
-                var professorSchedule =  _unitOfWork.ProfessorScheduleRepository
-                    .FindByCondition(ps => ps.ProfessorScheduleId == timeSlot.ProfessorScheduleId)
-                    .FirstOrDefault();
-
-                if (professorSchedule == null)
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Lịch làm việc không tồn tại!");
-                }
-
-                var professorId = professorSchedule.ProfessorId;
+                var professorId = getUseSub.ProfessorId;
                 var elderlyId = appointment.ElderlyId;
 
                 // Create feedback
                 var feedback = new ProfessorRating
                 {
-                    ProfessorId = professorId,
+                    ProfessorId = (int)professorId,
                     ElderlyId = elderlyId,
                     RatingComment = request.Content,
                     Rating = request.Star,
@@ -468,7 +334,7 @@ namespace SE.Service.Services
                 if (allRatings.Any())
                 {
                     var averageRating = allRatings.Average(r => r.Rating);
-                    var professor =  _unitOfWork.ProfessorRepository
+                    var professor = _unitOfWork.ProfessorRepository
                         .FindByCondition(p => p.ProfessorId == professorId)
                         .FirstOrDefault();
 
@@ -492,255 +358,11 @@ namespace SE.Service.Services
                 throw new Exception(ex.Message);
             }
         }
-        public async Task<IBusinessResult> UpdateSchedule(ProfessorScheduleRequest req)
-        {
-            try
-            {
-                // Check if request is valid
-                if (req == null || req.ListTime == null || !req.ListTime.Any())
-                {
-                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Invalid schedule data provided");
-                }
-
-                // Verify professor exists
-                var accountProfessor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(req.ProfessorId);
-
-                if (accountProfessor == null || accountProfessor.RoleId != 4)
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
-                }
-
-                // Verify professor exists
-                var professor = _unitOfWork.ProfessorRepository
-                    .FindByCondition(p => p.ProfessorId == accountProfessor.Professor.ProfessorId).FirstOrDefault();
-
-                if (professor == null)
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
-                }
-
-                // Get existing schedules for this professor
-                var existingSchedules = await _unitOfWork.ProfessorScheduleRepository
-                    .FindByConditionAsync(s => s.ProfessorId == professor.ProfessorId && s.Status == SD.GeneralStatus.ACTIVE);
-
-                var existingTimeSlots = await _unitOfWork.TimeSlotRepository.GetByAndContainProfessorScheduleIdAsync(existingSchedules.ToList(), SD.GeneralStatus.ACTIVE);
-
-                // Convert request times to comparable format
-                var requestTimes = req.ListTime.Select(t => new
-                {
-                    DayOfWeek = t.DayOfWeek,
-                    StartTime = TimeOnly.Parse(t.StartTime),
-                    EndTime = TimeOnly.Parse(t.EndTime)
-                }).ToList();
-
-                // Convert existing schedules to comparable format
-                var existingScheduleGroups = existingTimeSlots
-                    .GroupBy(t => t.ProfessorScheduleId)
-                    .SelectMany(g => g.Select(t => new
-                    {
-                        ProfessorScheduleId = g.Key,
-                        DayOfWeek = existingSchedules.First(s => s.ProfessorScheduleId == g.Key).DayOfWeek,
-                        StartTime = t.StartTime,
-                        EndTime = t.EndTime,
-                        Status = t.Status
-                    }))
-                    .ToList();
-
-                // Identify schedules to add, keep, and remove
-                var schedulesToAdd = requestTimes
-                    .Where(rt => !existingScheduleGroups.Any(es =>
-                        es.DayOfWeek == rt.DayOfWeek &&
-                        es.Status.Equals(SD.GeneralStatus.ACTIVE) &&
-                        rt.StartTime == es.StartTime &&
-                        rt.EndTime == es.EndTime))
-                    .ToList();
-
-                var schedulesToKeep = existingScheduleGroups
-                    .Where(es => requestTimes.Any(rt =>
-                        rt.DayOfWeek == es.DayOfWeek &&
-                        rt.StartTime == es.StartTime &&
-                        rt.EndTime == es.EndTime))
-                    .ToList();
-
-                var schedulesToRemove = existingScheduleGroups
-                    .Where(es => !requestTimes.Any(rt =>
-                        rt.DayOfWeek == es.DayOfWeek))
-                    .ToList();
-
-                // Create new schedules and time slots (similar to CreateSchedule)
-                var scheduleCreateList = new List<ProfessorSchedule>();
-                var timeSlotCreateList = new List<TimeSlot>();
-
-                foreach (var timeReq in schedulesToAdd)
-                {
-                    var existedDayOfWeek = existingSchedules.Where(ps => ps.DayOfWeek.Equals(timeReq.DayOfWeek) && ps.Status.Equals(SD.GeneralStatus.ACTIVE)).FirstOrDefault();
-
-                    if (existedDayOfWeek == null)
-                    {
-                        var schedule = new ProfessorSchedule
-                        {
-                            ProfessorId = professor.ProfessorId,
-                            DayOfWeek = timeReq.DayOfWeek,
-                            StartDate = DateTime.UtcNow.AddHours(7),
-                            EndDate = null,
-                            Status = SD.GeneralStatus.ACTIVE
-                        };
-
-                        var currentSlotStart = timeReq.StartTime;
-                        while (currentSlotStart < timeReq.EndTime)
-                        {
-                            var currentSlotEnd = currentSlotStart.AddHours(1);
-                            if (currentSlotEnd > timeReq.EndTime)
-                            {
-                                currentSlotEnd = timeReq.EndTime;
-                            }
-
-                            timeSlotCreateList.Add(new TimeSlot
-                            {
-                                ProfessorSchedule = schedule,
-                                StartTime = currentSlotStart,
-                                EndTime = currentSlotEnd,
-                                Status = SD.GeneralStatus.ACTIVE,
-                                Note = $"Auto-generated slot for {timeReq.DayOfWeek}"
-                            });
-                            currentSlotStart = currentSlotEnd;
-                        }
-
-                        scheduleCreateList.Add(schedule);
-                    }
-                    else
-                    {
-                        var currentSlotStart = timeReq.StartTime;
-                        while (currentSlotStart < timeReq.EndTime)
-                        {
-                            var currentSlotEnd = currentSlotStart.AddHours(1);
-                            if (currentSlotEnd > timeReq.EndTime)
-                            {
-                                currentSlotEnd = timeReq.EndTime;
-                            }
-
-                            if (!existingTimeSlots.Where(et => et.StartTime == currentSlotStart && et.EndTime == currentSlotEnd).Any())
-                            {
-                                timeSlotCreateList.Add(new TimeSlot
-                                {
-                                    ProfessorScheduleId = existedDayOfWeek.ProfessorScheduleId,
-                                    StartTime = currentSlotStart,
-                                    EndTime = currentSlotEnd,
-                                    Status = SD.GeneralStatus.ACTIVE,
-                                    Note = $"Auto-generated slot for {timeReq.DayOfWeek}"
-                                });
-                            }
-                            currentSlotStart = currentSlotEnd;
-                        }
-                    }
-                }
-
-                // Mark schedules to remove as inactive (soft delete)
-                var schedulesToRemoveIds = schedulesToRemove.Select(s => s.ProfessorScheduleId).ToList();
-                var schedulesToDeactivate = existingSchedules
-                    .Where(s => schedulesToRemoveIds.Contains(s.ProfessorScheduleId))
-                    .ToList();
-
-                foreach (var schedule in schedulesToDeactivate)
-                {
-                    schedule.Status = SD.GeneralStatus.INACTIVE;
-                    schedule.EndDate = DateTime.UtcNow.AddHours(7);
-                }
-
-                try
-                {
-                    // Create new schedules
-                    int scheduleResult = 0;
-                    if (scheduleCreateList.Any())
-                    {
-                        scheduleResult = await _unitOfWork.ProfessorScheduleRepository.CreateRangeAsync(scheduleCreateList);
-                        if (scheduleResult <= 0)
-                        {
-                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
-                        }
-                    }
-
-                    // Create new time slots
-                    int timeSlotResult = 0;
-                    if (timeSlotCreateList.Any())
-                    {
-                        timeSlotResult = await _unitOfWork.TimeSlotRepository.CreateRangeAsync(timeSlotCreateList);
-                        if (timeSlotResult <= 0 && timeSlotCreateList.Any())
-                        {
-                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
-                        }
-                    }
-
-                    // Update schedules to deactivate
-                    int deactivateResult = 0;
-                    if (schedulesToDeactivate.Any())
-                    {
-                        foreach (var schedule in schedulesToDeactivate)
-                        {
-                            var existingSchedule = await _unitOfWork.ProfessorScheduleRepository.GetByIdAsync(schedule.ProfessorScheduleId);
-                            if (existingSchedule != null)
-                            {
-                                existingSchedule.Status = schedule.Status;
-
-                                var result = await _unitOfWork.ProfessorScheduleRepository.UpdateAsync(existingSchedule);
-                                if (result <= 0)
-                                {
-                                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
-                                }
-                            }
-                        }
-                    }
-
-                    // Convert request times to TimeOnly for comparison
-                    var requestTimeSlots = req.ListTime.Select(rt => new {
-                        DayOfWeek = rt.DayOfWeek,
-                        StartTime = TimeOnly.Parse(rt.StartTime),
-                        EndTime = TimeOnly.Parse(rt.EndTime)
-                    }).ToList();
-
-                    // Find time slots to inactivate (exist in DB but not in request)
-                    var timeslotsToInactivate = timeSlotCreateList
-                        .Where(ets =>
-                            ets.Status == SD.GeneralStatus.ACTIVE &&  // Only consider active slots
-                            !timeSlotCreateList.Any(rts =>
-                                /*rts.DayOfWeek == ets.ProfessorSchedule.DayOfWeek &&*/
-                                rts.StartTime == ets.StartTime &&
-                                rts.EndTime == ets.EndTime))
-                        .ToList();
-
-                    if (timeslotsToInactivate.Any())
-                    {
-                        timeslotsToInactivate = timeslotsToInactivate.Select(ts => { ts.Status = SD.GeneralStatus.INACTIVE; return ts; } ).ToList();
-                        deactivateResult = await _unitOfWork.TimeSlotRepository.UpdateRangeAsync(timeslotsToInactivate);
-                        if (deactivateResult <= 0 && schedulesToDeactivate.Any())
-                        {
-                            return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
-                        }
-                    }
-
-                    return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, new
-                    {
-                        ProfessorId = professor.ProfessorId,
-                        SchedulesAdded = scheduleResult,
-                        TimeSlotsAdded = timeSlotResult,
-                        SchedulesRemoved = deactivateResult
-                    });
-                }
-                catch (Exception ex)
-                {
-                    throw ex;
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
         public async Task<IBusinessResult> GetAllProfessor()
         {
             try
             {
-                var getAllProfessor = _unitOfWork.ProfessorRepository.FindByCondition(p=>p.Status.Equals(SD.GeneralStatus.ACTIVE));
+                var getAllProfessor = _unitOfWork.ProfessorRepository.FindByCondition(p => p.Status.Equals(SD.GeneralStatus.ACTIVE));
                 var result = new List<GetAllProfessorReponse>();
                 var currentDate = DateTime.Now;
                 var currentDayOfWeek = currentDate.DayOfWeek;
@@ -755,32 +377,6 @@ namespace SE.Service.Services
                     professor.ProfessorId = professorInfor.Professor.ProfessorId;
                     professor.Major = professorInfor.Professor.Knowledge;
                     professor.Rating = (decimal)professorInfor.Professor.Rating;
-                    professor.TotalRating = 0;
-
-                    // Fetch the professor's schedule
-                    var professorSchedules = await _unitOfWork.ProfessorScheduleRepository.GetByProfessorIdAsync(professor.ProfessorId);
-
-                    // Find the nearest schedule
-                    var nearestSchedule = professorSchedules
-                        .Where(ps => (DayOfWeek)Enum.Parse(typeof(DayOfWeek), ps.DayOfWeek, true) >= currentDayOfWeek)
-                        .OrderBy(ps => ps.DayOfWeek)
-                        .FirstOrDefault();
-
-                    if (nearestSchedule != null)
-                    {
-                        var timeSlots = await _unitOfWork.TimeSlotRepository.GetByProfessorScheduleIdAsync(nearestSchedule.ProfessorScheduleId);
-
-                        if (timeSlots.Any())
-                        {
-                            var daysUntilNearestDay = ((DayOfWeek)Enum.Parse(typeof(DayOfWeek), nearestSchedule.DayOfWeek, true) - DateTime.Now.DayOfWeek + 7) % 7;
-                            var nearestDate = DateTime.Now.AddDays(daysUntilNearestDay);
-
-                            var nearestTimeSlot = timeSlots.OrderBy(ts => ts.StartTime).First();
-                            professor.Date = nearestDate.ToString("dd-MM-yyyy");
-                            professor.DateTime = $"{nearestSchedule.DayOfWeek}/{nearestTimeSlot.StartTime}-{nearestTimeSlot.EndTime}";
-                        }
-                    }
-
 
                     result.Add(professor);
 
@@ -839,59 +435,88 @@ namespace SE.Service.Services
             }
         }
 
-
-        public async Task<IBusinessResult> GetTimeSlot(int professorId, DateOnly date)
+        public async Task<IBusinessResult> GetTimeSlot(int professorId, DateTime date)
         {
             try
             {
-                // Fetch the professor's schedules for the given date
-                var professorSchedules = await _unitOfWork.ProfessorScheduleRepository.GetByProfessorIdAsync(professorId);
-
-                // Filter schedules for the given date's day of the week
-                var dayOfWeek = date.DayOfWeek.ToString();
-                var schedulesForDate = professorSchedules
-                    .Where(ps => ps.DayOfWeek.Equals(dayOfWeek, StringComparison.OrdinalIgnoreCase) && date.ToDateTime(TimeOnly.MinValue) <= ps.EndDate)
-                    .ToList();
-
-                var result = new ViewProfessorScheduleResponse
+                // Lấy thông tin professor để đảm bảo tồn tại
+                var professor = await _unitOfWork.ProfessorRepository.GetByIdAsync(professorId);
+                if (professor == null)
                 {
-                    Date = date.ToString("dddd dd-MM-yy"),
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor does not exist!");
+                }
+
+                // Lấy tất cả các cuộc hẹn của professor trong ngày cụ thể
+                var appointments = await _unitOfWork.ProfessorAppointmentRepository
+                    .GetAppointmentsByProfessorAndDateAsync(professorId, date);
+
+                var response = new ViewProfessorScheduleResponse
+                {
+                    Date = date.ToString("dd-MM-yyyy"),
                     TimeEachSlots = new List<TimeEachSlot>()
                 };
 
-                // Fetch all appointments for the given date
-                var appointmentsOnDate = await _unitOfWork.ProfessorAppointmentRepository.GetByDateAsync(date);
+                // Xác định thời gian làm việc trong ngày (7h - 19h)
+                TimeOnly workStart = new TimeOnly(7, 0);
+                TimeOnly workEnd = new TimeOnly(19, 0);
 
-                foreach (var schedule in schedulesForDate)
+                // Tạo danh sách các khoảng thời gian rảnh
+                List<(TimeOnly Start, TimeOnly End)> availableSlots = new List<(TimeOnly, TimeOnly)>();
+
+                // Thời gian bắt đầu kiểm tra
+                TimeOnly currentStart = workStart;
+
+                // Lọc các appointments có thời gian hợp lệ
+                var validAppointments = appointments
+                    .Where(a => a.StartTime.HasValue && a.EndTime.HasValue)
+                    .OrderBy(a => a.StartTime)
+                    .ToList();
+
+                foreach (var appointment in validAppointments)
                 {
-                    var timeSlots = await _unitOfWork.TimeSlotRepository.GetByProfessorScheduleIdAsync(schedule.ProfessorScheduleId);
+                    var apptStart = appointment.StartTime.Value;
+                    var apptEnd = appointment.EndTime.Value;
 
-                    foreach (var timeSlot in timeSlots)
+                    // Nếu có khoảng trống trước cuộc hẹn
+                    if (currentStart < apptStart)
                     {
-                        // Check if the time slot is booked
-                        var isBooked = appointmentsOnDate.Any(a => a.TimeSlotId == timeSlot.TimeSlotId);
+                        availableSlots.Add((currentStart, apptStart));
+                    }
 
-                        // If the time slot is not booked, add it to the result
-                        if (!isBooked)
+                    // Cập nhật thời gian bắt đầu kiểm tra tiếp theo
+                    currentStart = apptEnd;
+                }
+
+                // Kiểm tra khoảng thời gian sau cuộc hẹn cuối cùng
+                if (currentStart < workEnd)
+                {
+                    availableSlots.Add((currentStart, workEnd));
+                }
+
+                // Chia các khoảng thời gian rảnh thành các slot 1 tiếng
+                foreach (var slot in availableSlots)
+                {
+                    TimeOnly slotStart = slot.Start;
+                    TimeOnly slotEnd = slot.End;
+
+                    while (slotStart.AddHours(1) <= slotEnd)
+                    {
+                        response.TimeEachSlots.Add(new TimeEachSlot
                         {
-                            result.TimeEachSlots.Add(new TimeEachSlot
-                            {
-                                TimeSlotId = timeSlot.TimeSlotId,
-                                StartTime = timeSlot.StartTime.ToString(),
-                                EndTime = timeSlot.EndTime.ToString()
-                            });
-                        }
+                            StartTime = slotStart.ToString("HH:mm"),
+                            EndTime = slotStart.AddHours(1).ToString("HH:mm")
+                        });
+                        slotStart = slotStart.AddHours(1);
                     }
                 }
 
-                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, response);
             }
             catch (Exception ex)
             {
-                throw ex;
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
             }
         }
-
         public async Task<IBusinessResult> GetFilteredProfessors(FilterProfessorRequest request)
         {
             try
@@ -913,45 +538,7 @@ namespace SE.Service.Services
                     professor.Rating = professorInfor.Professor == null ? 0 : (decimal)professorInfor.Professor.Rating;
                     professor.TotalRating = 0;
 
-                    // Fetch the professor's schedule
-                    var professorSchedules = await _unitOfWork.ProfessorScheduleRepository.GetByProfessorIdAsync(professor.ProfessorId);
-
-                    // Find the nearest schedule
-                    var nearestSchedule = professorSchedules
-                        .Where(ps => (DayOfWeek)Enum.Parse(typeof(DayOfWeek), ps.DayOfWeek, true) >= currentDayOfWeek)
-                        .OrderBy(ps => ps.DayOfWeek)
-                        .FirstOrDefault();
-
-                    if (nearestSchedule != null)
-                    {
-                        var timeSlots = await _unitOfWork.TimeSlotRepository.GetByProfessorScheduleIdAsync(nearestSchedule.ProfessorScheduleId);
-
-                        if (timeSlots.Any())
-                        {
-                            var daysUntilNearestDay = ((DayOfWeek)Enum.Parse(typeof(DayOfWeek), nearestSchedule.DayOfWeek, true) - DateTime.Now.DayOfWeek + 7) % 7;
-                            var nearestDate = DateTime.Now.AddDays(daysUntilNearestDay);
-
-                            var nearestTimeSlot = timeSlots.OrderBy(ts => ts.StartTime).First();
-                            professor.Date = nearestDate.ToString("dd-MM-yyyy");
-
-                            // Convert TimeOnly? to TimeSpan
-                            var startTimeSpan = nearestTimeSlot.StartTime.HasValue
-                                ? new TimeSpan(nearestTimeSlot.StartTime.Value.Hour, nearestTimeSlot.StartTime.Value.Minute, 0)
-                                : TimeSpan.Zero;
-
-                            var endTimeSpan = nearestTimeSlot.EndTime.HasValue
-                                ? new TimeSpan(nearestTimeSlot.EndTime.Value.Hour, nearestTimeSlot.EndTime.Value.Minute, 0)
-                                : TimeSpan.Zero;
-
-                            // Format time in 24-hour format
-                            var startTime24H = DateTime.Today.Add(startTimeSpan).ToString("HH:mm");
-                            var endTime24H = DateTime.Today.Add(endTimeSpan).ToString("HH:mm");
-
-                            // Assign the formatted time to DateTime property
-                            professor.DateTime = $"{nearestSchedule.DayOfWeek}/{startTime24H}-{endTime24H}";
-                        }
-                    }
-
+                    
                     result.Add(professor);
                 }
                 // Apply filters
@@ -967,37 +554,6 @@ namespace SE.Service.Services
                     result = result
                         .Where(p => p.DateTime != null && request.DayOfWeekFilter.Contains(p.DateTime.Split('/')[0], StringComparer.OrdinalIgnoreCase))
                         .ToList();
-                }
-
-                if (request.TimeOfDateFilter != null && request.TimeOfDateFilter.Any())
-                {
-                    var filteredResult = new List<GetAllProfessorReponse>();
-
-                    foreach (var timeRange in request.TimeOfDateFilter)
-                    {
-                        var timeRangeParts = timeRange.Split('-');
-                        if (timeRangeParts.Length == 2 && TimeSpan.TryParse(timeRangeParts[0], out var startTime) && TimeSpan.TryParse(timeRangeParts[1], out var endTime))
-                        {
-                            var matchingProfessors = result
-                                .Where(p => p.DateTime != null)
-                                .Where(p =>
-                                {
-                                    var timeSlotPart = p.DateTime.Split('/')[1]; // Get the time part (e.g., "15:00-16:00")
-                                    var timeSlotParts = timeSlotPart.Split('-');
-                                    if (timeSlotParts.Length == 2 && TimeSpan.TryParse(timeSlotParts[0], out var slotStartTime) && TimeSpan.TryParse(timeSlotParts[1], out var slotEndTime))
-                                    {
-                                        // Check if the time slot overlaps with the filter range
-                                        return slotStartTime >= startTime && slotEndTime <= endTime;
-                                    }
-                                    return false;
-                                })
-                                .ToList();
-
-                            filteredResult.AddRange(matchingProfessors);
-                        }
-                    }
-
-                    result = filteredResult.Distinct().ToList(); // Ensure no duplicates
                 }
 
                 if (!string.IsNullOrEmpty(request.RatingSortOrder))
@@ -1020,6 +576,10 @@ namespace SE.Service.Services
             try
             {
                 var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+                if (getElderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Account does not exist!");
+                }
                 var appointments = await _unitOfWork.ProfessorAppointmentRepository
                     .GetByElderlyIdAsync(getElderly.Elderly.ElderlyId, type);
 
@@ -1030,10 +590,21 @@ namespace SE.Service.Services
                     var peopleInAppointment = new List<PeopleOfSchedule>();
 
                     var professor = await _unitOfWork.ProfessorRepository
-                        .GetByIdAsync(appointment.TimeSlot.ProfessorSchedule.ProfessorId);
+                        .GetByIdAsync(appointment.UserSubscription.ProfessorId);
 
+                    if (professor == null)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor does not exist!");
+
+                    }
                     var professorAccount = await _unitOfWork.AccountRepository
                         .GetByIdAsync(professor.AccountId);
+
+                    if (professorAccount == null)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Account of professor does not exist!");
+
+                    }
 
                     // Check if there is a report (Content in ProfessorAppointment)
                     bool isReport = !string.IsNullOrEmpty(appointment.Content);
@@ -1099,10 +670,12 @@ namespace SE.Service.Services
                 throw ex;
             }
         }
+
         public async Task<IBusinessResult> GetProfessorScheduleInProfessor(int professorId)
         {
             try
             {
+                // Kiểm tra account professor tồn tại và có role phù hợp
                 var accountProfessor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(professorId);
 
                 if (accountProfessor == null || accountProfessor.RoleId != 4)
@@ -1110,44 +683,82 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
                 }
 
-                // Verify professor exists
-                var professor = _unitOfWork.ProfessorRepository
-                    .FindByCondition(p => p.ProfessorId == accountProfessor.Professor.ProfessorId).FirstOrDefault();
+                // Lấy thông tin professor
+                var professor =  _unitOfWork.ProfessorRepository
+                    .FindByCondition(p => p.ProfessorId == accountProfessor.Professor.ProfessorId)
+                    .FirstOrDefault();
 
                 if (professor == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
                 }
 
-                // Get all schedules for this professor with their time slots
-                var schedules = await _unitOfWork.ProfessorScheduleRepository
-                    .GetProfessorIncludeTimeSlot(professor.ProfessorId);
+                // Lấy tất cả các cuộc hẹn trong tuần hiện tại
+                var startOfWeek = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+                var endOfWeek = startOfWeek.AddDays(7);
 
-                // Prepare days of week in order
+                var appointments = await _unitOfWork.ProfessorAppointmentRepository
+                    .GetAppointmentsByProfessorInDateRangeAsync(professor.ProfessorId, startOfWeek, endOfWeek);
+
+                // Chuẩn bị danh sách ngày trong tuần
                 var daysOfWeek = new List<string> { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
                 var result = new List<GetScheduleOfProfessorVM>();
-                // Process each day of week
+
+                // Xử lý từng ngày trong tuần
                 foreach (var day in daysOfWeek)
                 {
-                    var newDay = new GetScheduleOfProfessorVM();
-                    newDay.DayOfWeek = day;
-                    var daySchedule = schedules.FirstOrDefault(s => s.DayOfWeek.Equals(day, StringComparison.OrdinalIgnoreCase));
+                    var dayOfWeek = (DayOfWeek)Enum.Parse(typeof(DayOfWeek), day);
+                    var currentDate = startOfWeek.AddDays((int)dayOfWeek);
 
-                    if (daySchedule != null && daySchedule.TimeSlots.Any())
+                    var newDay = new GetScheduleOfProfessorVM
                     {
-                        // Add each time slot individually (sorted by time)
-                        foreach (var slot in daySchedule.TimeSlots.OrderBy(t => t.StartTime))
+                        DayOfWeek = day,
+                        Times = new List<Time>()
+                    };
+
+                    // Lấy các cuộc hẹn trong ngày
+                    var dayAppointments = appointments
+                        .Where(a => a.AppointmentTime.Date == currentDate.Date)
+                        .OrderBy(a => a.StartTime)
+                        .ToList();
+
+                    // Xác định thời gian làm việc (7h - 19h)
+                    TimeOnly workStart = new TimeOnly(7, 0);
+                    TimeOnly workEnd = new TimeOnly(19, 0);
+                    TimeOnly currentStart = workStart;
+
+                    // Tìm các khoảng thời gian rảnh
+                    foreach (var appointment in dayAppointments)
+                    {
+                        if (appointment.StartTime.HasValue && appointment.EndTime.HasValue)
                         {
-                            var newTime = new Time();
-                            newTime.Start = slot.StartTime.ToString();
-                            newTime.End = slot.EndTime.ToString();
-                            newDay.Times.Add(newTime);
+                            var apptStart = appointment.StartTime.Value;
+                            var apptEnd = appointment.EndTime.Value;
+
+                            // Thêm khoảng thời gian trước cuộc hẹn
+                            if (currentStart < apptStart)
+                            {
+                                newDay.Times.Add(new Time
+                                {
+                                    Start = currentStart.ToString("HH:mm"),
+                                    End = apptStart.ToString("HH:mm")
+                                });
+                            }
+
+                            currentStart = apptEnd;
                         }
                     }
-                    else
+
+                    // Thêm khoảng thời gian sau cuộc hẹn cuối cùng
+                    if (currentStart < workEnd)
                     {
-                        newDay.Times = [];
+                        newDay.Times.Add(new Time
+                        {
+                            Start = currentStart.ToString("HH:mm"),
+                            End = workEnd.ToString("HH:mm")
+                        });
                     }
+
                     result.Add(newDay);
                 }
 
@@ -1155,7 +766,7 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_READ, ex.Message);
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
             }
         }
         public async Task<List<int>> GetAllFamilyMemberByElderlyId(int userId)
@@ -1184,7 +795,7 @@ namespace SE.Service.Services
             return users;
         }
 
-       
+
         public async Task<IBusinessResult> GetProfessorDetailOfElderly(int elderlyId)
         {
             try
@@ -1329,7 +940,7 @@ namespace SE.Service.Services
                     bool isReport = !string.IsNullOrEmpty(appointment.Content);
 
                     // Check if feedback exists for this appointment
-                    bool isFeedback =  _unitOfWork.ProfessorRatingRepository
+                    bool isFeedback = _unitOfWork.ProfessorRatingRepository
                         .FindByCondition(r => r.ProfessorAppointmentId == appointment.ProfessorAppointmentId)
                         .Any();
 
@@ -1389,62 +1000,80 @@ namespace SE.Service.Services
         {
             try
             {
-                // Get current date and calculate start (Monday) and end (Sunday) of current week
-                var today = DateOnly.FromDateTime(DateTime.Now);
+                // Kiểm tra và lấy ProfessorId từ AccountId
+                var professor = _unitOfWork.ProfessorRepository
+                    .FindByCondition(p => p.AccountId == accountId)
+                    .FirstOrDefault();
+
+                if (professor == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor not found");
+                }
+
+                // Tính toán tuần hiện tại (từ thứ 2 đến chủ nhật)
+                var today = DateTime.Now.Date;
                 var daysFromMonday = (int)today.DayOfWeek - (int)DayOfWeek.Monday;
                 var monday = today.AddDays(-daysFromMonday);
                 var sunday = monday.AddDays(6);
 
-                var professorId = _unitOfWork.ProfessorRepository.FindByCondition(p=>p.AccountId == accountId).Select(p=>p.ProfessorId).FirstOrDefault();
-                // Fetch all professor schedules
-                var professorSchedules = await _unitOfWork.ProfessorScheduleRepository.GetByProfessorIdAsync(professorId);
-
-                // Filter schedules that are active (EndDate is in future)
-                var activeSchedules = professorSchedules
-                    .Where(ps => ps.EndDate >= DateTime.Now.Date)
-                    .ToList();
+                // Lấy tất cả cuộc hẹn trong tuần
+                var weeklyAppointments = await _unitOfWork.ProfessorAppointmentRepository
+                    .GetByProfessorAndDateRangeAsync(professor.ProfessorId, monday, sunday);
 
                 var result = new List<ViewProfessorScheduleResponse>();
 
-                // Loop through each day from Monday to Sunday
+                // Giả định thời gian làm việc mỗi ngày (7h-19h)
+                TimeOnly workStart = new TimeOnly(7, 0);
+                TimeOnly workEnd = new TimeOnly(19, 0);
+
+                // Duyệt qua từng ngày trong tuần
                 for (var date = monday; date <= sunday; date = date.AddDays(1))
                 {
-                    var dayOfWeek = date.DayOfWeek.ToString();
-                    var schedulesForDay = activeSchedules
-                        .Where(ps => ps.DayOfWeek.Equals(dayOfWeek, StringComparison.OrdinalIgnoreCase))
+                    var dayAppointments = weeklyAppointments
+                        .Where(a => a.AppointmentTime.Date == date.Date)
+                        .OrderBy(a => a.StartTime)
                         .ToList();
 
                     var dayResult = new ViewProfessorScheduleResponse
                     {
-                        Date = date.ToString("dddd dd-MM-yy"), // Format example: "Monday 01-04-24"
+                        Date = date.ToString("dddd dd-MM-yy"), // Ví dụ: "Monday 01-04-24"
                         TimeEachSlots = new List<TimeEachSlot>()
                     };
 
-                    // Get appointments for this date
-                    var appointmentsOnDate = await _unitOfWork.ProfessorAppointmentRepository.GetByDateAsync(date);
+                    TimeOnly currentStart = workStart;
 
-                    foreach (var schedule in schedulesForDay)
+                    // Tìm các khoảng thời gian rảnh
+                    foreach (var appointment in dayAppointments)
                     {
-                        var timeSlots = await _unitOfWork.TimeSlotRepository.GetByProfessorScheduleIdAsync(schedule.ProfessorScheduleId);
-
-                        foreach (var timeSlot in timeSlots)
+                        if (appointment.StartTime.HasValue && appointment.EndTime.HasValue)
                         {
-                            // Check if time slot is booked
-                            var isBooked = appointmentsOnDate.Any(a => a.TimeSlotId == timeSlot.TimeSlotId);
+                            var apptStart = appointment.StartTime.Value;
+                            var apptEnd = appointment.EndTime.Value;
 
-                            if (!isBooked)
+                            // Thêm khoảng trống trước cuộc hẹn
+                            if (currentStart < apptStart)
                             {
                                 dayResult.TimeEachSlots.Add(new TimeEachSlot
                                 {
-                                    TimeSlotId = timeSlot.TimeSlotId,
-                                    StartTime = timeSlot.StartTime.ToString(), // Format as "09:00"
-                                    EndTime = timeSlot.EndTime.ToString()      // Format as "10:00"
+                                    StartTime = currentStart.ToString("HH:mm"),
+                                    EndTime = apptStart.ToString("HH:mm")
                                 });
                             }
+
+                            currentStart = apptEnd;
                         }
                     }
 
-                    // Always add the day to result, even if TimeEachSlots is empty
+                    // Thêm khoảng thời gian sau cuộc hẹn cuối cùng
+                    if (currentStart < workEnd)
+                    {
+                        dayResult.TimeEachSlots.Add(new TimeEachSlot
+                        {
+                            StartTime = currentStart.ToString("HH:mm"),
+                            EndTime = workEnd.ToString("HH:mm")
+                        });
+                    }
+
                     result.Add(dayResult);
                 }
 
@@ -1452,115 +1081,110 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_READ, ex.Message);
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
             }
         }
-
         public async Task<IBusinessResult> BookProfessorAppointment(BookProfessorAppointmentRequest req)
         {
             try
             {
+                // 1. Validate Elderly account
                 var accountElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(req.ElderlyId);
-
                 if (accountElderly == null || accountElderly.RoleId != 2)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly doesn't exist!");
                 }
 
-                // Verify professor exists
+                // 2. Verify elderly exists
                 var elderly = _unitOfWork.ElderlyRepository
-                    .FindByCondition(p => p.ElderlyId == accountElderly.Elderly.ElderlyId).FirstOrDefault();
-
+                    .FindByCondition(p => p.ElderlyId == accountElderly.Elderly.ElderlyId)
+                    .FirstOrDefault();
                 if (elderly == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly doesn't exist!");
                 }
 
-                var bookings = _unitOfWork.BookingRepository
+                // 3. Check valid bookings
+                var bookings =  _unitOfWork.BookingRepository
                     .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
                     .Select(b => b.BookingId)
                     .ToList();
-
                 if (!bookings.Any())
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Bookings of elderly not found.");
                 }
 
+                // 4. Get active user subscription
                 var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
-
                 if (userSubscription?.Booking == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
                 }
 
-                userSubscription.NumberOfMeetingLeft = userSubscription.NumberOfMeetingLeft - 1;
-
-                var updateUserSubscriptionRs = await _unitOfWork.UserServiceRepository.UpdateAsync(userSubscription);
-
-                if (updateUserSubscriptionRs < 1)
-                {
-                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
-                }
-
+                // 5. Validate professor
                 var professor = _unitOfWork.ProfessorRepository
-                    .FindByCondition(p => p.ProfessorId == userSubscription.Professor.ProfessorId).FirstOrDefault();
-
+                    .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
+                    .FirstOrDefault();
                 if (professor == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
                 }
 
-                var timeslot = await _unitOfWork.TimeSlotRepository.GetByTimeSlotIdAsync(req.TimeSlotId);
-
-                if (timeslot == null) 
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Time slot doesn't exist!");
-                }
-
-                var professorSchedule = timeslot.ProfessorSchedule;
-
-                // Parse the date from req.Day
-                DateTime appointmentDate;
-                if (!DateTime.TryParse(req.Day, out appointmentDate))
+                // 6. Parse and validate appointment date/time
+                if (!DateTime.TryParse(req.Day, out DateTime appointmentDate))
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid date format!");
                 }
 
-                // Check if date is before schedule start
-                if (appointmentDate < professorSchedule.StartDate)
+                if (!TimeOnly.TryParse(req.StartTime, out TimeOnly startTime) ||
+                    !TimeOnly.TryParse(req.EndTime, out TimeOnly endTime))
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Date is before schedule start!");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid time format!");
                 }
 
-                // Check if day of week matches
-                if (appointmentDate.DayOfWeek.ToString().ToLower() != professorSchedule.DayOfWeek.ToString().ToLower())
+                // 7. Check if time slot is available (no overlapping appointments)
+                var existingAppointments = await _unitOfWork.ProfessorAppointmentRepository
+                    .GetByProfessorAndDateAsync((int)userSubscription.ProfessorId, appointmentDate.Date);
+
+                bool isSlotAvailable = !existingAppointments.Any(a =>
+                    (a.StartTime < endTime && a.EndTime > startTime));
+
+                if (!isSlotAvailable)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Day doesn't match professor's schedule!");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Time slot is already booked!");
                 }
 
+                // 8. Decrement meeting count
+                userSubscription.NumberOfMeetingLeft--;
+                var updateUserSubscriptionRs = await _unitOfWork.UserServiceRepository.UpdateAsync(userSubscription);
+                if (updateUserSubscriptionRs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                // 9. Create new appointment
                 var professorAppointment = new ProfessorAppointment
                 {
                     ElderlyId = elderly.ElderlyId,
-                    TimeSlotId = timeslot.TimeSlotId,
                     UserSubscriptionId = userSubscription.UserSubscriptionId,
-                    AppointmentTime = (DateTime)(appointmentDate.Date + timeslot.StartTime?.ToTimeSpan()),
-                    StartTime = timeslot.StartTime,
-                    EndTime = timeslot.EndTime,
-                    Description = req.Description == null ? "Nothing" : req.Description,
+                    AppointmentTime = appointmentDate.Date.Add(startTime.ToTimeSpan()),
+                    StartTime = startTime,
+                    EndTime = endTime,
+                    Description = req.Description ?? "Nothing",
                     CreatedDate = DateTime.UtcNow.AddHours(7),
                     Status = SD.ProfessorAppointmentStatus.NOTYET,
-                    IsOnline = true
+                    IsOnline = true,
+                    Content = null,
+                    Solution = null
                 };
 
                 var createRs = await _unitOfWork.ProfessorAppointmentRepository.CreateAsync(professorAppointment);
-
                 if (createRs < 1)
                 {
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
                 }
 
                 return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
-
             }
             catch (Exception ex)
             {
