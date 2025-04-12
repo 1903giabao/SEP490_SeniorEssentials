@@ -37,23 +37,17 @@ namespace SE.Data.Repository
             if (type == "All")
             {
                 return await _context.ProfessorAppointments
+                    .Include(p=>p.UserSubscription)
                 .Where(pa => pa.ElderlyId == elderlyId)
                 .ToListAsync();
             }
             return await _context.ProfessorAppointments
+                                    .Include(p => p.UserSubscription)
+
                 .Where(pa => pa.ElderlyId == elderlyId && pa.Status.ToLower() == type.ToLower())
                 .ToListAsync();
         }
-        public async Task<List<ProfessorAppointment>> GetByDateAsync(DateOnly date)
-        {
-            var startOfDay = date.ToDateTime(TimeOnly.MinValue);
-            var endOfDay = date.ToDateTime(TimeOnly.MaxValue);
 
-            return await _context.ProfessorAppointments
-                .Where(a => a.AppointmentTime >= startOfDay && a.AppointmentTime <= endOfDay)
-                .ToListAsync();
-        }
-        // In ProfessorAppointmentRepository
         public async Task<List<ProfessorAppointment>> GetByProfessorIdAsync(int professorId)
         {
             var query = _context.ProfessorAppointments
@@ -107,6 +101,16 @@ namespace SE.Data.Repository
                            a.UserSubscription.ProfessorId == professorId &&
                            a.AppointmentTime.Date == date.Date)
                 .ToListAsync();
+        }
+
+        public async Task<ProfessorAppointment> GetUserSubcriptionByAppointmentAsync(int appointmentId)
+        {
+            return await _context.ProfessorAppointments
+                .Include(a => a.UserSubscription)
+                .ThenInclude(us => us.Booking)
+                .ThenInclude(b => b.Subscription)
+                .Where(a => a.ProfessorAppointmentId == appointmentId)
+                .FirstOrDefaultAsync();
         }
     }
 }

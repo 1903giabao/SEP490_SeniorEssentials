@@ -38,5 +38,13 @@ namespace SE.Data.Repository
 
             return 0;
         }
+        public async Task<List<ActivitySchedule>> GetByElderlyIdAsync(int elderlyId)
+        {
+            return await _context.ActivitySchedules
+                .Include(s => s.Activity)
+                .Where(s => s.Activity.ElderlyId == elderlyId &&
+                           s.Status == "Active")
+                .ToListAsync();
+        }
     }
 }

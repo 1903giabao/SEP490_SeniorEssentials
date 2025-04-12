@@ -121,8 +121,15 @@ namespace SE.Service.Services
 
                 }
 
-                else if (FunctionCommon.IsValidPhoneNumber(account)) 
-                {
+                else if (FunctionCommon.IsValidPhoneNumber(account))
+                { 
+                    var existedPhone = _unitOfWork.AccountRepository.FindByCondition(a => a.PhoneNumber == account).FirstOrDefault();
+
+                    if (existedPhone != null)
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Số điện thoại đã tồn tại trong hệ thống!");
+
+                    }
                     var sendPhoneOTP = await _smsService.SendOTPSmsAsync(account, otp.ToString());
                     if (sendPhoneOTP == null)
                     {
@@ -210,6 +217,8 @@ namespace SE.Service.Services
                 {
                         return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Email is registered but not verified!");
                 }
+                
+
                 if (req.Avatar == null) {
                     user.Avatar = "https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png";
                 }
@@ -240,8 +249,6 @@ namespace SE.Service.Services
                     {
                         AccountId = user.AccountId,
                         MedicalRecord = medicalRecordsPassage,
-                        Weight = Decimal.Parse(req.Weight),
-                        Height = Decimal.Parse(req.Height),
                         Status = SD.GeneralStatus.ACTIVE,
                     };
                     var rsE = await _unitOfWork.ElderlyRepository.CreateAsync(newElderly);
@@ -306,15 +313,16 @@ namespace SE.Service.Services
                 var user = _unitOfWork.AccountRepository
                                             .FindByCondition(u => u.Email == email || u.PhoneNumber == email )
                                             .FirstOrDefault();
+                if (user == null || !SecurityUtil.Hash(password).Equals(user.Password))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Wrong email or password!");
+                }
                 var hash = SecurityUtil.Hash(password);
                 if (user.Status.Equals(SD.GeneralStatus.INACTIVE))
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Your account has been banned!");
                 }
-                if (user == null || !SecurityUtil.Hash(password).Equals(user.Password))
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Wrong email or password!");
-                }
+                
 
                 if (user.IsVerified == false)
                 {

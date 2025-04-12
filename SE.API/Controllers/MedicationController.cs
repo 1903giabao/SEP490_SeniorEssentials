@@ -45,6 +45,13 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("prescription/history/{accountId}")]
+        public async Task<IActionResult> GetUsedPrescriptionsOfElderly([FromRoute] int accountId)
+        {
+            var result = await _medicationService.GetUsedPrescriptionsOfElderly(accountId);
+            return Ok(result);
+        }
+
         [HttpPut("prescription/{prescriptionId}")]
         public async Task<IActionResult> UpdateMediInPrescription(int prescriptionId, UpdateMedicationInPrescriptionRequest req)
         {
