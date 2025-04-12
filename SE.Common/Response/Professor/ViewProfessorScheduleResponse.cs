@@ -15,7 +15,6 @@ namespace SE.Common.Response.Professor
     }
     public class TimeEachSlot
     {
-        public int TimeSlotId { get; set; }
         public string StartTime { get; set; }
         public string EndTime { get; set; }
 

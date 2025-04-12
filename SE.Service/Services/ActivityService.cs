@@ -78,7 +78,7 @@ namespace SE.Service.Services
                     .Select(pa => new GetScheduleInDayResponse
                     {
                         Title = "Tư vấn với bác sĩ",
-                        Description = "Bác sĩ " + pa.TimeSlot.ProfessorSchedule.Professor.Account.FullName,
+                        Description = "Bác sĩ " + pa.UserSubscription.Professor.Account.FullName,
                         StartTime = pa.StartTime?.ToString("HH:mm"),
                         EndTime = pa.EndTime?.ToString("HH:mm"),
                         Type = "Professor Appointment"

@@ -22,11 +22,9 @@ namespace SE.Data.Repository
             var dateTime = date.ToDateTime(TimeOnly.MinValue);
 
             var result = await _context.ProfessorAppointments
-                .Include(pa => pa.TimeSlot)
-                    .ThenInclude(ts => ts.ProfessorSchedule)
-                        .ThenInclude(ps => ps.Professor)
-                            .ThenInclude(p => p.Account)
-                .Include(pa => pa.Elderly)
+                .Include(pa=>pa.UserSubscription)
+                .ThenInclude(u=>u.Professor)
+                .ThenInclude(p=>p.Account)
                 .Where(pa => pa.ElderlyId == elderlyId && pa.AppointmentTime.Date == dateTime)
                 .ToListAsync();
 
@@ -39,14 +37,10 @@ namespace SE.Data.Repository
             if (type == "All")
             {
                 return await _context.ProfessorAppointments
-                .Include(pa => pa.TimeSlot)
-                .ThenInclude(ts => ts.ProfessorSchedule)
                 .Where(pa => pa.ElderlyId == elderlyId)
                 .ToListAsync();
             }
             return await _context.ProfessorAppointments
-                .Include(pa => pa.TimeSlot)
-                .ThenInclude(ts => ts.ProfessorSchedule)
                 .Where(pa => pa.ElderlyId == elderlyId && pa.Status.ToLower() == type.ToLower())
                 .ToListAsync();
         }
@@ -63,14 +57,56 @@ namespace SE.Data.Repository
         public async Task<List<ProfessorAppointment>> GetByProfessorIdAsync(int professorId)
         {
             var query = _context.ProfessorAppointments
-                .Include(pa => pa.TimeSlot)
-                .ThenInclude(ts => ts.ProfessorSchedule)
+                .Include(pa=>pa.UserSubscription)
                 .Include(pa => pa.Elderly)
+
                 .ThenInclude(e => e.Account)
-                .Where(pa => pa.TimeSlot.ProfessorSchedule.ProfessorId == professorId)
+                .Where(pa => pa.UserSubscription.ProfessorId == professorId)
                 ;
 
             return await query.ToListAsync();
+        }
+
+        public async Task<List<ProfessorAppointment>> GetAppointmentsByProfessorAndDateAsync(int professorId, DateTime date)
+        {
+            return await _context.ProfessorAppointments
+                .Include(a => a.UserSubscription)
+                .Where(a => a.UserSubscription != null &&
+                           a.UserSubscription.ProfessorId == professorId &&
+                           a.AppointmentTime.Date == date.Date
+                           && a.Status != "Cancelled")
+                .ToListAsync(); 
+        }
+
+        public async Task<List<ProfessorAppointment>> GetAppointmentsByProfessorInDateRangeAsync(int professorId, DateTime startDate, DateTime endDate)
+        {
+            return await _context.ProfessorAppointments
+                .Include(a => a.UserSubscription)
+                .Where(a => a.UserSubscription != null &&
+                           a.UserSubscription.ProfessorId == professorId &&
+                           a.AppointmentTime >= startDate &&
+                           a.AppointmentTime < endDate)
+                .ToListAsync();
+        }
+        public async Task<List<ProfessorAppointment>> GetByProfessorAndDateRangeAsync(int professorId, DateTime startDate, DateTime endDate)
+        {
+            return await _context.ProfessorAppointments
+                .Include(a => a.UserSubscription)
+                .Where(a => a.UserSubscription != null &&
+                           a.UserSubscription.ProfessorId == professorId &&
+                           a.AppointmentTime >= startDate &&
+                           a.AppointmentTime <= endDate)
+                .ToListAsync();
+        }
+
+        public async Task<List<ProfessorAppointment>> GetByProfessorAndDateAsync(int professorId, DateTime date)
+        {
+            return await _context.ProfessorAppointments
+                .Include(a => a.UserSubscription)
+                .Where(a => a.UserSubscription != null &&
+                           a.UserSubscription.ProfessorId == professorId &&
+                           a.AppointmentTime.Date == date.Date)
+                .ToListAsync();
         }
     }
 }

@@ -38,13 +38,6 @@ namespace SE.API.Controllers
             return Ok(result);
         }        
         
-/*        [HttpPost]
-        public async Task<IActionResult> CreateSchedule([FromBody] ProfessorScheduleRequest req)
-        {
-            var result = await _professorScheduleService.CreateSchedule(req);
-            return Ok(result);
-        }*/
-
         [HttpPost("feedback")]
         public async Task<IActionResult> GiveProfessorFeedbackByAccount([FromBody] GiveProfessorFeedbackByAccountVM req)
         {
@@ -58,12 +51,6 @@ namespace SE.API.Controllers
             return Ok(result);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> UpdateSchedule([FromBody] ProfessorScheduleRequest req)
-        {
-            var result = await _professorScheduleService.UpdateSchedule(req);
-            return Ok(result);
-        }
         [HttpGet]
         public async Task<IActionResult> GetAllProfessor()
         {
@@ -84,7 +71,7 @@ namespace SE.API.Controllers
         }
 
         [HttpGet("time-slot")]
-        public async Task<IActionResult> GetTimeSlot(int professorId, DateOnly date)
+        public async Task<IActionResult> GetTimeSlot(int professorId, DateTime date)
         {
             var result = await _professorScheduleService.GetTimeSlot(professorId, date);
             return Ok(result);
