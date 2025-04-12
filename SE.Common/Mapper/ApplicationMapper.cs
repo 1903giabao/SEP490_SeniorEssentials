@@ -9,6 +9,7 @@ using SE.Common.Request.HealthIndicator;
 using SE.Common.Request.Report;
 using SE.Common.Request.SE.Common.Request;
 using SE.Common.Response.Professor;
+using SE.Common.Response.Profile;
 using SE.Common.Response.Report;
 using SE.Data.Models;
 using System;
@@ -28,13 +29,19 @@ namespace SE.Common.Mapper
                 return new List<string>();
             }
 
-            return input.Split(new[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries)
+            return input.Split(new[] { "\n", "\r\n", "."}, StringSplitOptions.RemoveEmptyEntries)
                         .Select(s => s.Trim())
                         .ToList();
         }
         public ApplicationMapper() 
         {
             CreateMap<UserModel, Account>().ReverseMap();
+
+            CreateMap<GetDetailProfile, Account>().ReverseMap();
+            CreateMap<Elderly, GetElderlyProfile>()
+                        .ForMember(dest => dest.MedicalRecord, opt => opt.MapFrom(src => SplitStringToList(src.MedicalRecord)))
+                        .ReverseMap();
+
             CreateMap<UserInUserLinkDTO, Account>()
                 .ReverseMap();
             CreateMap<GetUserInRoomChatDetailDTO, Account>().ReverseMap();

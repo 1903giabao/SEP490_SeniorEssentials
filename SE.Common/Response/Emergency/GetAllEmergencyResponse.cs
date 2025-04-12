@@ -17,6 +17,7 @@ namespace SE.Common.Response.Emergency
         public DateTime? EmergencyDateTime { get; set; }
         public string? ConfirmationDate { get; set; }
         public bool? IsConfirmed { get; set; }
+        public string? Status { get; set; }
         public List<GetAllEmergencyInformation>? EmergencyInformations { get; set; }
         public List<GetAllEmergencyContact> EmergencyContacts { get; set; }
     }

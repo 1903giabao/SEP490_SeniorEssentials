@@ -58,6 +58,13 @@ namespace SE.Common.Enums
             public static string PENDING = "Pending";
             public static string CANCELLED = "Cancelled";
             public static string PAID = "Paid";
+        }        
+        
+        public class EmergencyStatus
+        {
+            public static string CONFIRMED = "Đã xác nhận";
+            public static string CANCELLED = "Đã hủy";
+            public static string PENDING = "Chưa xác nhận";
         }
     }
 }
