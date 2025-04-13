@@ -67,14 +67,13 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist");
                 }
 
-                var avatar = ("", "");
-
                 if (req.Avatar != null)
                 {
+                    var avatar = ("", "");
                     avatar = await CloudinaryHelper.UploadImageAsync(req.Avatar);
+                    account.Avatar = avatar.Item2;
                 }
 
-                account.Avatar = avatar.Item2;
                 account.FullName = req.FullName;
                 account.Gender = req.Gender;
                 account.DateOfBirth = req.Dob;

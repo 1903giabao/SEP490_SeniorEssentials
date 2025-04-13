@@ -17,12 +17,14 @@ using SE.Common.Response.HealthIndicator;
 using Microsoft.Identity.Client;
 using System.Text.RegularExpressions;
 using CloudinaryDotNet;
+using SE.Common.Request.Group;
 
 namespace SE.Service.Services
 {
     public interface IGroupService
     {
         Task<IBusinessResult> GetAllElderlyByFamilyMemberId(int accountId);
+        Task<IBusinessResult> ChangeGroupName(ChangeGroupNameRequest req);
         Task<IBusinessResult> CreateGroup(CreateGroupRequest request);
         Task<IBusinessResult> GetGroupsByAccountId(int accountId);
         Task<IBusinessResult> RemoveMemberFromGroup(int kickerId, int groupId, int accountId);
@@ -166,6 +168,39 @@ namespace SE.Service.Services
                 }
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> ChangeGroupName(ChangeGroupNameRequest req)
+        {
+            try
+            {
+                if (req.GroupId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid group ID.");
+                }
+
+                var group = _unitOfWork.GroupRepository.FindByCondition(a => a.GroupId == req.GroupId && a.Status.Equals(SD.GeneralStatus.ACTIVE)).FirstOrDefault();
+
+                if (group == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group does not existed");
+                }
+
+                group.GroupName = req.GroupName;
+
+                var result = await _unitOfWork.GroupRepository.UpdateAsync(group);
+
+                if (result < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
             }
             catch (Exception ex)
             {
