@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SE.Common.DTO;
 using SE.Common.Request;
+using SE.Common.Request.Group;
 using SE.Common.Request.SE.Common.Request;
 using SE.Service.Services;
 using System.Threading.Tasks;
@@ -16,6 +17,13 @@ namespace SE.API.Controllers
         public GroupController(IGroupService groupService)
         {
             _groupService = groupService;
+        }
+
+        [HttpPut("group/name")]
+        public async Task<IActionResult> ChangeGroupName([FromBody] ChangeGroupNameRequest req)
+        {
+            var result = await _groupService.ChangeGroupName(req);
+            return Ok(result);
         }
 
         [HttpGet("elderly/{accountId}")]

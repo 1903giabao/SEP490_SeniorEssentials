@@ -11,7 +11,7 @@ namespace SE.Common.Request.Account
     {
         public int AccountId { get; set; }
         public string FullName { get; set; }
-        public IFormFile Avatar {  get; set; }
+        public IFormFile? Avatar {  get; set; }
         public string Gender { get; set; }
         public DateTime Dob {  get; set; }
     }
