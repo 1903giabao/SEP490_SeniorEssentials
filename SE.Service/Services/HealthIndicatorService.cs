@@ -367,41 +367,45 @@ namespace SE.Service.Services
 
                     foreach (var member in listFamilyMember)
                     {
-                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
-                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        if (request.ElderlyId != 0 && member != getFamily.AccountId)
                         {
-                            // Send notification
-                            await _notificationService.SendNotification(
-                                familyMember.DeviceToken,
-                                "Cảnh báo sức khỏe",
-                                $"Người thân của bạn {getElderly.FullName} có mức oxy trong máu cao hơn bình thường.");
-
-                            // Create notification record
-                            var response = new LogBookReponse
+                            var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                            if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                             {
-                                Tabs = "BloodOxygen",
-                                Id = bloodOxygenEntity.BloodOxygenId,
-                                DataType = "IOT",
-                                DateTime = bloodOxygenEntity.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                                TimeRecorded = bloodOxygenEntity.DateRecorded?.ToString("HH:mm"),
-                                DateRecorded = bloodOxygenEntity.DateRecorded?.ToString("dd-MM-yyyy"),
-                                Indicator = $"{bloodOxygenEntity.BloodOxygen1}",
-                                Evaluation = GetBloodOxygenEvaluation((double)bloodOxygenEntity.BloodOxygen1)
-                            };
+                                // Send notification
+                                await _notificationService.SendNotification(
+                                    familyMember.DeviceToken,
+                                    "Cảnh báo sức khỏe",
+                                    $"Người thân của bạn {getElderly.FullName} có mức oxy trong máu cao hơn bình thường.");
 
-                            var newNotification = new Notification
-                            {
-                                NotificationType = "Cảnh báo sức khỏe",
-                                AccountId = familyMember.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Cảnh báo sức khỏe",
-                                Message = $"Người thân của bạn {getElderly.FullName} có mức oxy trong máu cao hơn bình thường.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                Data = JsonSerializer.Serialize(response)
-                            };
+                                // Create notification record
+                                var response = new LogBookReponse
+                                {
+                                    Tabs = "BloodOxygen",
+                                    Id = bloodOxygenEntity.BloodOxygenId,
+                                    DataType = "IOT",
+                                    DateTime = bloodOxygenEntity.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                    TimeRecorded = bloodOxygenEntity.DateRecorded?.ToString("HH:mm"),
+                                    DateRecorded = bloodOxygenEntity.DateRecorded?.ToString("dd-MM-yyyy"),
+                                    Indicator = $"{bloodOxygenEntity.BloodOxygen1}",
+                                    Evaluation = GetBloodOxygenEvaluation((double)bloodOxygenEntity.BloodOxygen1)
+                                };
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
-                        }
+                                var newNotification = new Notification
+                                {
+                                    NotificationType = "Cảnh báo sức khỏe",
+                                    AccountId = familyMember.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Cảnh báo sức khỏe",
+                                    Message = $"Người thân của bạn {getElderly.FullName} có mức oxy trong máu cao hơn bình thường.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                    Data = JsonSerializer.Serialize(response)
+                                };
+
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
+                            }
+                        
                     }
                 }
                 else if (check.Data == "Thấp")
@@ -410,7 +414,9 @@ namespace SE.Service.Services
 
                     foreach (var member in listFamilyMember)
                     {
-                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                        if (request.ElderlyId != 0 && member != getFamily.AccountId)
+                        {
+                            var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
                         if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                         {
                             // Send notification
@@ -444,7 +450,7 @@ namespace SE.Service.Services
                             };
 
                             await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
-                        }
+                        }}
                     }
 
                 }
@@ -552,40 +558,43 @@ namespace SE.Service.Services
 
                     foreach (var member in listFamilyMember)
                     {
-                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
-                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        if (request.ElderlyId != 0 && member != getFamily.AccountId)
                         {
-                            // Send notification
-                            await _notificationService.SendNotification(
-                                familyMember.DeviceToken,
-                                "Cảnh báo sức khỏe",
-                                $"Người thân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.");
-
-                            // Create notification record
-                            var response = new LogBookReponse
+                            var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                            if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                             {
-                                Tabs = "BloodPressure",
-                                Id = bloodPressure.BloodPressureId,
-                                DataType = bloodPressure.SystolicSource,
-                                DateTime = bloodPressure.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                                TimeRecorded = bloodPressure.DateRecorded?.ToString("HH:mm"),
-                                DateRecorded = bloodPressure.DateRecorded?.ToString("dd-MM-yyyy"),
-                                Indicator = $"{bloodPressure.Systolic}/{bloodPressure.Diastolic}",
-                                Evaluation = GetBloodPressureEvaluation((double)bloodPressure.Systolic, (double)bloodPressure.Diastolic)
-                            };
+                                // Send notification
+                                await _notificationService.SendNotification(
+                                    familyMember.DeviceToken,
+                                    "Cảnh báo sức khỏe",
+                                    $"Người thân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.");
 
-                            var newNotification = new Notification
-                            {
-                                NotificationType = "Cảnh báo sức khỏe",
-                                AccountId = familyMember.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Cảnh báo sức khỏe",
-                                Message = $"Người thân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                Data = JsonSerializer.Serialize(response)
-                            };
+                                // Create notification record
+                                var response = new LogBookReponse
+                                {
+                                    Tabs = "BloodPressure",
+                                    Id = bloodPressure.BloodPressureId,
+                                    DataType = bloodPressure.SystolicSource,
+                                    DateTime = bloodPressure.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                    TimeRecorded = bloodPressure.DateRecorded?.ToString("HH:mm"),
+                                    DateRecorded = bloodPressure.DateRecorded?.ToString("dd-MM-yyyy"),
+                                    Indicator = $"{bloodPressure.Systolic}/{bloodPressure.Diastolic}",
+                                    Evaluation = GetBloodPressureEvaluation((double)bloodPressure.Systolic, (double)bloodPressure.Diastolic)
+                                };
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                var newNotification = new Notification
+                                {
+                                    NotificationType = "Cảnh báo sức khỏe",
+                                    AccountId = familyMember.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Cảnh báo sức khỏe",
+                                    Message = $"Người thân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                    Data = JsonSerializer.Serialize(response)
+                                };
+
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
                         }
                     }
                 }
@@ -595,43 +604,45 @@ namespace SE.Service.Services
 
                     foreach (var member in listFamilyMember)
                     {
-                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
-                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        if (request.ElderlyId != 0 && member != getFamily.AccountId)
                         {
-                            // Send notification
-                            await _notificationService.SendNotification(
-                                familyMember.DeviceToken,
-                                "Cảnh báo sức khỏe",
-                                $"Người thân của bạn {getElderly.FullName} có huyết áp thấp hơn bình thường.");
-
-                            // Create notification record
-                            var response = new LogBookReponse
+                            var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                            if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                             {
-                                Tabs = "BloodPressure",
-                                Id = bloodPressure.BloodPressureId,
-                                DataType = bloodPressure.SystolicSource,
-                                DateTime = bloodPressure.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                                TimeRecorded = bloodPressure.DateRecorded?.ToString("HH:mm"),
-                                DateRecorded = bloodPressure.DateRecorded?.ToString("dd-MM-yyyy"),
-                                Indicator = $"{bloodPressure.Systolic}/{bloodPressure.Diastolic}",
-                                Evaluation = GetBloodPressureEvaluation((double)bloodPressure.Systolic, (double)bloodPressure.Diastolic)
-                            };
+                                // Send notification
+                                await _notificationService.SendNotification(
+                                    familyMember.DeviceToken,
+                                    "Cảnh báo sức khỏe",
+                                    $"Người thân của bạn {getElderly.FullName} có huyết áp thấp hơn bình thường.");
 
-                            var newNotification = new Notification
-                            {
-                                NotificationType = "Cảnh báo sức khỏe",
-                                AccountId = familyMember.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Cảnh báo sức khỏe",
-                                Message = $"Người thân của bạn {getElderly.FullName} có huyết áp thấp hơn bình thường.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                Data = JsonSerializer.Serialize(response)
-                            };
+                                // Create notification record
+                                var response = new LogBookReponse
+                                {
+                                    Tabs = "BloodPressure",
+                                    Id = bloodPressure.BloodPressureId,
+                                    DataType = bloodPressure.SystolicSource,
+                                    DateTime = bloodPressure.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                    TimeRecorded = bloodPressure.DateRecorded?.ToString("HH:mm"),
+                                    DateRecorded = bloodPressure.DateRecorded?.ToString("dd-MM-yyyy"),
+                                    Indicator = $"{bloodPressure.Systolic}/{bloodPressure.Diastolic}",
+                                    Evaluation = GetBloodPressureEvaluation((double)bloodPressure.Systolic, (double)bloodPressure.Diastolic)
+                                };
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                var newNotification = new Notification
+                                {
+                                    NotificationType = "Cảnh báo sức khỏe",
+                                    AccountId = familyMember.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Cảnh báo sức khỏe",
+                                    Message = $"Người thân của bạn {getElderly.FullName} có huyết áp thấp hơn bình thường.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                    Data = JsonSerializer.Serialize(response)
+                                };
+
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
                         }
                     }
-
                 }
 
                 return new BusinessResult(Const.SUCCESS_CREATE, "Blood Pressure created successfully.");
@@ -686,40 +697,43 @@ namespace SE.Service.Services
 
                     foreach (var member in listFamilyMember)
                     {
-                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
-                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        if (request.ElderlyId != 0 && member != getFamily.AccountId)
                         {
-                            // Send notification
-                            await _notificationService.SendNotification(
-                                familyMember.DeviceToken,
-                                "Cảnh báo sức khỏe",
-                                $"Người thân của bạn {getElderly.FullName} có nhịp tim nhanh hơn bình thường.");
-
-                            // Create notification record
-                            var response = new LogBookReponse
+                            var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                            if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                             {
-                                Tabs = "HeartRate",
-                                Id = heartRate.HeartRateId,
-                                DataType = heartRate.HeartRateSource,
-                                DateTime = heartRate.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                                TimeRecorded = heartRate.DateRecorded?.ToString("HH:mm"),
-                                DateRecorded = heartRate.DateRecorded?.ToString("dd-MM-yyyy"),
-                                Indicator = $"{heartRate.HeartRate1}",
-                                Evaluation = GetHeartRateEvaluation((double)heartRate.HeartRate1)
-                            };
+                                // Send notification
+                                await _notificationService.SendNotification(
+                                    familyMember.DeviceToken,
+                                    "Cảnh báo sức khỏe",
+                                    $"Người thân của bạn {getElderly.FullName} có nhịp tim nhanh hơn bình thường.");
 
-                            var newNotification = new Notification
-                            {
-                                NotificationType = "Cảnh báo sức khỏe",
-                                AccountId = familyMember.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Cảnh báo sức khỏe",
-                                Message = $"Người thân của bạn {getElderly.FullName} có nhịp tim nhanh hơn bình thường.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                Data = JsonSerializer.Serialize(response)
-                            };
+                                // Create notification record
+                                var response = new LogBookReponse
+                                {
+                                    Tabs = "HeartRate",
+                                    Id = heartRate.HeartRateId,
+                                    DataType = heartRate.HeartRateSource,
+                                    DateTime = heartRate.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                    TimeRecorded = heartRate.DateRecorded?.ToString("HH:mm"),
+                                    DateRecorded = heartRate.DateRecorded?.ToString("dd-MM-yyyy"),
+                                    Indicator = $"{heartRate.HeartRate1}",
+                                    Evaluation = GetHeartRateEvaluation((double)heartRate.HeartRate1)
+                                };
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                var newNotification = new Notification
+                                {
+                                    NotificationType = "Cảnh báo sức khỏe",
+                                    AccountId = familyMember.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Cảnh báo sức khỏe",
+                                    Message = $"Người thân của bạn {getElderly.FullName} có nhịp tim nhanh hơn bình thường.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                    Data = JsonSerializer.Serialize(response)
+                                };
+
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
                         }
                     }
                 }
@@ -729,40 +743,43 @@ namespace SE.Service.Services
 
                     foreach (var member in listFamilyMember)
                     {
-                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
-                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        if (request.ElderlyId != 0 && member != getFamily.AccountId)
                         {
-                            // Send notification
-                            await _notificationService.SendNotification(
-                                familyMember.DeviceToken,
-                                "Cảnh báo sức khỏe",
-                                $"Người thân của bạn {getElderly.FullName} có nhịp tim chậm hơn bình thường.");
-
-                            // Create notification record
-                            var response = new LogBookReponse
+                            var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                            if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                             {
-                                Tabs = "HeartRate",
-                                Id = heartRate.HeartRateId,
-                                DataType = heartRate.HeartRateSource,
-                                DateTime = heartRate.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                                TimeRecorded = heartRate.DateRecorded?.ToString("HH:mm"),
-                                DateRecorded = heartRate.DateRecorded?.ToString("dd-MM-yyyy"),
-                                Indicator = $"{heartRate.HeartRate1}",
-                                Evaluation = GetHeartRateEvaluation((double)heartRate.HeartRate1)
-                            };
+                                // Send notification
+                                await _notificationService.SendNotification(
+                                    familyMember.DeviceToken,
+                                    "Cảnh báo sức khỏe",
+                                    $"Người thân của bạn {getElderly.FullName} có nhịp tim chậm hơn bình thường.");
 
-                            var newNotification = new Notification
-                            {
-                                NotificationType = "Cảnh báo sức khỏe",
-                                AccountId = familyMember.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Cảnh báo sức khỏe",
-                                Message = $"Người thân của bạn {getElderly.FullName} nhịp tim chậm hơn bình thường.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                Data = JsonSerializer.Serialize(response)
-                            };
+                                // Create notification record
+                                var response = new LogBookReponse
+                                {
+                                    Tabs = "HeartRate",
+                                    Id = heartRate.HeartRateId,
+                                    DataType = heartRate.HeartRateSource,
+                                    DateTime = heartRate.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                    TimeRecorded = heartRate.DateRecorded?.ToString("HH:mm"),
+                                    DateRecorded = heartRate.DateRecorded?.ToString("dd-MM-yyyy"),
+                                    Indicator = $"{heartRate.HeartRate1}",
+                                    Evaluation = GetHeartRateEvaluation((double)heartRate.HeartRate1)
+                                };
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                var newNotification = new Notification
+                                {
+                                    NotificationType = "Cảnh báo sức khỏe",
+                                    AccountId = familyMember.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Cảnh báo sức khỏe",
+                                    Message = $"Người thân của bạn {getElderly.FullName} nhịp tim chậm hơn bình thường.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                    Data = JsonSerializer.Serialize(response)
+                                };
+
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
                         }
                     }
 
@@ -816,40 +833,43 @@ namespace SE.Service.Services
 
                     foreach (var member in listFamilyMember)
                     {
-                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
-                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        if (request.ElderlyId != 0 && member != getFamily.AccountId)
                         {
-                            // Send notification
-                            await _notificationService.SendNotification(
-                                familyMember.DeviceToken,
-                                "Cảnh báo sức khỏe",
-                                $"Người thân của bạn {getElderly.FullName} có đường máu cao hơn bình thường.");
-
-                            // Create notification record
-                            var response = new LogBookReponse
+                            var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                            if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                             {
-                                Tabs = "BloodGlucose",
-                                Id = bloodGlucose.BloodGlucoseId,
-                                DataType = bloodGlucose.BloodGlucoseSource,
-                                DateTime = bloodGlucose.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                                TimeRecorded = bloodGlucose.DateRecorded?.ToString("HH:mm"),
-                                DateRecorded = bloodGlucose.DateRecorded?.ToString("dd-MM-yyyy"),
-                                Indicator = $"{bloodGlucose.BloodGlucose1}/{bloodGlucose.Time}",
-                                Evaluation = (string)EvaluateBloodGlusose((int)bloodGlucose.BloodGlucose1, bloodGlucose.Time).Result.Data
-                            };
+                                // Send notification
+                                await _notificationService.SendNotification(
+                                    familyMember.DeviceToken,
+                                    "Cảnh báo sức khỏe",
+                                    $"Người thân của bạn {getElderly.FullName} có đường máu cao hơn bình thường.");
 
-                            var newNotification = new Notification
-                            {
-                                NotificationType = "Cảnh báo sức khỏe",
-                                AccountId = familyMember.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Cảnh báo sức khỏe",
-                                Message = $"Người thân của bạn {getElderly.FullName} có đường máu cao hơn bình thường.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                Data = JsonSerializer.Serialize(response)
-                            };
+                                // Create notification record
+                                var response = new LogBookReponse
+                                {
+                                    Tabs = "BloodGlucose",
+                                    Id = bloodGlucose.BloodGlucoseId,
+                                    DataType = bloodGlucose.BloodGlucoseSource,
+                                    DateTime = bloodGlucose.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                    TimeRecorded = bloodGlucose.DateRecorded?.ToString("HH:mm"),
+                                    DateRecorded = bloodGlucose.DateRecorded?.ToString("dd-MM-yyyy"),
+                                    Indicator = $"{bloodGlucose.BloodGlucose1}/{bloodGlucose.Time}",
+                                    Evaluation = (string)EvaluateBloodGlusose((int)bloodGlucose.BloodGlucose1, bloodGlucose.Time).Result.Data
+                                };
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                var newNotification = new Notification
+                                {
+                                    NotificationType = "Cảnh báo sức khỏe",
+                                    AccountId = familyMember.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Cảnh báo sức khỏe",
+                                    Message = $"Người thân của bạn {getElderly.FullName} có đường máu cao hơn bình thường.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                    Data = JsonSerializer.Serialize(response)
+                                };
+
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
                         }
                     }
                 }
@@ -859,40 +879,43 @@ namespace SE.Service.Services
 
                     foreach (var member in listFamilyMember)
                     {
-                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
-                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        if (request.ElderlyId != 0 && member != getFamily.AccountId)
                         {
-                            // Send notification
-                            await _notificationService.SendNotification(
-                                familyMember.DeviceToken,
-                                "Cảnh báo sức khỏe",
-                                $"Người thân của bạn {getElderly.FullName} có đường máu thấp hơn bình thường.");
-
-                            // Create notification record
-                            var response = new LogBookReponse
+                            var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                            if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                             {
-                                Tabs = "BloodGlucose",
-                                Id = bloodGlucose.BloodGlucoseId,
-                                DataType = bloodGlucose.BloodGlucoseSource,
-                                DateTime = bloodGlucose.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                                TimeRecorded = bloodGlucose.DateRecorded?.ToString("HH:mm"),
-                                DateRecorded = bloodGlucose.DateRecorded?.ToString("dd-MM-yyyy"),
-                                Indicator = $"{bloodGlucose.BloodGlucose1}/{bloodGlucose.Time}",
-                                Evaluation = (string)EvaluateBloodGlusose((int)bloodGlucose.BloodGlucose1, bloodGlucose.Time).Result.Data
-                            };
+                                // Send notification
+                                await _notificationService.SendNotification(
+                                    familyMember.DeviceToken,
+                                    "Cảnh báo sức khỏe",
+                                    $"Người thân của bạn {getElderly.FullName} có đường máu thấp hơn bình thường.");
 
-                            var newNotification = new Notification
-                            {
-                                NotificationType = "Cảnh báo sức khỏe",
-                                AccountId = familyMember.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Cảnh báo sức khỏe",
-                                Message = $"Người thân của bạn {getElderly.FullName} có đường máu thấp hơn bình thường.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                Data = JsonSerializer.Serialize(response)
-                            };
+                                // Create notification record
+                                var response = new LogBookReponse
+                                {
+                                    Tabs = "BloodGlucose",
+                                    Id = bloodGlucose.BloodGlucoseId,
+                                    DataType = bloodGlucose.BloodGlucoseSource,
+                                    DateTime = bloodGlucose.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                    TimeRecorded = bloodGlucose.DateRecorded?.ToString("HH:mm"),
+                                    DateRecorded = bloodGlucose.DateRecorded?.ToString("dd-MM-yyyy"),
+                                    Indicator = $"{bloodGlucose.BloodGlucose1}/{bloodGlucose.Time}",
+                                    Evaluation = (string)EvaluateBloodGlusose((int)bloodGlucose.BloodGlucose1, bloodGlucose.Time).Result.Data
+                                };
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                var newNotification = new Notification
+                                {
+                                    NotificationType = "Cảnh báo sức khỏe",
+                                    AccountId = familyMember.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Cảnh báo sức khỏe",
+                                    Message = $"Người thân của bạn {getElderly.FullName} có đường máu thấp hơn bình thường.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                    Data = JsonSerializer.Serialize(response)
+                                };
+
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
                         }
                     }
 
@@ -945,42 +968,45 @@ namespace SE.Service.Services
 
                     foreach (var member in listFamilyMember)
                     {
-                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
-                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        if (request.ElderlyId != 0 && member != getFamily.AccountId)
                         {
-                            // Send notification
-                            await _notificationService.SendNotification(
-                                familyMember.DeviceToken,
-                                "Cảnh báo sức khỏe",
-                                $"Người thân của bạn {getElderly.FullName} có mỡ máu cao hơn bình thường.");
-                            var evaluation = lipidProfile.TotalCholesterol < healthIndicator.MinValue ? "Thấp" :
-                              lipidProfile.TotalCholesterol > healthIndicator.MaxValue ? "Cao" :
-                              "Bình thường";
-                            // Create notification record
-                            var response = new LogBookReponse
+                            var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                            if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                             {
-                                Tabs = "LipidProfile",
-                                Id = lipidProfile.LipidProfileId,
-                                DataType = lipidProfile.LipidProfileSource,
-                                DateTime = lipidProfile.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                                TimeRecorded = lipidProfile.DateRecorded?.ToString("HH:mm"),
-                                DateRecorded = lipidProfile.DateRecorded?.ToString("dd-MM-yyyy"),
-                                Indicator = $"{lipidProfile.TotalCholesterol}/{lipidProfile.Ldlcholesterol}/{lipidProfile.Hdlcholesterol}/{lipidProfile.Triglycerides}",
-                                Evaluation = evaluation
-                            };
+                                // Send notification
+                                await _notificationService.SendNotification(
+                                    familyMember.DeviceToken,
+                                    "Cảnh báo sức khỏe",
+                                    $"Người thân của bạn {getElderly.FullName} có mỡ máu cao hơn bình thường.");
+                                var evaluation = lipidProfile.TotalCholesterol < healthIndicator.MinValue ? "Thấp" :
+                                  lipidProfile.TotalCholesterol > healthIndicator.MaxValue ? "Cao" :
+                                  "Bình thường";
+                                // Create notification record
+                                var response = new LogBookReponse
+                                {
+                                    Tabs = "LipidProfile",
+                                    Id = lipidProfile.LipidProfileId,
+                                    DataType = lipidProfile.LipidProfileSource,
+                                    DateTime = lipidProfile.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                    TimeRecorded = lipidProfile.DateRecorded?.ToString("HH:mm"),
+                                    DateRecorded = lipidProfile.DateRecorded?.ToString("dd-MM-yyyy"),
+                                    Indicator = $"{lipidProfile.TotalCholesterol}/{lipidProfile.Ldlcholesterol}/{lipidProfile.Hdlcholesterol}/{lipidProfile.Triglycerides}",
+                                    Evaluation = evaluation
+                                };
 
-                            var newNotification = new Notification
-                            {
-                                NotificationType = "Cảnh báo sức khỏe",
-                                AccountId = familyMember.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Cảnh báo sức khỏe",
-                                Message = $"Người thân của bạn {getElderly.FullName} có mỡ máu cao hơn bình thường.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                Data = JsonSerializer.Serialize(response)
-                            };
+                                var newNotification = new Notification
+                                {
+                                    NotificationType = "Cảnh báo sức khỏe",
+                                    AccountId = familyMember.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Cảnh báo sức khỏe",
+                                    Message = $"Người thân của bạn {getElderly.FullName} có mỡ máu cao hơn bình thường.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                    Data = JsonSerializer.Serialize(response)
+                                };
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
                         }
                     }
                 }
@@ -990,45 +1016,47 @@ namespace SE.Service.Services
 
                     foreach (var member in listFamilyMember)
                     {
-                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
-                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        if (request.ElderlyId != 0 && member != getFamily.AccountId)
                         {
-                            // Send notification
-                            await _notificationService.SendNotification(
-                                familyMember.DeviceToken,
-                                "Cảnh báo sức khỏe",
-                                $"Người thân của bạn {getElderly.FullName} có mữo máu thấp hơn bình thường.");
-                            var evaluation = lipidProfile.TotalCholesterol < healthIndicator.MinValue ? "Thấp" :
-                              lipidProfile.TotalCholesterol > healthIndicator.MaxValue ? "Cao" :
-                              "Bình thường";
-                            // Create notification record
-                            var response = new LogBookReponse
+                            var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                            if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                             {
-                                Tabs = "LipidProfile",
-                                Id = lipidProfile.LipidProfileId,
-                                DataType = lipidProfile.LipidProfileSource,
-                                DateTime = lipidProfile.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                                TimeRecorded = lipidProfile.DateRecorded?.ToString("HH:mm"),
-                                DateRecorded = lipidProfile.DateRecorded?.ToString("dd-MM-yyyy"),
-                                Indicator = $"{lipidProfile.TotalCholesterol}/{lipidProfile.Ldlcholesterol}/{lipidProfile.Hdlcholesterol}/{lipidProfile.Triglycerides}",
-                                Evaluation = evaluation
-                            };
+                                // Send notification
+                                await _notificationService.SendNotification(
+                                    familyMember.DeviceToken,
+                                    "Cảnh báo sức khỏe",
+                                    $"Người thân của bạn {getElderly.FullName} có mữo máu thấp hơn bình thường.");
+                                var evaluation = lipidProfile.TotalCholesterol < healthIndicator.MinValue ? "Thấp" :
+                                  lipidProfile.TotalCholesterol > healthIndicator.MaxValue ? "Cao" :
+                                  "Bình thường";
+                                // Create notification record
+                                var response = new LogBookReponse
+                                {
+                                    Tabs = "LipidProfile",
+                                    Id = lipidProfile.LipidProfileId,
+                                    DataType = lipidProfile.LipidProfileSource,
+                                    DateTime = lipidProfile.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                    TimeRecorded = lipidProfile.DateRecorded?.ToString("HH:mm"),
+                                    DateRecorded = lipidProfile.DateRecorded?.ToString("dd-MM-yyyy"),
+                                    Indicator = $"{lipidProfile.TotalCholesterol}/{lipidProfile.Ldlcholesterol}/{lipidProfile.Hdlcholesterol}/{lipidProfile.Triglycerides}",
+                                    Evaluation = evaluation
+                                };
 
-                            var newNotification = new Notification
-                            {
-                                NotificationType = "Cảnh báo sức khỏe",
-                                AccountId = familyMember.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Cảnh báo sức khỏe",
-                                Message = $"Người thân của bạn {getElderly.FullName} có mỡ máu thấp hơn bình thường.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                Data = JsonSerializer.Serialize(response)
-                            };
+                                var newNotification = new Notification
+                                {
+                                    NotificationType = "Cảnh báo sức khỏe",
+                                    AccountId = familyMember.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Cảnh báo sức khỏe",
+                                    Message = $"Người thân của bạn {getElderly.FullName} có mỡ máu thấp hơn bình thường.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                    Data = JsonSerializer.Serialize(response)
+                                };
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
                         }
                     }
-
                 }
 
 
@@ -1079,41 +1107,44 @@ namespace SE.Service.Services
 
                     foreach (var member in listFamilyMember)
                     {
-                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
-                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        if (request.ElderlyId != 0 && member != getFamily.AccountId)
                         {
-                            // Send notification
-                            await _notificationService.SendNotification(
-                                familyMember.DeviceToken,
-                                "Cảnh báo sức khỏe",
-                                $"Người thân của bạn {getElderly.FullName} có men gan cao hơn bình thường.");
-                            var evaluation = liverEnzyme.Alt < healthIndicator.MinValue ? "Thấp" :
-                               liverEnzyme.Alt > healthIndicator.MaxValue ? "Cao" :
-                               "Bình thường";
-                            var response = new LogBookReponse
+                            var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                            if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                             {
-                                Tabs = "LiverEnzyme",
-                                Id = liverEnzyme.LiverEnzymesId,
-                                DataType = liverEnzyme.LiverEnzymesSource,
-                                DateTime = liverEnzyme.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                                TimeRecorded = liverEnzyme.DateRecorded?.ToString("HH:mm"),
-                                DateRecorded = liverEnzyme.DateRecorded?.ToString("dd-MM-yyyy"),
-                                Indicator = $"{liverEnzyme.Alt}/{liverEnzyme.Ast}/{liverEnzyme.Alp}/{liverEnzyme.Ggt}",
-                                Evaluation = evaluation
-                            };
+                                // Send notification
+                                await _notificationService.SendNotification(
+                                    familyMember.DeviceToken,
+                                    "Cảnh báo sức khỏe",
+                                    $"Người thân của bạn {getElderly.FullName} có men gan cao hơn bình thường.");
+                                var evaluation = liverEnzyme.Alt < healthIndicator.MinValue ? "Thấp" :
+                                   liverEnzyme.Alt > healthIndicator.MaxValue ? "Cao" :
+                                   "Bình thường";
+                                var response = new LogBookReponse
+                                {
+                                    Tabs = "LiverEnzyme",
+                                    Id = liverEnzyme.LiverEnzymesId,
+                                    DataType = liverEnzyme.LiverEnzymesSource,
+                                    DateTime = liverEnzyme.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                    TimeRecorded = liverEnzyme.DateRecorded?.ToString("HH:mm"),
+                                    DateRecorded = liverEnzyme.DateRecorded?.ToString("dd-MM-yyyy"),
+                                    Indicator = $"{liverEnzyme.Alt}/{liverEnzyme.Ast}/{liverEnzyme.Alp}/{liverEnzyme.Ggt}",
+                                    Evaluation = evaluation
+                                };
 
-                            var newNotification = new Notification
-                            {
-                                NotificationType = "Cảnh báo sức khỏe",
-                                AccountId = familyMember.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Cảnh báo sức khỏe",
-                                Message = $"Người thân của bạn {getElderly.FullName} có men gan cao hơn bình thường.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                Data = JsonSerializer.Serialize(response)
-                            };
+                                var newNotification = new Notification
+                                {
+                                    NotificationType = "Cảnh báo sức khỏe",
+                                    AccountId = familyMember.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Cảnh báo sức khỏe",
+                                    Message = $"Người thân của bạn {getElderly.FullName} có men gan cao hơn bình thường.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                    Data = JsonSerializer.Serialize(response)
+                                };
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
                         }
                     }
                 }
@@ -1123,47 +1154,51 @@ namespace SE.Service.Services
 
                     foreach (var member in listFamilyMember)
                     {
-                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
-                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        if (request.ElderlyId != 0 && member != getFamily.AccountId)
                         {
-                            // Send notification
-                            await _notificationService.SendNotification(
-                                familyMember.DeviceToken,
-                                "Cảnh báo sức khỏe",
-                                $"Người thân của bạn {getElderly.FullName} có men gan thấp hơn bình thường.");
-
-                            // Create notification record
-                            var evaluation = liverEnzyme.Alt < healthIndicator.MinValue ? "Thấp" :
-                                liverEnzyme.Alt > healthIndicator.MaxValue ? "Cao" :
-                                "Bình thường";
-                            var response = new LogBookReponse
+                            var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                            if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                             {
-                                Tabs = "LiverEnzyme",
-                                Id = liverEnzyme.LiverEnzymesId,
-                                DataType = liverEnzyme.LiverEnzymesSource,
-                                DateTime = liverEnzyme.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                                TimeRecorded = liverEnzyme.DateRecorded?.ToString("HH:mm"),
-                                DateRecorded = liverEnzyme.DateRecorded?.ToString("dd-MM-yyyy"),
-                                Indicator = $"{liverEnzyme.Alt}/{liverEnzyme.Ast}/{liverEnzyme.Alp}/{liverEnzyme.Ggt}",
-                                Evaluation = evaluation
-                            };
+                                // Send notification
+                                await _notificationService.SendNotification(
+                                    familyMember.DeviceToken,
+                                    "Cảnh báo sức khỏe",
+                                    $"Người thân của bạn {getElderly.FullName} có men gan thấp hơn bình thường.");
+
+                                // Create notification record
+                                var evaluation = liverEnzyme.Alt < healthIndicator.MinValue ? "Thấp" :
+                                    liverEnzyme.Alt > healthIndicator.MaxValue ? "Cao" :
+                                    "Bình thường";
+                                var response = new LogBookReponse
+                                {
+                                    Tabs = "LiverEnzyme",
+                                    Id = liverEnzyme.LiverEnzymesId,
+                                    DataType = liverEnzyme.LiverEnzymesSource,
+                                    DateTime = liverEnzyme.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                    TimeRecorded = liverEnzyme.DateRecorded?.ToString("HH:mm"),
+                                    DateRecorded = liverEnzyme.DateRecorded?.ToString("dd-MM-yyyy"),
+                                    Indicator = $"{liverEnzyme.Alt}/{liverEnzyme.Ast}/{liverEnzyme.Alp}/{liverEnzyme.Ggt}",
+                                    Evaluation = evaluation
+                                };
 
 
-                            var newNotification = new Notification
-                            {
-                                NotificationType = "Cảnh báo sức khỏe",
-                                AccountId = familyMember.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Cảnh báo sức khỏe",
-                                Message = $"Người thân của bạn {getElderly.FullName} có men gan thấp hơn bình thường.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                Data = JsonSerializer.Serialize(response)
-                            };
+                                var newNotification = new Notification
+                                {
+                                    NotificationType = "Cảnh báo sức khỏe",
+                                    AccountId = familyMember.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Cảnh báo sức khỏe",
+                                    Message = $"Người thân của bạn {getElderly.FullName} có men gan thấp hơn bình thường.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                    Data = JsonSerializer.Serialize(response)
+                                };
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
                         }
-                    }
 
+
+                    }
                 }
 
 
@@ -1215,41 +1250,44 @@ namespace SE.Service.Services
 
                     foreach (var member in listFamilyMember)
                     {
-                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
-                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        if (request.ElderlyId != 0 && member != getFamily.AccountId)
                         {
-                            // Send notification
-                            await _notificationService.SendNotification(
-                                familyMember.DeviceToken,
-                                "Cảnh báo sức khỏe",
-                                $"Người thân của bạn {getElderly.FullName} có chức năng thận cao hơn bình thường.");
-                            var evaluation = kidneyFunction.EGfr < healthIndicator.MinValue ? "Thấp" :
-                               kidneyFunction.EGfr > healthIndicator.MaxValue ? "Cao" :
-                               "Bình thường";
-                            var response = new LogBookReponse
+                            var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                            if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                             {
-                                Tabs = "KidneyFunction",
-                                Id = kidneyFunction.KidneyFunctionId,
-                                DataType = kidneyFunction.KidneyFunctionSource,
-                                DateTime = kidneyFunction.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                                TimeRecorded = kidneyFunction.DateRecorded?.ToString("HH:mm"),
-                                DateRecorded = kidneyFunction.DateRecorded?.ToString("dd-MM-yyyy"),
-                                Indicator = $"{kidneyFunction.EGfr}/{kidneyFunction.Bun}/{kidneyFunction.Creatinine}",
-                                Evaluation = evaluation
-                            };
+                                // Send notification
+                                await _notificationService.SendNotification(
+                                    familyMember.DeviceToken,
+                                    "Cảnh báo sức khỏe",
+                                    $"Người thân của bạn {getElderly.FullName} có chức năng thận cao hơn bình thường.");
+                                var evaluation = kidneyFunction.EGfr < healthIndicator.MinValue ? "Thấp" :
+                                   kidneyFunction.EGfr > healthIndicator.MaxValue ? "Cao" :
+                                   "Bình thường";
+                                var response = new LogBookReponse
+                                {
+                                    Tabs = "KidneyFunction",
+                                    Id = kidneyFunction.KidneyFunctionId,
+                                    DataType = kidneyFunction.KidneyFunctionSource,
+                                    DateTime = kidneyFunction.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                    TimeRecorded = kidneyFunction.DateRecorded?.ToString("HH:mm"),
+                                    DateRecorded = kidneyFunction.DateRecorded?.ToString("dd-MM-yyyy"),
+                                    Indicator = $"{kidneyFunction.EGfr}/{kidneyFunction.Bun}/{kidneyFunction.Creatinine}",
+                                    Evaluation = evaluation
+                                };
 
-                            var newNotification = new Notification
-                            {
-                                NotificationType = "Cảnh báo sức khỏe",
-                                AccountId = familyMember.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Cảnh báo sức khỏe",
-                                Message = $"Người thân của bạn {getElderly.FullName} có chức năng thận cao hơn bình thường.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                Data = JsonSerializer.Serialize(response)
-                            };
+                                var newNotification = new Notification
+                                {
+                                    NotificationType = "Cảnh báo sức khỏe",
+                                    AccountId = familyMember.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Cảnh báo sức khỏe",
+                                    Message = $"Người thân của bạn {getElderly.FullName} có chức năng thận cao hơn bình thường.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                    Data = JsonSerializer.Serialize(response)
+                                };
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
                         }
                     }
                 }
@@ -1259,44 +1297,47 @@ namespace SE.Service.Services
 
                     foreach (var member in listFamilyMember)
                     {
-                        var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
-                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                        if (request.ElderlyId != 0 && member != getFamily.AccountId)
                         {
-                            // Send notification
-                            await _notificationService.SendNotification(
-                                familyMember.DeviceToken,
-                                "Cảnh báo sức khỏe",
-                                $"Người thân của bạn {getElderly.FullName} có chức năng thận thấp hơn bình thường.");
-
-                            // Create notification record
-                            var evaluation = kidneyFunction.EGfr < healthIndicator.MinValue ? "Thấp" :
-                               kidneyFunction.EGfr > healthIndicator.MaxValue ? "Cao" :
-                               "Bình thường";
-                            var response = new LogBookReponse
+                            var familyMember = await _unitOfWork.AccountRepository.GetByIdAsync(member);
+                            if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                             {
-                                Tabs = "KidneyFunction",
-                                Id = kidneyFunction.KidneyFunctionId,
-                                DataType = kidneyFunction.KidneyFunctionSource,
-                                DateTime = kidneyFunction.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                                TimeRecorded = kidneyFunction.DateRecorded?.ToString("HH:mm"),
-                                DateRecorded = kidneyFunction.DateRecorded?.ToString("dd-MM-yyyy"),
-                                Indicator = $"{kidneyFunction.EGfr}/{kidneyFunction.Bun}/{kidneyFunction.Creatinine}",
-                                Evaluation = evaluation
-                            };
+                                // Send notification
+                                await _notificationService.SendNotification(
+                                    familyMember.DeviceToken,
+                                    "Cảnh báo sức khỏe",
+                                    $"Người thân của bạn {getElderly.FullName} có chức năng thận thấp hơn bình thường.");
+
+                                // Create notification record
+                                var evaluation = kidneyFunction.EGfr < healthIndicator.MinValue ? "Thấp" :
+                                   kidneyFunction.EGfr > healthIndicator.MaxValue ? "Cao" :
+                                   "Bình thường";
+                                var response = new LogBookReponse
+                                {
+                                    Tabs = "KidneyFunction",
+                                    Id = kidneyFunction.KidneyFunctionId,
+                                    DataType = kidneyFunction.KidneyFunctionSource,
+                                    DateTime = kidneyFunction.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                    TimeRecorded = kidneyFunction.DateRecorded?.ToString("HH:mm"),
+                                    DateRecorded = kidneyFunction.DateRecorded?.ToString("dd-MM-yyyy"),
+                                    Indicator = $"{kidneyFunction.EGfr}/{kidneyFunction.Bun}/{kidneyFunction.Creatinine}",
+                                    Evaluation = evaluation
+                                };
 
 
-                            var newNotification = new Notification
-                            {
-                                NotificationType = "Cảnh báo sức khỏe",
-                                AccountId = familyMember.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Cảnh báo sức khỏe",
-                                Message = $"Người thân của bạn {getElderly.FullName} có chức năng thận thấp hơn bình thường.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                Data = JsonSerializer.Serialize(response)
-                            };
+                                var newNotification = new Notification
+                                {
+                                    NotificationType = "Cảnh báo sức khỏe",
+                                    AccountId = familyMember.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Cảnh báo sức khỏe",
+                                    Message = $"Người thân của bạn {getElderly.FullName} có chức năng thận thấp hơn bình thường.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                    Data = JsonSerializer.Serialize(response)
+                                };
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
                         }
                     }
 
