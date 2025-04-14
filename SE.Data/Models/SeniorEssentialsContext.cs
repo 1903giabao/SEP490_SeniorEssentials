@@ -29,7 +29,6 @@ public partial class SeniorEssentialsContext : DbContext
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer(GetConnectionString("DefaultConnection"));
-
     public virtual DbSet<Account> Accounts { get; set; }
 
     public virtual DbSet<Activity> Activities { get; set; }
@@ -888,11 +887,11 @@ public partial class SeniorEssentialsContext : DbContext
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
             entity.Property(e => e.Description)
                 .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(100);
             entity.Property(e => e.Fee).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.Name)
                 .IsRequired()
-                .HasMaxLength(20);
+                .HasMaxLength(50);
             entity.Property(e => e.Status)
                 .IsRequired()
                 .HasMaxLength(20);
@@ -992,7 +991,7 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.Property(e => e.EndDate).HasColumnType("datetime");
             entity.Property(e => e.StartDate).HasColumnType("datetime");
-            entity.Property(e => e.Status).HasMaxLength(10);
+            entity.Property(e => e.Status).HasMaxLength(20);
 
             entity.HasOne(d => d.Booking).WithMany(p => p.UserSubscriptions)
                 .HasForeignKey(d => d.BookingId)

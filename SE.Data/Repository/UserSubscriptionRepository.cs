@@ -36,6 +36,17 @@ namespace SE.Data.Repository
                         us.EndDate >= currentDate)
                                 .FirstOrDefaultAsync();
             return result;
+        }        
+        
+        public async Task<UserSubscription> GetAppointmentUserSubscriptionByBookingIdAsync(List<int> bookingIds, string status)
+        {
+            var result = await _context.UserSubscriptions.Include(us => us.Professor)
+                               .ThenInclude(us => us.Account)
+                               .Include(us => us.Booking)
+                                .Where(us => bookingIds.Contains((int)us.BookingId) && us.Status.Equals(status)
+                                && us.StartDate == us.EndDate)
+                                .FirstOrDefaultAsync();
+            return result;
         }
 
         public async Task<UserSubscription> GetProfessorByElderlyId(int elderlyId)
