@@ -87,8 +87,7 @@ namespace SE.API.Controllers
         [HttpPost("filter")]
         public async Task<IActionResult> GetFilteredProfessors([FromBody] FilterProfessorRequest request)
         {
-            var result = await _professorScheduleService.GetFilteredProfessors(
-                request);
+            var result = await _professorScheduleService.GetFilteredProfessors(request);
             return Ok(result);
 
         }
