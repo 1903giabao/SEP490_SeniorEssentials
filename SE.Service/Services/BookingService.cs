@@ -277,13 +277,15 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Cannot update booking");
                 }
 
+                var status = booking.Subscription.ValidityPeriod == 0 ? SD.UserSubscriptionStatus.BOOKED : SD.UserSubscriptionStatus.AVAILABLE;
+
                 var userSubscription = new UserSubscription
                 {
                     NumberOfMeetingLeft = booking.Subscription.NumberOfMeeting,
                     BookingId = booking.BookingId,
                     StartDate = booking.BookingDate,
                     EndDate = booking.BookingDate.AddDays(booking.Subscription.ValidityPeriod),
-                    Status = SD.GeneralStatus.ACTIVE,
+                    Status = status,
                 };
 
                 var createUserSubscription = await _unitOfWork.UserServiceRepository.CreateAsync(userSubscription);

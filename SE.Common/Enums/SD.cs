@@ -65,6 +65,13 @@ namespace SE.Common.Enums
             public static string CONFIRMED = "Đã xác nhận";
             public static string CANCELLED = "Đã hủy";
             public static string PENDING = "Chưa xác nhận";
+        }        
+        
+        public class UserSubscriptionStatus
+        {
+            public static string AVAILABLE = "Đang khả dụng";
+            public static string BOOKED = "Đã đặt lịch";
+            public static string EXPIRED = "Đã hết hạn";
         }
     }
 }

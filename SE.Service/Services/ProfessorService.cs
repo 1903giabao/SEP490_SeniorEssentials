@@ -1150,15 +1150,16 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Bookings of elderly not found.");
                 }
 
-                // 4. Get active user subscription
-                var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
-                if (userSubscription?.Booking == null)
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
-                }
+                var userSubscription = new UserSubscription();
 
                 if (req.ProfessorId == null)
                 {
+                    userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+                    if (userSubscription?.Booking == null)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                    }
+
                     var professor = _unitOfWork.ProfessorRepository
                         .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
                         .FirstOrDefault();
@@ -1169,6 +1170,12 @@ namespace SE.Service.Services
                 }
                 else
                 {
+                    userSubscription = await _unitOfWork.UserServiceRepository.GetAppointmentUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.BOOKED);
+                    if (userSubscription?.Booking == null)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                    }
+
                     var accountProfessor = await _unitOfWork.AccountRepository.GetAccountAsync((int)req.ProfessorId);
 
                     var professor = _unitOfWork.ProfessorRepository
