@@ -276,8 +276,16 @@ namespace SE.Service.Services
                     };
 
                     var saveHeight = await _unitOfWork.HeightRepository.CreateAsync(height);
-
-
+                }
+                if (req.RoleId == 3)
+                {
+                    var newFamilyMember = new FamilyMember
+                    {
+                        AccountId = req.AccountId,
+                        Status = SD.GeneralStatus.ACTIVE,
+                        
+                    };
+                    var saveFM = await _unitOfWork.FamilyMemberRepository.CreateAsync(newFamilyMember);
                 }
 
                 var onlineMembersRef = _firestoreDb.Collection("OnlineMembers");

@@ -55,11 +55,12 @@ namespace SE.Service.Services
     {
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-
-        public ProfessorService(UnitOfWork unitOfWork, IMapper mapper)
+        private readonly IGroupService _groupService;
+        public ProfessorService(UnitOfWork unitOfWork, IMapper mapper, IGroupService groupService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _groupService = groupService;
         }
 
         public async Task<IBusinessResult> CancelMeeting(int appointmentId)
@@ -78,7 +79,6 @@ namespace SE.Service.Services
                 if (getUserSub.UserSubscription.Booking.Subscription.SubscriptionId == getSubcription.SubscriptionId)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, $"Không thể hủy lịch gói đăng kí {getSubcription.Name}.");
-
                 }
                 // Kiểm tra thời gian hủy có trước 6 tiếng so với thời gian hẹn không
                 var currentTime = DateTime.UtcNow.AddHours(7);
@@ -98,6 +98,11 @@ namespace SE.Service.Services
 
                 appointment.Status = SD.ProfessorAppointmentStatus.CANCELLED;
                 var rs = await _unitOfWork.ProfessorAppointmentRepository.UpdateAsync(appointment);
+/*
+                var getElderly = _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(appointment.ElderlyId);
+
+                var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.Result.AccountId);
+*/
                 if (rs < 1)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Failed to cancel");
