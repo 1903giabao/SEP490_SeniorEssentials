@@ -309,6 +309,12 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, roomCreateRs.Message);
                 }
 
+                if (roomCreateRs.Data != null)
+                {
+                    group.GroupChatId = (string)roomCreateRs.Data;
+                    await _unitOfWork.GroupRepository.UpdateAsync(group);
+                }
+
                 var listFamilyMember = request.Members.Where(m => m.IsCreator == false).Select(m => m.AccountId).ToList();
 
                 foreach (var member in listFamilyMember)
@@ -378,10 +384,11 @@ namespace SE.Service.Services
                 List<Task> chatRoomTasks = new List<Task>();
 
                 var currentTime = DateTime.UtcNow.AddHours(7);
+                var groupId = Guid.NewGuid().ToString();
 
                 if (groupMembers.Count > 2)
-                {
-                    DocumentReference groupChatRoomRef = _firestoreDb.Collection("ChatRooms").Document(); 
+                {                    
+                    DocumentReference groupChatRoomRef = _firestoreDb.Collection("ChatRooms").Document(groupId); 
 
                     var groupChatRoomData = new Dictionary<string, object>
                     {
@@ -420,7 +427,7 @@ namespace SE.Service.Services
                     await onlineMembersRef.Document(member.AccountId.ToString()).SetAsync(onlineMemberData);
                 }
 
-                return new BusinessResult(Const.SUCCESS_CREATE, "Chat rooms created successfully.");
+                return new BusinessResult(Const.SUCCESS_CREATE, "Chat rooms created successfully.", groupId);
             }
             catch (Exception ex)
             {
@@ -572,18 +579,13 @@ namespace SE.Service.Services
 
                 var allGroupMembers = existingMembers.Select(m => m.AccountId).ToList();
 
-                var roomChatId = await _videoCallService.FindChatRoomContainingAllUsers(allGroupMembers, true);
+                var roomChatId = group.GroupChatId;
 
-                if (roomChatId != null)
+                var groupRef = _firestoreDb.Collection("ChatRooms").Document(roomChatId);
+                var groupDoc = await groupRef.GetSnapshotAsync();
+
+                if (groupDoc.Exists)
                 {
-                    var groupRef = _firestoreDb.Collection("ChatRooms").Document(roomChatId);
-                    var groupDoc = await groupRef.GetSnapshotAsync();
-
-                    if (!groupDoc.Exists)
-                    {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat does not exist!");
-                    }
-
                     var currentMembers = groupDoc.GetValue<Dictionary<string, object>>("MemberIds") ?? new Dictionary<string, object>();
 
                     foreach (var member in req.MemberIds)
@@ -609,8 +611,6 @@ namespace SE.Service.Services
                 }
                 else
                 {
-                    DocumentReference groupChatRoomRef = _firestoreDb.Collection("ChatRooms").Document();
-
                     var currentTime = DateTime.UtcNow.AddHours(7);
 
                     var groupChatRoomData = new Dictionary<string, object>
@@ -630,11 +630,11 @@ namespace SE.Service.Services
                             }
                     };
 
-                    await groupChatRoomRef.SetAsync(groupChatRoomData);
+                    await groupRef.SetAsync(groupChatRoomData);
 
                     foreach (var member in listGroupMembers)
                     {
-                        await groupChatRoomRef.Collection("Members").Document(member.AccountId.ToString()).SetAsync(new { IsCreator = member.IsCreator });
+                        await groupRef.Collection("Members").Document(member.AccountId.ToString()).SetAsync(new { IsCreator = member.IsCreator });
                     }
                 }
 
@@ -754,7 +754,13 @@ namespace SE.Service.Services
 
                 var allGroupMembers = _unitOfWork.GroupMemberRepository.FindByCondition(gm => gm.GroupId == groupId).Select(gm => gm.AccountId).ToList();
 
-                var roomChatId = await _videoCallService.FindChatRoomContainingAllUsers(allGroupMembers, true);
+                var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
+                if (group == null)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, "Group does not exist.");
+                }
+
+                var roomChatId = group.GroupChatId;
 
                 if (roomChatId != null)
                 {
@@ -1050,7 +1056,7 @@ namespace SE.Service.Services
                 var mapRequestUser = _mapper.Map<List<UserDTO>>(requestUserAccount);                
                 
                 var responseUser = await _unitOfWork.UserLinkRepository.GetByAccount2Async(elderlyId, SD.UserLinkStatus.PENDING);
-                var responseUserAccount = requestUser.Where(r => r.AccountId1 != elderlyAccount.AccountId && r.RelationshipType.Equals("Family")).Select(r => r.AccountId1Navigation).ToList();
+                var responseUserAccount = responseUser.Where(r => r.AccountId1 != elderlyAccount.AccountId && r.RelationshipType.Equals("Family")).Select(r => r.AccountId1Navigation).ToList();
                 var mapResponseUser = _mapper.Map<List<UserDTO>>(responseUserAccount);
 
                 var group = await _unitOfWork.GroupMemberRepository.GetGroupOfElderly(elderlyAccount.AccountId);
@@ -1073,7 +1079,7 @@ namespace SE.Service.Services
                     .Where(accountId => !familyInGroupIds.Contains(accountId) && accountId != elderlyAccount.AccountId)
                     .ToList();
 
-                var accountFamilyNotInGroup = _unitOfWork.AccountRepository.GetAll().Where(a => familyNotInGroup.Contains(a.AccountId) && a.RoleId == 3).ToList();
+                var accountFamilyNotInGroup = _unitOfWork.AccountRepository.GetAll().Where(a => familyNotInGroup.Contains(a.AccountId)).ToList();
 
                 var mapFamilyNotInGroup = _mapper.Map<List<UserDTO>>(accountFamilyNotInGroup);
 
@@ -1119,7 +1125,7 @@ namespace SE.Service.Services
                 var mapRequestUser = _mapper.Map<List<UserDTO>>(requestUserAccount);
 
                 var responseUser = await _unitOfWork.UserLinkRepository.GetByAccount2Async(familyMemberAccount.AccountId, SD.UserLinkStatus.PENDING);
-                var responseUserAccount = requestUser.Where(r => r.AccountId1 != familyMemberAccount.AccountId && r.RelationshipType.Equals("Family")).Select(r => r.AccountId1Navigation).ToList();
+                var responseUserAccount = responseUser.Where(r => r.AccountId1 != familyMemberAccount.AccountId && r.RelationshipType.Equals("Family")).Select(r => r.AccountId1Navigation).ToList();
                 var mapResponseUser = _mapper.Map<List<UserDTO>>(responseUserAccount);
 
                 var groups = await _unitOfWork.GroupMemberRepository.GetGroupOfFamilyMember(familyMemberAccount.AccountId);
@@ -1127,12 +1133,15 @@ namespace SE.Service.Services
                 var listGroupInfor = new List<GroupInfor>();
 
                 var listTotalUserNotInGroup = new List<UserDTO>();
+                var allUserIdsInAnyGroup = new List<int>();
 
                 foreach (var group in groups)
                 {
                     var groupMember = await _unitOfWork.GroupMemberRepository.GetByGroupIdAsync(group.GroupId);
 
                     var userInGroup = groupMember.Select(gm => gm.Account).ToList();
+
+                    allUserIdsInAnyGroup.AddRange(userInGroup.Select(uig => uig.AccountId));
 
                     var mapUserInGroup = _mapper.Map<List<UserDTO>>(userInGroup);
 
@@ -1166,6 +1175,11 @@ namespace SE.Service.Services
 
                     listTotalUserNotInGroup.AddRange(mapFamilyNotInGroup);
                 }
+
+                listTotalUserNotInGroup = listTotalUserNotInGroup
+                    .Where(user => !allUserIdsInAnyGroup.Contains(user.AccountId))
+                    .DistinctBy(a => a.AccountId)  // Ensure no duplicates
+                    .ToList();
 
                 var result = new GetGroupAndRelationshipInforByFamilyMember
                 {

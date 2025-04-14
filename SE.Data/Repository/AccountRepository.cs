@@ -25,7 +25,7 @@ namespace SE.Data.Repository
 
         public async Task<Account> GetAccountAsync(int id)
         {
-            var result = await _context.Accounts.Include(a => a.Role).Include(a => a.Elderly).Include(a => a.Professor).Include(a => a.ContentProvider).FirstOrDefaultAsync(e => e.AccountId == id);
+            var result = await _context.Accounts.Include(a => a.Role).Include(a => a.Elderly).Include(a => a.Professor).Include(a => a.FamilyMember).Include(a => a.ContentProvider).FirstOrDefaultAsync(e => e.AccountId == id);
             return result;
         }
 

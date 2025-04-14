@@ -44,7 +44,7 @@ namespace SE.Data.Repository
             var result = await _context.UserLinks
                 .Include(u => u.AccountId1Navigation)
                 .Include(u => u.AccountId2Navigation)
-                .Where(u => (u.AccountId1 == userId || u.AccountId2 == userId) && u.Status.Equals(status)).ToListAsync();
+                .Where(u => (u.AccountId1 == userId || u.AccountId2 == userId) && u.Status.Equals(status) && u.RelationshipType.Equals("Family")).ToListAsync();
             return result;
         }               
     }

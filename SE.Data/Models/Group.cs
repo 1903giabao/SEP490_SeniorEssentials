@@ -15,5 +15,7 @@ public partial class Group
 
     public string Status { get; set; }
 
+    public string GroupChatId { get; set; }
+
     public virtual ICollection<GroupMember> GroupMembers { get; set; } = new List<GroupMember>();
 }

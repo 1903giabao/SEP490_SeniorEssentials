@@ -358,11 +358,23 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Wrong phone number format!");
                 }
 
+                var user = await _unitOfWork.AccountRepository.GetAccountAsync(userId);
+
+                if (user == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
+                }
+
                 var userPhone = await _unitOfWork.AccountRepository.GetByPhoneNumberAsync(phoneNumber);
 
                 if (userPhone == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
+                }                
+                
+                if (userPhone.RoleId != 3 && user.RoleId == 2)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid role!");
                 }
 
                 if (userPhone.AccountId == userId)

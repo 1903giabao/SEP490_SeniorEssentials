@@ -13,7 +13,6 @@ public partial class SeniorEssentialsContext : DbContext
         : base(options)
     {
     }
-
     public SeniorEssentialsContext()
     {
     }
@@ -436,6 +435,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.ToTable("Group");
 
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.GroupChatId).HasMaxLength(100);
             entity.Property(e => e.GroupName)
                 .IsRequired()
                 .HasMaxLength(20);
