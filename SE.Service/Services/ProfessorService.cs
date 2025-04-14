@@ -983,6 +983,7 @@ namespace SE.Service.Services
                         Avatar = elderlyAccount.Avatar,
                         PhoneNumber = elderlyAccount.PhoneNumber,
                         DateTime = $"{appointment.AppointmentTime:dd/MM/yyyy HH:mm}",
+                        Description = appointment.Description,
                         Status = appointment.Status,
                         IsOnline = (bool)appointment.IsOnline,
                         IsReport = isReport,  // Set IsReport
