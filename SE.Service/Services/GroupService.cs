@@ -754,7 +754,13 @@ namespace SE.Service.Services
 
                 var allGroupMembers = _unitOfWork.GroupMemberRepository.FindByCondition(gm => gm.GroupId == groupId).Select(gm => gm.AccountId).ToList();
 
-                var roomChatId = await _videoCallService.FindChatRoomContainingAllUsers(allGroupMembers, true);
+                var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
+                if (group == null)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, "Group does not exist.");
+                }
+
+                var roomChatId = group.GroupChatId;
 
                 if (roomChatId != null)
                 {
