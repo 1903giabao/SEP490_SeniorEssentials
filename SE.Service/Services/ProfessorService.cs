@@ -1157,13 +1157,30 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
                 }
 
-                // 5. Validate professor
-                var professor = _unitOfWork.ProfessorRepository
-                    .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
-                    .FirstOrDefault();
-                if (professor == null)
+                if (req.ProfessorId == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
+                    var professor = _unitOfWork.ProfessorRepository
+                        .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
+                        .FirstOrDefault();
+                    if (professor == null)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Need to choose professor first!");
+                    }
+                }
+                else
+                {
+                    var accountProfessor = await _unitOfWork.AccountRepository.GetAccountAsync((int)req.ProfessorId);
+
+                    var professor = _unitOfWork.ProfessorRepository
+                        .FindByCondition(p => p.ProfessorId == accountProfessor.Professor.ProfessorId)
+                        .FirstOrDefault();
+
+                    if (professor == null)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor doesn't exist!");
+                    }
+
+                    userSubscription.ProfessorId = professor.ProfessorId;
                 }
 
                 // 6. Parse and validate appointment date/time
@@ -1190,12 +1207,14 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Time slot is already booked!");
                 }
 
-                // 8. Decrement meeting count
-                userSubscription.NumberOfMeetingLeft--;
-                var updateUserSubscriptionRs = await _unitOfWork.UserServiceRepository.UpdateAsync(userSubscription);
-                if (updateUserSubscriptionRs < 1)
+                var appointmentTime = appointmentDate.Date.Add(startTime.ToTimeSpan());
+
+                if (req.ProfessorId == null)
                 {
-                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                    if (DateTime.Compare(appointmentTime, (DateTime)userSubscription.EndDate) > 0)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không thể đặt lịch vượt quá ngày hết hạn gói!");
+                    }
                 }
 
                 // 9. Create new appointment
@@ -1203,7 +1222,7 @@ namespace SE.Service.Services
                 {
                     ElderlyId = elderly.ElderlyId,
                     UserSubscriptionId = userSubscription.UserSubscriptionId,
-                    AppointmentTime = appointmentDate.Date.Add(startTime.ToTimeSpan()),
+                    AppointmentTime = appointmentTime,
                     StartTime = startTime,
                     EndTime = endTime,
                     Description = req.Description ?? "Nothing",
@@ -1218,6 +1237,15 @@ namespace SE.Service.Services
                 if (createRs < 1)
                 {
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                }
+
+                userSubscription.NumberOfMeetingLeft--;
+
+                var updateUserSubscriptionRs = await _unitOfWork.UserServiceRepository.UpdateAsync(userSubscription);
+
+                if (updateUserSubscriptionRs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
                 }
 
                 return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);
