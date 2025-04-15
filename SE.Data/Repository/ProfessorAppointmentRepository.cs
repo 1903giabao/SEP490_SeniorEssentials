@@ -48,17 +48,20 @@ namespace SE.Data.Repository
                 .ToListAsync();
         }
 
-        public async Task<List<ProfessorAppointment>> GetByProfessorIdAsync(int professorId)
+        public async Task<List<ProfessorAppointment>> GetByProfessorIdAsync(int professorId, string type)
         {
-            var query = _context.ProfessorAppointments
-                .Include(pa=>pa.UserSubscription)
-                .Include(pa => pa.Elderly)
-
-                .ThenInclude(e => e.Account)
-                .Where(pa => pa.UserSubscription.ProfessorId == professorId)
-                ;
-
-            return await query.ToListAsync();
+            if (type == "All")
+            {
+                return await _context.ProfessorAppointments
+                    .Include(p => p.UserSubscription)
+                    .Where(pa => pa.UserSubscription.ProfessorId == professorId)
+                    .ToListAsync();
+            }
+            return await _context.ProfessorAppointments
+                .Include(p => p.UserSubscription)
+                .Where(pa => pa.UserSubscription.ProfessorId == professorId &&
+                            pa.Status.ToLower() == type.ToLower())
+                .ToListAsync();
         }
 
         public async Task<List<ProfessorAppointment>> GetAppointmentsByProfessorAndDateAsync(int professorId, DateTime date)

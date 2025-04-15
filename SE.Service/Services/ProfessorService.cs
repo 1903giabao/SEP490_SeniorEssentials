@@ -38,7 +38,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetProfessorDetailOfElderly(int elderlyId);
         Task<IBusinessResult> GetProfessorDetailByAccountId(int accountId);
         Task<IBusinessResult> UpdateProfessorInfor(UpdateProfessorRequest req);
-        Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId);
+        Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId, string type);
         Task<IBusinessResult> GetProfessorWeeklyTimeSlots(int accountId);
         Task<IBusinessResult> GetProfessorScheduleInProfessor(int professorId);
         Task<IBusinessResult> BookProfessorAppointment(BookProfessorAppointmentRequest req);
@@ -941,7 +941,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId)
+        public async Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId, string type)
         {
             try
             {
@@ -951,12 +951,12 @@ namespace SE.Service.Services
 
                 if (professor == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor does not exist!");
                 }
 
-                // Get all appointments for this professor
+                // Get all appointments for this professor with type filtering
                 var appointments = await _unitOfWork.ProfessorAppointmentRepository
-                    .GetByProfessorIdAsync(professor.ProfessorId);
+                    .GetByProfessorIdAsync(professor.ProfessorId, type);
 
                 var result = new List<GetScheduleOfElderlyByProfessorVM>();
 
@@ -965,8 +965,18 @@ namespace SE.Service.Services
                     var elderly = await _unitOfWork.ElderlyRepository
                         .GetByIdAsync(appointment.ElderlyId);
 
+                    if (elderly == null)
+                    {
+                        continue; // Skip if elderly not found
+                    }
+
                     var elderlyAccount = await _unitOfWork.AccountRepository
                         .GetByIdAsync(elderly.AccountId);
+
+                    if (elderlyAccount == null)
+                    {
+                        continue; // Skip if elderly account not found
+                    }
 
                     // Check if there is a report (Content in ProfessorAppointment)
                     bool isReport = !string.IsNullOrEmpty(appointment.Content);
@@ -978,6 +988,7 @@ namespace SE.Service.Services
 
                     var schedule = new GetScheduleOfElderlyByProfessorVM
                     {
+                        ProfessorAppointmentId = appointment.ProfessorAppointmentId,
                         ElderlyId = elderly.ElderlyId,
                         ElderlyName = elderlyAccount.FullName,
                         Avatar = elderlyAccount.Avatar,
@@ -991,32 +1002,36 @@ namespace SE.Service.Services
                         People = new List<PeopleOfScheduleVM>()
                     };
 
-                    // Add professor
-                    schedule.People.Add(new PeopleOfScheduleVM
+                    // Only add people if status is NOTYET (similar to first function)
+                    if (appointment.Status == SD.ProfessorAppointmentStatus.NOTYET)
                     {
-                        Id = professorAccountId,
-                        Name = (await _unitOfWork.AccountRepository.GetByIdAsync(professorAccountId)).FullName
-                    });
-
-                    // Add elderly
-                    schedule.People.Add(new PeopleOfScheduleVM
-                    {
-                        Id = elderly.AccountId,
-                        Name = elderlyAccount.FullName
-                    });
-
-                    // Add family members
-                    var familyMemberAccountIds = await GetAllFamilyMemberByElderlyId(elderly.AccountId);
-                    var familyMembers = _unitOfWork.AccountRepository.GetAll()
-                        .Where(a => familyMemberAccountIds.Contains(a.AccountId))
-                        .Select(a => new PeopleOfScheduleVM
+                        // Add professor
+                        schedule.People.Add(new PeopleOfScheduleVM
                         {
-                            Id = a.AccountId,
-                            Name = a.FullName
-                        })
-                        .ToList();
+                            Id = professorAccountId,
+                            Name = (await _unitOfWork.AccountRepository.GetByIdAsync(professorAccountId))?.FullName
+                        });
 
-                    schedule.People.AddRange(familyMembers);
+                        // Add elderly
+                        schedule.People.Add(new PeopleOfScheduleVM
+                        {
+                            Id = elderly.AccountId,
+                            Name = elderlyAccount.FullName
+                        });
+
+                        // Add family members
+                        var familyMemberAccountIds = await GetAllFamilyMemberByElderlyId(elderly.AccountId);
+                        var familyMembers = _unitOfWork.AccountRepository.GetAll()
+                            .Where(a => familyMemberAccountIds.Contains(a.AccountId))
+                            .Select(a => new PeopleOfScheduleVM
+                            {
+                                Id = a.AccountId,
+                                Name = a.FullName
+                            })
+                            .ToList();
+
+                        schedule.People.AddRange(familyMembers);
+                    }
 
                     result.Add(schedule);
                 }
@@ -1028,7 +1043,6 @@ namespace SE.Service.Services
                 throw ex;
             }
         }
-
         public async Task<IBusinessResult> GetProfessorWeeklyTimeSlots(int accountId)
         {
             try
