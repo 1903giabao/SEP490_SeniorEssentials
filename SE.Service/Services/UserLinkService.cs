@@ -65,7 +65,7 @@ namespace SE.Service.Services
 
                 if (responseUser == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Request user does not exist!");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Response user does not exist!");
                 }
 
                 if (responseUser.RoleId != 2 && responseUser.RoleId != 3)
@@ -190,19 +190,19 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid status!");
                 }                
 
-                if (req.ResponseStatus.Equals(SD.UserLinkStatus.CANCELLED, StringComparison.OrdinalIgnoreCase))
+                if (req.ResponseStatus.Equals(SD.UserLinkStatus.CANCELLED, StringComparison.OrdinalIgnoreCase) || req.ResponseStatus.Equals(SD.UserLinkStatus.REJECTED, StringComparison.OrdinalIgnoreCase))
                 {
                     var removeUserLink = await _unitOfWork.UserLinkRepository.RemoveAsync(userLink);
 
                     if (removeUserLink)
                     {
-                        return new BusinessResult(Const.SUCCESS_CREATE, $"Friend relationship is {userLink.Status}.");
+                        return new BusinessResult(Const.SUCCESS_CREATE, $"Friend relationship is {req.ResponseStatus}.");
                     }
                 }
                 else if (req.ResponseStatus.Equals(SD.UserLinkStatus.ACCEPTED, StringComparison.OrdinalIgnoreCase))
                 {
                     userLink.Status = SD.UserLinkStatus.ACCEPTED;
-                }
+                }                
                 else
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Status must be CANCELLED, REJECTED, ACCEPTED!");
@@ -305,48 +305,48 @@ namespace SE.Service.Services
                                 }
                             }
                         }
-                    }
 
-                    if (!string.IsNullOrEmpty(responseUser.DeviceToken) && responseUser.DeviceToken != "string")
-                    {
-                        if (userLink.RelationshipType.Equals("Friend"))
+                        if (!string.IsNullOrEmpty(responseUser.DeviceToken) && responseUser.DeviceToken != "string")
                         {
-                            // Send notification
-                            await _notificationService.SendNotification(
-                                responseUser.DeviceToken,
-                                "Chấp nhận kết bạn",
-                                $"{responseUser.FullName} đã chấp nhận lời mời kết bạn.");
-
-                            var newNotification = new Data.Models.Notification
+                            if (userLink.RelationshipType.Equals("Friend"))
                             {
-                                NotificationType = "Chấp nhận kết bạn",
-                                AccountId = responseUser.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Chấp nhận kết bạn",
-                                Message = $"{responseUser.FullName} đã chấp nhận lời mời kết bạn.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                            };
+                                // Send notification
+                                await _notificationService.SendNotification(
+                                    responseUser.DeviceToken,
+                                    "Chấp nhận kết bạn",
+                                    $"{responseUser.FullName} đã chấp nhận lời mời kết bạn.");
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
-                        }
-                        else
-                        {
-                            await _notificationService.SendNotification(
-                                responseUser.DeviceToken,
-                                "Xác Nhận Hỗ Trợ",
-                                $"{responseUser.FullName} đã chấp nhận yêu cầu hỗ trợ của bạn.");
+                                var newNotification = new Data.Models.Notification
+                                {
+                                    NotificationType = "Chấp nhận kết bạn",
+                                    AccountId = responseUser.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Chấp nhận kết bạn",
+                                    Message = $"{responseUser.FullName} đã chấp nhận lời mời kết bạn.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                };
 
-                            var newNotification = new Data.Models.Notification
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
+                            else
                             {
-                                NotificationType = "Xác Nhận Hỗ Trợ",
-                                AccountId = responseUser.AccountId,
-                                Status = SD.NotificationStatus.SEND,
-                                Title = "Xác Nhận Hỗ Trợ",
-                                Message = $"{responseUser.FullName} đã chấp nhận yêu cầu hỗ trợ của bạn.",
-                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                            };
+                                await _notificationService.SendNotification(
+                                    responseUser.DeviceToken,
+                                    "Xác Nhận Hỗ Trợ",
+                                    $"{responseUser.FullName} đã chấp nhận yêu cầu hỗ trợ của bạn.");
 
-                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                var newNotification = new Data.Models.Notification
+                                {
+                                    NotificationType = "Xác Nhận Hỗ Trợ",
+                                    AccountId = responseUser.AccountId,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Title = "Xác Nhận Hỗ Trợ",
+                                    Message = $"{responseUser.FullName} đã chấp nhận yêu cầu hỗ trợ của bạn.",
+                                    CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                };
+
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            }
                         }
                     }
 
