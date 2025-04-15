@@ -815,7 +815,7 @@ namespace SE.Service.Services
                     }
                 }
 
-                await _unitOfWork.GroupMemberRepository.UpdateAsync(groupMember);
+                await _unitOfWork.GroupMemberRepository.RemoveAsync(groupMember);
 
                 return new BusinessResult(Const.SUCCESS_UPDATE, "Member removed from group successfully.");
             }
@@ -1060,6 +1060,19 @@ namespace SE.Service.Services
                 var mapResponseUser = _mapper.Map<List<UserDTO>>(responseUserAccount);
 
                 var group = await _unitOfWork.GroupMemberRepository.GetGroupOfElderly(elderlyAccount.AccountId);
+
+                if (group == null)
+                {
+                    var result1 = new GetGroupAndRelationshipInforByElderly
+                    {
+                        RequestUsers = mapRequestUser,
+                        ResponseUsers = mapResponseUser,
+                        FamilyNotInGroup = null,
+                        GroupInfor = null
+                    };
+
+                    return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result1);
+                }
 
                 var groupMember = await _unitOfWork.GroupMemberRepository.GetByGroupIdAsync(group.GroupId);
 
