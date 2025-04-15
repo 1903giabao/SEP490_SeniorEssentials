@@ -330,7 +330,7 @@ namespace SE.Service.Services
 
                 if (bookings.Any())
                 {
-                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
+                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
 
                     if (userSubscription?.Booking == null)
                     {

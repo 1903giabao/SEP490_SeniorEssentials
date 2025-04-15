@@ -11,8 +11,8 @@ namespace SE.Common.Response.Group
     {
         public List<UserDTO> RequestUsers { get; set; }
         public List<UserDTO> ResponseUsers { get; set; }
-        public List<UserDTO> FamilyNotInGroup { get; set; }
-        public GroupInfor GroupInfor { get; set; }
+        public List<UserDTO>? FamilyNotInGroup { get; set; }
+        public GroupInfor? GroupInfor { get; set; }
     }
 
     public class GroupInfor
