@@ -497,7 +497,7 @@ namespace SE.Service.Services
                     {
                         var elderlyAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(requestUser.AccountId);
 
-                        var activityDOB = _unitOfWork.ActivityRepository.FindByCondition(a => a.ElderlyId == elderlyAccount.Elderly.ElderlyId).FirstOrDefault();
+                        var activityDOB = _unitOfWork.ActivityRepository.FindByCondition(a => a.ElderlyId == elderlyAccount.Elderly.ElderlyId && a.CreatedBy.Equals("System")).FirstOrDefault();
 
                         if (activityDOB != null)
                         {
@@ -517,7 +517,7 @@ namespace SE.Service.Services
                     {
                         var elderlyAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(responseUser.AccountId);
 
-                        var activityDOB = _unitOfWork.ActivityRepository.FindByCondition(a => a.ElderlyId == elderlyAccount.Elderly.ElderlyId).FirstOrDefault();
+                        var activityDOB = _unitOfWork.ActivityRepository.FindByCondition(a => a.ElderlyId == elderlyAccount.Elderly.ElderlyId && a.CreatedBy.Equals("System")).FirstOrDefault();
 
                         if (activityDOB != null)
                         {
