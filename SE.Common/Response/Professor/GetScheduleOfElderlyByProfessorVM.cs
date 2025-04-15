@@ -8,6 +8,7 @@ namespace SE.Common.Response.Professor
 {
     public class GetScheduleOfElderlyByProfessorVM
     {
+        public int ProfessorAppointmentId {  get; set; }
         public int ElderlyId {  get; set; }
         public string ElderlyName { get; set; }
         public string Avatar {  get; set; }

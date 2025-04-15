@@ -99,9 +99,9 @@ namespace SE.API.Controllers
             return Ok(rs);
         }
         [HttpGet("appointment/{accountId}")]
-        public async Task<IActionResult> GetScheduleOfElderlyByProfessorId([FromRoute] int accountId)
+        public async Task<IActionResult> GetScheduleOfElderlyByProfessorId(int accountId, string type)
         {
-            var rs = await _professorScheduleService.GetScheduleOfElderlyByProfessorId(accountId);
+            var rs = await _professorScheduleService.GetScheduleOfElderlyByProfessorId(accountId, type);
             return Ok(rs);
         }
 
