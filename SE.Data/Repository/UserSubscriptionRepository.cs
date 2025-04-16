@@ -101,6 +101,6 @@ namespace SE.Data.Repository
                 .Include(us => us.Booking).ThenInclude(us => us.Elderly).ThenInclude(us => us.Account).ThenInclude(us => us.Elderly)
                 .Where(us => us.ProfessorId == professorId).Select(us => us.Booking.Elderly.Account).ToListAsync();
             return result;
-        }
+        }             
     }
 }
