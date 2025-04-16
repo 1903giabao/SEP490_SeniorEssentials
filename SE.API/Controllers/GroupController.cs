@@ -108,6 +108,13 @@ namespace SE.API.Controllers
         {
             var result = await _groupService.GetGroupAndRelationshipInforByFamily(familyMemberId);
             return Ok(result);
+        }        
+        
+        [HttpGet("relationship-information/member-not-in-group/family-member/{familyMemberId}")]
+        public async Task<IActionResult> GetFamilyNotInGroup(int familyMemberId)
+        {
+            var result = await _groupService.GetFamilyNotInGroup(familyMemberId);
+            return Ok(result);
         }
     }
 }

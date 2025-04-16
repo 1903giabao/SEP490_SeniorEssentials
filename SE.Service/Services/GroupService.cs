@@ -39,6 +39,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> CheckIfElderlyInGroup(int elderly);
         Task<IBusinessResult> GetGroupAndRelationshipInforByElderly(int elderlyId);
         Task<IBusinessResult> GetGroupAndRelationshipInforByFamily(int familyMemberId);
+        Task<IBusinessResult> GetFamilyNotInGroup(int familyMemberId);
     }
 
     public class GroupService : IGroupService
@@ -1130,7 +1131,7 @@ namespace SE.Service.Services
 
                 if (familyMemberAccount == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Family Member does not exist!");
                 }
 
                 var requestUser = await _unitOfWork.UserLinkRepository.GetByAccount1Async(familyMemberAccount.AccountId, SD.UserLinkStatus.PENDING);
@@ -1203,6 +1204,69 @@ namespace SE.Service.Services
                 };
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetFamilyNotInGroup(int familyMemberId)
+        {
+            try
+            {
+                var familyMemberAccount = await _unitOfWork.AccountRepository.GetFamilyMemberByAccountIDAsync(familyMemberId);
+
+                if (familyMemberAccount == null || familyMemberAccount.RoleId != 3)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Family Member does not exist!");
+                }
+
+                var groups = await _unitOfWork.GroupMemberRepository.GetGroupOfFamilyMember(familyMemberAccount.AccountId);
+
+                var listTotalUserNotInGroup = new List<UserDTO>();
+                var allUserIdsInAnyGroup = new List<int>();
+
+                foreach (var group in groups)
+                {
+                    var groupMember = await _unitOfWork.GroupMemberRepository.GetByGroupIdAsync(group.GroupId);
+
+                    var userInGroup = groupMember.Select(gm => gm.Account).ToList();
+
+                    allUserIdsInAnyGroup.AddRange(userInGroup.Select(uig => uig.AccountId));
+
+                    var mapUserInGroup = _mapper.Map<List<UserDTO>>(userInGroup);
+
+                    var familyInGroup = groupMember.Where(gm => gm.Account.AccountId != familyMemberAccount.AccountId).Select(gm => gm.Account).ToList();
+
+                    var familyInGroupIds = familyInGroup.Select(a => a.AccountId).ToList();
+
+                    var allElderlyUserLinks = await _unitOfWork.UserLinkRepository.GetByUserIdAsync(familyMemberAccount.AccountId, SD.UserLinkStatus.ACCEPTED);
+
+                    var familyNotInGroup = allElderlyUserLinks
+                        .SelectMany(link => new[] { link.AccountId1, link.AccountId2 })
+                        .Distinct()
+                        .Where(accountId => !familyInGroupIds.Contains(accountId) && accountId != familyMemberAccount.AccountId)
+                        .ToList();
+
+                    var accountFamilyNotInGroup = _unitOfWork.AccountRepository.GetAll().Where(a => familyNotInGroup.Contains(a.AccountId)).ToList();
+
+                    var mapFamilyNotInGroup = _mapper.Map<List<UserDTO>>(accountFamilyNotInGroup);
+
+                    if (allElderlyUserLinks == null)
+                    {
+                        allElderlyUserLinks = new List<UserLink>();
+                    }
+
+                    listTotalUserNotInGroup.AddRange(mapFamilyNotInGroup);
+                }
+
+                listTotalUserNotInGroup = listTotalUserNotInGroup
+                    .Where(user => !(user.RoleId == 2 && allUserIdsInAnyGroup.Contains(user.AccountId))) 
+                    .DistinctBy(a => a.AccountId)
+                    .ToList();
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, listTotalUserNotInGroup);
             }
             catch (Exception ex)
             {
