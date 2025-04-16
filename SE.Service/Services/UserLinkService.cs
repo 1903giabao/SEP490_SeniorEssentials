@@ -474,7 +474,7 @@ namespace SE.Service.Services
 
                 if (commonGroups.Any())
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot remove friend because both users are in the same family group.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot remove relationship because both users are in the same family group.");
                 }
 
                 var userLink = await _unitOfWork.UserLinkRepository.GetByUserIdsAsync(requestUser.AccountId, responseUser.AccountId);
@@ -503,11 +503,6 @@ namespace SE.Service.Services
                         {
                             var deleteResult = await _unitOfWork.ActivityScheduleRepository.DeleteActivitySchedulesByActivityIdAsync(activityDOB.ActivityId);
 
-                            if (deleteResult < 1)
-                            {
-                                return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
-                            }
-
                             activityDOB.Status = SD.GeneralStatus.INACTIVE;
                             await _unitOfWork.ActivityRepository.UpdateAsync(activityDOB);
                         }
@@ -522,11 +517,6 @@ namespace SE.Service.Services
                         if (activityDOB != null)
                         {
                             var deleteResult = await _unitOfWork.ActivityScheduleRepository.DeleteActivitySchedulesByActivityIdAsync(activityDOB.ActivityId);
-
-                            if (deleteResult < 1)
-                            {
-                                return new BusinessResult(Const.FAIL_DELETE, Const.FAIL_DELETE_MSG);
-                            }
 
                             activityDOB.Status = SD.GeneralStatus.INACTIVE;
                             await _unitOfWork.ActivityRepository.UpdateAsync(activityDOB);
