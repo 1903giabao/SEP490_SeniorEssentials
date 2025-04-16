@@ -21,6 +21,15 @@ namespace SE.Data.Repository
         {
             var result = await _context.Bookings.Include(a => a.Subscription).FirstOrDefaultAsync(e => e.TransactionId == transactionId);
             return result;
+        }        
+        
+        public async Task<List<Booking>> GetByFamilyMemberIdAsync(int familyMemberId, string status)
+        {
+            var result = await _context.Bookings
+                        .Include(a => a.Subscription)
+                        .Include(a => a.Elderly).ThenInclude(e => e.Account)
+                        .Where(e => e.AccountId == familyMemberId && e.Status.Equals(status)).ToListAsync();
+            return result;
         }
     }
 }

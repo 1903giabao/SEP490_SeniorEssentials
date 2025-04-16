@@ -33,6 +33,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> CheckOrderStatus(string appTransId);
         Task<IBusinessResult> ConfirmOrder(string appTransId);
         Task<IBusinessResult> CheckIfUserHasBooking(int accountId);
+        Task<IBusinessResult> GetListBookingOfFamilyMember(int familyMemberId);
     }
 
     public class BookingService : IBookingService
@@ -344,6 +345,46 @@ namespace SE.Service.Services
                 }
 
                 return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> GetListBookingOfFamilyMember(int familyMemberId)
+        {
+            try
+            {
+                if (familyMemberId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid account ID.");
+                }
+
+                var familyMember = await _unitOfWork.AccountRepository.GetAccountAsync(familyMemberId);
+                if (familyMember == null || familyMember.RoleId != 3 || !familyMember.Status.Equals(SD.GeneralStatus.ACTIVE))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Family Member does not exist.");
+                }
+
+                if (familyMember.FamilyMember == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Family Member details not found.");
+                }
+
+                var bookings = await _unitOfWork.BookingRepository.GetByFamilyMemberIdAsync(familyMember.AccountId, SD.BookingStatus.PAID);
+
+                var result = bookings.Select(b => new GetListBookingOfFamilyMemberResponse
+                {
+                    BookingId = b.BookingId,
+                    Elderly = _mapper.Map<UserDTO>(b.Elderly.Account),
+                    BookingDate = b.BookingDate,
+                    Note = b.Note,
+                    Price = (double?)b.Price,
+                    Subscription = _mapper.Map<SubscriptionDTO>(b.Subscription),
+                }).ToList();
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
             }
             catch (Exception ex)
             {

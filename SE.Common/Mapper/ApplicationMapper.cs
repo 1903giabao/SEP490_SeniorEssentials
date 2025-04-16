@@ -89,7 +89,7 @@ namespace SE.Common.Mapper
             CreateMap<CreateIotDeviceRequest, Iotdevice>();
             CreateMap<IotDeviceDto, Iotdevice>();
 
-
+            CreateMap<Subscription, SubscriptionDTO>().ReverseMap();
 
             CreateMap<EmergencyInformation, GetEmergencyInformationDTO>().ReverseMap();
 
