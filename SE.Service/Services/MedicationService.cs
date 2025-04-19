@@ -134,6 +134,12 @@ namespace SE.Service.Services
             var hehe = new List<MedicationModel>();
 
             var medicationList = ConvertToMedicationModels(groupData);
+            if (!medicationList.Any())
+            {
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Không thể quét toa thuốc này!");
+
+            }
+
 
             var result = new
             {
@@ -312,6 +318,11 @@ namespace SE.Service.Services
 
             foreach (var model in mediModels.mediModels)
             {
+                if (model.Name == null || model.Dosage == null || model.Time == null)
+                {
+                    return rs;
+
+                }
                 var temp = new UpdateMedicationModel();
                 temp.MedicationName = model.Name;
                 temp.Dosage = model.Dosage;
@@ -346,6 +357,10 @@ namespace SE.Service.Services
 
         static string ExtractUnit(string input)
         {
+            if (input == null)
+            {
+                return "Không thể quét toa thuốc này!";
+            }
             Match match = Regex.Match(input, @"^\d+\s+(.+)$");
             return match.Success ? match.Groups[1].Value : string.Empty;
         }

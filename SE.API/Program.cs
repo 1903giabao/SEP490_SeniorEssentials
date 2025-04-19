@@ -67,7 +67,7 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 Log.Logger = new LoggerConfiguration()
             .WriteTo.Console() // Log to console
-            .WriteTo.File(@"E:\SEP490\worker_logs.txt", rollingInterval: RollingInterval.Day) // Log to file
+            .WriteTo.File(@"D:\SEP490\worker_logs.txt", rollingInterval: RollingInterval.Day) // Log to file
             .CreateLogger();
 
 builder.Host.UseSerilog(); 
