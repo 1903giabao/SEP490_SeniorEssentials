@@ -136,7 +136,7 @@ namespace SE.Service.Services
             var medicationList = ConvertToMedicationModels(groupData);
             if (!medicationList.Any())
             {
-                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Không thể quét toa thuốc này!");
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không thể quét toa thuốc này!");
 
             }
 
