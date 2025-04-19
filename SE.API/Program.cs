@@ -14,6 +14,7 @@ using SE.API.ConfigModel;
 using SE.Common.Mapper;
 using SE.Common.Setting;
 using SE.Data.UnitOfWork;
+using SE.Service.BackgroundWorkers;
 using SE.Service.Helper;
 using SE.Service.Services;
 using Serilog;
@@ -64,7 +65,7 @@ builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddScoped<ISmsService, SmsService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IReportService, ReportService>();
-/*Log.Logger = new LoggerConfiguration()
+Log.Logger = new LoggerConfiguration()
             .WriteTo.Console() // Log to console
             .WriteTo.File(@"E:\SEP490\worker_logs.txt", rollingInterval: RollingInterval.Day) // Log to file
             .CreateLogger();
@@ -73,8 +74,6 @@ builder.Host.UseSerilog();
 
 builder.Services.AddHostedService<Worker>();
 
-
-*/
 DotEnv.Load();
 
 

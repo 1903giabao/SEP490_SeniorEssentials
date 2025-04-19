@@ -1,9 +1,10 @@
-﻿/*using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SE.Common.DTO;
@@ -15,23 +16,18 @@ using SE.Service.Base;
 using SE.Service.Services;
 using Serilog;
 
-
 namespace SE.Service.BackgroundWorkers
 {
     public class Worker : BackgroundService
     {
         private readonly ILogger<Worker> _logger;
-        private readonly UnitOfWork _unitOfWork;
-        private readonly IActivityService _activityService;
-        private readonly INotificationService _notificationService;
+        private readonly IServiceProvider _serviceProvider;
         private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1); // Kiểm tra mỗi phút
 
-        public Worker(ILogger<Worker> logger, UnitOfWork unitOfWork, IActivityService activityService, INotificationService notificationService)
+        public Worker(ILogger<Worker> logger, IServiceProvider serviceProvider)
         {
             _logger = logger;
-            _unitOfWork = unitOfWork;
-            _activityService = activityService;
-            _notificationService = notificationService;
+            _serviceProvider = serviceProvider;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -42,9 +38,15 @@ namespace SE.Service.BackgroundWorkers
             {
                 try
                 {
-                    await CheckAndSendActivityNotifications(stoppingToken);
-                    await CheckAndSendWaterReminders(stoppingToken);
+                    using (var scope = _serviceProvider.CreateScope())
+                    {
+                        var activityService = scope.ServiceProvider.GetRequiredService<IActivityService>();
+                        var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+                        var unitOfWork = scope.ServiceProvider.GetRequiredService<UnitOfWork>();
 
+                        await CheckAndSendActivityNotifications(unitOfWork, activityService, notificationService, stoppingToken);
+                        await CheckAndSendWaterReminders(unitOfWork, notificationService, stoppingToken);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -57,179 +59,119 @@ namespace SE.Service.BackgroundWorkers
             Log.Information("Activity Notification Background Service is stopping.");
         }
 
-        protected async Task CheckAndSendActivityNotifications(CancellationToken stoppingToken)
+        private async Task CheckAndSendActivityNotifications(UnitOfWork _unitOfWork, IActivityService _activityService, INotificationService _notificationService, CancellationToken stoppingToken)
         {
             Log.Information("Background Worker for Activity Notifications starting...");
 
             try
             {
-                while (!stoppingToken.IsCancellationRequested)
+                var now = DateTime.Now;
+                var currentDate = DateOnly.FromDateTime(now);
+                var currentTime = now.ToString("HH:mm");
+
+                var accountIds = await _unitOfWork.AccountRepository.GetAllAsync();
+
+                foreach (var account in accountIds)
                 {
-                    try
+                    var result = await _activityService.GetAllActivityForDay(account.AccountId, currentDate);
+                    if (result is BusinessResult businessResult && businessResult.Data is List<GetScheduleInDayResponse> schedules)
                     {
-                        var now = DateTime.Now;
-                        var currentDate = DateOnly.FromDateTime(now);
-                        var currentTime = now.ToString("HH:mm");
+                        var upcomingActivities = schedules
+                            .Where(a => a.StartTime == currentTime)
+                            .ToList();
 
-                        // Giả sử bạn có cách lấy tất cả accountId cần kiểm tra
-                        var accountIds = await _unitOfWork.AccountRepository.GetAllAsync(); 
-
-                        foreach (var account in accountIds)
+                        if (account.DeviceToken != null && account.DeviceToken != "string")
                         {
-                            var result = await _activityService.GetAllActivityForDay(account.AccountId, currentDate);
-                            if (result is BusinessResult businessResult && businessResult.Data is List<GetScheduleInDayResponse> schedules)
+                            foreach (var activity in upcomingActivities)
                             {
-                                var upcomingActivities = schedules
-                                    .Where(a => a.StartTime == currentTime)
-                                    .ToList();
-                                if (account.DeviceToken != null&& account.DeviceToken != "string")
+                                var isMedication = activity.Type == "Medication";
+                                var title = isMedication ? "Nhắc nhở uống thuốc" : "Lịch trình hàng ngày";
+                                var body = isMedication
+                                    ? $"Đã đến giờ uống thuốc {activity.Title}. Đừng quên nhé!"
+                                    : $"Bạn có hoạt động '{activity.Title}' bắt đầu lúc {activity.StartTime}";
+
+                                await _notificationService.SendNotification(account.DeviceToken, title, body);
+
+                                var newNoti = new Notification
                                 {
-                                    foreach (var activity in upcomingActivities)
-                                    {
-                                        if (!string.IsNullOrEmpty(account.DeviceToken))
-                                        {
-                                            if (activity.Type == "Medication")
-                                            {
-                                                var title = $"Nhắc nhở uống thuốc";
-                                                var body = $"Đã đến giờ uống thuốc {activity.Title}. Đừng quên nhé!";
-
-                                                await _notificationService.SendNotification(account.DeviceToken, title, body);
-
-                                                var newNoti = new Notification
-                                                {
-                                                    Title = title,
-                                                    AccountId = account.AccountId,
-                                                    CreatedDate = DateTime.UtcNow.AddHours(7),
-                                                    Message = body,
-                                                    NotificationType = title,
-                                                    Status = SD.NotificationStatus.SEND,
-                                                    Data = currentDate.ToString("yyyy-MM-dd")
-                                                };
-                                                var rs = await _unitOfWork.NotificationRepository.CreateAsync(newNoti);
-                                            }
-                                            else
-                                            {
-
-                                                var title = $"Lịch trình hàng ngày";
-                                                var body = $"Bạn có hoạt động '{activity.Title}' bắt đầu lúc {activity.StartTime}";
-
-                                                await _notificationService.SendNotification(account.DeviceToken, title, body);
-
-                                                var newNoti = new Notification
-                                                {
-                                                    Title = title,
-                                                    AccountId = account.AccountId,
-                                                    CreatedDate = DateTime.UtcNow.AddHours(7),
-                                                    Message = body,
-                                                    NotificationType = title,
-                                                    Status = SD.NotificationStatus.SEND,
-                                                    Data = currentDate.ToString("yyyy-MM-dd")
-                                                };
-                                                var rs = await _unitOfWork.NotificationRepository.CreateAsync(newNoti);
-                                            }
-
-                                        }
-                                    }
-                                }
-                                
+                                    Title = title,
+                                    AccountId = account.AccountId,
+                                    CreatedDate = DateTime.UtcNow.AddHours(7),
+                                    Message = body,
+                                    NotificationType = title,
+                                    Status = SD.NotificationStatus.SEND,
+                                    Data = currentDate.ToString("yyyy-MM-dd")
+                                };
+                                await _unitOfWork.NotificationRepository.CreateAsync(newNoti);
                             }
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error while checking and sending activity notifications");
-                    }
-
-                    await Task.Delay(_checkInterval, stoppingToken);
                 }
-            }
-            catch (Exception ex) when (stoppingToken.IsCancellationRequested)
-            {
-                Log.Information("Background Worker is stopping due to cancellation request");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "An error occurred in the background worker.");
+                Log.Error(ex, "Error while checking and sending activity notifications");
             }
         }
 
-
-        protected async Task CheckAndSendWaterReminders(CancellationToken stoppingToken)
+        private async Task CheckAndSendWaterReminders(UnitOfWork _unitOfWork, INotificationService _notificationService, CancellationToken stoppingToken)
         {
             Log.Information("Water Reminder Background Service starting...");
 
-            // Define the reminder schedule
             var reminderSchedule = new List<WaterReminder>
-                                            {
-                                                new WaterReminder { Time = "07:00", Amount = "250 ml", Reason = "Sau khi thức dậy, thanh lọc cơ thể" },
-                                                new WaterReminder { Time = "10:00", Amount = "250 ml", Reason = "Giữ tỉnh táo, tránh khô người" },
-                                                new WaterReminder { Time = "14:00", Amount = "250 ml", Reason = "Bổ sung sau ăn trưa, tránh mệt mỏi" },
-                                                new WaterReminder { Time = "18:00", Amount = "250 ml", Reason = "Hỗ trợ tiêu hóa trước bữa tối" }
-                                            };
+            {
+                new WaterReminder { Time = "06:30", Amount = "250 ml", Reason = "Sau khi thức dậy, làm sạch cơ thể" },
+                new WaterReminder { Time = "08:40", Amount = "200 ml", Reason = "Trước ăn sáng, hỗ trợ tiêu hóa" },
+                new WaterReminder { Time = "10:00", Amount = "200 ml", Reason = "Giữa buổi sáng, giữ tỉnh táo" },
+                new WaterReminder { Time = "11:30", Amount = "200 ml", Reason = "Trước ăn trưa khoảng 30 phút" },
+                new WaterReminder { Time = "14:00", Amount = "200 ml", Reason = "Sau ăn trưa, bổ sung nước nhẹ" },
+                new WaterReminder { Time = "16:00", Amount = "200 ml", Reason = "Giữ nước cho cơ thể, chống mệt mỏi" },
+                new WaterReminder { Time = "18:00", Amount = "200 ml", Reason = "Trước ăn tối 30 phút" },
+                new WaterReminder { Time = "20:00", Amount = "150 ml", Reason = "Sau ăn tối nhẹ" },
+                new WaterReminder { Time = "21:30", Amount = "100 ml (hoặc ít hơn)", Reason = "Trước khi ngủ, tránh tiểu đêm" }
+            };
+
 
             try
             {
-                while (!stoppingToken.IsCancellationRequested)
+                var now = DateTime.Now;
+                var currentTime = now.ToString("HH:mm");
+
+                var currentReminder = reminderSchedule.FirstOrDefault(r => r.Time == currentTime);
+                if (currentReminder != null)
                 {
-                    try
+                    var accounts = _unitOfWork.AccountRepository.FindByCondition(a => a.RoleId == 2).ToList();
+
+                    foreach (var account in accounts)
                     {
-                        var now = DateTime.Now;
-                        var currentTime = now.ToString("HH:mm");
-                        var currentDate = DateOnly.FromDateTime(now);
-
-                        // Check if current time matches any reminder time
-                        var currentReminder = reminderSchedule.FirstOrDefault(r => r.Time == currentTime);
-                        if (currentReminder != null)
+                        if (account.DeviceToken != null && account.DeviceToken != "string")
                         {
-                            // Get all accounts with roleId = 2
-                            var accounts = _unitOfWork.AccountRepository.FindByCondition(a=>a.RoleId ==2).ToList();
+                            var title = "Nhắc nhở uống nước";
+                            var body = $"Đã đến giờ uống nước! {currentReminder.Amount} {currentReminder.Reason}";
 
-                            foreach (var account in accounts)
+                            await _notificationService.SendNotification(account.DeviceToken, title, body);
+
+                            var newNoti = new Notification
                             {
-                                if (account.DeviceToken != null && account.DeviceToken != "string")
-                                {
-                                    var title = "Nhắc nhở uống nước";
-                                    var body = $"Đã đến giờ uống nước! {currentReminder.Amount} {currentReminder.Reason}";
-
-                                    await _notificationService.SendNotification(account.DeviceToken, title, body);
-
-                                    // Save notification to database
-                                    var newNoti = new Notification
-                                    {
-                                        Title = title,
-                                        AccountId = account.AccountId,
-                                        CreatedDate = DateTime.UtcNow.AddHours(7),
-                                        Message = body,
-                                        NotificationType = "Nhắc nhở uống nước",
-                                        Status = SD.NotificationStatus.SEND
-                                    };
-                                    await _unitOfWork.NotificationRepository.CreateAsync(newNoti);
-                                }
-                            }
-
-                            // Wait for 1 minute to avoid sending duplicate notifications
-                            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+                                Title = title,
+                                AccountId = account.AccountId,
+                                CreatedDate = DateTime.UtcNow.AddHours(7),
+                                Message = body,
+                                NotificationType = "Nhắc nhở uống nước",
+                                Status = SD.NotificationStatus.SEND
+                            };
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNoti);
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error while checking and sending water reminders");
-                    }
 
-                    // Check every minute
-                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                    // Wait for 1 hour to prevent duplicate sends
+                    await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
                 }
-            }
-            catch (Exception ex) when (stoppingToken.IsCancellationRequested)
-            {
-                Log.Information("Water Reminder Background Service is stopping due to cancellation request");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "An error occurred in the water reminder background service.");
+                Log.Error(ex, "Error while checking and sending water reminders");
             }
         }
-
     }
 }
-*/

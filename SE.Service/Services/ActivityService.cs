@@ -9,6 +9,7 @@ using SE.Data.Models;
 using SE.Data.Repository;
 using SE.Data.UnitOfWork;
 using SE.Service.Base;
+using static Google.Cloud.Vision.V1.ProductSearchResults.Types;
 
 namespace SE.Service.Services
 {
@@ -36,59 +37,66 @@ namespace SE.Service.Services
         {
             try
             {
-                var checkAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
-
-                var activities = await _unitOfWork.ActivityRepository.GetActivitiesIncludeOfElderly(checkAccount.Elderly.ElderlyId);
-                var medicationSchedules = await _unitOfWork.MedicationScheduleRepository.GetMedicationSchedulesForDay(checkAccount.Elderly.ElderlyId, date);
-                var professorAppointments = await _unitOfWork.ProfessorAppointmentRepository.GetProfessorAppointmentsForDay(checkAccount.Elderly.ElderlyId, date);
-
-                var createBy = activities.Select(a => a.CreatedBy).FirstOrDefault();
-
                 var result = new List<GetScheduleInDayResponse>();
-                var activitySchedules = activities
-                                        .SelectMany(a => a.ActivitySchedules
-                                            .Where(s => s.StartTime?.ToString("yyyy-MM-dd") == date.ToString("yyyy-MM-dd"))
-                                            .Select(s => new GetScheduleInDayResponse
-                                            {
-                                                ActivityId = a.ActivityId,
-                                                Title = a.ActivityName,
-                                                Description = a.ActivityDescription,
-                                                StartTime = s.StartTime?.ToString("HH:mm"),
-                                                EndTime = s.EndTime?.ToString("HH:mm"),
-                                                Type = "Activity",
-                                                CreatedBy = createBy,
-                                                Duration = CalculateDuration(date, s.ActivityScheduleId, a.ActivitySchedules)
-                                            })).ToList();
-                result.AddRange(activitySchedules);
 
-                var medicationScheduleResponses = medicationSchedules
-                    .Select(ms => new GetScheduleInDayResponse
-                    {
-                        Title = ms.Medication.MedicationName,
-                        Description = "Dùng " + ms.Dosage + " vào " + ms.DateTaken?.ToString("HH:mm"),
-                        StartTime = ms.DateTaken?.ToString("HH:mm"),
-                        EndTime = null,
-                        Type = "Medication"
-                    })
-                    .ToList();
+                var checkAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+                
+                if (checkAccount.Elderly != null)
+                {
+                    var activities = await _unitOfWork.ActivityRepository.GetActivitiesIncludeOfElderly(checkAccount.Elderly.ElderlyId);
+                    var medicationSchedules = await _unitOfWork.MedicationScheduleRepository.GetMedicationSchedulesForDay(checkAccount.Elderly.ElderlyId, date);
+                    var professorAppointments = await _unitOfWork.ProfessorAppointmentRepository.GetProfessorAppointmentsForDay(checkAccount.Elderly.ElderlyId, date);
 
-                result.AddRange(medicationScheduleResponses);
+                    var createBy = activities.Select(a => a.CreatedBy).FirstOrDefault();
 
-                var professorAppointmentResponses = professorAppointments
-                    .Select(pa => new GetScheduleInDayResponse
-                    {
-                        Title = "Tư vấn với bác sĩ",
-                        Description = "Bác sĩ " + pa.UserSubscription.Professor.Account.FullName,
-                        StartTime = pa.StartTime?.ToString("HH:mm"),
-                        EndTime = pa.EndTime?.ToString("HH:mm"),
-                        Type = "Professor Appointment"
-                    })
-                    .ToList();
+                    var activitySchedules = activities
+                                            .SelectMany(a => a.ActivitySchedules
+                                                .Where(s => s.StartTime?.ToString("yyyy-MM-dd") == date.ToString("yyyy-MM-dd"))
+                                                .Select(s => new GetScheduleInDayResponse
+                                                {
+                                                    ActivityId = a.ActivityId,
+                                                    Title = a.ActivityName,
+                                                    Description = a.ActivityDescription,
+                                                    StartTime = s.StartTime?.ToString("HH:mm"),
+                                                    EndTime = s.EndTime?.ToString("HH:mm"),
+                                                    Type = "Activity",
+                                                    CreatedBy = createBy,
+                                                    Duration = CalculateDuration(date, s.ActivityScheduleId, a.ActivitySchedules)
+                                                })).ToList();
+                    result.AddRange(activitySchedules);
 
-                result.AddRange(professorAppointmentResponses);
-                result = result.OrderBy(r => r.StartTime).ToList();
+                    var medicationScheduleResponses = medicationSchedules
+                        .Select(ms => new GetScheduleInDayResponse
+                        {
+                            Title = ms.Medication.MedicationName,
+                            Description = "Dùng " + ms.Dosage + " vào " + ms.DateTaken?.ToString("HH:mm"),
+                            StartTime = ms.DateTaken?.ToString("HH:mm"),
+                            EndTime = null,
+                            Type = "Medication"
+                        })
+                        .ToList();
 
+                    result.AddRange(medicationScheduleResponses);
+
+                    var professorAppointmentResponses = professorAppointments
+                        .Select(pa => new GetScheduleInDayResponse
+                        {
+                            Title = "Tư vấn với bác sĩ",
+                            Description = "Bác sĩ " + pa.UserSubscription.Professor.Account.FullName,
+                            StartTime = pa.StartTime?.ToString("HH:mm"),
+                            EndTime = pa.EndTime?.ToString("HH:mm"),
+                            Type = "Professor Appointment"
+                        })
+                        .ToList();
+
+                    result.AddRange(professorAppointmentResponses);
+                    result = result.OrderBy(r => r.StartTime).ToList();
+
+                    return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+                }
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
+
+
             }
             catch (Exception ex)
             {
