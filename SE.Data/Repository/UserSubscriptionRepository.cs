@@ -51,10 +51,13 @@ namespace SE.Data.Repository
 
         public async Task<UserSubscription> GetProfessorByElderlyId(int elderlyId)
         {
-            var rs = await _context.UserSubscriptions.Include(us => us.Booking).ThenInclude(b => b.Elderly).FirstOrDefaultAsync(us => us.Booking.ElderlyId == elderlyId && us.Status == "Active");
+        //    var elderly = await _context.Elderlies.Include(e=>e.Account).FirstOrDefaultAsync(e => e.Account.AccountId == elderlyId);
+            var rs = await _context.UserSubscriptions.Include(us => us.Booking)
+                                                    .ThenInclude(b => b.Elderly)
+                                                    .FirstOrDefaultAsync(us => us.Booking.ElderlyId == elderlyId && us.Status == "Đang khả dụng");
             return rs;
         }
-
+        
         public async Task<List<UserSubscription>> GetAllUserInSubscriptions(int subId)
         {
             return await _context.UserSubscriptions.Include(s => s.Booking).ThenInclude(b => b.Account)
