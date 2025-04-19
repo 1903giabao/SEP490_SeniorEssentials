@@ -21,6 +21,8 @@ public partial class UserSubscription
 
     public int? NumberOfMeetingLeft { get; set; }
 
+    public string ProfessorGroupChatId { get; set; }
+
     public virtual Booking Booking { get; set; }
 
     public virtual Professor Professor { get; set; }

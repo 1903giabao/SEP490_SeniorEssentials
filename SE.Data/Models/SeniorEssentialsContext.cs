@@ -16,7 +16,6 @@ public partial class SeniorEssentialsContext : DbContext
     public SeniorEssentialsContext()
     {
     }
-
     public static string GetConnectionString(string connectionStringName)
     {
         var config = new ConfigurationBuilder()
@@ -990,6 +989,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.ToTable("UserSubscription");
 
             entity.Property(e => e.EndDate).HasColumnType("datetime");
+            entity.Property(e => e.ProfessorGroupChatId).HasMaxLength(100);
             entity.Property(e => e.StartDate).HasColumnType("datetime");
             entity.Property(e => e.Status).HasMaxLength(20);
 

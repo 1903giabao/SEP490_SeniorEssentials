@@ -408,6 +408,7 @@ namespace SE.Service.Services
                     {
                         { "CreatedAt", currentTime.ToString("dd-MM-yyyy HH:mm") },
                         { "IsGroupChat", true },
+                        { "IsProfessorChat", false },
                         { "RoomName", groupName },
                         { "RoomAvatar", "https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png" },
                         { "SenderId", 0 },
@@ -644,6 +645,7 @@ namespace SE.Service.Services
                     {
                         { "CreatedAt", currentTime.ToString("dd-MM-yyyy HH:mm") },
                         { "IsGroupChat", true },
+                        { "IsProfessorChat", false },
                         { "RoomName", group.GroupName },
                         { "RoomAvatar", "https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png" },
                         { "SenderId", 0 },

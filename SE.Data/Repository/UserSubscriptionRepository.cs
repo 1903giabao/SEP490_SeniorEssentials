@@ -28,9 +28,11 @@ namespace SE.Data.Repository
         {
             var currentDate = DateTime.UtcNow.AddHours(7);
 
-            var result = await _context.UserSubscriptions.Include(us => us.Professor)
+            var result = await _context.UserSubscriptions
+                               .Include(us => us.Professor)
                                .ThenInclude(us => us.Account)
                                .Include(us => us.Booking)
+                               .ThenInclude(us => us.Account)
                                 .Where(us => bookingIds.Contains((int)us.BookingId) && us.Status.Equals(status)
                                 && us.StartDate <= currentDate &&
                         us.EndDate >= currentDate)
