@@ -18,6 +18,7 @@ using Microsoft.Identity.Client;
 using System.Text.RegularExpressions;
 using CloudinaryDotNet;
 using SE.Common.Request.Group;
+using System.Linq;
 
 namespace SE.Service.Services
 {
@@ -122,14 +123,14 @@ namespace SE.Service.Services
             {
                 if (accountId <= 0)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid account ID.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "ID tài khoản không hợp lệ.");
                 }
 
                 var familyMember = _unitOfWork.AccountRepository.FindByCondition(a => a.AccountId == accountId && a.RoleId == 3 && a.Status.Equals(SD.GeneralStatus.ACTIVE)).FirstOrDefault();
 
-                if (familyMember == null) 
+                if (familyMember == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Family Member does not existed");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Thành viên gia đình không tồn tại");
                 }
 
                 var userGroups = _unitOfWork.GroupMemberRepository.GetAll()
@@ -139,7 +140,7 @@ namespace SE.Service.Services
 
                 if (!userGroups.Any())
                 {
-                    return new BusinessResult(Const.FAIL_READ, "User is not a member of any group.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Người dùng không thuộc nhóm nào.");
                 }
 
                 var result = new List<GetAllElderlyInGroupResponse>();
@@ -165,14 +166,14 @@ namespace SE.Service.Services
 
                 if (!result.Any())
                 {
-                    return new BusinessResult(Const.FAIL_READ, "No active members found in any group.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không tìm thấy thành viên hoạt động trong nhóm.");
                 }
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
 
@@ -182,14 +183,14 @@ namespace SE.Service.Services
             {
                 if (req.GroupId <= 0)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid group ID.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "ID nhóm không hợp lệ.");
                 }
 
                 var group = _unitOfWork.GroupRepository.FindByCondition(a => a.GroupId == req.GroupId && a.Status.Equals(SD.GeneralStatus.ACTIVE)).FirstOrDefault();
 
                 if (group == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group does not existed");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Nhóm không tồn tại");
                 }
 
                 group.GroupName = req.GroupName;
@@ -205,7 +206,7 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
 
@@ -215,24 +216,24 @@ namespace SE.Service.Services
             {
                 if (request == null)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Request cannot be null.");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Yêu cầu không được để trống.");
                 }
 
                 if (string.IsNullOrWhiteSpace(request.GroupName))
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Group name cannot be empty.");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Tên nhóm không được để trống.");
                 }
 
                 if (request.CreatorAccountId <= 0)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Invalid creator account ID.");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "ID người tạo không hợp lệ.");
                 }
 
                 var checkCreator = await _unitOfWork.AccountRepository.GetByIdAsync(request.CreatorAccountId);
 
                 if (checkCreator.RoleId != 3)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Creator is not Family Member");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Người tạo không phải thành viên gia đình");
                 }
 
                 var accountIds = request.Members.Select(m => m.AccountId).ToList();
@@ -246,16 +247,18 @@ namespace SE.Service.Services
 
                 if (existingGroupIds.Any())
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "A group with the same members already exists.");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Nhóm với các thành viên này đã tồn tại.");
                 }
 
                 var memberIds = request.Members.Select(m => m.AccountId).ToList();
 
-                foreach (var memberId  in memberIds)
+                var numberOfElderly = 0;
+
+                foreach (var memberId in memberIds)
                 {
                     var elderlyCheck = await _unitOfWork.AccountRepository.GetByIdAsync(memberId);
 
-                    if (elderlyCheck.RoleId == 2) 
+                    if (elderlyCheck.RoleId == 2)
                     {
                         var elderly = _unitOfWork.GroupMemberRepository.FindByCondition(gm => gm.AccountId == elderlyCheck.AccountId).FirstOrDefault();
 
@@ -263,7 +266,14 @@ namespace SE.Service.Services
                         {
                             return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Người già đã ở trong nhóm gia đình khác!");
                         }
+
+                        numberOfElderly++;
                     }
+                }
+
+                if (numberOfElderly == 0)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Phải có ít nhất một người già!");
                 }
 
                 var allPairs = GetUniquePairs(memberIds);
@@ -276,7 +286,7 @@ namespace SE.Service.Services
 
                     if (!relationshipExists)
                     {
-                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Members {pair.Item1} and {pair.Item2} is not Family.");
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Thành viên {pair.Item1} và {pair.Item2} không phải là gia đình.");
                     }
                 }
 
@@ -299,15 +309,15 @@ namespace SE.Service.Services
 
                     if (createRs < 1)
                     {
-                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Lỗi khi tạo!");
                     }
-                }
+                } 
 
                 var roomCreateRs = await CreateRoomChat(request.Members, group.GroupName);
 
                 if (roomCreateRs.Status < 1)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, roomCreateRs.Message);
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, roomCreateRs.Message);
                 }
 
                 if (roomCreateRs.Data != null)
@@ -365,11 +375,11 @@ namespace SE.Service.Services
                     }
                 }
 
-                return new BusinessResult(Const.SUCCESS_CREATE, "Group created successfully.");
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, "Tạo nhóm thành công.");
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
 
@@ -379,7 +389,7 @@ namespace SE.Service.Services
             {
                 if (groupMembers.Count < 2)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "At least two members are required to create chat rooms.");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cần ít nhất hai thành viên để tạo phòng chat.");
                 }
 
                 List<Task> chatRoomTasks = new List<Task>();
@@ -388,8 +398,8 @@ namespace SE.Service.Services
                 var groupId = Guid.NewGuid().ToString();
 
                 if (groupMembers.Count > 2)
-                {                    
-                    DocumentReference groupChatRoomRef = _firestoreDb.Collection("ChatRooms").Document(groupId); 
+                {
+                    DocumentReference groupChatRoomRef = _firestoreDb.Collection("ChatRooms").Document(groupId);
 
                     var groupChatRoomData = new Dictionary<string, object>
                     {
@@ -428,11 +438,11 @@ namespace SE.Service.Services
                     await onlineMembersRef.Document(member.AccountId.ToString()).SetAsync(onlineMemberData);
                 }
 
-                return new BusinessResult(Const.SUCCESS_CREATE, "Chat rooms created successfully.", groupId);
+                return new BusinessResult(Const.SUCCESS_CREATE, "Tạo phòng chat thành công.", groupId);
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
 
@@ -455,18 +465,18 @@ namespace SE.Service.Services
             {
                 if (req.GroupId <= 0)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Invalid group ID.");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "ID nhóm không hợp lệ.");
                 }
 
                 if (req.MemberIds == null || !req.MemberIds.Any())
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Member IDs cannot be null or empty.");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Danh sách thành viên không được để trống.");
                 }
 
                 var group = await _unitOfWork.GroupRepository.GetByIdAsync(req.GroupId);
                 if (group == null)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Group does not exist.");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Nhóm không tồn tại.");
                 }
 
                 foreach (var memberId in req.MemberIds)
@@ -488,6 +498,19 @@ namespace SE.Service.Services
                     .Where(gm => gm.GroupId == req.GroupId)
                     .ToList();
 
+                if (existingMembers.Any())
+                {
+                    var existingMemberIds = existingMembers.Select(gm => gm.AccountId).ToList();
+
+                    foreach (var memberId in req.MemberIds)
+                    {
+                        if (existingMemberIds.Contains(memberId))
+                        {
+                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Người dùng đã ở trong nhóm.");
+                        }
+                    }
+                }
+
                 var duplicateMembers = existingMembers
                     .Where(gm => req.MemberIds.Contains(gm.AccountId))
                     .ToList();
@@ -501,7 +524,7 @@ namespace SE.Service.Services
 
                         if (updateRs < 1)
                         {
-                            return new BusinessResult(Const.FAIL_CREATE, $"Failed to reactivate member {duplicateMember.AccountId}.");
+                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Không thể kích hoạt lại thành viên {duplicateMember.AccountId}.");
                         }
                     }
                 }
@@ -535,7 +558,7 @@ namespace SE.Service.Services
 
                         if (createRs < 1)
                         {
-                            return new BusinessResult(Const.FAIL_CREATE, $"Failed to create user link.");
+                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Không thể tạo liên kết người dùng.");
                         }
                     }
                 }
@@ -554,7 +577,7 @@ namespace SE.Service.Services
 
                     if (createRs < 1)
                     {
-                        return new BusinessResult(Const.FAIL_CREATE, "Failed to add member to the group.");
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Không thể thêm thành viên vào nhóm.");
                     }
                 }
 
@@ -595,7 +618,7 @@ namespace SE.Service.Services
 
                         if (currentMembers.ContainsKey(memberIdStr))
                         {
-                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Member is already in this group!");
+                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Thành viên đã có trong nhóm này!");
                         }
 
                         currentMembers.Add(memberIdStr, true);
@@ -677,11 +700,11 @@ namespace SE.Service.Services
                     }
                 }
 
-                return new BusinessResult(Const.SUCCESS_CREATE, "Members added to the group successfully.");
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, "Thêm thành viên vào nhóm thành công.");
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
 
@@ -689,11 +712,11 @@ namespace SE.Service.Services
         {
             try
             {
-                var isExisted= _unitOfWork.AccountRepository.GetById(accountId);
+                var isExisted = _unitOfWork.AccountRepository.GetById(accountId);
 
                 if (isExisted == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "Account not found.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không tìm thấy tài khoản.");
                 }
 
                 var groupMembers = await _unitOfWork.GroupMemberRepository
@@ -701,28 +724,20 @@ namespace SE.Service.Services
 
                 if (groupMembers == null || !groupMembers.Any())
                 {
-                    return new BusinessResult(Const.FAIL_READ, "No groups found for the given account ID.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không tìm thấy nhóm nào cho ID tài khoản này.");
                 }
 
-                var result = groupMembers.Select(gm => new GroupMemberDTO
-                {
-                    GroupId = gm.GroupId,
-                    AccountId = gm.AccountId,
-                    FullName = gm.Account.FullName,
-                    Avatar = gm.Account.Avatar,
-                    IsCreator = gm.IsCreator,
-                    GroupName = gm.Group.GroupName
-                }).ToList();
+                var rs = _mapper.Map<List<GroupMemberDTO>>(groupMembers);
 
-                return new BusinessResult(Const.SUCCESS_READ, "Groups retrieved successfully.", result);
+                return new BusinessResult(Const.SUCCESS_READ, "Lấy thông tin nhóm thành công.", rs);
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
 
-        public async Task<IBusinessResult> RemoveMemberFromGroup(int kickerId,int groupId, int accountId)
+        public async Task<IBusinessResult> RemoveMemberFromGroup(int kickerId, int groupId, int accountId)
         {
             try
             {
@@ -731,14 +746,14 @@ namespace SE.Service.Services
 
                 if (groupMember == null)
                 {
-                    return new BusinessResult(Const.FAIL_UPDATE, "Group member not found.");
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Không tìm thấy thành viên nhóm.");
                 }
 
                 var isMemberCreator = _unitOfWork.GroupMemberRepository.FindByCondition(gm => gm.AccountId == accountId && gm.GroupId == groupId).Select(gm => gm.IsCreator).FirstOrDefault();
 
                 if (isMemberCreator)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Creator cannot be kicked/out!");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không thể xóa người tạo nhóm!");
                 }
 
                 groupMember.Status = SD.GeneralStatus.INACTIVE;
@@ -749,16 +764,34 @@ namespace SE.Service.Services
 
                     if (!isKickerCreator)
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Only the group creator can perform this action!");
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Chỉ người tạo nhóm mới có quyền thực hiện hành động này!");
                     }
                 }
 
                 var allGroupMembers = _unitOfWork.GroupMemberRepository.FindByCondition(gm => gm.GroupId == groupId).Select(gm => gm.AccountId).ToList();
 
+                int countRole2 = 0;
+
+                foreach (var groupMemberId in allGroupMembers)
+                {
+                    var account = await _unitOfWork.AccountRepository.GetAccountAsync(groupMemberId);
+
+                    if (account.RoleId == 2)
+                    {
+                        countRole2++;
+                    }
+                }
+
+                if (countRole2 == 1)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Không thể xóa người già này vì phải có ít nhất một người già trong nhóm!");
+                }
+
+
                 var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
                 if (group == null)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, "Group does not exist.");
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Nhóm không tồn tại.");
                 }
 
                 var roomChatId = group.GroupChatId;
@@ -770,7 +803,7 @@ namespace SE.Service.Services
 
                     if (!groupDoc.Exists)
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat does not exist!");
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Nhóm chat không tồn tại!");
                     }
 
                     var currentMembers = groupDoc.GetValue<Dictionary<string, object>>("MemberIds") ?? new Dictionary<string, object>();
@@ -778,7 +811,7 @@ namespace SE.Service.Services
 
                     if (!currentMembers.ContainsKey(memberIdStr))
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Member is not part of this group!");
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Thành viên không thuộc nhóm này!");
                     }
 
                     currentMembers.Remove(memberIdStr);
@@ -811,18 +844,18 @@ namespace SE.Service.Services
 
                         if (!deleteRs)
                         {
-                            return new BusinessResult(Const.FAIL_CREATE, $"Failed to delete user link.");
+                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Không thể xóa liên kết người dùng.");
                         }
                     }
                 }
 
                 await _unitOfWork.GroupMemberRepository.RemoveAsync(groupMember);
 
-                return new BusinessResult(Const.SUCCESS_UPDATE, "Member removed from group successfully.");
+                return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, "Xóa thành viên khỏi nhóm thành công.");
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
 
@@ -834,7 +867,7 @@ namespace SE.Service.Services
 
                 if (group == null)
                 {
-                    return new BusinessResult(Const.FAIL_UPDATE, "Group not found.");
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Không tìm thấy nhóm.");
                 }
 
                 var removeAllGroupMember = await _unitOfWork.GroupMemberRepository.RemoveAllGroupMember(group.GroupId);
@@ -843,18 +876,18 @@ namespace SE.Service.Services
 
                 if (!removeGroup)
                 {
-                    return new BusinessResult(Const.SUCCESS_UPDATE, "Remove group failed.");
+                    return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, "Xóa nhóm thất bại.");
                 }
 
                 var roomChatId = group.GroupChatId;
                 var groupRef = _firestoreDb.Collection("ChatRooms").Document(roomChatId);
                 await groupRef.DeleteAsync();
 
-                return new BusinessResult(Const.SUCCESS_UPDATE, "Remove group successfully.");
+                return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, "Xóa nhóm thành công.");
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_UPDATE, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
 
@@ -867,16 +900,16 @@ namespace SE.Service.Services
 
                 if (groupMembers == null || !groupMembers.Any())
                 {
-                    return new BusinessResult(Const.FAIL_READ, "No members found for the given group ID.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không tìm thấy thành viên nào trong nhóm.");
                 }
 
                 var rs = _mapper.Map<List<GroupMemberDTO>>(groupMembers);
 
-                return new BusinessResult(Const.SUCCESS_READ, "Group members retrieved successfully.", rs);
+                return new BusinessResult(Const.SUCCESS_READ, "Lấy thông tin thành viên nhóm thành công.", rs);
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
 
@@ -889,7 +922,7 @@ namespace SE.Service.Services
 
                 if (!documentSnapshot.Exists)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Group chat does not exist.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Nhóm chat không tồn tại.");
                 }
 
                 var memberIds = documentSnapshot.GetValue<Dictionary<string, object>>("MemberIds")?.Keys
@@ -898,7 +931,7 @@ namespace SE.Service.Services
 
                 if (memberIds == null || !memberIds.Any())
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "No members found in the group chat.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không tìm thấy thành viên nào trong nhóm chat.");
                 }
 
                 var familyGroups = _unitOfWork.GroupMemberRepository.GetAll()
@@ -910,7 +943,7 @@ namespace SE.Service.Services
 
                 if (!familyGroups.Any())
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "No valid family groups found where all group chat members are present.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không tìm thấy nhóm gia đình hợp lệ nào.");
                 }
 
                 var result = new List<GetAllGroupMembersDTO>();
@@ -951,7 +984,7 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
 
@@ -961,7 +994,7 @@ namespace SE.Service.Services
             {
                 if (userId <= 0)
                 {
-                    return new BusinessResult(Const.FAIL_READ, "Invalid user ID.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "ID người dùng không hợp lệ.");
                 }
 
                 var userGroups = _unitOfWork.GroupMemberRepository.GetAll()
@@ -971,7 +1004,7 @@ namespace SE.Service.Services
 
                 if (!userGroups.Any())
                 {
-                    return new BusinessResult(Const.FAIL_READ, "User is not a member of any group.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Người dùng không thuộc nhóm nào.");
                 }
 
                 var result = new List<GetAllGroupMembersDTO>();
@@ -983,7 +1016,7 @@ namespace SE.Service.Services
                     var groupMembers = _unitOfWork.GroupMemberRepository.GetAll()
                         .Where(gm => gm.GroupId == groupId &&
                                      gm.Status == SD.GeneralStatus.ACTIVE &&
-                                     gm.AccountId != userId) 
+                                     gm.AccountId != userId)
                         .Select(gm => gm.AccountId)
                         .ToList();
 
@@ -1005,14 +1038,14 @@ namespace SE.Service.Services
 
                 if (!result.Any())
                 {
-                    return new BusinessResult(Const.FAIL_READ, "No active members found in any group.");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không tìm thấy thành viên hoạt động trong nhóm.");
                 }
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
 
@@ -1025,28 +1058,28 @@ namespace SE.Service.Services
 
                 if (elderlyAccount == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Người già không tồn tại!");
                 }
 
                 var group = await _unitOfWork.GroupMemberRepository.GetGroupOfElderly(elderly);
 
                 if (group == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Nhóm không tồn tại!");
                 }
 
                 var groupMember = await _unitOfWork.GroupMemberRepository.GetFamilyMemberInGroup(group.GroupId);
 
                 if (!groupMember.Any())
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Lỗi khi tìm nhóm!");
                 }
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG);
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
 
@@ -1058,13 +1091,13 @@ namespace SE.Service.Services
 
                 if (elderlyAccount == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Người già không tồn tại!");
                 }
 
                 var requestUser = await _unitOfWork.UserLinkRepository.GetByAccount1Async(elderlyId, SD.UserLinkStatus.PENDING);
                 var requestUserAccount = requestUser.Where(r => r.AccountId2 != elderlyAccount.AccountId && r.RelationshipType.Equals("Family")).Select(r => r.AccountId2Navigation).ToList();
-                var mapRequestUser = _mapper.Map<List<UserDTO>>(requestUserAccount);                
-                
+                var mapRequestUser = _mapper.Map<List<UserDTO>>(requestUserAccount);
+
                 var responseUser = await _unitOfWork.UserLinkRepository.GetByAccount2Async(elderlyId, SD.UserLinkStatus.PENDING);
                 var responseUserAccount = responseUser.Where(r => r.AccountId1 != elderlyAccount.AccountId && r.RelationshipType.Equals("Family")).Select(r => r.AccountId1Navigation).ToList();
                 var mapResponseUser = _mapper.Map<List<UserDTO>>(responseUserAccount);
@@ -1128,7 +1161,7 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
 
@@ -1140,7 +1173,7 @@ namespace SE.Service.Services
 
                 if (familyMemberAccount == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Family Member does not exist!");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Thành viên gia đình không tồn tại!");
                 }
 
                 var requestUser = await _unitOfWork.UserLinkRepository.GetByAccount1Async(familyMemberAccount.AccountId, SD.UserLinkStatus.PENDING);
@@ -1216,7 +1249,7 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
 
@@ -1228,7 +1261,7 @@ namespace SE.Service.Services
 
                 if (familyMemberAccount == null || familyMemberAccount.RoleId != 3)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Family Member does not exist!");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Thành viên gia đình không tồn tại!");
                 }
 
                 var groups = await _unitOfWork.GroupMemberRepository.GetGroupOfFamilyMember(familyMemberAccount.AccountId);
@@ -1271,7 +1304,7 @@ namespace SE.Service.Services
                 }
 
                 listTotalUserNotInGroup = listTotalUserNotInGroup
-                    .Where(user => !(user.RoleId == 2 && allUserIdsInAnyGroup.Contains(user.AccountId))) 
+                    .Where(user => !(user.RoleId == 2 && allUserIdsInAnyGroup.Contains(user.AccountId)))
                     .DistinctBy(a => a.AccountId)
                     .ToList();
 
@@ -1279,7 +1312,7 @@ namespace SE.Service.Services
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_CREATE, "An unexpected error occurred: " + ex.Message);
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Lỗi không mong muốn: " + ex.Message);
             }
         }
     }

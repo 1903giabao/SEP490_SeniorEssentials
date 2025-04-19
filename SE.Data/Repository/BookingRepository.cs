@@ -19,7 +19,10 @@ namespace SE.Data.Repository
 
         public async Task<Booking> GetByTransactionIdAsync(int transactionId)
         {
-            var result = await _context.Bookings.Include(a => a.Subscription).FirstOrDefaultAsync(e => e.TransactionId == transactionId);
+            var result = await _context.Bookings
+                .Include(b => b.Elderly).ThenInclude(b => b.Account)
+                .Include(a => a.Subscription)
+                .FirstOrDefaultAsync(e => e.TransactionId == transactionId);
             return result;
         }        
         
