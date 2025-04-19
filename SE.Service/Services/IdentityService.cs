@@ -323,7 +323,7 @@ namespace SE.Service.Services
                                             .FirstOrDefault();
                 if (user == null || !SecurityUtil.Hash(password).Equals(user.Password))
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Wrong email or password!");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Sai Email hoặc mật khẩu!");
                 }
                 var hash = SecurityUtil.Hash(password);
                 if (user.Status.Equals(SD.GeneralStatus.INACTIVE))
