@@ -32,7 +32,9 @@ namespace SE.Data.Repository
                                .Include(us => us.Professor)
                                .ThenInclude(us => us.Account)
                                .Include(us => us.Booking)
-                               .ThenInclude(us => us.Account)
+                               .ThenInclude(us => us.Account)                               
+                               .Include(us => us.Booking)
+                               .ThenInclude(us => us.Subscription)
                                 .Where(us => bookingIds.Contains((int)us.BookingId) && us.Status.Equals(status)
                                 && us.StartDate <= currentDate &&
                         us.EndDate >= currentDate)

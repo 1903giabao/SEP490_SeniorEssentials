@@ -90,7 +90,7 @@ namespace SE.Service.Services
                 {
                     var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
 
-                    if (userSubscription != null)
+                    if (userSubscription != null && subscription.ValidityPeriod != 0)
                     {
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Người dùng hiện đang sử dụng gói dịch vụ!");
                     }
