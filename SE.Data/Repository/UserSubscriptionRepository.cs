@@ -104,6 +104,13 @@ namespace SE.Data.Repository
                 .Include(us => us.Booking).ThenInclude(us => us.Elderly).ThenInclude(us => us.Account).ThenInclude(us => us.Elderly)
                 .Where(us => us.ProfessorId == professorId).Select(us => us.Booking.Elderly.Account).ToListAsync();
             return result;
+        }         
+        
+        public async Task<List<UserSubscription>> GetAllActive(string status)
+        {
+            var result = await _context.UserSubscriptions
+                .Where(us => us.Status.Equals(status)).ToListAsync();
+            return result;
         }             
     }
 }

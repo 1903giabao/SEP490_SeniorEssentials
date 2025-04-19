@@ -46,6 +46,7 @@ namespace SE.Service.BackgroundWorkers
 
                         await CheckAndSendActivityNotifications(unitOfWork, activityService, notificationService, stoppingToken);
                         await CheckAndSendWaterReminders(unitOfWork, notificationService, stoppingToken);
+                        await CheckAndDisableStatus(unitOfWork, notificationService, stoppingToken);
                     }
                 }
                 catch (Exception ex)
@@ -65,7 +66,7 @@ namespace SE.Service.BackgroundWorkers
 
             try
             {
-                var now = DateTime.Now;
+                var now = DateTime.UtcNow.AddHours(7);
                 var currentDate = DateOnly.FromDateTime(now);
                 var currentTime = now.ToString("HH:mm");
 
@@ -134,7 +135,7 @@ namespace SE.Service.BackgroundWorkers
 
             try
             {
-                var now = DateTime.Now;
+                var now = DateTime.UtcNow.AddHours(7);
                 var currentTime = now.ToString("HH:mm");
 
                 var currentReminder = reminderSchedule.FirstOrDefault(r => r.Time == currentTime);
@@ -171,6 +172,38 @@ namespace SE.Service.BackgroundWorkers
             catch (Exception ex)
             {
                 Log.Error(ex, "Error while checking and sending water reminders");
+            }
+        }        
+        
+        private async Task CheckAndDisableStatus(UnitOfWork _unitOfWork, INotificationService _notificationService, CancellationToken stoppingToken)
+        {
+            Log.Information("Disable status is working...");
+
+            try
+            {
+                var now = DateTime.UtcNow.AddHours(7);
+                var currentTime = now.ToString("HH:mm");
+
+                var allUserSubscriptions = await _unitOfWork.UserServiceRepository.GetAllActive(SD.UserSubscriptionStatus.AVAILABLE);
+
+                if (allUserSubscriptions.Any())
+                {
+                    foreach (var subscription in allUserSubscriptions)
+                    {
+                        var endTime = subscription.EndDate;
+
+                        if (now > endTime)
+                        {
+                            subscription.Status = SD.UserSubscriptionStatus.EXPIRED;
+
+                            await _unitOfWork.UserServiceRepository.UpdateAsync(subscription);
+                        }                        
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while checking and disable status");
             }
         }
     }
