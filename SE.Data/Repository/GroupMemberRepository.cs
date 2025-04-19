@@ -97,6 +97,20 @@ namespace SE.Data.Repository
                 .Include(x => x.Account)
                 .Include(x=>x.Group)
                 .FirstOrDefaultAsync(gm => gm.GroupId == groupId && gm.AccountId == accountId);
+        }        
+        
+        public async Task<int> RemoveAllGroupMember(int groupId)
+        {
+            var removeGroupMembers = await _context.GroupMembers.Where(gm => gm.GroupId == groupId).ToListAsync();
+
+            if (removeGroupMembers.Any())
+            {
+                _context.GroupMembers.RemoveRange(removeGroupMembers);
+
+                return await _context.SaveChangesAsync();
+            }
+
+            return 0;
         }
     }
 }

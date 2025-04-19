@@ -830,18 +830,27 @@ namespace SE.Service.Services
         {
             try
             {
-                var groupMember = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
+                var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
 
-                if (groupMember == null)
+                if (group == null)
                 {
                     return new BusinessResult(Const.FAIL_UPDATE, "Group not found.");
                 }
 
-                groupMember.Status = SD.GeneralStatus.INACTIVE;
+                var removeAllGroupMember = await _unitOfWork.GroupMemberRepository.RemoveAllGroupMember(group.GroupId);
 
-                await _unitOfWork.GroupRepository.UpdateAsync(groupMember);
+                var removeGroup = await _unitOfWork.GroupRepository.RemoveAsync(group);
 
-                return new BusinessResult(Const.SUCCESS_UPDATE, "Removed group successfully.");
+                if (!removeGroup)
+                {
+                    return new BusinessResult(Const.SUCCESS_UPDATE, "Remove group failed.");
+                }
+
+                var roomChatId = group.GroupChatId;
+                var groupRef = _firestoreDb.Collection("ChatRooms").Document(roomChatId);
+                await groupRef.DeleteAsync();
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Remove group successfully.");
             }
             catch (Exception ex)
             {
