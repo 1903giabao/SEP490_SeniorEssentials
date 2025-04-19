@@ -14,6 +14,7 @@ namespace SE.Common.DTO
         public string? CreatedAt { get; set; }
         public bool? IsOnline { get; set; }
         public bool? IsGroupChat { get; set; }
+        public bool? IsProfessorChat { get; set; }
         public int? NumberOfMems { get; set; }
         public long? SenderId { get; set; }
         public string? LastMessage { get; set; }

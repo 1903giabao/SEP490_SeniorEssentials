@@ -21,6 +21,9 @@ using SE.Common.Request.Subscription;
 using Google.Api.Gax;
 using TagLib.Ape;
 using Org.BouncyCastle.Ocsp;
+using SE.Common.Request.SE.Common.Request;
+using Google.Cloud.Firestore;
+using System.Text.RegularExpressions;
 
 namespace SE.Service.Services
 {
@@ -56,11 +59,13 @@ namespace SE.Service.Services
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IGroupService _groupService;
-        public ProfessorService(UnitOfWork unitOfWork, IMapper mapper, IGroupService groupService)
+        private readonly FirestoreDb _firestoreDb;
+        public ProfessorService(UnitOfWork unitOfWork, IMapper mapper, IGroupService groupService, FirestoreDb firestoreDb)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _groupService = groupService;
+            _firestoreDb = firestoreDb;
         }
 
         public async Task<IBusinessResult> CancelMeeting(int appointmentId)
@@ -290,6 +295,79 @@ namespace SE.Service.Services
                     var updateRs = await _unitOfWork.UserServiceRepository.UpdateAsync(userSubscription);
 
                     if (updateRs < 1)
+                    {
+                        return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                    }
+
+                    var groupMembers = new List<GroupMemberRequest>
+                    {
+                        new GroupMemberRequest
+                        {
+                            AccountId = userSubscription.Booking.AccountId,
+                            IsCreator = true
+                        },
+                        new GroupMemberRequest
+                        {
+                            AccountId = getProfessorInfor.AccountId,
+                            IsCreator = false
+                        },
+                        new GroupMemberRequest
+                        {
+                            AccountId = elderly.AccountId,
+                            IsCreator = false
+                        }
+                    };
+
+                    var currentTime = DateTime.UtcNow.AddHours(7);
+                    var groupId = Guid.NewGuid().ToString();
+
+                    if (groupMembers.Count > 2)
+                    {
+                        DocumentReference groupChatRoomRef = _firestoreDb.Collection("ChatRooms").Document(groupId);
+
+                        var groupChatRoomData = new Dictionary<string, object>
+                        {
+                        { "CreatedAt", currentTime.ToString("dd-MM-yyyy HH:mm") },
+                        { "IsGroupChat", true },
+                        { "IsProfessorChat", true },
+                        { "RoomName", "Bác sĩ " + getProfessorInfor.FullName + ", " + elderly.FullName + ", " + userSubscription.Booking.Account.FullName},
+                        { "RoomAvatar", "https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png" },
+                        { "SenderId", 0 },
+                        { "LastMessage", "" },
+                        { "SentDate", currentTime.ToString("dd-MM-yyyy") },
+                        { "SentTime", currentTime.ToString("HH:mm") },
+                        { "SentDateTime", currentTime.ToString("dd-MM-yyyy HH:mm") },
+                            {
+                                "MemberIds", groupMembers
+                                    .ToDictionary(m => m.AccountId.ToString(), m => (object)true)
+                            }
+                        };
+
+                        await groupChatRoomRef.SetAsync(groupChatRoomData);
+
+                        foreach (var member in groupMembers)
+                        {
+                            await groupChatRoomRef.Collection("Members").Document(member.AccountId.ToString()).SetAsync(new { IsCreator = member.IsCreator });
+                        }
+                    }
+
+                    var onlineMembersRef = _firestoreDb.Collection("OnlineMembers");
+
+                    foreach (var member in groupMembers)
+                    {
+                        var onlineMemberData = new Dictionary<string, object>
+                            {
+                                { "IsOnline", true }
+                            };
+
+                        await onlineMembersRef.Document(member.AccountId.ToString()).SetAsync(onlineMemberData);
+                    }
+
+                    userSubscription.ProfessorGroupChatId = groupId;
+
+                    var updateRs1 = await _unitOfWork.UserServiceRepository.UpdateAsync(userSubscription);
+
+                    if (updateRs1 < 1)
                     {
                         return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
                     }

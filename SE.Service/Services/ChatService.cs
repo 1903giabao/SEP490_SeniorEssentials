@@ -404,6 +404,7 @@ namespace SE.Service.Services
                             CreatedAt = data["CreatedAt"]?.ToString(),
                             IsOnline = isOnline,
                             IsGroupChat = data["IsGroupChat"] as bool? ?? false,
+                            IsProfessorChat = data["IsProfessorChat"] as bool? ?? false,
                             RoomName = !groupChat && numberOfMems == 2 ? roomName : data["RoomName"].ToString(),
                             RoomAvatar = !groupChat && numberOfMems == 2 ? roomAvatar : data["RoomAvatar"].ToString(),
                             SenderId = data["SenderId"] as long?,
@@ -658,6 +659,7 @@ namespace SE.Service.Services
                     {
                             { "CreatedAt", DateTime.UtcNow.AddHours(7).ToString("dd-MM-yyyy HH:mm") },
                             { "IsGroupChat", true },
+                            { "IsProfessorChat", false },
                             { "RoomName", req.GroupName },
                             { "RoomAvatar", req.GroupAvatar == null ? "https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png" : urlLink.Item2},
                             { "SenderId", 0 },

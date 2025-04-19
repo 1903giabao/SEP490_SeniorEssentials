@@ -81,6 +81,21 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Subscription does not exist.");
                 }
 
+                var bookings = _unitOfWork.BookingRepository
+                    .FindByCondition(b => b.ElderlyId == elderly.Elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                    .Select(b => b.BookingId)
+                    .ToList();
+
+                if (bookings.Any())
+                {
+                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+
+                    if (userSubscription != null && subscription.ValidityPeriod != 0)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Người dùng hiện đang sử dụng gói dịch vụ!");
+                    }
+                }
+
                 var currentDatetime = DateTime.UtcNow.AddHours(7);
                 Random rnd = new Random();
                 var uniqueNumber = ZaloPay.Helper.Utils.Generate7DigitUniqueId();
