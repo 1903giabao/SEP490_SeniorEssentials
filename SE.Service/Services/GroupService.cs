@@ -779,7 +779,7 @@ namespace SE.Service.Services
                 {
                     var account = await _unitOfWork.AccountRepository.GetAccountAsync(groupMemberId);
 
-                    if (account.RoleId == 2)
+                    if (account.RoleId == 2 && account.AccountId == accountId)
                     {
                         countRole2++;
                     }
@@ -787,9 +787,16 @@ namespace SE.Service.Services
 
                 if (countRole2 == 1)
                 {
-                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Không thể xóa người già này vì phải có ít nhất một người già trong nhóm!");
-                }
+                    if (kickerId == accountId)
+                    {
+                        await RemoveGroup(groupId);
 
+                    }
+                    else
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Không thể xóa người già này vì phải có ít nhất một người già trong nhóm!");
+                    }
+                }
 
                 var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
                 if (group == null)
