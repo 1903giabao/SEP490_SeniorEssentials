@@ -161,7 +161,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Bookings of elderly not found.");
                 }
 
-                var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
+                var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
 
                 if (userSubscription?.Booking == null)
                 {

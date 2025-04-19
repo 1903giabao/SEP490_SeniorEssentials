@@ -286,7 +286,10 @@ namespace SE.Service.Services
 
                     if (!relationshipExists)
                     {
-                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Thành viên {pair.Item1} và {pair.Item2} không phải là gia đình.");
+                        var fullName1 = _unitOfWork.AccountRepository.GetById(pair.Item1);
+                        var fullName2 = _unitOfWork.AccountRepository.GetById(pair.Item2);
+
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Thành viên {fullName1.FullName} và {fullName2.FullName} không có mối quan hệ gia đình.");
                     }
                 }
 
