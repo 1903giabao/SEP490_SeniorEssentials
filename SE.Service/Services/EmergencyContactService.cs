@@ -41,6 +41,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateEmergencyConfirmation(int elderlyId);
         Task<IBusinessResult> ConfirmEmergency(int accountId, int emergencyId);
         Task<IBusinessResult> GetListEmergencyConfirmationByFamilyMember(int familyMemberId);
+        Task<IBusinessResult> GetListEmergencyConfirmationByProfessor(int professorId);
     }
 
     public class EmergencyContactService : IEmergencyContactService
@@ -515,6 +516,59 @@ namespace SE.Service.Services
                         ElderlyId = elderly.ElderlyId,
                         ElderlyName = elderly.Account.FullName,
                         PhoneNumber = elderly.Account.PhoneNumber,
+                        GetEmergencyConfirmationDTOs = listResult
+                    });
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, totalResult);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, $"An unexpected error occurred: {ex.Message}");
+            }
+        }        
+        
+        public async Task<IBusinessResult> GetListEmergencyConfirmationByProfessor(int professorId)
+        {
+            try
+            {
+                var account = await _unitOfWork.AccountRepository.GetAccountAsync(professorId);
+
+                if (account == null || account.RoleId != 4)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor does not exist!");
+                }
+
+                var listUserSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByProfessorAsync(account.AccountId, SD.UserSubscriptionStatus.AVAILABLE);
+
+                if (!listUserSubscription.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, new List<int>());
+                }
+
+                var totalResult = new List<GetListEmergencyConfirmationByFamilyMemberDTO>();
+
+                foreach ( var elderly in listUserSubscription)
+                {
+                    var emergency = await _unitOfWork.EmergencyConfirmationRepository.GetListEmergencyConfirmationByElderlyIdAsync(elderly.Booking.ElderlyId);
+
+                    var listResult = emergency.Select(e => new GetEmergencyConfirmationDTO
+                    {
+                        EmergencyConfirmationId = e.EmergencyConfirmationId,
+                        ElderlyId = e.ElderlyId,
+                        EmergencyDate = e.EmergencyDate?.ToString("dd-MM-yyyy"),
+                        EmergencyTime = e.EmergencyDate?.ToString("HH:mm"),
+                        ConfirmationAccountName = e.ConfirmationAccount == null ? "" : e.ConfirmationAccount.FullName,
+                        ConfirmationDate = e.ConfirmationDate?.ToString("dd-MM-yyyy HH:mm"),
+                        IsConfirmed = (e.IsConfirm == null ? false : e.IsConfirm),
+                        Status = e.Status,
+                    }).ToList();
+
+                    totalResult.Add(new GetListEmergencyConfirmationByFamilyMemberDTO
+                    {
+                        ElderlyId = elderly.Booking.ElderlyId,
+                        ElderlyName = elderly.Booking.Account.FullName,
+                        PhoneNumber = elderly.Booking.Account.PhoneNumber,
                         GetEmergencyConfirmationDTOs = listResult
                     });
                 }
