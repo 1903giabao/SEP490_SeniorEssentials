@@ -408,6 +408,8 @@ namespace SE.Service.Services
                         {
                             { "CreatedAt",  currentTime.ToString("dd-MM-yyyy HH:mm") },
                             { "IsGroupChat", false },
+                            { "IsProfessorChat", false },
+                            { "IsDisabled", false },
                             { "RoomName", "" },
                             { "RoomAvatar", "" },
                             { "SenderId", 0 },
