@@ -40,6 +40,25 @@ namespace SE.Data.Repository
                         us.EndDate >= currentDate)
                                 .FirstOrDefaultAsync();
             return result;
+        }          
+        
+        public async Task<UserSubscription> GetUserSubscriptionByElderlyAndProfessorAsync(int professorId, int familyMemberId, int elderlyId, string status)
+        {
+            var currentDate = DateTime.UtcNow.AddHours(7);
+
+            var result = await _context.UserSubscriptions
+                               .Include(us => us.Professor)
+                               .ThenInclude(us => us.Account)
+                               .Include(us => us.Booking)
+                               .ThenInclude(us => us.Account)                               
+                               .Include(us => us.Booking)
+                               .ThenInclude(us => us.Elderly)
+                               .ThenInclude(us => us.Account)
+                                .Where(us => us.Professor.AccountId == professorId && us.Booking.AccountId == familyMemberId && us.Booking.Elderly.AccountId == elderlyId && us.Status.Equals(status)
+                                && us.StartDate <= currentDate &&
+                        us.EndDate <= currentDate)
+                                .FirstOrDefaultAsync();
+            return result;
         }        
         
         public async Task<UserSubscription> GetAppointmentUserSubscriptionByBookingIdAsync(List<int> bookingIds, string status)

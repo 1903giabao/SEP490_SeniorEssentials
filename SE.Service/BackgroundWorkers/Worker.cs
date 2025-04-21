@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AutoMapper;
+using Google.Cloud.Firestore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SE.Common;
 using SE.Common.DTO;
 using SE.Common.Enums;
 using SE.Common.Response.HealthIndicator;
@@ -42,11 +45,12 @@ namespace SE.Service.BackgroundWorkers
                     {
                         var activityService = scope.ServiceProvider.GetRequiredService<IActivityService>();
                         var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+                        var firestoreDb = scope.ServiceProvider.GetRequiredService<FirestoreDb>();
                         var unitOfWork = scope.ServiceProvider.GetRequiredService<UnitOfWork>();
 
                         await CheckAndSendActivityNotifications(unitOfWork, activityService, notificationService, stoppingToken);
                         await CheckAndSendWaterReminders(unitOfWork, notificationService, stoppingToken);
-                        await CheckAndDisableStatus(unitOfWork, notificationService, stoppingToken);
+                        await CheckAndDisableStatus(unitOfWork, firestoreDb, stoppingToken);
                     }
                 }
                 catch (Exception ex)
@@ -175,7 +179,7 @@ namespace SE.Service.BackgroundWorkers
             }
         }        
         
-        private async Task CheckAndDisableStatus(UnitOfWork _unitOfWork, INotificationService _notificationService, CancellationToken stoppingToken)
+        private async Task CheckAndDisableStatus(UnitOfWork _unitOfWork, FirestoreDb _firestoreDb, CancellationToken stoppingToken)
         {
             Log.Information("Disable status is working...");
 
@@ -195,8 +199,20 @@ namespace SE.Service.BackgroundWorkers
                         if (now > endTime)
                         {
                             subscription.Status = SD.UserSubscriptionStatus.EXPIRED;
-
                             await _unitOfWork.UserServiceRepository.UpdateAsync(subscription);
+
+                            var groupRef = _firestoreDb.Collection("ChatRooms").Document(subscription.ProfessorGroupChatId);
+                            var groupDoc = await groupRef.GetSnapshotAsync();
+
+                            if (groupDoc.Exists)
+                            {
+                                var updateData = new Dictionary<string, object>
+                                {
+                                    { "IsDisabled", true }
+                                };
+
+                                await groupRef.UpdateAsync(updateData);
+                            }
                         }                        
                     }
                 }
