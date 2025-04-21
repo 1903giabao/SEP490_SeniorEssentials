@@ -398,6 +398,10 @@ namespace SE.Service.Services
                         }
                     }
 
+                    var isDisabled = data["IsDisabled"] as bool? ?? false;
+
+                    if (!isDisabled)
+                    {
                         chatRooms.Add(new ChatRoomDTO
                         {
                             RoomId = document.Id,
@@ -416,10 +420,11 @@ namespace SE.Service.Services
                             Users = listUser
                         });
                     }
+                }
 
-                    var orderedChatRooms = chatRooms
+                var orderedChatRooms = chatRooms
                             .OrderByDescending(chatRoom =>
-                                DateTime.TryParse(chatRoom.SentDateTime, out DateTime sentDateTime) ? sentDateTime : DateTime.MinValue).ToList();
+                             DateTime.TryParse(chatRoom.SentDateTime, out DateTime sentDateTime) ? sentDateTime : DateTime.MinValue).ToList();
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, orderedChatRooms);
             }
@@ -660,6 +665,7 @@ namespace SE.Service.Services
                             { "CreatedAt", DateTime.UtcNow.AddHours(7).ToString("dd-MM-yyyy HH:mm") },
                             { "IsGroupChat", true },
                             { "IsProfessorChat", false },
+                            { "IsDisabled", false },
                             { "RoomName", req.GroupName },
                             { "RoomAvatar", req.GroupAvatar == null ? "https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png" : urlLink.Item2},
                             { "SenderId", 0 },

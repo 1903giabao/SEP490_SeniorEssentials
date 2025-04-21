@@ -45,6 +45,13 @@ namespace SE.API.Controllers
         {
             var result = await _bookingService.CheckIfUserHasBooking(accountId);
             return Ok(result);
+        }         
+        
+        [HttpGet("user-subscription/{accountId}")]
+        public async Task<IActionResult> CheckSubscriptionByUser([FromRoute] int accountId)
+        {
+            var result = await _bookingService.CheckSubscriptionByUser(accountId);
+            return Ok(result);
         }       
         
         [HttpGet("bookings/family-member/{familyMemberId}")]

@@ -266,17 +266,17 @@ namespace SE.Service.Services
             {
                 var getProfessorInfor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(req.ProfessorId);
 
-                if (getProfessorInfor == null)
+                if (getProfessorInfor == null || getProfessorInfor.RoleId != 4)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor does not exist!");
                 }
 
                 var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(req.ElderlyId);
 
-                if (elderly == null)
+                if (elderly == null || elderly.RoleId != 2)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor does not exist!");
-                }
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }                               
 
                 var bookings = _unitOfWork.BookingRepository.FindByCondition(b => b.ElderlyId == elderly.Elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
                                                             .Select(b => b.BookingId).ToList();
@@ -299,37 +299,42 @@ namespace SE.Service.Services
                         return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
                     }
 
-                    var groupMembers = new List<GroupMemberRequest>
+                    var expiredUserSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByElderlyAndProfessorAsync(getProfessorInfor.AccountId, userSubscription.Booking.AccountId, userSubscription.Booking.Elderly.AccountId, SD.UserSubscriptionStatus.EXPIRED);
+
+                    if (expiredUserSubscription == null)
                     {
-                        new GroupMemberRequest
+                        var groupMembers = new List<GroupMemberRequest>
                         {
-                            AccountId = userSubscription.Booking.AccountId,
-                            IsCreator = true
-                        },
-                        new GroupMemberRequest
+                            new GroupMemberRequest
+                            {
+                                AccountId = userSubscription.Booking.AccountId,
+                                IsCreator = true
+                            },
+                            new GroupMemberRequest
+                            {
+                                AccountId = getProfessorInfor.AccountId,
+                                IsCreator = false
+                            },
+                            new GroupMemberRequest
+                            {
+                                AccountId = elderly.AccountId,
+                                IsCreator = false
+                            }
+                        };
+
+                        var currentTime = DateTime.UtcNow.AddHours(7);
+                        var groupId = Guid.NewGuid().ToString();
+
+                        if (groupMembers.Count > 2)
                         {
-                            AccountId = getProfessorInfor.AccountId,
-                            IsCreator = false
-                        },
-                        new GroupMemberRequest
-                        {
-                            AccountId = elderly.AccountId,
-                            IsCreator = false
-                        }
-                    };
+                            DocumentReference groupChatRoomRef = _firestoreDb.Collection("ChatRooms").Document(groupId);
 
-                    var currentTime = DateTime.UtcNow.AddHours(7);
-                    var groupId = Guid.NewGuid().ToString();
-
-                    if (groupMembers.Count > 2)
-                    {
-                        DocumentReference groupChatRoomRef = _firestoreDb.Collection("ChatRooms").Document(groupId);
-
-                        var groupChatRoomData = new Dictionary<string, object>
+                            var groupChatRoomData = new Dictionary<string, object>
                         {
                         { "CreatedAt", currentTime.ToString("dd-MM-yyyy HH:mm") },
                         { "IsGroupChat", true },
                         { "IsProfessorChat", true },
+                        { "IsDisabled", false },
                         { "RoomName", "Bác sĩ " + getProfessorInfor.FullName + ", " + elderly.FullName + ", " + userSubscription.Booking.Account.FullName},
                         { "RoomAvatar", "https://icons.veryicon.com/png/o/miscellaneous/standard/avatar-15.png" },
                         { "SenderId", 0 },
@@ -343,27 +348,46 @@ namespace SE.Service.Services
                             }
                         };
 
-                        await groupChatRoomRef.SetAsync(groupChatRoomData);
+                            await groupChatRoomRef.SetAsync(groupChatRoomData);
+
+                            foreach (var member in groupMembers)
+                            {
+                                await groupChatRoomRef.Collection("Members").Document(member.AccountId.ToString()).SetAsync(new { IsCreator = member.IsCreator });
+                            }
+                        }
+
+                        var onlineMembersRef = _firestoreDb.Collection("OnlineMembers");
 
                         foreach (var member in groupMembers)
                         {
-                            await groupChatRoomRef.Collection("Members").Document(member.AccountId.ToString()).SetAsync(new { IsCreator = member.IsCreator });
-                        }
-                    }
-
-                    var onlineMembersRef = _firestoreDb.Collection("OnlineMembers");
-
-                    foreach (var member in groupMembers)
-                    {
-                        var onlineMemberData = new Dictionary<string, object>
+                            var onlineMemberData = new Dictionary<string, object>
                             {
                                 { "IsOnline", true }
                             };
 
-                        await onlineMembersRef.Document(member.AccountId.ToString()).SetAsync(onlineMemberData);
-                    }
+                            await onlineMembersRef.Document(member.AccountId.ToString()).SetAsync(onlineMemberData);
+                        }
 
-                    userSubscription.ProfessorGroupChatId = groupId;
+                        userSubscription.ProfessorGroupChatId = groupId;
+                    }
+                    else
+                    {
+                        userSubscription.ProfessorGroupChatId = expiredUserSubscription.ProfessorGroupChatId;
+
+
+                        var groupRef = _firestoreDb.Collection("ChatRooms").Document(expiredUserSubscription.ProfessorGroupChatId);
+                        var groupDoc = await groupRef.GetSnapshotAsync();
+
+                        if (groupDoc.Exists)
+                        {
+                            var updateData = new Dictionary<string, object>
+                                {
+                                    { "IsDisabled", true }
+                                };
+
+                            await groupRef.UpdateAsync(updateData);
+                        }
+                    }
 
                     var updateRs1 = await _unitOfWork.UserServiceRepository.UpdateAsync(userSubscription);
 

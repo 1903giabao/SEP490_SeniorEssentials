@@ -34,6 +34,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> ConfirmOrder(string appTransId);
         Task<IBusinessResult> CheckIfUserHasBooking(int accountId);
         Task<IBusinessResult> GetListBookingOfFamilyMember(int familyMemberId);
+        Task<IBusinessResult> CheckSubscriptionByUser(int accountId);
     }
 
     public class BookingService : IBookingService
@@ -357,6 +358,66 @@ namespace SE.Service.Services
                     mapperBooking.ProfessorId = userSubscription?.ProfessorId ?? 0; // Safe assignment
 
                     return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, mapperBooking);
+                }
+
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }        
+        
+        public async Task<IBusinessResult> CheckSubscriptionByUser(int accountId)
+        {
+            try
+            {
+                if (accountId <= 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid account ID.");
+                }
+
+                var elderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+                if (elderly == null || elderly.RoleId != 2 || !elderly.Status.Equals(SD.GeneralStatus.ACTIVE))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist.");
+                }
+
+                if (elderly.Elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly details not found.");
+                }
+
+                var bookings = _unitOfWork.BookingRepository
+                    .FindByCondition(b => b.ElderlyId == elderly.Elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                    .Select(b => b.BookingId)
+                    .ToList();
+
+                if (bookings.Any())
+                {
+                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+
+                    if (userSubscription?.Booking == null)
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                    }
+
+                    if (userSubscription?.Booking == null)
+                    {
+                        return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG);
+                    }
+
+                    var result = new GetSubscriptionByUserResponse
+                    {
+                        SubscriptionName = userSubscription.Booking.Subscription.Name,
+                        Description = userSubscription.Booking.Subscription.Description,
+                        Price = (double)userSubscription.Booking.Price,
+                        StartDate = (DateTime)userSubscription.StartDate,
+                        EndDate = (DateTime)userSubscription.EndDate,
+                        NumberOfMeetingLeft = (int)userSubscription.NumberOfMeetingLeft,
+                    };
+
+                    return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
                 }
 
                 return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
