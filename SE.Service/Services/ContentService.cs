@@ -495,6 +495,13 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "User does not exist!");
                 }
 
+                var currentTime = DateTime.UtcNow.AddHours(7);
+
+                if (req.PublishDate >= currentTime)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Ngày xuất bản phải trước ngày hiện tại!");
+                }
+
                 var bookURL = ("", "");
 
                 if (req.BookFile != null)
@@ -538,6 +545,13 @@ namespace SE.Service.Services
                 if (book == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Book does not exist!");
+                }
+
+                var currentTime = DateTime.UtcNow.AddHours(7);
+
+                if (req.PublishDate >= currentTime)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Ngày xuất bản phải trước ngày hiện tại!");
                 }
 
                 book.BookName = req.BookName;
