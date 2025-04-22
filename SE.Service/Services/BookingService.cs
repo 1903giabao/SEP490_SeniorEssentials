@@ -65,7 +65,7 @@ namespace SE.Service.Services
                 }
 
                 var buyer = await _unitOfWork.AccountRepository.GetByIdAsync(req.AccountId);
-                if (buyer == null || buyer.RoleId != 3 || !buyer.Status.Equals(SD.GeneralStatus.ACTIVE))
+                if (buyer == null || !buyer.Status.Equals(SD.GeneralStatus.ACTIVE))
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Account does not exist.");
                 }

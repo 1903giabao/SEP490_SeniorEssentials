@@ -13,7 +13,6 @@ public partial class SeniorEssentialsContext : DbContext
         : base(options)
     {
     }
-
     public SeniorEssentialsContext()
     {
     }
@@ -29,7 +28,6 @@ public partial class SeniorEssentialsContext : DbContext
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer(GetConnectionString("DefaultConnection"));
-
     public virtual DbSet<Account> Accounts { get; set; }
 
     public virtual DbSet<Activity> Activities { get; set; }
@@ -142,7 +140,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Activity>(entity =>
         {
-            entity.HasKey(e => e.ActivityId).HasName("PK__Activity__45F4A791C7E62EA3");
+            entity.HasKey(e => e.ActivityId).HasName("PK__Activity__45F4A791DFF99496");
 
             entity.ToTable("Activity");
 
@@ -160,12 +158,12 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Elderly).WithMany(p => p.Activities)
                 .HasForeignKey(d => d.ElderlyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Activity__Elderl__7E37BEF6");
+                .HasConstraintName("FK__Activity__Elderl__10566F31");
         });
 
         modelBuilder.Entity<ActivitySchedule>(entity =>
         {
-            entity.HasKey(e => e.ActivityScheduleId).HasName("PK__Activity__273CEBBF773782F4");
+            entity.HasKey(e => e.ActivityScheduleId).HasName("PK__Activity__273CEBBF4A344DD1");
 
             entity.ToTable("ActivitySchedule");
 
@@ -178,12 +176,12 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Activity).WithMany(p => p.ActivitySchedules)
                 .HasForeignKey(d => d.ActivityId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ActivityS__Activ__7F2BE32F");
+                .HasConstraintName("FK__ActivityS__Activ__114A936A");
         });
 
         modelBuilder.Entity<BloodGlucose>(entity =>
         {
-            entity.HasKey(e => e.BloodGlucoseId).HasName("PK__BloodGlu__D56DFCB3E940D72E");
+            entity.HasKey(e => e.BloodGlucoseId).HasName("PK__BloodGlu__D56DFCB3CD2964B3");
 
             entity.ToTable("BloodGlucose");
 
@@ -198,12 +196,12 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.BloodGlucoses)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__BloodGluc__Elder__6CD828CA");
+                .HasConstraintName("FK__BloodGluc__Elder__123EB7A3");
         });
 
         modelBuilder.Entity<BloodOxygen>(entity =>
         {
-            entity.HasKey(e => e.BloodOxygenId).HasName("PK__BloodOxy__FD752DD7FB3DAAC5");
+            entity.HasKey(e => e.BloodOxygenId).HasName("PK__BloodOxy__FD752DD732B0CEBE");
 
             entity.ToTable("BloodOxygen");
 
@@ -218,12 +216,12 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.BloodOxygens)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__BloodOxyg__Elder__5C6CB6D7");
+                .HasConstraintName("FK__BloodOxyg__Elder__1332DBDC");
         });
 
         modelBuilder.Entity<BloodPressure>(entity =>
         {
-            entity.HasKey(e => e.BloodPressureId).HasName("PK__BloodPre__B6BB8B4E951D12AE");
+            entity.HasKey(e => e.BloodPressureId).HasName("PK__BloodPre__B6BB8B4EC70528A2");
 
             entity.ToTable("BloodPressure");
 
@@ -235,7 +233,7 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.BloodPressures)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__BloodPres__Elder__671F4F74");
+                .HasConstraintName("FK__BloodPres__Elder__14270015");
         });
 
         modelBuilder.Entity<Book>(entity =>
@@ -259,7 +257,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Booking>(entity =>
         {
-            entity.HasKey(e => e.BookingId).HasName("PK__Booking__73951AED56E58162");
+            entity.HasKey(e => e.BookingId).HasName("PK__Booking__73951AED0CD3D3D7");
 
             entity.ToTable("Booking");
 
@@ -283,7 +281,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Elderly).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.ElderlyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Booking__Elderly__01142BA1");
+                .HasConstraintName("FK__Booking__Elderly__17036CC0");
 
             entity.HasOne(d => d.Subscription).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.SubscriptionId)
@@ -292,7 +290,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<CaloriesConsumption>(entity =>
         {
-            entity.HasKey(e => e.CaloriesConsumptionId).HasName("PK__Calories__F6FC3D1C9F7A0152");
+            entity.HasKey(e => e.CaloriesConsumptionId).HasName("PK__Calories__F6FC3D1C59928F03");
 
             entity.ToTable("CaloriesConsumption");
 
@@ -307,16 +305,16 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.CaloriesConsumptions)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__CaloriesC__Elder__6225902D");
+                .HasConstraintName("FK__CaloriesC__Elder__18EBB532");
         });
 
         modelBuilder.Entity<ContentProvider>(entity =>
         {
-            entity.HasKey(e => e.ContentProviderId).HasName("PK__ContentP__B6C9992AF6A5A4B9");
+            entity.HasKey(e => e.ContentProviderId).HasName("PK__ContentP__B6C9992ADE5DC6FB");
 
             entity.ToTable("ContentProvider");
 
-            entity.HasIndex(e => e.AccountId, "UQ__ContentP__349DA5A79C25F4C0").IsUnique();
+            entity.HasIndex(e => e.AccountId, "UQ__ContentP__349DA5A77C7CEB74").IsUnique();
 
             entity.Property(e => e.Organization)
                 .IsRequired()
@@ -332,11 +330,11 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Elderly>(entity =>
         {
-            entity.HasKey(e => e.ElderlyId).HasName("PK__Elderly__8E4AA9597126FF96");
+            entity.HasKey(e => e.ElderlyId).HasName("PK__Elderly__8E4AA959BD5E9711");
 
             entity.ToTable("Elderly");
 
-            entity.HasIndex(e => e.AccountId, "UQ__Elderly__349DA5A7A2068C0F").IsUnique();
+            entity.HasIndex(e => e.AccountId, "UQ__Elderly__349DA5A75198D5BB").IsUnique();
 
             entity.Property(e => e.Allergy).HasMaxLength(100);
             entity.Property(e => e.LivingSituation).HasMaxLength(50);
@@ -352,21 +350,21 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<EmergencyConfirmation>(entity =>
         {
-            entity.HasKey(e => e.EmergencyConfirmationId).HasName("PK__Emergenc__FE2C2E4480AAD319");
+            entity.HasKey(e => e.EmergencyConfirmationId).HasName("PK__Emergenc__FE2C2E444FE541E2");
 
             entity.ToTable("EmergencyConfirmation");
 
             entity.Property(e => e.ConfirmationDate).HasColumnType("datetime");
             entity.Property(e => e.EmergencyDate).HasColumnType("datetime");
-            entity.Property(e => e.Status).HasMaxLength(20);
+            entity.Property(e => e.Status).HasMaxLength(50);
 
             entity.HasOne(d => d.ConfirmationAccount).WithMany(p => p.EmergencyConfirmations)
                 .HasForeignKey(d => d.ConfirmationAccountId)
-                .HasConstraintName("FK__Emergency__Confi__28ED12D1");
+                .HasConstraintName("FK__Emergency__Confi__1BC821DD");
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.EmergencyConfirmations)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__Emergency__Elder__27F8EE98");
+                .HasConstraintName("FK__Emergency__Elder__1CBC4616");
         });
 
         modelBuilder.Entity<EmergencyInformation>(entity =>
@@ -393,11 +391,11 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<FamilyMember>(entity =>
         {
-            entity.HasKey(e => e.FamilyMemberId).HasName("PK__FamilyMe__B7AD6D93093EA00A");
+            entity.HasKey(e => e.FamilyMemberId).HasName("PK__FamilyMe__B7AD6D93740225CD");
 
             entity.ToTable("FamilyMember");
 
-            entity.HasIndex(e => e.AccountId, "UQ__FamilyMe__349DA5A759589B1E").IsUnique();
+            entity.HasIndex(e => e.AccountId, "UQ__FamilyMe__349DA5A72AF1EFCF").IsUnique();
 
             entity.Property(e => e.Status)
                 .IsRequired()
@@ -410,7 +408,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<FootStep>(entity =>
         {
-            entity.HasKey(e => e.FootStepId).HasName("PK__FootStep__392C7E95EDAF3E52");
+            entity.HasKey(e => e.FootStepId).HasName("PK__FootStep__392C7E9574215E3A");
 
             entity.ToTable("FootStep");
 
@@ -425,12 +423,12 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.FootSteps)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__FootStep__Elderl__5F492382");
+                .HasConstraintName("FK__FootStep__Elderl__1F98B2C1");
         });
 
         modelBuilder.Entity<Group>(entity =>
         {
-            entity.HasKey(e => e.GroupId).HasName("PK__Group__149AF36A34004E88");
+            entity.HasKey(e => e.GroupId).HasName("PK__Group__149AF36AE8191497");
 
             entity.ToTable("Group");
 
@@ -446,11 +444,11 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<GroupMember>(entity =>
         {
-            entity.HasKey(e => e.GroupMemberId).HasName("PK__GroupMem__34481292ABAEC82E");
+            entity.HasKey(e => e.GroupMemberId).HasName("PK__GroupMem__344812925D046B4B");
 
             entity.ToTable("GroupMember");
 
-            entity.HasIndex(e => new { e.GroupId, e.AccountId }, "UQ__GroupMem__67D32931CD6D3D4D").IsUnique();
+            entity.HasIndex(e => new { e.GroupId, e.AccountId }, "UQ__GroupMem__67D329319D9409AC").IsUnique();
 
             entity.Property(e => e.Status)
                 .IsRequired()
@@ -464,12 +462,12 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Group).WithMany(p => p.GroupMembers)
                 .HasForeignKey(d => d.GroupId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__GroupMemb__Group__0C85DE4D");
+                .HasConstraintName("FK__GroupMemb__Group__2180FB33");
         });
 
         modelBuilder.Entity<HealthIndicatorBase>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__HealthIn__3214EC0774C43183");
+            entity.HasKey(e => e.Id).HasName("PK__HealthIn__3214EC0722A118AF");
 
             entity.ToTable("HealthIndicatorBase");
 
@@ -487,12 +485,12 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Account).WithMany(p => p.HealthIndicatorBases)
                 .HasForeignKey(d => d.AccountId)
-                .HasConstraintName("FK__HealthInd__Accou__382F5661");
+                .HasConstraintName("FK__HealthInd__Accou__22751F6C");
         });
 
         modelBuilder.Entity<HeartRate>(entity =>
         {
-            entity.HasKey(e => e.HeartRateId).HasName("PK__HeartRat__1FFE19891DF8BE79");
+            entity.HasKey(e => e.HeartRateId).HasName("PK__HeartRat__1FFE1989C4B3ACBF");
 
             entity.ToTable("HeartRate");
 
@@ -504,12 +502,12 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.HeartRates)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__HeartRate__Elder__69FBBC1F");
+                .HasConstraintName("FK__HeartRate__Elder__236943A5");
         });
 
         modelBuilder.Entity<Height>(entity =>
         {
-            entity.HasKey(e => e.HeightId).HasName("PK__Height__BF48562F44B6A3DF");
+            entity.HasKey(e => e.HeightId).HasName("PK__Height__BF48562F09FB275B");
 
             entity.ToTable("Height");
 
@@ -523,12 +521,12 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.Heights)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__Height__ElderlyI__4E53A1AA");
+                .HasConstraintName("FK__Height__ElderlyI__245D67DE");
         });
 
         modelBuilder.Entity<Iotdevice>(entity =>
         {
-            entity.HasKey(e => e.DeviceId).HasName("PK__IOTDevic__49E12311CA337122");
+            entity.HasKey(e => e.DeviceId).HasName("PK__IOTDevic__49E1231182F55968");
 
             entity.ToTable("IOTDevice");
 
@@ -545,12 +543,12 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Elderly).WithMany(p => p.Iotdevices)
                 .HasForeignKey(d => d.ElderlyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__IOTDevice__Elder__0E6E26BF");
+                .HasConstraintName("FK__IOTDevice__Elder__25518C17");
         });
 
         modelBuilder.Entity<KidneyFunction>(entity =>
         {
-            entity.HasKey(e => e.KidneyFunctionId).HasName("PK__KidneyFu__55187E7A17F76ACE");
+            entity.HasKey(e => e.KidneyFunctionId).HasName("PK__KidneyFu__55187E7A3CAD3F1B");
 
             entity.ToTable("KidneyFunction");
 
@@ -568,12 +566,12 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.KidneyFunctions)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__KidneyFun__Elder__756D6ECB");
+                .HasConstraintName("FK__KidneyFun__Elder__2645B050");
         });
 
         modelBuilder.Entity<Lesson>(entity =>
         {
-            entity.HasKey(e => e.LessonId).HasName("PK__Lesson__B084ACD0D1280DF7");
+            entity.HasKey(e => e.LessonId).HasName("PK__Lesson__B084ACD018D844DC");
 
             entity.ToTable("Lesson");
 
@@ -585,16 +583,16 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Account).WithMany(p => p.Lessons)
                 .HasForeignKey(d => d.AccountId)
-                .HasConstraintName("FK__Lesson__AccountI__42ACE4D4");
+                .HasConstraintName("FK__Lesson__AccountI__2739D489");
 
             entity.HasOne(d => d.Playlist).WithMany(p => p.Lessons)
                 .HasForeignKey(d => d.PlaylistId)
-                .HasConstraintName("FK__Lesson__Playlist__41B8C09B");
+                .HasConstraintName("FK__Lesson__Playlist__282DF8C2");
         });
 
         modelBuilder.Entity<LipidProfile>(entity =>
         {
-            entity.HasKey(e => e.LipidProfileId).HasName("PK__LipidPro__5B5E777C67E99247");
+            entity.HasKey(e => e.LipidProfileId).HasName("PK__LipidPro__5B5E777C9F31534F");
 
             entity.ToTable("LipidProfile");
 
@@ -613,12 +611,12 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.LipidProfiles)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__LipidProf__Elder__6FB49575");
+                .HasConstraintName("FK__LipidProf__Elder__29221CFB");
         });
 
         modelBuilder.Entity<LiverEnzyme>(entity =>
         {
-            entity.HasKey(e => e.LiverEnzymesId).HasName("PK__LiverEnz__96CA6DE97146A8DF");
+            entity.HasKey(e => e.LiverEnzymesId).HasName("PK__LiverEnz__96CA6DE9B5EDEA23");
 
             entity.Property(e => e.Alp)
                 .HasColumnType("decimal(5, 2)")
@@ -639,12 +637,12 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.LiverEnzymes)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__LiverEnzy__Elder__72910220");
+                .HasConstraintName("FK__LiverEnzy__Elder__2A164134");
         });
 
         modelBuilder.Entity<Medication>(entity =>
         {
-            entity.HasKey(e => e.MedicationId).HasName("PK__Medicati__62EC1AFA40A3EE22");
+            entity.HasKey(e => e.MedicationId).HasName("PK__Medicati__62EC1AFA958BB42B");
 
             entity.ToTable("Medication");
 
@@ -664,7 +662,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Elderly).WithMany(p => p.Medications)
                 .HasForeignKey(d => d.ElderlyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Medicatio__Elder__14270015");
+                .HasConstraintName("FK__Medicatio__Elder__2B0A656D");
 
             entity.HasOne(d => d.Prescription).WithMany(p => p.Medications)
                 .HasForeignKey(d => d.PrescriptionId)
@@ -674,7 +672,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<MedicationSchedule>(entity =>
         {
-            entity.HasKey(e => e.MedicationScheduleId).HasName("PK__Medicati__EDCDE99C09A80189");
+            entity.HasKey(e => e.MedicationScheduleId).HasName("PK__Medicati__EDCDE99C4EE469BD");
 
             entity.ToTable("MedicationSchedule");
 
@@ -689,12 +687,12 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Medication).WithMany(p => p.MedicationSchedules)
                 .HasForeignKey(d => d.MedicationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Medicatio__Medic__17036CC0");
+                .HasConstraintName("FK__Medicatio__Medic__2CF2ADDF");
         });
 
         modelBuilder.Entity<Music>(entity =>
         {
-            entity.HasKey(e => e.MusicId).HasName("PK__Music__11F840007C779ACD");
+            entity.HasKey(e => e.MusicId).HasName("PK__Music__11F84000592EC734");
 
             entity.ToTable("Music");
 
@@ -707,16 +705,16 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Account).WithMany(p => p.Musics)
                 .HasForeignKey(d => d.AccountId)
-                .HasConstraintName("FK__Music__AccountId__467D75B8");
+                .HasConstraintName("FK__Music__AccountId__2DE6D218");
 
             entity.HasOne(d => d.Playlist).WithMany(p => p.Musics)
                 .HasForeignKey(d => d.PlaylistId)
-                .HasConstraintName("FK__Music__PlaylistI__4589517F");
+                .HasConstraintName("FK__Music__PlaylistI__2EDAF651");
         });
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E122022E05E");
+            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E12E7D7E759");
 
             entity.ToTable("Notification");
 
@@ -739,12 +737,12 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.Notifications)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__Notificat__Elder__0A338187");
+                .HasConstraintName("FK__Notificat__Elder__30C33EC3");
         });
 
         modelBuilder.Entity<Playlist>(entity =>
         {
-            entity.HasKey(e => e.PlaylistId).HasName("PK__Playlist__B30167A0F60AE6CC");
+            entity.HasKey(e => e.PlaylistId).HasName("PK__Playlist__B30167A096D15A32");
 
             entity.ToTable("Playlist");
 
@@ -755,12 +753,12 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Account).WithMany(p => p.Playlists)
                 .HasForeignKey(d => d.AccountId)
-                .HasConstraintName("FK__Playlist__Accoun__3EDC53F0");
+                .HasConstraintName("FK__Playlist__Accoun__31B762FC");
         });
 
         modelBuilder.Entity<Prescription>(entity =>
         {
-            entity.HasKey(e => e.PrescriptionId).HasName("PK__Prescrip__40130832DAFDAA42");
+            entity.HasKey(e => e.PrescriptionId).HasName("PK__Prescrip__40130832DE8D2496");
 
             entity.ToTable("Prescription");
 
@@ -775,16 +773,16 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.ElderlyNavigation).WithMany(p => p.Prescriptions)
                 .HasForeignKey(d => d.Elderly)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Prescript__Elder__2B0A656D");
+                .HasConstraintName("FK__Prescript__Elder__32AB8735");
         });
 
         modelBuilder.Entity<Professor>(entity =>
         {
-            entity.HasKey(e => e.ProfessorId).HasName("PK__Professo__90035949D3A95ADB");
+            entity.HasKey(e => e.ProfessorId).HasName("PK__Professo__900359493FC28E71");
 
             entity.ToTable("Professor");
 
-            entity.HasIndex(e => e.AccountId, "UQ__Professo__349DA5A73244F108").IsUnique();
+            entity.HasIndex(e => e.AccountId, "UQ__Professo__349DA5A7099CF0DB").IsUnique();
 
             entity.Property(e => e.ClinicAddress).HasMaxLength(100);
             entity.Property(e => e.ConsultationFee).HasColumnType("decimal(10, 2)");
@@ -822,7 +820,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<ProfessorRating>(entity =>
         {
-            entity.HasKey(e => e.ProfessorRatingId).HasName("PK__Professo__4B8DB8B312A887BD");
+            entity.HasKey(e => e.ProfessorRatingId).HasName("PK__Professo__4B8DB8B3FC4A44B1");
 
             entity.ToTable("ProfessorRating");
 
@@ -837,7 +835,7 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Elderly).WithMany(p => p.ProfessorRatings)
                 .HasForeignKey(d => d.ElderlyId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Professor__Elder__1EA48E88");
+                .HasConstraintName("FK__Professor__Elder__367C1819");
 
             entity.HasOne(d => d.ProfessorAppointment).WithOne(p => p.ProfessorRating)
                 .HasForeignKey<ProfessorRating>(d => d.ProfessorAppointmentId)
@@ -846,12 +844,12 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Professor).WithMany(p => p.ProfessorRatings)
                 .HasForeignKey(d => d.ProfessorId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Professor__Profe__1F98B2C1");
+                .HasConstraintName("FK__Professor__Profe__37703C52");
         });
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Role__8AFACE1A23CDDE19");
+            entity.HasKey(e => e.RoleId).HasName("PK__Role__8AFACE1A74547830");
 
             entity.ToTable("Role");
 
@@ -865,7 +863,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<SleepTime>(entity =>
         {
-            entity.HasKey(e => e.SleepTimeId).HasName("PK__SleepTim__889BDCACAC61C3AC");
+            entity.HasKey(e => e.SleepTimeId).HasName("PK__SleepTim__889BDCACFFF845C5");
 
             entity.ToTable("SleepTime");
 
@@ -880,7 +878,7 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.SleepTimes)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__SleepTime__Elder__6501FCD8");
+                .HasConstraintName("FK__SleepTime__Elder__395884C4");
         });
 
         modelBuilder.Entity<Subscription>(entity =>
@@ -909,7 +907,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<SystemReport>(entity =>
         {
-            entity.HasKey(e => e.ReportId).HasName("PK__SystemRe__D5BD48051F46884C");
+            entity.HasKey(e => e.ReportId).HasName("PK__SystemRe__D5BD4805F996D6DC");
 
             entity.ToTable("SystemReport");
 
@@ -927,7 +925,7 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Account).WithMany(p => p.SystemReports)
                 .HasForeignKey(d => d.AccountId)
-                .HasConstraintName("FK__SystemRep__Accou__59904A2C");
+                .HasConstraintName("FK__SystemRep__Accou__3B40CD36");
         });
 
         modelBuilder.Entity<Transaction>(entity =>
@@ -962,7 +960,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<UserLink>(entity =>
         {
-            entity.HasKey(e => e.UserLinkId).HasName("PK__UserLink__36BB989DA8E38988");
+            entity.HasKey(e => e.UserLinkId).HasName("PK__UserLink__36BB989DCBAF057E");
 
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -1010,7 +1008,7 @@ public partial class SeniorEssentialsContext : DbContext
 
         modelBuilder.Entity<Weight>(entity =>
         {
-            entity.HasKey(e => e.WeightId).HasName("PK__Weight__02A0F31B0E0D250C");
+            entity.HasKey(e => e.WeightId).HasName("PK__Weight__02A0F31B9A7F9B79");
 
             entity.ToTable("Weight");
 
@@ -1024,7 +1022,7 @@ public partial class SeniorEssentialsContext : DbContext
 
             entity.HasOne(d => d.Elderly).WithMany(p => p.Weights)
                 .HasForeignKey(d => d.ElderlyId)
-                .HasConstraintName("FK__Weight__ElderlyI__4B7734FF");
+                .HasConstraintName("FK__Weight__ElderlyI__41EDCAC5");
         });
 
         OnModelCreatingPartial(modelBuilder);
