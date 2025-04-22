@@ -356,25 +356,28 @@ namespace SE.Service.Services
                         await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
                     }
 
-                    if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                    if (request.Members.Count == 2)
                     {
-                        // Send notification
-                        await _notificationService.SendNotification(
-                            familyMember.DeviceToken,
-                            "Thêm vào nhóm chat",
-                            $"Bạn đã được vào nhóm chat {group.GroupName}.");
-
-                        var newNotification = new Data.Models.Notification
+                        if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                         {
-                            NotificationType = "Thêm vào nhóm chat",
-                            AccountId = familyMember.AccountId,
-                            Status = SD.GeneralStatus.ACTIVE,
-                            Title = "Thêm vào nhóm chat",
-                            Message = $"Bạn đã được vào nhóm chat {group.GroupName}.",
-                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                        };
+                            // Send notification
+                            await _notificationService.SendNotification(
+                                familyMember.DeviceToken,
+                                "Thêm vào nhóm chat",
+                                $"Bạn đã được vào nhóm chat {group.GroupName}.");
 
-                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                            var newNotification = new Data.Models.Notification
+                            {
+                                NotificationType = "Thêm vào nhóm chat",
+                                AccountId = familyMember.AccountId,
+                                Status = SD.GeneralStatus.ACTIVE,
+                                Title = "Thêm vào nhóm chat",
+                                Message = $"Bạn đã được vào nhóm chat {group.GroupName}.",
+                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                            };
+
+                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        }
                     }
                 }
 
