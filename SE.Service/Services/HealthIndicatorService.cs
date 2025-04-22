@@ -399,7 +399,8 @@ namespace SE.Service.Services
                                     Title = "Cảnh báo sức khỏe",
                                     Message = $"Người thân của bạn {getElderly.FullName} có mức oxy trong máu cao hơn bình thường.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                    Data = JsonSerializer.Serialize(response)
+                                    Data = JsonSerializer.Serialize(response),
+                                    ElderlyId = bloodOxygenEntity.ElderlyId
                                 };
 
                                 await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
@@ -446,7 +447,9 @@ namespace SE.Service.Services
                                 Title = "Cảnh báo sức khỏe",
                                 Message = $"Người thân của bạn {getElderly.FullName} có mức oxy trong máu thấp hơn bình thường.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                Data = JsonSerializer.Serialize(response)
+                                Data = JsonSerializer.Serialize(response),
+                                ElderlyId = bloodOxygenEntity.ElderlyId
+
                             };
 
                             await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
@@ -590,7 +593,9 @@ namespace SE.Service.Services
                                     Title = "Cảnh báo sức khỏe",
                                     Message = $"Người thân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                    Data = JsonSerializer.Serialize(response)
+                                    Data = JsonSerializer.Serialize(response),
+                                    ElderlyId = bloodPressure.ElderlyId
+
                                 };
 
                                 await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
@@ -636,7 +641,9 @@ namespace SE.Service.Services
                                     Title = "Cảnh báo sức khỏe",
                                     Message = $"Người thân của bạn {getElderly.FullName} có huyết áp thấp hơn bình thường.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                    Data = JsonSerializer.Serialize(response)
+                                    Data = JsonSerializer.Serialize(response),
+                                    ElderlyId = bloodPressure.ElderlyId
+
                                 };
 
                                 await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
@@ -729,7 +736,9 @@ namespace SE.Service.Services
                                     Title = "Cảnh báo sức khỏe",
                                     Message = $"Người thân của bạn {getElderly.FullName} có nhịp tim nhanh hơn bình thường.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                    Data = JsonSerializer.Serialize(response)
+                                    Data = JsonSerializer.Serialize(response),
+                                    ElderlyId = heartRate.ElderlyId
+
                                 };
 
                                 await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
@@ -775,7 +784,9 @@ namespace SE.Service.Services
                                     Title = "Cảnh báo sức khỏe",
                                     Message = $"Người thân của bạn {getElderly.FullName} nhịp tim chậm hơn bình thường.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                    Data = JsonSerializer.Serialize(response)
+                                    Data = JsonSerializer.Serialize(response),
+                                    ElderlyId = heartRate.ElderlyId
+
                                 };
 
                                 await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
@@ -865,7 +876,9 @@ namespace SE.Service.Services
                                     Title = "Cảnh báo sức khỏe",
                                     Message = $"Người thân của bạn {getElderly.FullName} có đường máu cao hơn bình thường.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                    Data = JsonSerializer.Serialize(response)
+                                    Data = JsonSerializer.Serialize(response),
+                                    ElderlyId = bloodGlucose.ElderlyId
+
                                 };
 
                                 await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
@@ -911,7 +924,9 @@ namespace SE.Service.Services
                                     Title = "Cảnh báo sức khỏe",
                                     Message = $"Người thân của bạn {getElderly.FullName} có đường máu thấp hơn bình thường.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                    Data = JsonSerializer.Serialize(response)
+                                    Data = JsonSerializer.Serialize(response),
+                                    ElderlyId = bloodGlucose.ElderlyId
+
                                 };
 
                                 await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
@@ -1002,7 +1017,9 @@ namespace SE.Service.Services
                                     Title = "Cảnh báo sức khỏe",
                                     Message = $"Người thân của bạn {getElderly.FullName} có mỡ máu cao hơn bình thường.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                    Data = JsonSerializer.Serialize(response)
+                                    Data = JsonSerializer.Serialize(response),
+                                    ElderlyId = lipidProfile.ElderlyId
+
                                 };
 
                                 await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
@@ -1050,7 +1067,9 @@ namespace SE.Service.Services
                                     Title = "Cảnh báo sức khỏe",
                                     Message = $"Người thân của bạn {getElderly.FullName} có mỡ máu thấp hơn bình thường.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                    Data = JsonSerializer.Serialize(response)
+                                    Data = JsonSerializer.Serialize(response),
+                                    ElderlyId = lipidProfile.ElderlyId
+
                                 };
 
                                 await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
@@ -1140,7 +1159,9 @@ namespace SE.Service.Services
                                     Title = "Cảnh báo sức khỏe",
                                     Message = $"Người thân của bạn {getElderly.FullName} có men gan cao hơn bình thường.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                    Data = JsonSerializer.Serialize(response)
+                                    Data = JsonSerializer.Serialize(response),
+                                    ElderlyId = liverEnzyme.ElderlyId
+
                                 };
 
                                 await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
@@ -1190,7 +1211,9 @@ namespace SE.Service.Services
                                     Title = "Cảnh báo sức khỏe",
                                     Message = $"Người thân của bạn {getElderly.FullName} có men gan thấp hơn bình thường.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                    Data = JsonSerializer.Serialize(response)
+                                    Data = JsonSerializer.Serialize(response),
+                                    ElderlyId = liverEnzyme.ElderlyId
+
                                 };
 
                                 await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
@@ -1283,7 +1306,9 @@ namespace SE.Service.Services
                                     Title = "Cảnh báo sức khỏe",
                                     Message = $"Người thân của bạn {getElderly.FullName} có chức năng thận cao hơn bình thường.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                    Data = JsonSerializer.Serialize(response)
+                                    Data = JsonSerializer.Serialize(response),
+                                    ElderlyId = kidneyFunction.ElderlyId
+
                                 };
 
                                 await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
@@ -1333,7 +1358,9 @@ namespace SE.Service.Services
                                     Title = "Cảnh báo sức khỏe",
                                     Message = $"Người thân của bạn {getElderly.FullName} có chức năng thận thấp hơn bình thường.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                    Data = JsonSerializer.Serialize(response)
+                                    Data = JsonSerializer.Serialize(response),
+                                    ElderlyId = kidneyFunction.ElderlyId
+
                                 };
 
                                 await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
@@ -5167,18 +5194,11 @@ namespace SE.Service.Services
                 if (bloodPressureResponse != null)
                     responseList.Add(bloodPressureResponse);
 
-                if (lipidProfileResponse != null)
-                    responseList.Add(lipidProfileResponse);
-
-                if (liverEnzymeResponse != null)
-                    responseList.Add(liverEnzymeResponse);
-
+               
                 if (bloodGlucoseResponse != null)
                     responseList.Add(bloodGlucoseResponse);
 
-                if (kidneyFunctionResponse != null)
-                    responseList.Add(kidneyFunctionResponse);
-
+              
                 // Add new indicators to response list
                 if (caloriesConsumptionResponse != null)
                     responseList.Add(caloriesConsumptionResponse);
@@ -5191,6 +5211,14 @@ namespace SE.Service.Services
 
                 if (sleepTimeResponse != null)
                     responseList.Add(sleepTimeResponse);
+                if (lipidProfileResponse != null)
+                    responseList.Add(lipidProfileResponse);
+
+                if (liverEnzymeResponse != null)
+                    responseList.Add(liverEnzymeResponse);
+
+                if (kidneyFunctionResponse != null)
+                    responseList.Add(kidneyFunctionResponse);
 
                 return new BusinessResult(Const.SUCCESS_READ, "Health indicators retrieved successfully.", responseList);
             }

@@ -140,7 +140,7 @@ namespace SE.Service.Services
                                 NotificationType = "Gửi Yêu Cầu Hỗ Trợ",
                                 AccountId = responseUser.AccountId,
                                 Status = SD.NotificationStatus.SEND,
-                                Title = "Lời mời kết bạn",
+                                Title = "Gửi yêu cầu hỗ trợ",
                                 Message = $"Bạn nhận được yêu cầu hỗ trợ từ {requestUser.FullName}.",
                                 CreatedDate = System.DateTime.UtcNow.AddHours(7),
                             };
