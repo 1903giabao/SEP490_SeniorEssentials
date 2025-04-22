@@ -1261,7 +1261,25 @@ namespace SE.Service.Services
                 {
                     var allElderlyUserLinksIds = allElderlyUserLinks.SelectMany(link => new[] { link.AccountId1, link.AccountId2 }).Where(u => u != familyMemberId).Distinct().ToList();
 
-                    var accountFamilyNotInGroup = _unitOfWork.AccountRepository.GetAll().Where(a => allElderlyUserLinksIds.Contains(a.AccountId)).ToList();
+                    var familyNotInGroupIds = new List<int>();
+
+                    foreach (var us in allElderlyUserLinksIds)
+                    {
+                        var account = await _unitOfWork.AccountRepository.GetAccountAsync(us);
+
+                        var groupOfElderly = await _unitOfWork.GroupMemberRepository.GetGroupOfElderly(us);
+
+                        if (account != null && account.RoleId == 2 && groupOfElderly == null)
+                        {
+                            familyNotInGroupIds.Add(us);
+                        }
+                        else if (account != null && account.RoleId == 3)
+                        {
+                            familyNotInGroupIds.Add(us);
+                        }
+                    }
+
+                    var accountFamilyNotInGroup = _unitOfWork.AccountRepository.GetAll().Where(a => familyNotInGroupIds.Contains(a.AccountId)).ToList();
 
                     var mapFamilyNotInGroup = _mapper.Map<List<UserDTO>>(accountFamilyNotInGroup);
 
@@ -1350,7 +1368,25 @@ namespace SE.Service.Services
                 {
                     var allElderlyUserLinksIds = allElderlyUserLinks.SelectMany(link => new[] { link.AccountId1, link.AccountId2 }).Where(u => u != familyMemberId).Distinct().ToList();
 
-                    var accountFamilyNotInGroup = _unitOfWork.AccountRepository.GetAll().Where(a => allElderlyUserLinksIds.Contains(a.AccountId)).ToList();
+                    var familyNotInGroupIds = new List<int>();
+
+                    foreach (var us in allElderlyUserLinksIds)
+                    {
+                        var account = await _unitOfWork.AccountRepository.GetAccountAsync(us);
+
+                        var groupOfElderly = await _unitOfWork.GroupMemberRepository.GetGroupOfElderly(us);
+
+                        if (account != null && account.RoleId == 2 && groupOfElderly == null)
+                        {
+                            familyNotInGroupIds.Add(us);
+                        }
+                        else if (account != null && account.RoleId == 3)
+                        {
+                            familyNotInGroupIds.Add(us);
+                        }
+                    }
+
+                    var accountFamilyNotInGroup = _unitOfWork.AccountRepository.GetAll().Where(a => familyNotInGroupIds.Contains(a.AccountId)).ToList();
 
                     var mapFamilyNotInGroup = _mapper.Map<List<UserDTO>>(accountFamilyNotInGroup);
 
