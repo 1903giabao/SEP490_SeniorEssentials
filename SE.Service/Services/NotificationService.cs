@@ -51,7 +51,7 @@ namespace SE.Service.Services
                         NotificationId = item.NotificationId,   
                         Status = item.Status,   
                         Title = item.Title,
-
+                        Data = item.Data,
                     };
 
                     if (item.Title == "Cảnh báo sức khỏe")
