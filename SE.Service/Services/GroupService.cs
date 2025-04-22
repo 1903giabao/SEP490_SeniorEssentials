@@ -1283,29 +1283,47 @@ namespace SE.Service.Services
                 var listTotalUserNotInGroup = new List<UserDTO>();
                 var allUserIdsInAnyGroup = new List<int>();
 
-                foreach (var group in groups)
+                var allElderlyUserLinks = await _unitOfWork.UserLinkRepository.GetByUserIdAsync(familyMemberAccount.AccountId, SD.UserLinkStatus.ACCEPTED);
+
+                if (groups.Any())
                 {
-                    var groupMember = await _unitOfWork.GroupMemberRepository.GetByGroupIdAsync(group.GroupId);
+                    foreach (var group in groups)
+                    {
+                        var groupMember = await _unitOfWork.GroupMemberRepository.GetByGroupIdAsync(group.GroupId);
 
-                    var userInGroup = groupMember.Select(gm => gm.Account).ToList();
+                        var userInGroup = groupMember.Select(gm => gm.Account).ToList();
 
-                    allUserIdsInAnyGroup.AddRange(userInGroup.Select(uig => uig.AccountId));
+                        allUserIdsInAnyGroup.AddRange(userInGroup.Select(uig => uig.AccountId));
 
-                    var mapUserInGroup = _mapper.Map<List<UserDTO>>(userInGroup);
+                        var mapUserInGroup = _mapper.Map<List<UserDTO>>(userInGroup);
 
-                    var familyInGroup = groupMember.Where(gm => gm.Account.AccountId != familyMemberAccount.AccountId).Select(gm => gm.Account).ToList();
+                        var familyInGroup = groupMember.Where(gm => gm.Account.AccountId != familyMemberAccount.AccountId).Select(gm => gm.Account).ToList();
 
-                    var familyInGroupIds = familyInGroup.Select(a => a.AccountId).ToList();
+                        var familyInGroupIds = familyInGroup.Select(a => a.AccountId).ToList();
 
-                    var allElderlyUserLinks = await _unitOfWork.UserLinkRepository.GetByUserIdAsync(familyMemberAccount.AccountId, SD.UserLinkStatus.ACCEPTED);
+                        var familyNotInGroup = allElderlyUserLinks
+                            .SelectMany(link => new[] { link.AccountId1, link.AccountId2 })
+                            .Distinct()
+                            .Where(accountId => !familyInGroupIds.Contains(accountId) && accountId != familyMemberAccount.AccountId)
+                            .ToList();
 
-                    var familyNotInGroup = allElderlyUserLinks
-                        .SelectMany(link => new[] { link.AccountId1, link.AccountId2 })
-                        .Distinct()
-                        .Where(accountId => !familyInGroupIds.Contains(accountId) && accountId != familyMemberAccount.AccountId)
-                        .ToList();
+                        var accountFamilyNotInGroup = _unitOfWork.AccountRepository.GetAll().Where(a => familyNotInGroup.Contains(a.AccountId)).ToList();
 
-                    var accountFamilyNotInGroup = _unitOfWork.AccountRepository.GetAll().Where(a => familyNotInGroup.Contains(a.AccountId)).ToList();
+                        var mapFamilyNotInGroup = _mapper.Map<List<UserDTO>>(accountFamilyNotInGroup);
+
+                        if (allElderlyUserLinks == null)
+                        {
+                            allElderlyUserLinks = new List<UserLink>();
+                        }
+
+                        listTotalUserNotInGroup.AddRange(mapFamilyNotInGroup);
+                    }
+                }
+                else
+                {
+                    var allElderlyUserLinksIds = allElderlyUserLinks.SelectMany(link => new[] { link.AccountId1, link.AccountId2 }).Where(u => u != familyMemberId).Distinct().ToList();
+
+                    var accountFamilyNotInGroup = _unitOfWork.AccountRepository.GetAll().Where(a => allElderlyUserLinksIds.Contains(a.AccountId)).ToList();
 
                     var mapFamilyNotInGroup = _mapper.Map<List<UserDTO>>(accountFamilyNotInGroup);
 

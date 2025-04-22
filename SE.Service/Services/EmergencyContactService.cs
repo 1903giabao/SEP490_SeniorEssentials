@@ -42,6 +42,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> ConfirmEmergency(int accountId, int emergencyId);
         Task<IBusinessResult> GetListEmergencyConfirmationByFamilyMember(int familyMemberId);
         Task<IBusinessResult> GetListEmergencyConfirmationByProfessor(int professorId);
+        Task<IBusinessResult> ExpiredEmergency(int emergencyId);
     }
 
     public class EmergencyContactService : IEmergencyContactService
@@ -282,7 +283,7 @@ namespace SE.Service.Services
                 var bookings = _unitOfWork.BookingRepository.FindByCondition(b => b.ElderlyId == account.Elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
                                                             .Select(b => b.BookingId).ToList();
 
-                var doctor = await _unitOfWork.UserServiceRepository.GetProfessorByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
+                var doctor = await _unitOfWork.UserServiceRepository.GetProfessorByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
 
                 if (doctor == null)
                 {
@@ -863,6 +864,39 @@ namespace SE.Service.Services
                 }
 
                 return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, "Confirm success");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_CREATE, ex.Message);
+            }
+        }        
+        
+        public async Task<IBusinessResult> ExpiredEmergency(int emergencyId)
+        
+        {
+            try
+            {
+                var emergencyConfirmation = await _unitOfWork.EmergencyConfirmationRepository.GetByIdAsync(emergencyId);
+
+                if (emergencyConfirmation == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "Emergency Confirmation does not exist.");
+                }
+
+                emergencyConfirmation.ConfirmationAccountId = null;
+                emergencyConfirmation.IsConfirm = true;
+                emergencyConfirmation.ConfirmationDate = DateTime.UtcNow.AddHours(7);
+
+                emergencyConfirmation.Status = SD.EmergencyStatus.EXPIRED;
+
+                var updateRs = await _unitOfWork.EmergencyConfirmationRepository.UpdateAsync(emergencyConfirmation);
+
+                if (updateRs < 1)
+                {
+                    return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, "Emergency expired successfully!");
             }
             catch (Exception ex)
             {

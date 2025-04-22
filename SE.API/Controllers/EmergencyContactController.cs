@@ -90,7 +90,7 @@ namespace SE.API.Controllers
         {
             var result = await _emergencyContactService.ConfirmEmergency(accountId, emergencyId);
             return Ok(result);
-        }
+        }              
 
         [HttpPost("family-emergency-call")]
         public async Task<IActionResult> FamilyEmergencyCall([FromQuery] int accountId)
@@ -185,6 +185,13 @@ namespace SE.API.Controllers
                 CallStatuses[accountId] = "Cancelled";
                 return BadRequest("Call was cancelled.");
             }
+        }
+
+        [HttpPost("expire")]
+        public async Task<IActionResult> ExpiredEmergency([FromQuery] int emergencyId)
+        {
+            var result = await _emergencyContactService.ExpiredEmergency(emergencyId);
+            return Ok(result);
         }
     }
 }

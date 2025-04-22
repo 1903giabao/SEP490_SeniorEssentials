@@ -66,6 +66,7 @@ namespace SE.Common.Enums
             public static string CONFIRMED = "Đã xác nhận";
             public static string CANCELLED = "Đã hủy";
             public static string PENDING = "Chưa xác nhận";
+            public static string EXPIRED = "Đã quá thời gian xác nhận";
         }        
         
         public class UserSubscriptionStatus
