@@ -41,7 +41,6 @@ namespace SE.Service.Services
                 var final = new List<GetNotificationVM>();
                 foreach (var item in result)
                 {
-                    
                     var noti = new GetNotificationVM
                     {
                         AccountId = item.AccountId,
@@ -56,20 +55,15 @@ namespace SE.Service.Services
 
                     if (item.Title == "Cảnh báo sức khỏe")
                     {
-                        string pattern = @"Người thân của bạn (.+?) có";
-
-                        Match match = Regex.Match(item.Message, pattern);
-                       
-                            string name = match.Groups[1].Value.Trim();
                         
-                        var elderly = _unitOfWork.AccountRepository.FindByCondition (a=>a.FullName == name).FirstOrDefault();
+                        var elderly =await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(noti.ElderlyId);
                         if (elderly == null)
                         {
                             return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, " Không tìm thấy người già trong thông báo");
 
                         }
-                        noti.ElderlyId = elderly.AccountId;
-                        noti.FullName = name;
+                        noti.ElderlyId = elderly.Elderly.ElderlyId;
+                        noti.FullName = elderly.FullName;
                     }
                     final.Add(noti);
                 }

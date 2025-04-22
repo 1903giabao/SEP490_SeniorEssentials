@@ -23,5 +23,9 @@ public partial class Notification
 
     public string Data { get; set; }
 
+    public int? ElderlyId { get; set; }
+
     public virtual Account Account { get; set; }
+
+    public virtual Elderly Elderly { get; set; }
 }

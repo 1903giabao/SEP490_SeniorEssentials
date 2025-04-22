@@ -13,6 +13,7 @@ public partial class SeniorEssentialsContext : DbContext
         : base(options)
     {
     }
+
     public SeniorEssentialsContext()
     {
     }
@@ -28,6 +29,7 @@ public partial class SeniorEssentialsContext : DbContext
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer(GetConnectionString("DefaultConnection"));
+
     public virtual DbSet<Account> Accounts { get; set; }
 
     public virtual DbSet<Activity> Activities { get; set; }
@@ -734,6 +736,10 @@ public partial class SeniorEssentialsContext : DbContext
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Notificat__Accou__19DFD96B");
+
+            entity.HasOne(d => d.Elderly).WithMany(p => p.Notifications)
+                .HasForeignKey(d => d.ElderlyId)
+                .HasConstraintName("FK__Notificat__Elder__0A338187");
         });
 
         modelBuilder.Entity<Playlist>(entity =>

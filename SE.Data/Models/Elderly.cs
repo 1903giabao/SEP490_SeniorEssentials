@@ -51,6 +51,8 @@ public partial class Elderly
 
     public virtual ICollection<Medication> Medications { get; set; } = new List<Medication>();
 
+    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
     public virtual ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
 
     public virtual ICollection<ProfessorAppointment> ProfessorAppointments { get; set; } = new List<ProfessorAppointment>();
