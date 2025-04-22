@@ -819,14 +819,20 @@ namespace SE.Service.Services
         }        
         
         public async Task<IBusinessResult> ConfirmEmergency(int accountId, int emergencyId)
+        
         {
             try
             {
-                var account = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
+                var account = await _unitOfWork.AccountRepository.GetAccountAsync(accountId);
 
                 if (account == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, "Account does not exist.");
+                }                
+                
+                if (account.RoleId != 2 && account.RoleId != 3)
+                {
+                    return new BusinessResult(Const.FAIL_READ, "Invalid role.");
                 }
 
                 var emergencyConfirmation = await _unitOfWork.EmergencyConfirmationRepository.GetByIdAsync(emergencyId);
@@ -840,7 +846,7 @@ namespace SE.Service.Services
                 emergencyConfirmation.IsConfirm = true;
                 emergencyConfirmation.ConfirmationDate = DateTime.UtcNow.AddHours(7);
 
-                if (emergencyConfirmation.ElderlyId == account.Elderly.ElderlyId)
+                if (account.Elderly != null && emergencyConfirmation.ElderlyId == account.Elderly.ElderlyId)
                 {
                     emergencyConfirmation.Status = SD.EmergencyStatus.CANCELLED;
                 }
