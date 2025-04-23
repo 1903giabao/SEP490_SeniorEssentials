@@ -48,7 +48,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateAppointmentReport(CreateReportRequest request);
         Task<IBusinessResult> GiveProfessorFeedbackByAccount(GiveProfessorFeedbackByAccountVM request);
         Task<IBusinessResult> GetAllRatingsByProfessorId(int professorId);
-        Task<IBusinessResult> ConfirmMeeting(int appointmentId);
+        Task<IBusinessResult> ConfirmMeeting(int appointmentId, List<int> participantAccountIds);
         Task<IBusinessResult> CancelMeeting(int appointmentId, int accountId);
 
 
@@ -201,31 +201,52 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> ConfirmMeeting(int appointmentId)
+        public async Task<IBusinessResult> ConfirmMeeting(int appointmentId, List<int> participantAccountIds)
         {
             try
             {
-                var appointment = await _unitOfWork.ProfessorAppointmentRepository.GetByIdAsync(appointmentId);
-                if (appointment == null)
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Appointment not found.");
-                }
+                // 1. Lấy appointment với đầy đủ thông tin liên quan
+                var appointment = await _unitOfWork.ProfessorAppointmentRepository
+                    .GetAppointmentWithParticipantsAsync(appointmentId);
 
-                appointment.Status = SD.ProfessorAppointmentStatus.JOINED;
-                var rs = await _unitOfWork.ProfessorAppointmentRepository.UpdateAsync(appointment);
-                if (rs < 1)
+                if (appointment == null)
+                    return new BusinessResult(Const.FAIL_READ, "Appointment not found");
+
+                // 2. Xác minh thông tin Elderly
+                var elderlyAccountId = appointment.Elderly?.Account?.AccountId;
+                if (elderlyAccountId == null || elderlyAccountId == 0)
+                    return new BusinessResult(Const.FAIL_READ, "Invalid Elderly information");
+
+                // 3. Xác minh thông tin Professor
+                var professorAccountId = appointment.UserSubscription?.Professor?.Account?.AccountId;
+                if (professorAccountId == null || professorAccountId == 0)
+                    return new BusinessResult(Const.FAIL_READ, "Invalid Professor information");
+
+                // 4. Kiểm tra danh tính thực sự của người tham gia
+                bool isRealElderly = participantAccountIds.Contains(elderlyAccountId.Value);
+                bool isRealProfessor = participantAccountIds.Contains(professorAccountId.Value);
+
+                if (!isRealElderly || !isRealProfessor)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Failed to cancel");
+                    var errorMsg = new StringBuilder("Missing required participants:");
+                    if (!isRealElderly) errorMsg.Append(" Elderly");
+                    if (!isRealProfessor) errorMsg.Append(" Professor");
+                    return new BusinessResult(2, errorMsg.ToString());
                 }
-                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Confirm joined successfully");
+                // 6. Cập nhật trạng thái
+                appointment.Status = SD.ProfessorAppointmentStatus.JOINED;
+                var updateResult = await _unitOfWork.ProfessorAppointmentRepository.UpdateAsync(appointment);
+
+                if (updateResult < 1)
+                    return new BusinessResult(Const.FAIL_UPDATE, "Failed to update appointment status");
+
+                return new BusinessResult(Const.SUCCESS_UPDATE, "Meeting confirmed successfully");
             }
             catch (Exception ex)
             {
-                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
+                return new BusinessResult(Const.FAIL_READ,Const.FAIL_READ_MSG,ex.Message);
             }
         }
-
-
         public async Task<IBusinessResult> GetNumberOfMeetingLeftByElderly(int elderlyId)
         {
             try

@@ -134,10 +134,10 @@ namespace SE.API.Controllers
             return Ok(rs);
         }
 
-        [HttpPut("confirm/{appoinmentId}")]
-        public async Task<IActionResult> ConfirmMeeting([FromRoute] int appoinmentId)
+        [HttpPut("confirmation")]
+        public async Task<IActionResult> ConfirmMeeting( int appoinmentId,List<int> accountId)
         {
-            var rs = await _professorScheduleService.ConfirmMeeting(appoinmentId);
+            var rs = await _professorScheduleService.ConfirmMeeting(appoinmentId, accountId);
             return Ok(rs);
         }
 
