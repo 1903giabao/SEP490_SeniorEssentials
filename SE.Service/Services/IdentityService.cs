@@ -80,8 +80,7 @@ namespace SE.Service.Services
 
                     if (existedEmail!=null && existedEmail.IsVerified == true && existedEmail.FullName== null)
                     {
-                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Your email is created! Please login to fill information");
-
+                        var remove =await _unitOfWork.AccountRepository.RemoveAsync(existedEmail);
                     }
 
                     var mailData = new EmailData
@@ -125,12 +124,16 @@ namespace SE.Service.Services
                 { 
                     var existedPhone = _unitOfWork.AccountRepository.FindByCondition(a => a.PhoneNumber == account).FirstOrDefault();
 
-                    if (existedPhone != null)
+                    if (existedPhone != null && existedPhone.FullName != null)
                     {
                         return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Số điện thoại đã tồn tại trong hệ thống!");
 
                     }
-                    var sendPhoneOTP = await _smsService.SendOTPSmsAsync(account, otp.ToString());
+                    else if (existedPhone != null && existedPhone.IsVerified == true && existedPhone.FullName == null)
+                    {
+                        var remove = await _unitOfWork.AccountRepository.RemoveAsync(existedPhone);
+                    }
+                        var sendPhoneOTP = await _smsService.SendOTPSmsAsync(account, otp.ToString());
                     if (sendPhoneOTP == null)
                     {
                         return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot send sms.");

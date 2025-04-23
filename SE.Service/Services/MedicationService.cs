@@ -312,8 +312,8 @@ namespace SE.Service.Services
         {
             { "Sáng", "07:00" },
             { "Trưa", "11:00" },
-            { "Chiều", "15:00" },
-            { "Tối", "20:00" }
+            { "Chiều", "16:00" },
+            { "Tối", "19:00" }
         };
 
             foreach (var model in mediModels.mediModels)
@@ -449,7 +449,19 @@ namespace SE.Service.Services
                 throw new InvalidOperationException("Lịch uống thuốc không thể trống");
             }
 
+            var now = DateTime.Now;
             var currentDate = ConvertToDateTime(medication.StartDate).Value;
+
+            // Nếu ngày bắt đầu là hôm nay, điều chỉnh để bỏ qua các thời điểm đã qua
+            if (currentDate.Date == now.Date)
+            {
+                currentDate = now; // Bắt đầu từ thời điểm hiện tại
+            }
+            else if (currentDate < now)
+            {
+                currentDate = now.Date.AddDays(1); // Nếu ngày bắt đầu đã qua, bắt đầu từ ngày mai
+            }
+
             var remaining = medication.Remaining;
             var rs = 0;
             var maxDate = currentDate.AddMonths(6); // Giới hạn 6 tháng
@@ -500,12 +512,20 @@ namespace SE.Service.Services
                                 throw new InvalidOperationException($"Thời gian không hợp lệ: {time}");
                             }
 
+                            var scheduleTime = currentDate.Date.Add(timeOfDay);
+
+                            // Bỏ qua nếu thời gian đã qua trong ngày hiện tại
+                            if (currentDate.Date == now.Date && scheduleTime <= now)
+                            {
+                                continue;
+                            }
+
                             var schedule = new MedicationSchedule
                             {
                                 MedicationId = medication.MedicationId,
                                 Dosage = medication.Dosage,
                                 Status = "Unused",
-                                DateTaken = currentDate.Date.Add(timeOfDay),
+                                DateTaken = scheduleTime,
                                 IsTaken = false
                             };
 
@@ -536,12 +556,20 @@ namespace SE.Service.Services
                             throw new InvalidOperationException($"Thời gian không hợp lệ: {time}");
                         }
 
+                        var scheduleTime = currentDate.Date.Add(timeOfDay);
+
+                        // Bỏ qua nếu thời gian đã qua trong ngày hiện tại
+                        if (currentDate.Date == now.Date && scheduleTime <= now)
+                        {
+                            continue;
+                        }
+
                         var schedule = new MedicationSchedule
                         {
                             MedicationId = medication.MedicationId,
                             Dosage = medication.Dosage,
                             Status = "Unused",
-                            DateTaken = currentDate.Date.Add(timeOfDay),
+                            DateTaken = scheduleTime,
                             IsTaken = false
                         };
 
@@ -578,29 +606,6 @@ namespace SE.Service.Services
             await _unitOfWork.MedicationRepository.UpdateAsync(medication);
 
             return rs;
-        }
-
-        private string GetVietnameseDayOfWeek(System.DayOfWeek dayOfWeek)
-        {
-            switch (dayOfWeek)
-            {
-                case System.DayOfWeek.Monday:
-                    return "Thứ 2";
-                case System.DayOfWeek.Tuesday:
-                    return "Thứ 3";
-                case System.DayOfWeek.Wednesday:
-                    return "Thứ 4";
-                case System.DayOfWeek.Thursday:
-                    return "Thứ 5";
-                case System.DayOfWeek.Friday:
-                    return "Thứ 6";
-                case System.DayOfWeek.Saturday:
-                    return "Thứ 7";
-                case System.DayOfWeek.Sunday:
-                    return "Chủ nhật";
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(dayOfWeek), dayOfWeek, null);
-            }
         }
 
         public static System.DateTime? ConvertToDateTime(DateOnly? dateOnly)
