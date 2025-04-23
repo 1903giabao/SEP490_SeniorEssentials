@@ -31,6 +31,27 @@ namespace SE.Data.Repository
             return result;
         }
 
+        public async Task<bool> ValidateElderlyProfessorRelationAsync(int appointmentId, int elderlyId, int professorId)
+        {
+            return await _context.ProfessorAppointments
+                .Where(pa => pa.ProfessorAppointmentId == appointmentId && pa.ElderlyId == elderlyId)
+                .Join(_context.UserSubscriptions,
+                    appointment => appointment.UserSubscriptionId,
+                    subscription => subscription.UserSubscriptionId,
+                    (appointment, subscription) => subscription)
+                .AnyAsync(s => s.ProfessorId == professorId);
+        }
+
+        public async Task<ProfessorAppointment> GetAppointmentWithParticipantsAsync(int appointmentId)
+        {
+            return await _context.ProfessorAppointments
+                .Include(a => a.Elderly.Account)
+                .Include(a => a.UserSubscription)
+                    .ThenInclude(us => us.Professor)
+                        .ThenInclude(p => p.Account)
+                .FirstOrDefaultAsync(a => a.ProfessorAppointmentId == appointmentId);
+        }
+
         public async Task<List<ProfessorAppointment>> GetByElderlyIdAsync(int elderlyId, string type)
         {
 
