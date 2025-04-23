@@ -38,13 +38,15 @@ namespace SE.Service.Services
             {
                 var result = _unitOfWork.NotificationRepository.FindByCondition(n=>n.AccountId == accountId)
                     .OrderByDescending(n=>n.NotificationId).ToList();
+
                 var final = new List<GetNotificationVM>();
+
                 foreach (var item in result)
                 {
                     var noti = new GetNotificationVM
                     {
                         AccountId = item.AccountId,
-                        CreatedDate = DateTime.Now,
+                        CreatedDate = item.CreatedDate,
                         Message = item.Message,
                         NotificationType = item.NotificationType,
                         NotificationId = item.NotificationId,   
@@ -57,13 +59,12 @@ namespace SE.Service.Services
                     {
                         
                         var elderly =await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(noti.ElderlyId);
-                        if (elderly == null)
+                        if (elderly != null)
                         {
-                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, " Không tìm thấy người già trong thông báo");
-
+                            //return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, " Không tìm thấy người già trong thông báo");
+                            noti.ElderlyId = elderly.Elderly.ElderlyId;
+                            noti.FullName = elderly.FullName;
                         }
-                        noti.ElderlyId = elderly.Elderly.ElderlyId;
-                        noti.FullName = elderly.FullName;
                     }
                     final.Add(noti);
                 }
