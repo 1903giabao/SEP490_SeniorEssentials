@@ -48,8 +48,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> CreateAppointmentReport(CreateReportRequest request);
         Task<IBusinessResult> GiveProfessorFeedbackByAccount(GiveProfessorFeedbackByAccountVM request);
         Task<IBusinessResult> GetAllRatingsByProfessorId(int professorId);
-        Task<IBusinessResult> CancelMeeting(int appointmentId);
         Task<IBusinessResult> ConfirmMeeting(int appointmentId);
+        Task<IBusinessResult> CancelMeeting(int appointmentId, int accountId);
 
 
     }
@@ -60,15 +60,18 @@ namespace SE.Service.Services
         private readonly IMapper _mapper;
         private readonly IGroupService _groupService;
         private readonly FirestoreDb _firestoreDb;
-        public ProfessorService(UnitOfWork unitOfWork, IMapper mapper, IGroupService groupService, FirestoreDb firestoreDb)
+        private readonly INotificationService _notificationService;
+
+        public ProfessorService(UnitOfWork unitOfWork, IMapper mapper, IGroupService groupService, FirestoreDb firestoreDb, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _groupService = groupService;
             _firestoreDb = firestoreDb;
+            _notificationService = notificationService;
         }
 
-        public async Task<IBusinessResult> CancelMeeting(int appointmentId)
+        public async Task<IBusinessResult> CancelMeeting(int appointmentId, int accountId)
         {
             try
             {
@@ -103,11 +106,89 @@ namespace SE.Service.Services
 
                 appointment.Status = SD.ProfessorAppointmentStatus.CANCELLED;
                 var rs = await _unitOfWork.ProfessorAppointmentRepository.UpdateAsync(appointment);
-/*
-                var getElderly = _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(appointment.ElderlyId);
 
-                var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.Result.AccountId);
-*/
+
+                var getTokenProfessor = _unitOfWork.AccountRepository.FindByCondition(a => a.AccountId == getUserSub.UserSubscription.Professor.AccountId).FirstOrDefault();
+                var getTokenElderly = _unitOfWork.AccountRepository.FindByCondition(a => a.AccountId == getUserSub.Elderly.AccountId).FirstOrDefault();
+                var getTokenFamilyMember = _unitOfWork.AccountRepository.FindByCondition(a => a.AccountId == getUserSub.UserSubscription.Booking.AccountId).FirstOrDefault();
+
+
+
+                var checkAccount = _unitOfWork.AccountRepository.FindByCondition(a => a.AccountId == accountId).FirstOrDefault();
+
+                //send professor noti 
+                if (checkAccount.RoleId != 4)
+                {
+                    if ( getTokenProfessor != null && getTokenProfessor.DeviceToken != "string")
+                    {
+                        await _notificationService.SendNotification(
+                                    getTokenProfessor.DeviceToken,
+                                    "Hủy Lịch Khám",
+                                    $"{checkAccount.FullName} đã hủy lịch hẹn vào lúc {appointment.AppointmentTime.ToString("HH:mm")} ngày {appointment.AppointmentTime.ToString("dd-MM-yyyy")}");
+
+                        var newNotification = new Notification
+                        {
+                            NotificationType = "Hủy Lịch Khám",
+                            AccountId = getTokenProfessor.AccountId,
+                            Status = SD.NotificationStatus.SEND,
+                            Title = "Hủy Lịch Khám",
+                            Message = $"{checkAccount.FullName} đã hủy lịch hẹn vào lúc {appointment.AppointmentTime.ToString("HH:mm")} ngày {appointment.AppointmentTime.ToString("dd-MM-yyyy")}",
+                            CreatedDate = System.DateTime.UtcNow.AddHours(7)
+                        };
+
+                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                    }
+                }
+
+                // send elderly noti
+
+                if (checkAccount.RoleId != 2)
+                {
+                    if (getTokenElderly != null && getTokenElderly.DeviceToken != "string")
+                    {
+                        await _notificationService.SendNotification(
+                                    getTokenElderly.DeviceToken,
+                                    "Hủy Lịch Khám",
+                                    $"{checkAccount.FullName} đã hủy lịch hẹn vào lúc {appointment.AppointmentTime.ToString("HH:mm")} ngày {appointment.AppointmentTime.ToString("dd-MM-yyyy")}");
+
+                        var newNotification = new Notification
+                        {
+                            NotificationType = "Hủy Lịch Khám",
+                            AccountId = getTokenElderly.AccountId,
+                            Status = SD.NotificationStatus.SEND,
+                            Title = "Hủy Lịch Khám",
+                            Message = $"{checkAccount.FullName} đã hủy lịch hẹn vào lúc {appointment.AppointmentTime.ToString("HH:mm")} ngày {appointment.AppointmentTime.ToString("dd-MM-yyyy")}",
+                            CreatedDate = System.DateTime.UtcNow.AddHours(7)
+                        };
+
+                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                    }
+                }
+
+                // send family member noti
+                if (checkAccount.RoleId != 3)
+                {
+                    if (getTokenFamilyMember != null && getTokenFamilyMember.DeviceToken != "string")
+                    {
+                        await _notificationService.SendNotification(
+                                    getTokenFamilyMember.DeviceToken,
+                                    "Hủy Lịch Khám",
+                                    $"{checkAccount.FullName} đã hủy lịch hẹn vào lúc {appointment.AppointmentTime.ToString("HH:mm")} ngày {appointment.AppointmentTime.ToString("dd-MM-yyyy")}");
+
+                        var newNotification = new Notification
+                        {
+                            NotificationType = "Hủy Lịch Khám",
+                            AccountId = getTokenFamilyMember.AccountId,
+                            Status = SD.NotificationStatus.SEND,
+                            Title = "Hủy Lịch Khám",
+                            Message = $"{checkAccount.FullName} đã hủy lịch hẹn vào lúc {appointment.AppointmentTime.ToString("HH:mm")} ngày {appointment.AppointmentTime.ToString("dd-MM-yyyy")}",
+                            CreatedDate = System.DateTime.UtcNow.AddHours(7)
+                        };
+
+                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                    }
+                }
+
                 if (rs < 1)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Failed to cancel");

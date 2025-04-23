@@ -127,10 +127,10 @@ namespace SE.API.Controllers
         }
 
 
-        [HttpPut("cancel/{appoinmentId}")]
-        public async Task<IActionResult> CancelMeeting([FromRoute] int appoinmentId)
+        [HttpPut("cancel/{appoinmentId}/{accountId}")]
+        public async Task<IActionResult> CancelMeeting([FromRoute] int appoinmentId, int accountId)
         {
-            var rs = await _professorScheduleService.CancelMeeting(appoinmentId);
+            var rs = await _professorScheduleService.CancelMeeting(appoinmentId, accountId);
             return Ok(rs);
         }
 
