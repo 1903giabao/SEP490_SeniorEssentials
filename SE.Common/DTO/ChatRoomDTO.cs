@@ -21,6 +21,7 @@ namespace SE.Common.DTO
         public string? SentDate { get; set; }
         public string? SentTime { get; set; }
         public string? SentDateTime { get; set; }
+        public bool? IsFriend { get; set; }
         public List<UserInRoomChatDTO> Users { get; set; }
     }
 

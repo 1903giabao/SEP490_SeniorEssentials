@@ -354,6 +354,7 @@ namespace SE.Service.Services
                     List<string> memberIdsList = new List<string>();
                     var listUser = new List<UserInRoomChatDTO>();
                     bool groupChat = false;
+                    bool isFriend = false;
 
                     if (data.TryGetValue("MemberIds", out var memberIdsObj) &&
                         memberIdsObj is IDictionary<string, object> memberIds)
@@ -393,6 +394,12 @@ namespace SE.Service.Services
                                     }
                                     roomName = getUser.FullName;
                                     roomAvatar = getUser.Avatar;
+
+                                    var memberId = int.Parse(member.Key);
+
+                                    var userLink = await _unitOfWork.UserLinkRepository.GetByUserIdsAsync(memberId, userId);
+
+                                    isFriend = userLink.RelationshipType.Equals("Friend");
                                 }
                             }
                         }
@@ -417,6 +424,7 @@ namespace SE.Service.Services
                             SentTime = data["SentTime"]?.ToString(),
                             SentDateTime = data["SentDateTime"]?.ToString(),
                             NumberOfMems = numberOfMems,
+                            IsFriend = isFriend,
                             Users = listUser
                         });
                     }
