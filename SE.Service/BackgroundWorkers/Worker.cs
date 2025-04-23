@@ -72,7 +72,7 @@ namespace SE.Service.BackgroundWorkers
             {
                 var now = DateTime.UtcNow.AddHours(7);
                 var currentDate = DateOnly.FromDateTime(now);
-                var currentTime = now.ToString("HH:mm");
+                var currentTime = now.AddMinutes(5).ToString("HH:mm");
 
                 var accountIds = await _unitOfWork.AccountRepository.GetAllAsync();
 
