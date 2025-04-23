@@ -110,8 +110,14 @@ namespace SE.Data.Repository
         {
             return await _context.ProfessorAppointments
                 .Include(a => a.UserSubscription)
-                .ThenInclude(us => us.Booking)
-                .ThenInclude(b => b.Subscription)
+                    .ThenInclude(us => us.Booking)
+                .Include(a => a.UserSubscription)
+                    .ThenInclude(us => us.Booking)
+                    .ThenInclude(b => b.Subscription)   
+                .Include(a => a.UserSubscription)
+                    .ThenInclude(us => us.Professor)
+                        .ThenInclude(p => p.Account)
+                .Include(a=>a.Elderly)
                 .Where(a => a.ProfessorAppointmentId == appointmentId)
                 .FirstOrDefaultAsync();
         }

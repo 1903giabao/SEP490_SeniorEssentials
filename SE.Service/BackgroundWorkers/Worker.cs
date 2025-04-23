@@ -51,8 +51,10 @@ namespace SE.Service.BackgroundWorkers
                         await CheckAndSendActivityNotifications(unitOfWork, activityService, notificationService, stoppingToken);
                         await CheckAndSendWaterReminders(unitOfWork, notificationService, stoppingToken);
                         await CheckAndDisableStatus(unitOfWork, firestoreDb, stoppingToken);
+           //             await DisableAppointment(unitOfWork, stoppingToken);
+
                     }
-                }
+}
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Error occurred in Activity Notification Background Service");
@@ -89,25 +91,64 @@ namespace SE.Service.BackgroundWorkers
                         {
                             foreach (var activity in upcomingActivities)
                             {
-                                var isMedication = activity.Type == "Medication";
-                                var title = isMedication ? "Nhắc nhở uống thuốc" : "Lịch trình hàng ngày";
-                                var body = isMedication
-                                    ? $"Đã đến giờ uống thuốc {activity.Title}. Đừng quên nhé!"
-                                    : $"Bạn có hoạt động '{activity.Title}' bắt đầu lúc {activity.StartTime}";
-
-                                await _notificationService.SendNotification(account.DeviceToken, title, body);
-
-                                var newNoti = new Notification
+                                if (activity.Type == "Medication")
                                 {
-                                    Title = title,
-                                    AccountId = account.AccountId,
-                                    CreatedDate = DateTime.UtcNow.AddHours(7),
-                                    Message = body,
-                                    NotificationType = title,
-                                    Status = SD.NotificationStatus.SEND,
-                                    Data = currentDate.ToString("yyyy-MM-dd")
-                                };
-                                await _unitOfWork.NotificationRepository.CreateAsync(newNoti);
+                                    var title ="Nhắc nhở uống thuốc";
+                                    var body = $"Đã đến giờ uống thuốc {activity.Title}. Đừng quên nhé!";
+
+                                   await _notificationService.SendNotification(account.DeviceToken, title, body);
+
+                                    var newNoti = new Notification
+                                    {
+                                        Title = title,
+                                        AccountId = account.AccountId,
+                                        CreatedDate = DateTime.UtcNow.AddHours(7),
+                                        Message = body,
+                                        NotificationType = title,
+                                        Status = SD.NotificationStatus.SEND,
+                                        Data = currentDate.ToString("yyyy-MM-dd")
+                                    };
+                                    await _unitOfWork.NotificationRepository.CreateAsync(newNoti);
+                                }
+                                else if (activity.Type == "Activity")
+                                {
+                                    var title = "Lịch trình hàng ngày";
+                                    var body =  $"Bạn có hoạt động '{activity.Title}' bắt đầu lúc {activity.StartTime}";
+
+                                    await _notificationService.SendNotification(account.DeviceToken, title, body);
+
+                                    var newNoti = new Notification
+                                    {
+                                        Title = title,
+                                        AccountId = account.AccountId,
+                                        CreatedDate = DateTime.UtcNow.AddHours(7),
+                                        Message = body,
+                                        NotificationType = title,
+                                        Status = SD.NotificationStatus.SEND,
+                                        Data = currentDate.ToString("yyyy-MM-dd")
+                                    };
+                                    await _unitOfWork.NotificationRepository.CreateAsync(newNoti);
+                                }
+                                else if (activity.Type == "Professor Appointment")    
+                                {
+                                    var title = "Lịch gặp bác sĩ";
+                                    var body = $"Bạn có lịch hẹn với bác sĩ {activity.Description} vào lúc {activity.StartTime}";
+
+                                    await _notificationService.SendNotification(account.DeviceToken, title, body);
+
+                                    var newNoti = new Notification
+                                    {
+                                        Title = title,
+                                        AccountId = account.AccountId,
+                                        CreatedDate = DateTime.UtcNow.AddHours(7),
+                                        Message = body,
+                                        NotificationType = title,
+                                        Status = SD.NotificationStatus.SEND,
+                                    };
+                                    await _unitOfWork.NotificationRepository.CreateAsync(newNoti);
+                                }
+
+                                   
                             }
                         }
                     }
@@ -135,7 +176,6 @@ namespace SE.Service.BackgroundWorkers
                 new WaterReminder { Time = "20:00", Amount = "150 ml", Reason = "Sau ăn tối nhẹ" },
                 new WaterReminder { Time = "21:30", Amount = "100 ml (hoặc ít hơn)", Reason = "Trước khi ngủ, tránh tiểu đêm" }
             };
-
 
             try
             {
@@ -222,5 +262,19 @@ namespace SE.Service.BackgroundWorkers
                 Log.Error(ex, "Error while checking and disable status");
             }
         }
+
+       /* private async Task DisableAppointment(UnitOfWork _unitOfWork, CancellationToken stoppingToken)
+        {
+            try
+            {
+                var now = DateTime.UtcNow.AddHours(7);
+                var currentTime = now.ToString("HH:mm");
+
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while checking and sending water reminders");
+            }
+        }*/
     }
 }
