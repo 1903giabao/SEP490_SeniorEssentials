@@ -842,7 +842,12 @@ namespace SE.Service.Services
                 else bloodGlucose.CreatedBy = getElderly.FullName;
                 await _unitOfWork.BloodGlucoseRepository.CreateAsync(bloodGlucose);
 
-                var check = await EvaluateBloodGlusose(int.Parse(request.BloodGlucose1),request.Time);
+                if (!decimal.TryParse(request.BloodGlucose1, out var bloodGlucoseValue))
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, "Blood glucose value must be a valid number.");
+                }
+
+                var check = await EvaluateBloodGlusose(bloodGlucoseValue, request.Time);
                 if (check.Data == "Cao")
                 {
                     var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
@@ -982,7 +987,7 @@ namespace SE.Service.Services
                 await _unitOfWork.LipidProfileRepository.CreateAsync(lipidProfile);
 
                 var healthIndicator = _unitOfWork.HealthIndicatorBaseRepository.FindByCondition(h => h.Type == "TotalCholesterol").FirstOrDefault();
-                if (int.Parse( request.TotalCholesterol) > healthIndicator.MaxValue)
+                if (decimal.Parse( request.TotalCholesterol) > healthIndicator.MaxValue)
                 {
                     var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
 
@@ -1032,7 +1037,7 @@ namespace SE.Service.Services
                         }
                     }
                 }
-                else if (int.Parse(request.TotalCholesterol) < healthIndicator.MinValue)
+                else if (decimal.Parse(request.TotalCholesterol) < healthIndicator.MinValue)
                 {
                     var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
 
@@ -1125,7 +1130,7 @@ namespace SE.Service.Services
                 await _unitOfWork.LiverEnzymeRepository.CreateAsync(liverEnzyme);
 
                 var healthIndicator = _unitOfWork.HealthIndicatorBaseRepository.FindByCondition(h => h.Type == "ALT").FirstOrDefault();
-                if (int.Parse(request.Alt) > healthIndicator.MaxValue)
+                if (decimal.Parse(request.Alt) > healthIndicator.MaxValue)
                 {
                     var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
 
@@ -1174,7 +1179,7 @@ namespace SE.Service.Services
                         }
                     }
                 }
-                else if (int.Parse(request.Alt) < healthIndicator.MinValue)
+                else if (decimal.Parse(request.Alt) < healthIndicator.MinValue)
                 {
                     var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
 
@@ -1272,7 +1277,7 @@ namespace SE.Service.Services
                 await _unitOfWork.KidneyFunctionRepository.CreateAsync(kidneyFunction);
 
                 var healthIndicator = _unitOfWork.HealthIndicatorBaseRepository.FindByCondition(h => h.Type == "eGFR").FirstOrDefault();
-                if (int.Parse(request.EGFR) > healthIndicator.MaxValue)
+                if (decimal.Parse(request.EGFR) > healthIndicator.MaxValue)
                 {
                     var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
 
@@ -1321,7 +1326,7 @@ namespace SE.Service.Services
                         }
                     }
                 }
-                else if (int.Parse(request.EGFR) < healthIndicator.MinValue)
+                else if (decimal.Parse(request.EGFR) < healthIndicator.MinValue)
                 {
                     var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
 
