@@ -51,7 +51,7 @@ namespace SE.Service.BackgroundWorkers
                         await CheckAndSendActivityNotifications(unitOfWork, activityService, notificationService, stoppingToken);
                         await CheckAndSendWaterReminders(unitOfWork, notificationService, stoppingToken);
                         await CheckAndDisableStatus(unitOfWork, firestoreDb, stoppingToken);
-           //             await DisableAppointment(unitOfWork, stoppingToken);
+                        await DisableAppointment(unitOfWork, stoppingToken);
 
                     }
 }
@@ -263,18 +263,27 @@ namespace SE.Service.BackgroundWorkers
             }
         }
 
-       /* private async Task DisableAppointment(UnitOfWork _unitOfWork, CancellationToken stoppingToken)
+        private async Task DisableAppointment(UnitOfWork _unitOfWork, CancellationToken stoppingToken)
         {
+            Log.Information("Activity Disable Appointment Background Service started.");
             try
             {
                 var now = DateTime.UtcNow.AddHours(7);
                 var currentTime = now.ToString("HH:mm");
+                var appointments = _unitOfWork.ProfessorAppointmentRepository.FindByCondition(a=>a.Status == SD.ProfessorAppointmentStatus.NOTYET && a.EndTime.ToString() == currentTime).ToList();
+                foreach (var appointment in appointments)
+                {
+                     appointment.Status = SD.ProfessorAppointmentStatus.OUTOFTIME;
+                       await _unitOfWork.ProfessorAppointmentRepository.UpdateAsync(appointment);
+                   
+                }
+                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
 
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error while checking and sending water reminders");
             }
-        }*/
+        }
     }
 }
