@@ -245,7 +245,7 @@ namespace SE.Service.Services
                                 {
                                     ElderlyId = elderlyAccount.Elderly.ElderlyId,
                                     ActivityName = $"Sinh Nhật Của {responseUser.FullName}",
-                                    ActivityDescription = $"Sinh nhật của {responseUser.FullName} là vào ngày {responseUser.DateOfBirth.Value.ToShortDateString()}",
+                                    ActivityDescription = $"Sinh nhật của {responseUser.FullName} là vào ngày {responseUser.DateOfBirth?.ToString("dd/MM/yyyy")}",
                                     CreatedBy = "System",
                                     Status = SD.GeneralStatus.ACTIVE
                                 };

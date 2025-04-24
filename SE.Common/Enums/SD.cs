@@ -36,6 +36,8 @@ namespace SE.Common.Enums
             public static string NOTYET = "NotYet";
             public static string JOINED = "Joined";
             public static string CANCELLED = "Cancelled";
+            public static string OUTOFTIME = "OutOfTime";
+
 
         }
 
