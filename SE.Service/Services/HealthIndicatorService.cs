@@ -727,7 +727,12 @@ namespace SE.Service.Services
                                     Indicator = $"{heartRate.HeartRate1}",
                                     Evaluation = GetHeartRateEvaluation((double)heartRate.HeartRate1)
                                 };
+                                var options = new JsonSerializerOptions
+                                {
+                                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                                };
 
+                                string json = JsonSerializer.Serialize(response, options);
                                 var newNotification = new Notification
                                 {
                                     NotificationType = "Cảnh báo sức khỏe",
@@ -736,7 +741,7 @@ namespace SE.Service.Services
                                     Title = "Cảnh báo sức khỏe",
                                     Message = $"Người thân của bạn {getElderly.FullName} có nhịp tim nhanh hơn bình thường.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                                    Data = JsonSerializer.Serialize(response),
+                                    Data = json,
                                     ElderlyId = heartRate.ElderlyId
 
                                 };
