@@ -85,6 +85,20 @@ namespace SE.Service.Services
 
                 if (createRs > 0)
                 {
+                    var newContentProvider = new ContentProvider
+                    {
+                        AccountId = newAccount.AccountId,
+                        Organization = "System",
+                        Status = SD.GeneralStatus.ACTIVE,
+                    };
+
+                    var createContentProviderRs = await _unitOfWork.ContentProviderRepository.CreateAsync(newContentProvider);
+
+                    if (createContentProviderRs < 1)
+                    {
+                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Failed to create content provider!");
+                    }
+
                     var mailData = new EmailData
                     {
                         EmailToId = req.Email,
