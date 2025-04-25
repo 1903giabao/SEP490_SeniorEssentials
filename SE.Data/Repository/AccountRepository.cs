@@ -19,7 +19,7 @@ namespace SE.Data.Repository
 
         public async Task<Account> GetByEmailAsync(string email)
         {
-            var result = await _context.Accounts.Include(a => a.Role).FirstOrDefaultAsync(e => e.Email == email);
+            var result = await _context.Accounts.Include(a => a.Role).FirstOrDefaultAsync(e => e.PhoneNumber == email);
             return result;
         }
 
