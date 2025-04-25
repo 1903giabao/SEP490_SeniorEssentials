@@ -1427,7 +1427,7 @@ namespace SE.Service.Services
 
                 if (timeUntilAppointment.TotalMinutes < 15)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Appointments must be booked at least 15 minutes in advance!");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Chỉ có thể đặt lịch trước 15 phút!");
                 }
 
                 // 7. Check if time slot is available (no overlapping appointments)
