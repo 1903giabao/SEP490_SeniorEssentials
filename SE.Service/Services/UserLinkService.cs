@@ -73,6 +73,11 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid role!");
                 }
 
+                if (!req.RelationshipType.Equals("Friend") && !req.RelationshipType.Equals("Family"))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid relationship!");
+                }
+
                 var userLinkCheck = await _unitOfWork.UserLinkRepository.GetByUserIdsAsync(requestUser.AccountId, responseUser.AccountId);
 
                 if (userLinkCheck != null)
