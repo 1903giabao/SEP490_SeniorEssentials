@@ -3216,7 +3216,7 @@ namespace SE.Service.Services
             var baseHeal = _unitOfWork.HealthIndicatorBaseRepository.FindByCondition(x => x.Type == "BloodOxygen").FirstOrDefault();
             if ((decimal)averageBloodOxygen < baseHeal.MinValue)
             {
-                return "Trung bình cần cho thở thêm Oxy";
+                return "Trung bình";
             }
             else if ((decimal)averageBloodOxygen >= baseHeal.MinValue && (decimal)averageBloodOxygen <= baseHeal.MaxValue)
             {
@@ -5435,7 +5435,7 @@ namespace SE.Service.Services
                 string result;
                 if (bloodOxygen < baseIndicator.MinValue)
                 {
-                    result = "Thấp";
+                    result = "Trung bình";
                 }
                 else if (bloodOxygen >= baseIndicator.MinValue && bloodOxygen <= baseIndicator.MaxValue)
                 {
