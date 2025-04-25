@@ -147,7 +147,7 @@ namespace SE.Data.Repository
                 .Where(us => us.ProfessorId == professorId).Select(us => us.Booking.Elderly.Account).ToListAsync();
 
             var rs = result.DistinctBy(us => us.AccountId).ToList();
-            return result;
+            return rs;
         }         
         
         public async Task<List<UserSubscription>> GetAllActive(string status)
