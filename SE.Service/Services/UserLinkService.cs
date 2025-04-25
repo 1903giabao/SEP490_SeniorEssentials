@@ -180,7 +180,7 @@ namespace SE.Service.Services
 
                 if (responseUser == null)
                 {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Request user does not exist!");
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Response user does not exist!");
                 }
 
                 var userLink = await _unitOfWork.UserLinkRepository.GetByUserIdsAsync(requestUser.AccountId, responseUser.AccountId);

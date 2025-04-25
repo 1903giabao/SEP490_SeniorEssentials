@@ -144,6 +144,7 @@ namespace SE.Service.BackgroundWorkers
                                         Message = body,
                                         NotificationType = title,
                                         Status = SD.NotificationStatus.SEND,
+                                        Data = currentDate.ToString("yyyy-MM-dd")
                                     };
                                     await _unitOfWork.NotificationRepository.CreateAsync(newNoti);
                                 }
