@@ -50,12 +50,16 @@ namespace SE.Service.Services
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly GoogleCredential _googleCredential;
+        private readonly INotificationService _notificationService;
+        private readonly IGroupService _groupService;
 
-        public MedicationService(UnitOfWork unitOfWork, IMapper mapper, GoogleCredential googleCredential)
+        public MedicationService(UnitOfWork unitOfWork, IMapper mapper, GoogleCredential googleCredential, INotificationService notificationService, IGroupService groupService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _googleCredential = googleCredential;
+            _notificationService = notificationService;
+            _groupService = groupService;
         }
 
 
@@ -839,7 +843,7 @@ namespace SE.Service.Services
                     {
                         return new BusinessResult(Const.FAIL_UPDATE, $"Sai format ngày: {confirmation.DateTaken}");
                     }
-                    var medication = await _unitOfWork.MedicationRepository.GetByIdAsync(confirmation.MedicationId);
+                    var medication = await _unitOfWork.MedicationRepository.GetByMedicationIdAsync(confirmation.MedicationId);
                     var schedule = await _unitOfWork.MedicationScheduleRepository
                         .GetByDateAndMedicationIdAsync(dateTaken, confirmation.MedicationId);
 
@@ -861,6 +865,38 @@ namespace SE.Service.Services
                         if (updateResult > 0)
                         {
                             updatedCount++;
+                        }
+
+                        if (confirmation.Status.Equals("Skip"))
+                        {
+                            var elderly = await _unitOfWork.AccountRepository.GetAccountAsync(medication.Elderly.AccountId);
+
+                            var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(elderly.AccountId);
+
+                            foreach (var member in listFamilyMember)
+                            {
+                                var familyMember = await _unitOfWork.AccountRepository.GetAccountAsync(member);
+                                if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                                {
+                                    // Send notification
+                                    await _notificationService.SendNotification(
+                                        familyMember.DeviceToken,
+                                        "Bỏ qua lịch uống thuốc",
+                                        $"{elderly.FullName} vừa bỏ qua lịch uống thuốc lúc {schedule.DateTaken?.ToString("HH:mm dd/MM/yyyy")}.");
+
+                                    var newNotification = new Data.Models.Notification
+                                    {
+                                        NotificationType = "Bỏ qua lịch uống thuốc",
+                                        AccountId = familyMember.AccountId,
+                                        Status = SD.GeneralStatus.ACTIVE,
+                                        Title = "Bỏ qua lịch uống thuốc",
+                                        Message = $"{elderly.FullName} vừa bỏ qua lịch uống thuốc lúc {schedule.DateTaken?.ToString("HH:mm dd/MM/yyyy")}.",
+                                        CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                    };
+
+                                    await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                }
+                            }                              
                         }
                     }
                 }

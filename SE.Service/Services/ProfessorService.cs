@@ -312,7 +312,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var getAppointment = await _unitOfWork.ProfessorAppointmentRepository.GetByIdAsync(request.ProfessorAppointmentId);
+                var getAppointment = await _unitOfWork.ProfessorAppointmentRepository.GetByProfessorAppointmentAsync(request.ProfessorAppointmentId);
                 if (getAppointment == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot find appointment");
@@ -327,6 +327,31 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot create report");
 
                 }
+
+                var familyMember = await _unitOfWork.AccountRepository.GetAccountAsync(getAppointment.UserSubscription.Booking.AccountId);
+                var elderly = await _unitOfWork.AccountRepository.GetAccountAsync(getAppointment.UserSubscription.Booking.Elderly.AccountId);
+
+                if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                {
+                    // Send notification
+                    await _notificationService.SendNotification(
+                        familyMember.DeviceToken,
+                        "Báo cáo tư vấn bác sĩ",
+                        $"Bạn đã nhận được báo cáo về buổi tư vấn của {elderly.FullName} và bác sĩ.");
+
+                    var newNotification = new Data.Models.Notification
+                    {
+                        NotificationType = "Báo cáo tư vấn bác sĩ",
+                        AccountId = familyMember.AccountId,
+                        Status = SD.GeneralStatus.ACTIVE,
+                        Title = "Báo cáo tư vấn bác sĩ",
+                        Message = $"Bạn đã nhận được báo cáo về buổi tư vấn của {elderly.FullName} và bác sĩ.",
+                        CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                    };
+
+                    await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                }
+
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Created report succesfully!");
 
 
@@ -1485,6 +1510,29 @@ namespace SE.Service.Services
                 if (updateUserSubscriptionRs < 1)
                 {
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
+                }
+
+                var professorNoti = await _unitOfWork.AccountRepository.GetAccountAsync((int)userSubscription.Professor.AccountId);
+
+                if (!string.IsNullOrEmpty(professorNoti.DeviceToken) && professorNoti.DeviceToken != "string")
+                {
+                    // Send notification
+                    await _notificationService.SendNotification(
+                        professorNoti.DeviceToken,
+                        "Đặt lịch hẹn tư vấn",
+                        $"{accountElderly.FullName} đã đặt lịch hẹn tư vấn vào lúc {appointmentDateTime.ToString("HH:mm dd/MM/yyyy")}.");
+
+                    var newNotification = new Data.Models.Notification
+                    {
+                        NotificationType = "Đặt lịch hẹn tư vấn",
+                        AccountId = professorNoti.AccountId,
+                        Status = SD.GeneralStatus.ACTIVE,
+                        Title = "Đặt lịch hẹn tư vấn",
+                        Message = $"{accountElderly.FullName} đã đặt lịch hẹn tư vấn vào lúc {appointmentDateTime.ToString("HH:mm dd/MM/yyyy")}.",
+                        CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                    };
+
+                    await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
                 }
 
                 return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG);

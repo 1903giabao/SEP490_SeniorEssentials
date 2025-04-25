@@ -1126,13 +1126,21 @@ namespace SE.Service.Services
 
                 var group = await _unitOfWork.GroupMemberRepository.GetGroupOfElderly(elderlyAccount.AccountId);
 
+                var allElderlyUserLinks = await _unitOfWork.UserLinkRepository.GetByUserIdAsync(elderlyAccount.AccountId, SD.UserLinkStatus.ACCEPTED);
+
                 if (group == null)
                 {
+                    var allUserLinks = allElderlyUserLinks.SelectMany(link => new[] { link.AccountId1, link.AccountId2 }).Where(u => u != elderlyAccount.AccountId).Distinct().ToList();
+
+                    var allUserLinkAccount = _unitOfWork.AccountRepository.GetAll().Where(a => allUserLinks.Contains(a.AccountId)).ToList();
+
+                    var allUserLinkAccountMap = _mapper.Map<List<UserDTO>>(allUserLinkAccount);
+
                     var result1 = new GetGroupAndRelationshipInforByElderly
                     {
                         RequestUsers = mapRequestUser,
                         ResponseUsers = mapResponseUser,
-                        FamilyNotInGroup = null,
+                        FamilyNotInGroup = allUserLinkAccountMap,
                         GroupInfor = null
                     };
 
@@ -1149,7 +1157,6 @@ namespace SE.Service.Services
 
                 var familyInGroupIds = familyInGroup.Select(a => a.AccountId).ToList();
 
-                var allElderlyUserLinks = await _unitOfWork.UserLinkRepository.GetByUserIdAsync(elderlyAccount.AccountId, SD.UserLinkStatus.ACCEPTED);
 
                 var familyNotInGroup = allElderlyUserLinks
                     .SelectMany(link => new[] { link.AccountId1, link.AccountId2 })
