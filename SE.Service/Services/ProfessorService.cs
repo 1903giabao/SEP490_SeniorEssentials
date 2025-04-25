@@ -1218,6 +1218,7 @@ namespace SE.Service.Services
                     var schedule = new GetScheduleOfElderlyByProfessorVM
                     {
                         ProfessorAppointmentId = appointment.ProfessorAppointmentId,
+                        AccountId  = elderly.AccountId,
                         ElderlyId = elderly.ElderlyId,
                         ElderlyName = elderlyAccount.FullName,
                         Avatar = elderlyAccount.Avatar,
