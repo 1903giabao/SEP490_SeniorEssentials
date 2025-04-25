@@ -142,5 +142,17 @@ namespace SE.Data.Repository
                 .Where(a => a.ProfessorAppointmentId == appointmentId)
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<ProfessorAppointment> GetByProfessorAppointmentAsync(int professorAppointmentId)
+        {
+            return await _context.ProfessorAppointments
+                .Include(a => a.UserSubscription)
+                .ThenInclude(a => a.Booking)
+                .ThenInclude(a => a.Account)
+                .Include(a => a.Elderly)
+                .Where(a => a.UserSubscription != null &&
+                           a.ProfessorAppointmentId == professorAppointmentId)
+                .FirstOrDefaultAsync();
+        }
     }
 }

@@ -568,8 +568,8 @@ namespace SE.Service.Services
                     totalResult.Add(new GetListEmergencyConfirmationByFamilyMemberDTO
                     {
                         ElderlyId = elderly.Booking.ElderlyId,
-                        ElderlyName = elderly.Booking.Account.FullName,
-                        PhoneNumber = elderly.Booking.Account.PhoneNumber,
+                        ElderlyName = elderly.Booking.Elderly.Account.FullName,
+                        PhoneNumber = elderly.Booking.Elderly.Account.PhoneNumber,
                         GetEmergencyConfirmationDTOs = listResult
                     });
                 }

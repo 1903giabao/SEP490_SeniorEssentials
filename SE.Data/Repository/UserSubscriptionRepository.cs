@@ -82,7 +82,8 @@ namespace SE.Data.Repository
         
         public async Task<UserSubscription> GetAppointmentUserSubscriptionByBookingIdAsync(List<int> bookingIds, string status)
         {
-            var result = await _context.UserSubscriptions.Include(us => us.Professor)
+            var result = await _context.UserSubscriptions
+                               .Include(us => us.Professor)
                                .ThenInclude(us => us.Account)
                                .Include(us => us.Booking)
                                 .Where(us => bookingIds.Contains((int)us.BookingId) && us.Status.Equals(status)

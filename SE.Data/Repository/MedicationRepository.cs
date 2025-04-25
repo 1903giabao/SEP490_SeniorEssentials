@@ -23,6 +23,14 @@ namespace SE.Data.Repository
                 .Include(x => x.Prescription)
                 .Where(m => m.PrescriptionId == prescriptionId && m.Prescription.Status == "Active")
                 .ToListAsync();
+        }        
+        
+        public async Task<Medication> GetByMedicationIdAsync(int medicationId)
+        {
+            return await _context.Medications
+                .Include(x => x.Elderly)
+                .Where(m => m.MedicationId == medicationId)
+                .FirstOrDefaultAsync();
         }
 
       
