@@ -76,9 +76,11 @@ namespace SE.Service.Services
                     Password = SecurityUtil.Hash(req.Password),
                     FullName = req.FullName,
                     Gender = req.Gender,
+                    IsVerified = true,
                     PhoneNumber = req.PhoneNumber,
                     Status = SD.GeneralStatus.ACTIVE,
-                    IsSuperAdmin = false
+                    IsSuperAdmin = false,
+                    Otp = null,
                 };
 
                 var createRs = await _unitOfWork.AccountRepository.CreateAsync(newAccount);

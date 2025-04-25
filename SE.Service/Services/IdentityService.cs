@@ -241,6 +241,7 @@ namespace SE.Service.Services
                 user.Gender = req.Gender;
                 user.DateOfBirth = DateTime.Parse(req.DateOfBirth);
                 user.CreatedDate = DateTime.UtcNow.AddHours(7);
+                user.IsSuperAdmin = false;
 
                 var res = await _unitOfWork.AccountRepository.UpdateAsync(user);
 
