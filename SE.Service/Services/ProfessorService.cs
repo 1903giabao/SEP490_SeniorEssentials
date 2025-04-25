@@ -1359,7 +1359,7 @@ namespace SE.Service.Services
                 }
 
                 // 3. Check valid bookings
-                var bookings =  _unitOfWork.BookingRepository
+                var bookings = _unitOfWork.BookingRepository
                     .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
                     .Select(b => b.BookingId)
                     .ToList();
@@ -1420,6 +1420,16 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid time format!");
                 }
 
+                // New condition: Check if appointment is at least 15 minutes from now
+                var appointmentDateTime = appointmentDate.Date.Add(startTime.ToTimeSpan());
+                var currentDateTime = DateTime.UtcNow.AddHours(7);
+                var timeUntilAppointment = appointmentDateTime - currentDateTime;
+
+                if (timeUntilAppointment.TotalMinutes < 15)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Appointments must be booked at least 15 minutes in advance!");
+                }
+
                 // 7. Check if time slot is available (no overlapping appointments)
                 var existingAppointments = await _unitOfWork.ProfessorAppointmentRepository
                     .GetByProfessorAndDateAsync((int)userSubscription.ProfessorId, appointmentDate.Date);
@@ -1432,11 +1442,9 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Time slot is already booked!");
                 }
 
-                var appointmentTime = appointmentDate.Date.Add(startTime.ToTimeSpan());
-
                 if (req.ProfessorId == null)
                 {
-                    if (DateTime.Compare(appointmentTime, (DateTime)userSubscription.EndDate) > 0)
+                    if (DateTime.Compare(appointmentDateTime, (DateTime)userSubscription.EndDate) > 0)
                     {
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không thể đặt lịch vượt quá ngày hết hạn gói!");
                     }
@@ -1447,11 +1455,11 @@ namespace SE.Service.Services
                 {
                     ElderlyId = elderly.ElderlyId,
                     UserSubscriptionId = userSubscription.UserSubscriptionId,
-                    AppointmentTime = appointmentTime,
+                    AppointmentTime = appointmentDateTime,
                     StartTime = startTime,
                     EndTime = endTime,
                     Description = req.Description ?? "Nothing",
-                    CreatedDate = DateTime.UtcNow.AddHours(7),
+                    CreatedDate = currentDateTime,
                     Status = SD.ProfessorAppointmentStatus.NOTYET,
                     IsOnline = true,
                     Content = null,
