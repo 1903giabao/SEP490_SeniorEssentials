@@ -77,7 +77,7 @@ namespace SE.Service.Services
             var authClaims = new List<Claim>
             {
                 new(JwtRegisteredClaimNames.NameId, user.AccountId.ToString()),
-                new(JwtRegisteredClaimNames.Email, user.PhoneNumber),
+                new(JwtRegisteredClaimNames.Email, user.Email),
                 new(ClaimTypes.Role, userRole.RoleName),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new(JwtRegisteredClaimNames.Name, user.FullName ?? "null"),
