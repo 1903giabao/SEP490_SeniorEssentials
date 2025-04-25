@@ -1262,7 +1262,7 @@ namespace SE.Service.Services
                 }
 
                 // Tính toán tuần hiện tại (từ thứ 2 đến chủ nhật)
-                var today = DateTime.Now.Date;
+                var today = DateTime.UtcNow.AddHours(7);
                 var daysFromMonday = (int)today.DayOfWeek - (int)DayOfWeek.Monday;
                 var monday = today.AddDays(-daysFromMonday);
                 var sunday = monday.AddDays(6);
@@ -1388,7 +1388,7 @@ namespace SE.Service.Services
                 }
                 else
                 {
-                    userSubscription = await _unitOfWork.UserServiceRepository.GetAppointmentUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.BOOKED);
+                    userSubscription = await _unitOfWork.UserServiceRepository.GetAppointmentUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.ONETIME);
                     if (userSubscription?.Booking == null)
                     {
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
@@ -1406,6 +1406,7 @@ namespace SE.Service.Services
                     }
 
                     userSubscription.ProfessorId = professor.ProfessorId;
+                    userSubscription.Status = SD.UserSubscriptionStatus.BOOKED;
                 }
 
                 // 6. Parse and validate appointment date/time
@@ -1448,6 +1449,11 @@ namespace SE.Service.Services
                     {
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không thể đặt lịch vượt quá ngày hết hạn gói!");
                     }
+                }
+
+                if (userSubscription.NumberOfMeetingLeft == 0)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Hết số lần gặp bác sĩ!");
                 }
 
                 // 9. Create new appointment

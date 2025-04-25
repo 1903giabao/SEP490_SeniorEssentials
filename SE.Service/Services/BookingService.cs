@@ -273,7 +273,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Cannot update booking");
                 }
 
-                var status = booking.Subscription.ValidityPeriod == 0 ? SD.UserSubscriptionStatus.BOOKED : SD.UserSubscriptionStatus.AVAILABLE;
+                var status = booking.Subscription.ValidityPeriod == 0 ? SD.UserSubscriptionStatus.ONETIME : SD.UserSubscriptionStatus.AVAILABLE;
 
                 var userSubscription = new UserSubscription
                 {
