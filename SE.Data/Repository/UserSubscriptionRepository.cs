@@ -144,7 +144,9 @@ namespace SE.Data.Repository
             var result = await _context.UserSubscriptions
                 .Include(us => us.Professor).ThenInclude(us => us.Account)
                 .Include(us => us.Booking).ThenInclude(us => us.Elderly).ThenInclude(us => us.Account).ThenInclude(us => us.Elderly)
-                .Where(us => us.ProfessorId == professorId).Select(us => us.Booking.Elderly.Account).DistinctBy(us => us.AccountId).ToListAsync();
+                .Where(us => us.ProfessorId == professorId).Select(us => us.Booking.Elderly.Account).ToListAsync();
+
+            var rs = result.DistinctBy(us => us.AccountId).ToList();
             return result;
         }         
         
