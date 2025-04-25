@@ -344,6 +344,13 @@ namespace SE.Service.Services
                                                 .FindByCondition(ur => ur.RoleId == user.RoleId)
                                                 .FirstOrDefault();
                 user.Role = userRole!;
+
+                var findDevice = _unitOfWork.AccountRepository.FindByCondition(a=>a.DeviceToken == deviceToken).FirstOrDefault();
+                if(findDevice != null)
+                {
+                    findDevice.DeviceToken = null;
+                }
+                await _unitOfWork.AccountRepository.UpdateAsync(user);
                 if (deviceToken != null)
                 {
                     user.DeviceToken = deviceToken;
