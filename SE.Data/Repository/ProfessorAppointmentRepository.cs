@@ -149,7 +149,10 @@ namespace SE.Data.Repository
                 .Include(a => a.UserSubscription)
                 .ThenInclude(a => a.Booking)
                 .ThenInclude(a => a.Account)
-                .Include(a => a.Elderly)
+                .Include(a => a.UserSubscription)
+                .ThenInclude(a => a.Booking)
+                .ThenInclude(a => a.Elderly)
+                .ThenInclude(a => a.Account)
                 .Where(a => a.UserSubscription != null &&
                            a.ProfessorAppointmentId == professorAppointmentId)
                 .FirstOrDefaultAsync();

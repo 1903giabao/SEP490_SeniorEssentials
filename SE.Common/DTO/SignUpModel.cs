@@ -21,6 +21,7 @@ namespace SE.Common.DTO
         public List<string> MedicalRecord { get; set; }
         public string Height {  get; set; }
         public string Weight { get; set; }
+        public int CreatorAccountId { get; set; }
 
     }
 }

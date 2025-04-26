@@ -607,59 +607,74 @@ namespace SE.Service.Services
                         .FindByCondition(p => p.ElderlyId == getElderly.Elderly.ElderlyId)
                         .FirstOrDefault();
 
-                    // 3. Check valid bookings
-                    var bookings = _unitOfWork.BookingRepository
-                        .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
-                        .Select(b => b.BookingId)
-                        .ToList();
-
-                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
-                    if (userSubscription?.Booking == null)
+                    if (elderly != null)
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
-                    }
+                        // 3. Check valid bookings
+                        var bookings = _unitOfWork.BookingRepository
+                            .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                            .Select(b => b.BookingId)
+                            .ToList();
 
-                    var professor = _unitOfWork.ProfessorRepository
-                        .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
-                        .FirstOrDefault();
-
-                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
-
-                    if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
-                    {
-                        // Send notification
-                        await _notificationService.SendNotification(
-                            professorAccount.DeviceToken,
-                            "Cảnh báo sức khỏe",
-                            $"Bệnh nhân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.");
-
-                        // Create notification record
-                        var response = new LogBookReponse
+                        if (bookings.Any())
                         {
-                            Tabs = "BloodPressure",
-                            Id = bloodPressure.BloodPressureId,
-                            DataType = bloodPressure.SystolicSource,
-                            DateTime = bloodPressure.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                            TimeRecorded = bloodPressure.DateRecorded?.ToString("HH:mm"),
-                            DateRecorded = bloodPressure.DateRecorded?.ToString("dd-MM-yyyy"),
-                            Indicator = $"{bloodPressure.Systolic}/{bloodPressure.Diastolic}",
-                            Evaluation = GetBloodPressureEvaluation((double)bloodPressure.Systolic, (double)bloodPressure.Diastolic)
-                        };
+                            var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+                            if (userSubscription?.Booking == null)
+                            {
+                                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                            }
 
-                        var newNotification = new Notification
-                        {
-                            NotificationType = "Cảnh báo sức khỏe",
-                            AccountId = professorAccount.AccountId,
-                            Status = SD.NotificationStatus.SEND,
-                            Title = "Cảnh báo sức khỏe",
-                            Message = $"Bệnh nhân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.",
-                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                            Data = JsonSerializer.Serialize(response),
-                            ElderlyId = bloodPressure.ElderlyId
+                            if (userSubscription != null)
+                            {
+                                var professor = _unitOfWork.ProfessorRepository
+                                    .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
+                                    .FirstOrDefault();
 
-                        };
+                                if (professor != null)
+                                {
+                                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
 
-                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                    if (professorAccount != null)
+                                    {
+                                        if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
+                                        {
+                                            // Send notification
+                                            await _notificationService.SendNotification(
+                                                professorAccount.DeviceToken,
+                                                "Cảnh báo sức khỏe",
+                                                $"Bệnh nhân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.");
+
+                                            // Create notification record
+                                            var response = new LogBookReponse
+                                            {
+                                                Tabs = "BloodPressure",
+                                                Id = bloodPressure.BloodPressureId,
+                                                DataType = bloodPressure.SystolicSource,
+                                                DateTime = bloodPressure.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                                TimeRecorded = bloodPressure.DateRecorded?.ToString("HH:mm"),
+                                                DateRecorded = bloodPressure.DateRecorded?.ToString("dd-MM-yyyy"),
+                                                Indicator = $"{bloodPressure.Systolic}/{bloodPressure.Diastolic}",
+                                                Evaluation = GetBloodPressureEvaluation((double)bloodPressure.Systolic, (double)bloodPressure.Diastolic)
+                                            };
+
+                                            var newNotification = new Notification
+                                            {
+                                                NotificationType = "Cảnh báo sức khỏe",
+                                                AccountId = professorAccount.AccountId,
+                                                Status = SD.NotificationStatus.SEND,
+                                                Title = "Cảnh báo sức khỏe",
+                                                Message = $"Bệnh nhân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.",
+                                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                                Data = JsonSerializer.Serialize(response),
+                                                ElderlyId = bloodPressure.ElderlyId
+
+                                            };
+
+                                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 else if (check.Data == "Huyết áp thấp")
@@ -714,59 +729,75 @@ namespace SE.Service.Services
                         .FindByCondition(p => p.ElderlyId == getElderly.Elderly.ElderlyId)
                         .FirstOrDefault();
 
-                    // 3. Check valid bookings
-                    var bookings = _unitOfWork.BookingRepository
-                        .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
-                        .Select(b => b.BookingId)
-                        .ToList();
-
-                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
-                    if (userSubscription?.Booking == null)
+                    if (elderly != null)
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
-                    }
+                        // 3. Check valid bookings
+                        var bookings = _unitOfWork.BookingRepository
+                            .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                            .Select(b => b.BookingId)
+                            .ToList();
 
-                    var professor = _unitOfWork.ProfessorRepository
-                        .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
-                        .FirstOrDefault();
-
-                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
-
-                    if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
-                    {
-                        // Send notification
-                        await _notificationService.SendNotification(
-                            professorAccount.DeviceToken,
-                            "Cảnh báo sức khỏe",
-                            $"Bệnh nhân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.");
-
-                        // Create notification record
-                        var response = new LogBookReponse
+                        if (bookings.Any())
                         {
-                            Tabs = "BloodPressure",
-                            Id = bloodPressure.BloodPressureId,
-                            DataType = bloodPressure.SystolicSource,
-                            DateTime = bloodPressure.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                            TimeRecorded = bloodPressure.DateRecorded?.ToString("HH:mm"),
-                            DateRecorded = bloodPressure.DateRecorded?.ToString("dd-MM-yyyy"),
-                            Indicator = $"{bloodPressure.Systolic}/{bloodPressure.Diastolic}",
-                            Evaluation = GetBloodPressureEvaluation((double)bloodPressure.Systolic, (double)bloodPressure.Diastolic)
-                        };
+                            var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+                            if (userSubscription?.Booking == null)
+                            {
+                                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                            }
 
-                        var newNotification = new Notification
-                        {
-                            NotificationType = "Cảnh báo sức khỏe",
-                            AccountId = professorAccount.AccountId,
-                            Status = SD.NotificationStatus.SEND,
-                            Title = "Cảnh báo sức khỏe",
-                            Message = $"Bệnh nhân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.",
-                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                            Data = JsonSerializer.Serialize(response),
-                            ElderlyId = bloodPressure.ElderlyId
+                            if (userSubscription != null)
+                            {
+                                var professor = _unitOfWork.ProfessorRepository
+                                    .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
+                                    .FirstOrDefault();
 
-                        };
+                                if (professor != null)
+                                {
+                                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
 
-                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                    if (professorAccount != null)
+                                    {
+
+                                        if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
+                                        {
+                                            // Send notification
+                                            await _notificationService.SendNotification(
+                                                professorAccount.DeviceToken,
+                                                "Cảnh báo sức khỏe",
+                                                $"Bệnh nhân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.");
+
+                                            // Create notification record
+                                            var response = new LogBookReponse
+                                            {
+                                                Tabs = "BloodPressure",
+                                                Id = bloodPressure.BloodPressureId,
+                                                DataType = bloodPressure.SystolicSource,
+                                                DateTime = bloodPressure.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                                TimeRecorded = bloodPressure.DateRecorded?.ToString("HH:mm"),
+                                                DateRecorded = bloodPressure.DateRecorded?.ToString("dd-MM-yyyy"),
+                                                Indicator = $"{bloodPressure.Systolic}/{bloodPressure.Diastolic}",
+                                                Evaluation = GetBloodPressureEvaluation((double)bloodPressure.Systolic, (double)bloodPressure.Diastolic)
+                                            };
+
+                                            var newNotification = new Notification
+                                            {
+                                                NotificationType = "Cảnh báo sức khỏe",
+                                                AccountId = professorAccount.AccountId,
+                                                Status = SD.NotificationStatus.SEND,
+                                                Title = "Cảnh báo sức khỏe",
+                                                Message = $"Bệnh nhân của bạn {getElderly.FullName} có huyết áp cao hơn bình thường.",
+                                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                                Data = JsonSerializer.Serialize(response),
+                                                ElderlyId = bloodPressure.ElderlyId
+
+                                            };
+
+                                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -873,59 +904,75 @@ namespace SE.Service.Services
                         .FindByCondition(p => p.ElderlyId == getElderly.Elderly.ElderlyId)
                         .FirstOrDefault();
 
-                    // 3. Check valid bookings
-                    var bookings = _unitOfWork.BookingRepository
-                        .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
-                        .Select(b => b.BookingId)
-                        .ToList();
-
-                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
-                    if (userSubscription?.Booking == null)
+                    if (elderly != null)
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
-                    }
+                        // 3. Check valid bookings
+                        var bookings = _unitOfWork.BookingRepository
+                            .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                            .Select(b => b.BookingId)
+                            .ToList();
 
-                    var professor = _unitOfWork.ProfessorRepository
-                        .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
-                        .FirstOrDefault();
-
-                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
-
-                    if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
-                    {
-                        // Send notification
-                        await _notificationService.SendNotification(
-                            professorAccount.DeviceToken,
-                            "Cảnh báo sức khỏe",
-                            $"Bệnh nhân của bạn {getElderly.FullName} có nhịp tim nhanh hơn bình thường.");
-
-                        // Create notification record
-                        var response = new LogBookReponse
+                        if (bookings.Any())
                         {
-                            Tabs = "HeartRate",
-                            Id = heartRate.HeartRateId,
-                            DataType = heartRate.HeartRateSource,
-                            DateTime = heartRate.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                            TimeRecorded = heartRate.DateRecorded?.ToString("HH:mm"),
-                            DateRecorded = heartRate.DateRecorded?.ToString("dd-MM-yyyy"),
-                            Indicator = $"{heartRate.HeartRate1}",
-                            Evaluation = GetHeartRateEvaluation((double)heartRate.HeartRate1)
-                        };
+                            var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+                            if (userSubscription?.Booking == null)
+                            {
+                                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                            }
 
-                        var newNotification = new Notification
-                        {
-                            NotificationType = "Cảnh báo sức khỏe",
-                            AccountId = professorAccount.AccountId,
-                            Status = SD.NotificationStatus.SEND,
-                            Title = "Cảnh báo sức khỏe",
-                            Message = $"Bệnh nhân của bạn {getElderly.FullName} có nhịp tim nhanh hơn bình thường.",
-                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                            Data = JsonSerializer.Serialize(response),
-                            ElderlyId = heartRate.ElderlyId
+                            if (userSubscription != null)
+                            {
+                                var professor = _unitOfWork.ProfessorRepository
+                                    .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
+                                    .FirstOrDefault();
 
-                        };
+                                if (professor != null)
+                                {
+                                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
 
-                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                    if (professorAccount != null)
+                                    {
+
+                                        if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
+                                        {
+                                            // Send notification
+                                            await _notificationService.SendNotification(
+                                                professorAccount.DeviceToken,
+                                                "Cảnh báo sức khỏe",
+                                                $"Bệnh nhân của bạn {getElderly.FullName} có nhịp tim nhanh hơn bình thường.");
+
+                                            // Create notification record
+                                            var response = new LogBookReponse
+                                            {
+                                                Tabs = "HeartRate",
+                                                Id = heartRate.HeartRateId,
+                                                DataType = heartRate.HeartRateSource,
+                                                DateTime = heartRate.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                                TimeRecorded = heartRate.DateRecorded?.ToString("HH:mm"),
+                                                DateRecorded = heartRate.DateRecorded?.ToString("dd-MM-yyyy"),
+                                                Indicator = $"{heartRate.HeartRate1}",
+                                                Evaluation = GetHeartRateEvaluation((double)heartRate.HeartRate1)
+                                            };
+
+                                            var newNotification = new Notification
+                                            {
+                                                NotificationType = "Cảnh báo sức khỏe",
+                                                AccountId = professorAccount.AccountId,
+                                                Status = SD.NotificationStatus.SEND,
+                                                Title = "Cảnh báo sức khỏe",
+                                                Message = $"Bệnh nhân của bạn {getElderly.FullName} có nhịp tim nhanh hơn bình thường.",
+                                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                                Data = JsonSerializer.Serialize(response),
+                                                ElderlyId = heartRate.ElderlyId
+
+                                            };
+
+                                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 else if (check.Data == "Nhịp tim chậm")
@@ -979,59 +1026,75 @@ namespace SE.Service.Services
                         .FindByCondition(p => p.ElderlyId == getElderly.Elderly.ElderlyId)
                         .FirstOrDefault();
 
-                    // 3. Check valid bookings
-                    var bookings = _unitOfWork.BookingRepository
-                        .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
-                        .Select(b => b.BookingId)
-                        .ToList();
-
-                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
-                    if (userSubscription?.Booking == null)
+                    if (elderly != null)
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
-                    }
+                        // 3. Check valid bookings
+                        var bookings = _unitOfWork.BookingRepository
+                            .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                            .Select(b => b.BookingId)
+                            .ToList();
 
-                    var professor = _unitOfWork.ProfessorRepository
-                        .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
-                        .FirstOrDefault();
-
-                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
-
-                    if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
-                    {
-                        // Send notification
-                        await _notificationService.SendNotification(
-                            professorAccount.DeviceToken,
-                            "Cảnh báo sức khỏe",
-                            $"Bệnh nhân của bạn {getElderly.FullName} có nhịp tim chậm hơn bình thường.");
-
-                        // Create notification record
-                        var response = new LogBookReponse
+                        if (bookings.Any())
                         {
-                            Tabs = "HeartRate",
-                            Id = heartRate.HeartRateId,
-                            DataType = heartRate.HeartRateSource,
-                            DateTime = heartRate.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                            TimeRecorded = heartRate.DateRecorded?.ToString("HH:mm"),
-                            DateRecorded = heartRate.DateRecorded?.ToString("dd-MM-yyyy"),
-                            Indicator = $"{heartRate.HeartRate1}",
-                            Evaluation = GetHeartRateEvaluation((double)heartRate.HeartRate1)
-                        };
+                            var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+                            if (userSubscription?.Booking == null)
+                            {
+                                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                            }
 
-                        var newNotification = new Notification
-                        {
-                            NotificationType = "Cảnh báo sức khỏe",
-                            AccountId = professorAccount.AccountId,
-                            Status = SD.NotificationStatus.SEND,
-                            Title = "Cảnh báo sức khỏe",
-                            Message = $"Bệnh nhân của bạn {getElderly.FullName} có nhịp tim chậm hơn bình thường.",
-                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                            Data = JsonSerializer.Serialize(response),
-                            ElderlyId = heartRate.ElderlyId
+                            if (userSubscription != null)
+                            {
+                                var professor = _unitOfWork.ProfessorRepository
+                                    .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
+                                    .FirstOrDefault();
 
-                        };
+                                if (professor != null)
+                                {
+                                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
 
-                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                    if (professorAccount != null)
+                                    {
+
+                                        if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
+                                        {
+                                            // Send notification
+                                            await _notificationService.SendNotification(
+                                                professorAccount.DeviceToken,
+                                                "Cảnh báo sức khỏe",
+                                                $"Bệnh nhân của bạn {getElderly.FullName} có nhịp tim chậm hơn bình thường.");
+
+                                            // Create notification record
+                                            var response = new LogBookReponse
+                                            {
+                                                Tabs = "HeartRate",
+                                                Id = heartRate.HeartRateId,
+                                                DataType = heartRate.HeartRateSource,
+                                                DateTime = heartRate.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                                TimeRecorded = heartRate.DateRecorded?.ToString("HH:mm"),
+                                                DateRecorded = heartRate.DateRecorded?.ToString("dd-MM-yyyy"),
+                                                Indicator = $"{heartRate.HeartRate1}",
+                                                Evaluation = GetHeartRateEvaluation((double)heartRate.HeartRate1)
+                                            };
+
+                                            var newNotification = new Notification
+                                            {
+                                                NotificationType = "Cảnh báo sức khỏe",
+                                                AccountId = professorAccount.AccountId,
+                                                Status = SD.NotificationStatus.SEND,
+                                                Title = "Cảnh báo sức khỏe",
+                                                Message = $"Bệnh nhân của bạn {getElderly.FullName} có nhịp tim chậm hơn bình thường.",
+                                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                                Data = JsonSerializer.Serialize(response),
+                                                ElderlyId = heartRate.ElderlyId
+
+                                            };
+
+                                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -1134,59 +1197,75 @@ namespace SE.Service.Services
                         .FindByCondition(p => p.ElderlyId == getElderly.Elderly.ElderlyId)
                         .FirstOrDefault();
 
-                    // 3. Check valid bookings
-                    var bookings = _unitOfWork.BookingRepository
-                        .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
-                        .Select(b => b.BookingId)
-                        .ToList();
-
-                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
-                    if (userSubscription?.Booking == null)
+                    if (elderly != null)
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
-                    }
+                        // 3. Check valid bookings
+                        var bookings = _unitOfWork.BookingRepository
+                            .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                            .Select(b => b.BookingId)
+                            .ToList();
 
-                    var professor = _unitOfWork.ProfessorRepository
-                        .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
-                        .FirstOrDefault();
-
-                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
-
-                    if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
-                    {
-                        // Send notification
-                        await _notificationService.SendNotification(
-                            professorAccount.DeviceToken,
-                            "Cảnh báo sức khỏe",
-                            $"Bệnh nhân của bạn {getElderly.FullName} có đường máu cao hơn bình thường.");
-
-                        // Create notification record
-                        var response = new LogBookReponse
+                        if (bookings.Any())
                         {
-                            Tabs = "BloodGlucose",
-                            Id = bloodGlucose.BloodGlucoseId,
-                            DataType = bloodGlucose.BloodGlucoseSource,
-                            DateTime = bloodGlucose.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                            TimeRecorded = bloodGlucose.DateRecorded?.ToString("HH:mm"),
-                            DateRecorded = bloodGlucose.DateRecorded?.ToString("dd-MM-yyyy"),
-                            Indicator = $"{bloodGlucose.BloodGlucose1}/{bloodGlucose.Time}",
-                            Evaluation = (string)EvaluateBloodGlusose((int)bloodGlucose.BloodGlucose1, bloodGlucose.Time).Result.Data
-                        };
+                            var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+                            if (userSubscription?.Booking == null)
+                            {
+                                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                            }
 
-                        var newNotification = new Notification
-                        {
-                            NotificationType = "Cảnh báo sức khỏe",
-                            AccountId = professorAccount.AccountId,
-                            Status = SD.NotificationStatus.SEND,
-                            Title = "Cảnh báo sức khỏe",
-                            Message = $"Bệnh nhân của bạn {getElderly.FullName} có đường máu cao hơn bình thường.",
-                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                            Data = JsonSerializer.Serialize(response),
-                            ElderlyId = bloodGlucose.ElderlyId
+                            if (userSubscription != null)
+                            {
+                                var professor = _unitOfWork.ProfessorRepository
+                                    .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
+                                    .FirstOrDefault();
 
-                        };
+                                if (professor != null)
+                                {
+                                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
 
-                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                    if (professorAccount != null)
+                                    {
+
+                                        if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
+                                        {
+                                            // Send notification
+                                            await _notificationService.SendNotification(
+                                                professorAccount.DeviceToken,
+                                                "Cảnh báo sức khỏe",
+                                                $"Bệnh nhân của bạn {getElderly.FullName} có đường máu cao hơn bình thường.");
+
+                                            // Create notification record
+                                            var response = new LogBookReponse
+                                            {
+                                                Tabs = "BloodGlucose",
+                                                Id = bloodGlucose.BloodGlucoseId,
+                                                DataType = bloodGlucose.BloodGlucoseSource,
+                                                DateTime = bloodGlucose.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                                TimeRecorded = bloodGlucose.DateRecorded?.ToString("HH:mm"),
+                                                DateRecorded = bloodGlucose.DateRecorded?.ToString("dd-MM-yyyy"),
+                                                Indicator = $"{bloodGlucose.BloodGlucose1}/{bloodGlucose.Time}",
+                                                Evaluation = (string)EvaluateBloodGlusose((int)bloodGlucose.BloodGlucose1, bloodGlucose.Time).Result.Data
+                                            };
+
+                                            var newNotification = new Notification
+                                            {
+                                                NotificationType = "Cảnh báo sức khỏe",
+                                                AccountId = professorAccount.AccountId,
+                                                Status = SD.NotificationStatus.SEND,
+                                                Title = "Cảnh báo sức khỏe",
+                                                Message = $"Bệnh nhân của bạn {getElderly.FullName} có đường máu cao hơn bình thường.",
+                                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                                Data = JsonSerializer.Serialize(response),
+                                                ElderlyId = bloodGlucose.ElderlyId
+
+                                            };
+
+                                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 else if (check.Data == "Thấp")
@@ -1240,59 +1319,75 @@ namespace SE.Service.Services
                         .FindByCondition(p => p.ElderlyId == getElderly.Elderly.ElderlyId)
                         .FirstOrDefault();
 
-                    // 3. Check valid bookings
-                    var bookings = _unitOfWork.BookingRepository
-                        .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
-                        .Select(b => b.BookingId)
-                        .ToList();
-
-                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
-                    if (userSubscription?.Booking == null)
+                    if (elderly != null)
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
-                    }
+                        // 3. Check valid bookings
+                        var bookings = _unitOfWork.BookingRepository
+                            .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                            .Select(b => b.BookingId)
+                            .ToList();
 
-                    var professor = _unitOfWork.ProfessorRepository
-                        .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
-                        .FirstOrDefault();
-
-                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
-
-                    if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
-                    {
-                        // Send notification
-                        await _notificationService.SendNotification(
-                            professorAccount.DeviceToken,
-                            "Cảnh báo sức khỏe",
-                            $"Bệnh nhân của bạn {getElderly.FullName} có đường máu thấp hơn bình thường.");
-
-                        // Create notification record
-                        var response = new LogBookReponse
+                        if (bookings.Any())
                         {
-                            Tabs = "BloodGlucose",
-                            Id = bloodGlucose.BloodGlucoseId,
-                            DataType = bloodGlucose.BloodGlucoseSource,
-                            DateTime = bloodGlucose.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                            TimeRecorded = bloodGlucose.DateRecorded?.ToString("HH:mm"),
-                            DateRecorded = bloodGlucose.DateRecorded?.ToString("dd-MM-yyyy"),
-                            Indicator = $"{bloodGlucose.BloodGlucose1}/{bloodGlucose.Time}",
-                            Evaluation = (string)EvaluateBloodGlusose((int)bloodGlucose.BloodGlucose1, bloodGlucose.Time).Result.Data
-                        };
+                            var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+                            if (userSubscription?.Booking == null)
+                            {
+                                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                            }
 
-                        var newNotification = new Notification
-                        {
-                            NotificationType = "Cảnh báo sức khỏe",
-                            AccountId = professorAccount.AccountId,
-                            Status = SD.NotificationStatus.SEND,
-                            Title = "Cảnh báo sức khỏe",
-                            Message = $"Bệnh nhân của bạn {getElderly.FullName} có đường máu thấp hơn bình thường.",
-                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                            Data = JsonSerializer.Serialize(response),
-                            ElderlyId = bloodGlucose.ElderlyId
+                            if (userSubscription != null)
+                            {
+                                var professor = _unitOfWork.ProfessorRepository
+                                    .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
+                                    .FirstOrDefault();
 
-                        };
+                                if (professor != null)
+                                {
+                                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
 
-                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                    if (professorAccount != null)
+                                    {
+
+                                        if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
+                                        {
+                                            // Send notification
+                                            await _notificationService.SendNotification(
+                                                professorAccount.DeviceToken,
+                                                "Cảnh báo sức khỏe",
+                                                $"Bệnh nhân của bạn {getElderly.FullName} có đường máu thấp hơn bình thường.");
+
+                                            // Create notification record
+                                            var response = new LogBookReponse
+                                            {
+                                                Tabs = "BloodGlucose",
+                                                Id = bloodGlucose.BloodGlucoseId,
+                                                DataType = bloodGlucose.BloodGlucoseSource,
+                                                DateTime = bloodGlucose.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                                TimeRecorded = bloodGlucose.DateRecorded?.ToString("HH:mm"),
+                                                DateRecorded = bloodGlucose.DateRecorded?.ToString("dd-MM-yyyy"),
+                                                Indicator = $"{bloodGlucose.BloodGlucose1}/{bloodGlucose.Time}",
+                                                Evaluation = (string)EvaluateBloodGlusose((int)bloodGlucose.BloodGlucose1, bloodGlucose.Time).Result.Data
+                                            };
+
+                                            var newNotification = new Notification
+                                            {
+                                                NotificationType = "Cảnh báo sức khỏe",
+                                                AccountId = professorAccount.AccountId,
+                                                Status = SD.NotificationStatus.SEND,
+                                                Title = "Cảnh báo sức khỏe",
+                                                Message = $"Bệnh nhân của bạn {getElderly.FullName} có đường máu thấp hơn bình thường.",
+                                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                                Data = JsonSerializer.Serialize(response),
+                                                ElderlyId = bloodGlucose.ElderlyId
+
+                                            };
+
+                                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -1337,7 +1432,7 @@ namespace SE.Service.Services
                 await _unitOfWork.LipidProfileRepository.CreateAsync(lipidProfile);
 
                 var healthIndicator = _unitOfWork.HealthIndicatorBaseRepository.FindByCondition(h => h.Type == "TotalCholesterol").FirstOrDefault();
-                if (decimal.Parse( request.TotalCholesterol) > healthIndicator.MaxValue)
+                if (decimal.Parse(request.TotalCholesterol) > healthIndicator.MaxValue)
                 {
                     var listFamilyMember = await _groupService.GetAllFamilyMembersByElderly(getElderly.AccountId);
 
@@ -1390,62 +1485,78 @@ namespace SE.Service.Services
                         .FindByCondition(p => p.ElderlyId == getElderly.Elderly.ElderlyId)
                         .FirstOrDefault();
 
-                    // 3. Check valid bookings
-                    var bookings = _unitOfWork.BookingRepository
-                        .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
-                        .Select(b => b.BookingId)
-                        .ToList();
-
-                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
-                    if (userSubscription?.Booking == null)
+                    if (elderly != null)
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
-                    }
+                        // 3. Check valid bookings
+                        var bookings = _unitOfWork.BookingRepository
+                            .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                            .Select(b => b.BookingId)
+                            .ToList();
 
-                    var professor = _unitOfWork.ProfessorRepository
-                        .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
-                        .FirstOrDefault();
-
-                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
-
-                    if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
-                    {
-                        // Send notification
-                        await _notificationService.SendNotification(
-                            professorAccount.DeviceToken,
-                            "Cảnh báo sức khỏe",
-                            $"Bệnh nhân của bạn {getElderly.FullName} có mỡ máu cao hơn bình thường.");
-
-                        var evaluation = lipidProfile.TotalCholesterol < healthIndicator.MinValue ? "Thấp" :
-                          lipidProfile.TotalCholesterol > healthIndicator.MaxValue ? "Cao" :
-                          "Bình thường";
-                        // Create notification record
-                        var response = new LogBookReponse
+                        if (bookings.Any())
                         {
-                            Tabs = "LipidProfile",
-                            Id = lipidProfile.LipidProfileId,
-                            DataType = lipidProfile.LipidProfileSource,
-                            DateTime = lipidProfile.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                            TimeRecorded = lipidProfile.DateRecorded?.ToString("HH:mm"),
-                            DateRecorded = lipidProfile.DateRecorded?.ToString("dd-MM-yyyy"),
-                            Indicator = $"{lipidProfile.TotalCholesterol}/{lipidProfile.Ldlcholesterol}/{lipidProfile.Hdlcholesterol}/{lipidProfile.Triglycerides}",
-                            Evaluation = evaluation
-                        };
+                            var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+                            if (userSubscription?.Booking == null)
+                            {
+                                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                            }
 
-                        var newNotification = new Notification
-                        {
-                            NotificationType = "Cảnh báo sức khỏe",
-                            AccountId = professorAccount.AccountId,
-                            Status = SD.NotificationStatus.SEND,
-                            Title = "Cảnh báo sức khỏe",
-                            Message = $"Bệnh nhân của bạn {getElderly.FullName} có mỡ máu cao hơn bình thường.",
-                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                            Data = JsonSerializer.Serialize(response),
-                            ElderlyId = lipidProfile.ElderlyId
+                            if (userSubscription != null)
+                            {
+                                var professor = _unitOfWork.ProfessorRepository
+                                    .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
+                                    .FirstOrDefault();
 
-                        };
+                                if (professor != null)
+                                {
+                                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
 
-                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                    if (professorAccount != null)
+                                    {
+
+                                        if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
+                                        {
+                                            // Send notification
+                                            await _notificationService.SendNotification(
+                                                professorAccount.DeviceToken,
+                                                "Cảnh báo sức khỏe",
+                                                $"Bệnh nhân của bạn {getElderly.FullName} có mỡ máu cao hơn bình thường.");
+
+                                            var evaluation = lipidProfile.TotalCholesterol < healthIndicator.MinValue ? "Thấp" :
+                                              lipidProfile.TotalCholesterol > healthIndicator.MaxValue ? "Cao" :
+                                              "Bình thường";
+                                            // Create notification record
+                                            var response = new LogBookReponse
+                                            {
+                                                Tabs = "LipidProfile",
+                                                Id = lipidProfile.LipidProfileId,
+                                                DataType = lipidProfile.LipidProfileSource,
+                                                DateTime = lipidProfile.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                                TimeRecorded = lipidProfile.DateRecorded?.ToString("HH:mm"),
+                                                DateRecorded = lipidProfile.DateRecorded?.ToString("dd-MM-yyyy"),
+                                                Indicator = $"{lipidProfile.TotalCholesterol}/{lipidProfile.Ldlcholesterol}/{lipidProfile.Hdlcholesterol}/{lipidProfile.Triglycerides}",
+                                                Evaluation = evaluation
+                                            };
+
+                                            var newNotification = new Notification
+                                            {
+                                                NotificationType = "Cảnh báo sức khỏe",
+                                                AccountId = professorAccount.AccountId,
+                                                Status = SD.NotificationStatus.SEND,
+                                                Title = "Cảnh báo sức khỏe",
+                                                Message = $"Bệnh nhân của bạn {getElderly.FullName} có mỡ máu cao hơn bình thường.",
+                                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                                Data = JsonSerializer.Serialize(response),
+                                                ElderlyId = lipidProfile.ElderlyId
+
+                                            };
+
+                                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 else if (decimal.Parse(request.TotalCholesterol) < healthIndicator.MinValue)
@@ -1502,63 +1613,79 @@ namespace SE.Service.Services
                         .FindByCondition(p => p.ElderlyId == getElderly.Elderly.ElderlyId)
                         .FirstOrDefault();
 
-                    // 3. Check valid bookings
-                    var bookings = _unitOfWork.BookingRepository
-                        .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
-                        .Select(b => b.BookingId)
-                        .ToList();
-
-                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
-                    if (userSubscription?.Booking == null)
+                    if (elderly != null)
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
-                    }
+                        // 3. Check valid bookings
+                        var bookings = _unitOfWork.BookingRepository
+                            .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                            .Select(b => b.BookingId)
+                            .ToList();
 
-                    var professor = _unitOfWork.ProfessorRepository
-                        .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
-                        .FirstOrDefault();
-
-                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
-
-                    if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
-                    {
-                        // Send notification
-                        await _notificationService.SendNotification(
-                            professorAccount.DeviceToken,
-                            "Cảnh báo sức khỏe",
-                            $"Bệnh nhân của bạn {getElderly.FullName} có mỡ máu thấp hơn bình thường.");
-
-                        var evaluation = lipidProfile.TotalCholesterol < healthIndicator.MinValue ? "Thấp" :
-                          lipidProfile.TotalCholesterol > healthIndicator.MaxValue ? "Cao" :
-                          "Bình thường";
-
-                        // Create notification record
-                        var response = new LogBookReponse
+                        if (bookings.Any())
                         {
-                            Tabs = "LipidProfile",
-                            Id = lipidProfile.LipidProfileId,
-                            DataType = lipidProfile.LipidProfileSource,
-                            DateTime = lipidProfile.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                            TimeRecorded = lipidProfile.DateRecorded?.ToString("HH:mm"),
-                            DateRecorded = lipidProfile.DateRecorded?.ToString("dd-MM-yyyy"),
-                            Indicator = $"{lipidProfile.TotalCholesterol}/{lipidProfile.Ldlcholesterol}/{lipidProfile.Hdlcholesterol}/{lipidProfile.Triglycerides}",
-                            Evaluation = evaluation
-                        };
+                            var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+                            if (userSubscription?.Booking == null)
+                            {
+                                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                            }
 
-                        var newNotification = new Notification
-                        {
-                            NotificationType = "Cảnh báo sức khỏe",
-                            AccountId = professorAccount.AccountId,
-                            Status = SD.NotificationStatus.SEND,
-                            Title = "Cảnh báo sức khỏe",
-                            Message = $"Bệnh nhân của bạn {getElderly.FullName} có mỡ máu thấp hơn bình thường.",
-                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                            Data = JsonSerializer.Serialize(response),
-                            ElderlyId = lipidProfile.ElderlyId
+                            if (userSubscription != null)
+                            {
+                                var professor = _unitOfWork.ProfessorRepository
+                                    .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
+                                    .FirstOrDefault();
 
-                        };
+                                if (professor != null)
+                                {
+                                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
 
-                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                    if (professorAccount != null)
+                                    {
+
+                                        if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
+                                        {
+                                            // Send notification
+                                            await _notificationService.SendNotification(
+                                                professorAccount.DeviceToken,
+                                                "Cảnh báo sức khỏe",
+                                                $"Bệnh nhân của bạn {getElderly.FullName} có mỡ máu thấp hơn bình thường.");
+
+                                            var evaluation = lipidProfile.TotalCholesterol < healthIndicator.MinValue ? "Thấp" :
+                                              lipidProfile.TotalCholesterol > healthIndicator.MaxValue ? "Cao" :
+                                              "Bình thường";
+
+                                            // Create notification record
+                                            var response = new LogBookReponse
+                                            {
+                                                Tabs = "LipidProfile",
+                                                Id = lipidProfile.LipidProfileId,
+                                                DataType = lipidProfile.LipidProfileSource,
+                                                DateTime = lipidProfile.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                                TimeRecorded = lipidProfile.DateRecorded?.ToString("HH:mm"),
+                                                DateRecorded = lipidProfile.DateRecorded?.ToString("dd-MM-yyyy"),
+                                                Indicator = $"{lipidProfile.TotalCholesterol}/{lipidProfile.Ldlcholesterol}/{lipidProfile.Hdlcholesterol}/{lipidProfile.Triglycerides}",
+                                                Evaluation = evaluation
+                                            };
+
+                                            var newNotification = new Notification
+                                            {
+                                                NotificationType = "Cảnh báo sức khỏe",
+                                                AccountId = professorAccount.AccountId,
+                                                Status = SD.NotificationStatus.SEND,
+                                                Title = "Cảnh báo sức khỏe",
+                                                Message = $"Bệnh nhân của bạn {getElderly.FullName} có mỡ máu thấp hơn bình thường.",
+                                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                                Data = JsonSerializer.Serialize(response),
+                                                ElderlyId = lipidProfile.ElderlyId
+
+                                            };
+
+                                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -1657,61 +1784,77 @@ namespace SE.Service.Services
                         .FindByCondition(p => p.ElderlyId == getElderly.Elderly.ElderlyId)
                         .FirstOrDefault();
 
-                    // 3. Check valid bookings
-                    var bookings = _unitOfWork.BookingRepository
-                        .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
-                        .Select(b => b.BookingId)
-                        .ToList();
-
-                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
-                    if (userSubscription?.Booking == null)
+                    if (elderly != null)
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
-                    }
+                        // 3. Check valid bookings
+                        var bookings = _unitOfWork.BookingRepository
+                            .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                            .Select(b => b.BookingId)
+                            .ToList();
 
-                    var professor = _unitOfWork.ProfessorRepository
-                        .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
-                        .FirstOrDefault();
-
-                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
-
-                    if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
-                    {
-                        // Send notification
-                        await _notificationService.SendNotification(
-                            professorAccount.DeviceToken,
-                            "Cảnh báo sức khỏe",
-                            $"Bệnh nhân của bạn {getElderly.FullName} có men gan cao hơn bình thường.");
-
-                        var evaluation = liverEnzyme.Alt < healthIndicator.MinValue ? "Thấp" :
-                           liverEnzyme.Alt > healthIndicator.MaxValue ? "Cao" :
-                           "Bình thường";
-                        var response = new LogBookReponse
+                        if (bookings.Any())
                         {
-                            Tabs = "LiverEnzyme",
-                            Id = liverEnzyme.LiverEnzymesId,
-                            DataType = liverEnzyme.LiverEnzymesSource,
-                            DateTime = liverEnzyme.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                            TimeRecorded = liverEnzyme.DateRecorded?.ToString("HH:mm"),
-                            DateRecorded = liverEnzyme.DateRecorded?.ToString("dd-MM-yyyy"),
-                            Indicator = $"{liverEnzyme.Alt}/{liverEnzyme.Ast}/{liverEnzyme.Alp}/{liverEnzyme.Ggt}",
-                            Evaluation = evaluation
-                        };
+                            var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+                            if (userSubscription?.Booking == null)
+                            {
+                                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                            }
 
-                        var newNotification = new Notification
-                        {
-                            NotificationType = "Cảnh báo sức khỏe",
-                            AccountId = professorAccount.AccountId,
-                            Status = SD.NotificationStatus.SEND,
-                            Title = "Cảnh báo sức khỏe",
-                            Message = $"Bệnh nhân của bạn {getElderly.FullName} có men gan cao hơn bình thường.",
-                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                            Data = JsonSerializer.Serialize(response),
-                            ElderlyId = liverEnzyme.ElderlyId
+                            if (userSubscription != null)
+                            {
+                                var professor = _unitOfWork.ProfessorRepository
+                                    .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
+                                    .FirstOrDefault();
 
-                        };
+                                if (professor != null)
+                                {
+                                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
 
-                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                    if (professorAccount != null)
+                                    {
+
+                                        if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
+                                        {
+                                            // Send notification
+                                            await _notificationService.SendNotification(
+                                                professorAccount.DeviceToken,
+                                                "Cảnh báo sức khỏe",
+                                                $"Bệnh nhân của bạn {getElderly.FullName} có men gan cao hơn bình thường.");
+
+                                            var evaluation = liverEnzyme.Alt < healthIndicator.MinValue ? "Thấp" :
+                                               liverEnzyme.Alt > healthIndicator.MaxValue ? "Cao" :
+                                               "Bình thường";
+                                            var response = new LogBookReponse
+                                            {
+                                                Tabs = "LiverEnzyme",
+                                                Id = liverEnzyme.LiverEnzymesId,
+                                                DataType = liverEnzyme.LiverEnzymesSource,
+                                                DateTime = liverEnzyme.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                                TimeRecorded = liverEnzyme.DateRecorded?.ToString("HH:mm"),
+                                                DateRecorded = liverEnzyme.DateRecorded?.ToString("dd-MM-yyyy"),
+                                                Indicator = $"{liverEnzyme.Alt}/{liverEnzyme.Ast}/{liverEnzyme.Alp}/{liverEnzyme.Ggt}",
+                                                Evaluation = evaluation
+                                            };
+
+                                            var newNotification = new Notification
+                                            {
+                                                NotificationType = "Cảnh báo sức khỏe",
+                                                AccountId = professorAccount.AccountId,
+                                                Status = SD.NotificationStatus.SEND,
+                                                Title = "Cảnh báo sức khỏe",
+                                                Message = $"Bệnh nhân của bạn {getElderly.FullName} có men gan cao hơn bình thường.",
+                                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                                Data = JsonSerializer.Serialize(response),
+                                                ElderlyId = liverEnzyme.ElderlyId
+
+                                            };
+
+                                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 else if (decimal.Parse(request.Alt) < healthIndicator.MinValue)
@@ -1772,61 +1915,77 @@ namespace SE.Service.Services
                         .FindByCondition(p => p.ElderlyId == getElderly.Elderly.ElderlyId)
                         .FirstOrDefault();
 
-                    // 3. Check valid bookings
-                    var bookings = _unitOfWork.BookingRepository
-                        .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
-                        .Select(b => b.BookingId)
-                        .ToList();
-
-                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
-                    if (userSubscription?.Booking == null)
+                    if (elderly != null)
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
-                    }
+                        // 3. Check valid bookings
+                        var bookings = _unitOfWork.BookingRepository
+                            .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                            .Select(b => b.BookingId)
+                            .ToList();
 
-                    var professor = _unitOfWork.ProfessorRepository
-                        .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
-                        .FirstOrDefault();
-
-                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
-
-                    if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
-                    {
-                        // Send notification
-                        await _notificationService.SendNotification(
-                            professorAccount.DeviceToken,
-                            "Cảnh báo sức khỏe",
-                            $"Bệnh nhân của bạn {getElderly.FullName} có men gan thấp hơn bình thường.");
-
-                        var evaluation = liverEnzyme.Alt < healthIndicator.MinValue ? "Thấp" :
-                           liverEnzyme.Alt > healthIndicator.MaxValue ? "Cao" :
-                           "Bình thường";
-                        var response = new LogBookReponse
+                        if (bookings.Any())
                         {
-                            Tabs = "LiverEnzyme",
-                            Id = liverEnzyme.LiverEnzymesId,
-                            DataType = liverEnzyme.LiverEnzymesSource,
-                            DateTime = liverEnzyme.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                            TimeRecorded = liverEnzyme.DateRecorded?.ToString("HH:mm"),
-                            DateRecorded = liverEnzyme.DateRecorded?.ToString("dd-MM-yyyy"),
-                            Indicator = $"{liverEnzyme.Alt}/{liverEnzyme.Ast}/{liverEnzyme.Alp}/{liverEnzyme.Ggt}",
-                            Evaluation = evaluation
-                        };
+                            var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+                            if (userSubscription?.Booking == null)
+                            {
+                                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                            }
 
-                        var newNotification = new Notification
-                        {
-                            NotificationType = "Cảnh báo sức khỏe",
-                            AccountId = professorAccount.AccountId,
-                            Status = SD.NotificationStatus.SEND,
-                            Title = "Cảnh báo sức khỏe",
-                            Message = $"Bệnh nhân của bạn {getElderly.FullName} có men gan thấp hơn bình thường.",
-                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                            Data = JsonSerializer.Serialize(response),
-                            ElderlyId = liverEnzyme.ElderlyId
+                            if (userSubscription != null)
+                            {
+                                var professor = _unitOfWork.ProfessorRepository
+                                    .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
+                                    .FirstOrDefault();
 
-                        };
+                                if (professor != null)
+                                {
+                                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
 
-                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                    if (professorAccount != null)
+                                    {
+
+                                        if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
+                                        {
+                                            // Send notification
+                                            await _notificationService.SendNotification(
+                                                professorAccount.DeviceToken,
+                                                "Cảnh báo sức khỏe",
+                                                $"Bệnh nhân của bạn {getElderly.FullName} có men gan thấp hơn bình thường.");
+
+                                            var evaluation = liverEnzyme.Alt < healthIndicator.MinValue ? "Thấp" :
+                                               liverEnzyme.Alt > healthIndicator.MaxValue ? "Cao" :
+                                               "Bình thường";
+                                            var response = new LogBookReponse
+                                            {
+                                                Tabs = "LiverEnzyme",
+                                                Id = liverEnzyme.LiverEnzymesId,
+                                                DataType = liverEnzyme.LiverEnzymesSource,
+                                                DateTime = liverEnzyme.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                                TimeRecorded = liverEnzyme.DateRecorded?.ToString("HH:mm"),
+                                                DateRecorded = liverEnzyme.DateRecorded?.ToString("dd-MM-yyyy"),
+                                                Indicator = $"{liverEnzyme.Alt}/{liverEnzyme.Ast}/{liverEnzyme.Alp}/{liverEnzyme.Ggt}",
+                                                Evaluation = evaluation
+                                            };
+
+                                            var newNotification = new Notification
+                                            {
+                                                NotificationType = "Cảnh báo sức khỏe",
+                                                AccountId = professorAccount.AccountId,
+                                                Status = SD.NotificationStatus.SEND,
+                                                Title = "Cảnh báo sức khỏe",
+                                                Message = $"Bệnh nhân của bạn {getElderly.FullName} có men gan thấp hơn bình thường.",
+                                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                                Data = JsonSerializer.Serialize(response),
+                                                ElderlyId = liverEnzyme.ElderlyId
+
+                                            };
+
+                                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -1926,61 +2085,77 @@ namespace SE.Service.Services
                         .FindByCondition(p => p.ElderlyId == getElderly.Elderly.ElderlyId)
                         .FirstOrDefault();
 
-                    // 3. Check valid bookings
-                    var bookings = _unitOfWork.BookingRepository
-                        .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
-                        .Select(b => b.BookingId)
-                        .ToList();
-
-                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
-                    if (userSubscription?.Booking == null)
+                    if (elderly != null)
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
-                    }
+                        // 3. Check valid bookings
+                        var bookings = _unitOfWork.BookingRepository
+                            .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                            .Select(b => b.BookingId)
+                            .ToList();
 
-                    var professor = _unitOfWork.ProfessorRepository
-                        .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
-                        .FirstOrDefault();
-
-                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
-
-                    if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
-                    {
-                        // Send notification
-                        await _notificationService.SendNotification(
-                            professorAccount.DeviceToken,
-                            "Cảnh báo sức khỏe",
-                            $"Bệnh nhân của bạn {getElderly.FullName} có chức năng thận cao hơn bình thường.");
-
-                        var evaluation = kidneyFunction.EGfr < healthIndicator.MinValue ? "Thấp" :
-                           kidneyFunction.EGfr > healthIndicator.MaxValue ? "Cao" :
-                           "Bình thường";
-                        var response = new LogBookReponse
+                        if (bookings.Any())
                         {
-                            Tabs = "KidneyFunction",
-                            Id = kidneyFunction.KidneyFunctionId,
-                            DataType = kidneyFunction.KidneyFunctionSource,
-                            DateTime = kidneyFunction.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                            TimeRecorded = kidneyFunction.DateRecorded?.ToString("HH:mm"),
-                            DateRecorded = kidneyFunction.DateRecorded?.ToString("dd-MM-yyyy"),
-                            Indicator = $"{kidneyFunction.EGfr}/{kidneyFunction.Bun}/{kidneyFunction.Creatinine}",
-                            Evaluation = evaluation
-                        };
+                            var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+                            if (userSubscription?.Booking == null)
+                            {
+                                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                            }
 
-                        var newNotification = new Notification
-                        {
-                            NotificationType = "Cảnh báo sức khỏe",
-                            AccountId = professorAccount.AccountId,
-                            Status = SD.NotificationStatus.SEND,
-                            Title = "Cảnh báo sức khỏe",
-                            Message = $"Bệnh nhân của bạn {getElderly.FullName} có chức năng thận cao hơn bình thường.",
-                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                            Data = JsonSerializer.Serialize(response),
-                            ElderlyId = kidneyFunction.ElderlyId
+                            if (userSubscription != null)
+                            {
+                                var professor = _unitOfWork.ProfessorRepository
+                                    .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
+                                    .FirstOrDefault();
 
-                        };
+                                if (professor != null)
+                                {
+                                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
 
-                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                    if (professorAccount != null)
+                                    {
+
+                                        if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
+                                        {
+                                            // Send notification
+                                            await _notificationService.SendNotification(
+                                                professorAccount.DeviceToken,
+                                                "Cảnh báo sức khỏe",
+                                                $"Bệnh nhân của bạn {getElderly.FullName} có chức năng thận cao hơn bình thường.");
+
+                                            var evaluation = kidneyFunction.EGfr < healthIndicator.MinValue ? "Thấp" :
+                                               kidneyFunction.EGfr > healthIndicator.MaxValue ? "Cao" :
+                                               "Bình thường";
+                                            var response = new LogBookReponse
+                                            {
+                                                Tabs = "KidneyFunction",
+                                                Id = kidneyFunction.KidneyFunctionId,
+                                                DataType = kidneyFunction.KidneyFunctionSource,
+                                                DateTime = kidneyFunction.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                                TimeRecorded = kidneyFunction.DateRecorded?.ToString("HH:mm"),
+                                                DateRecorded = kidneyFunction.DateRecorded?.ToString("dd-MM-yyyy"),
+                                                Indicator = $"{kidneyFunction.EGfr}/{kidneyFunction.Bun}/{kidneyFunction.Creatinine}",
+                                                Evaluation = evaluation
+                                            };
+
+                                            var newNotification = new Notification
+                                            {
+                                                NotificationType = "Cảnh báo sức khỏe",
+                                                AccountId = professorAccount.AccountId,
+                                                Status = SD.NotificationStatus.SEND,
+                                                Title = "Cảnh báo sức khỏe",
+                                                Message = $"Bệnh nhân của bạn {getElderly.FullName} có chức năng thận cao hơn bình thường.",
+                                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                                Data = JsonSerializer.Serialize(response),
+                                                ElderlyId = kidneyFunction.ElderlyId
+
+                                            };
+
+                                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 else if (decimal.Parse(request.EGFR) < healthIndicator.MinValue)
@@ -2038,61 +2213,77 @@ namespace SE.Service.Services
                         .FindByCondition(p => p.ElderlyId == getElderly.Elderly.ElderlyId)
                         .FirstOrDefault();
 
-                    // 3. Check valid bookings
-                    var bookings = _unitOfWork.BookingRepository
-                        .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
-                        .Select(b => b.BookingId)
-                        .ToList();
-
-                    var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
-                    if (userSubscription?.Booking == null)
+                    if (elderly != null)
                     {
-                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
-                    }
+                        // 3. Check valid bookings
+                        var bookings = _unitOfWork.BookingRepository
+                            .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                            .Select(b => b.BookingId)
+                            .ToList();
 
-                    var professor = _unitOfWork.ProfessorRepository
-                        .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
-                        .FirstOrDefault();
-
-                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
-
-                    if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
-                    {
-                        // Send notification
-                        await _notificationService.SendNotification(
-                            professorAccount.DeviceToken,
-                            "Cảnh báo sức khỏe",
-                            $"Bệnh nhân của bạn {getElderly.FullName} có chức năng thận thấp hơn bình thường.");
-
-                        var evaluation = kidneyFunction.EGfr < healthIndicator.MinValue ? "Thấp" :
-                           kidneyFunction.EGfr > healthIndicator.MaxValue ? "Cao" :
-                           "Bình thường";
-                        var response = new LogBookReponse
+                        if (bookings.Any())
                         {
-                            Tabs = "KidneyFunction",
-                            Id = kidneyFunction.KidneyFunctionId,
-                            DataType = kidneyFunction.KidneyFunctionSource,
-                            DateTime = kidneyFunction.DateRecorded?.ToString("dd'-th'MM HH:mm"),
-                            TimeRecorded = kidneyFunction.DateRecorded?.ToString("HH:mm"),
-                            DateRecorded = kidneyFunction.DateRecorded?.ToString("dd-MM-yyyy"),
-                            Indicator = $"{kidneyFunction.EGfr}/{kidneyFunction.Bun}/{kidneyFunction.Creatinine}",
-                            Evaluation = evaluation
-                        };
+                            var userSubscription = await _unitOfWork.UserServiceRepository.GetUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
+                            if (userSubscription?.Booking == null)
+                            {
+                                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                            }
 
-                        var newNotification = new Notification
-                        {
-                            NotificationType = "Cảnh báo sức khỏe",
-                            AccountId = professorAccount.AccountId,
-                            Status = SD.NotificationStatus.SEND,
-                            Title = "Cảnh báo sức khỏe",
-                            Message = $"Bệnh nhân của bạn {getElderly.FullName} có chức năng thận thấp hơn bình thường.",
-                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                            Data = JsonSerializer.Serialize(response),
-                            ElderlyId = kidneyFunction.ElderlyId
+                            if (userSubscription != null)
+                            {
+                                var professor = _unitOfWork.ProfessorRepository
+                                    .FindByCondition(p => p.ProfessorId == userSubscription.ProfessorId)
+                                    .FirstOrDefault();
 
-                        };
+                                if (professor != null)
+                                {
+                                    var professorAccount = await _unitOfWork.AccountRepository.GetAccountAsync(professor.AccountId);
 
-                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                    if (professorAccount != null)
+                                    {
+
+                                        if (!string.IsNullOrEmpty(professorAccount.DeviceToken) && professorAccount.DeviceToken != "string")
+                                        {
+                                            // Send notification
+                                            await _notificationService.SendNotification(
+                                                professorAccount.DeviceToken,
+                                                "Cảnh báo sức khỏe",
+                                                $"Bệnh nhân của bạn {getElderly.FullName} có chức năng thận thấp hơn bình thường.");
+
+                                            var evaluation = kidneyFunction.EGfr < healthIndicator.MinValue ? "Thấp" :
+                                               kidneyFunction.EGfr > healthIndicator.MaxValue ? "Cao" :
+                                               "Bình thường";
+                                            var response = new LogBookReponse
+                                            {
+                                                Tabs = "KidneyFunction",
+                                                Id = kidneyFunction.KidneyFunctionId,
+                                                DataType = kidneyFunction.KidneyFunctionSource,
+                                                DateTime = kidneyFunction.DateRecorded?.ToString("dd'-th'MM HH:mm"),
+                                                TimeRecorded = kidneyFunction.DateRecorded?.ToString("HH:mm"),
+                                                DateRecorded = kidneyFunction.DateRecorded?.ToString("dd-MM-yyyy"),
+                                                Indicator = $"{kidneyFunction.EGfr}/{kidneyFunction.Bun}/{kidneyFunction.Creatinine}",
+                                                Evaluation = evaluation
+                                            };
+
+                                            var newNotification = new Notification
+                                            {
+                                                NotificationType = "Cảnh báo sức khỏe",
+                                                AccountId = professorAccount.AccountId,
+                                                Status = SD.NotificationStatus.SEND,
+                                                Title = "Cảnh báo sức khỏe",
+                                                Message = $"Bệnh nhân của bạn {getElderly.FullName} có chức năng thận thấp hơn bình thường.",
+                                                CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                                                Data = JsonSerializer.Serialize(response),
+                                                ElderlyId = kidneyFunction.ElderlyId
+
+                                            };
+
+                                            await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 

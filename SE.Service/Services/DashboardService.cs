@@ -89,6 +89,28 @@ namespace SE.Service.Services
                         YearValue = d.Year,
                     });
 
+                var result12 = allMonths
+                        .GroupJoin(monthlyRevenues,
+                            month => new { month.MonthValue, month.YearValue },
+                            revenue => new { revenue.MonthValue, revenue.YearValue},
+                            (month, revenues) => new
+                            {
+                                month.MonthValue,
+                                month.YearValue,
+                                Revenue = revenues.FirstOrDefault()?.Revenue ?? 0d
+                            })
+                        .Select(x => new MonthlyValue
+                        {
+                            MonthValue = x.MonthValue,
+                            YearValue = x.YearValue,
+                            Value = (double)Math.Round(x.Revenue, 2),
+                            Revenue = (double)x.Revenue,
+                            Month = VietnameseMonths[x.MonthValue],
+                        })
+                        .OrderBy(m => m.YearValue)
+                        .ThenBy(m => m.MonthValue)
+                        .ToList();
+
                 var monthlyRevenueResult = allMonths
                     .GroupJoin(monthlyRevenues,
                         date => new { date.MonthValue },
@@ -104,14 +126,16 @@ namespace SE.Service.Services
                     .ThenBy(m => m.MonthValue)
                     .ToList();
 
-                var monthlyGrowth = monthlyRevenues
+                var monthlyGrowth = result12
                     .Select((month, index) => new MonthlyValue
                     {
                         Month = month.Month,
                         Value = index == 0
-                            ? 0 
-                            : (month.Revenue - monthlyRevenues[index - 1].Revenue) /
-                              monthlyRevenues[index - 1].Revenue * 100
+                            ? 0
+                            : (result12[index - 1].Revenue == 0)
+                                ? 0 // Handle division by zero by returning 100
+                                : (month.Revenue - result12[index - 1].Revenue) /
+                                  result12[index - 1].Revenue * 100
                     })
                     .ToList();
 
