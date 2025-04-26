@@ -123,7 +123,7 @@ namespace SE.Data.Repository
                 .Include(a => a.UserSubscription)
                 .Where(a => a.UserSubscription != null &&
                            a.UserSubscription.ProfessorId == professorId &&
-                           a.AppointmentTime.Date == date.Date)
+                           a.AppointmentTime.Date == date.Date && (a.Status == "NotYet" ||a.Status == "Cancelled"))
                 .ToListAsync();
         }
 
