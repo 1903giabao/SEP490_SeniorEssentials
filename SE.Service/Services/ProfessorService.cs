@@ -331,30 +331,31 @@ namespace SE.Service.Services
                 var familyMember = await _unitOfWork.AccountRepository.GetAccountAsync(getAppointment.UserSubscription.Booking.AccountId);
                 var elderly = await _unitOfWork.AccountRepository.GetAccountAsync(getAppointment.UserSubscription.Booking.Elderly.AccountId);
 
-                if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
+                if (familyMember != null && elderly != null)
                 {
-                    // Send notification
-                    await _notificationService.SendNotification(
-                        familyMember.DeviceToken,
-                        "Báo cáo tư vấn bác sĩ",
-                        $"Bạn đã nhận được báo cáo về buổi tư vấn của {elderly.FullName} và bác sĩ.");
-
-                    var newNotification = new Data.Models.Notification
+                    if (!string.IsNullOrEmpty(familyMember.DeviceToken) && familyMember.DeviceToken != "string")
                     {
-                        NotificationType = "Báo cáo tư vấn bác sĩ",
-                        AccountId = familyMember.AccountId,
-                        Status = SD.GeneralStatus.ACTIVE,
-                        Title = "Báo cáo tư vấn bác sĩ",
-                        Message = $"Bạn đã nhận được báo cáo về buổi tư vấn của {elderly.FullName} và bác sĩ.",
-                        CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                    };
+                        // Send notification
+                        await _notificationService.SendNotification(
+                            familyMember.DeviceToken,
+                            "Báo cáo tư vấn bác sĩ",
+                            $"Bạn đã nhận được báo cáo về buổi tư vấn của {elderly.FullName} và bác sĩ.");
 
-                    await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        var newNotification = new Data.Models.Notification
+                        {
+                            NotificationType = "Báo cáo tư vấn bác sĩ",
+                            AccountId = familyMember.AccountId,
+                            Status = SD.GeneralStatus.ACTIVE,
+                            Title = "Báo cáo tư vấn bác sĩ",
+                            Message = $"Bạn đã nhận được báo cáo về buổi tư vấn của {elderly.FullName} và bác sĩ.",
+                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                        };
+
+                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                    }
                 }
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Created report succesfully!");
-
-
             }
             catch (Exception ex)
             {
@@ -471,6 +472,7 @@ namespace SE.Service.Services
                         { "SentDateTime", currentTime.ToString("dd-MM-yyyy HH:mm") },
                             {
                                 "MemberIds", groupMembers
+                                    .DistinctBy(m => m.AccountId)
                                     .ToDictionary(m => m.AccountId.ToString(), m => (object)true)
                             }
                         };

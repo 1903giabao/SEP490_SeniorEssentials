@@ -306,6 +306,21 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Fail to create new account!");
                 }
 
+                if (req.CreatorAccountId != 0)
+                {
+                    var createUserLink = new UserLink
+                    {
+                        AccountId1 = req.CreatorAccountId,
+                        AccountId2 = req.AccountId,
+                        CreatedAt = DateTime.UtcNow.AddHours(7),
+                        RelationshipType = "Family",
+                        Status = SD.UserLinkStatus.ACCEPTED,
+                        UpdatedAt = DateTime.UtcNow.AddHours(7),
+                    };
+
+                    await _unitOfWork.UserLinkRepository.CreateAsync(createUserLink);
+                }
+
                 return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, "Create new account successfully!");
             }
             catch (Exception ex)

@@ -786,92 +786,94 @@ namespace SE.Service.Services
                 {
                     var account = await _unitOfWork.AccountRepository.GetAccountAsync(groupMemberId);
 
-                    if (account.RoleId == 2 && account.AccountId == accountId)
+                    if (account.RoleId == 2)
                     {
                         countRole2++;
                     }
                 }
 
+                var kickedAccount = await _unitOfWork.AccountRepository.GetAccountAsync(accountId);
+
                 if (countRole2 == 1)
                 {
-                    if (kickerId == accountId)
+                    if (kickerId == kickedAccount.AccountId && kickedAccount.RoleId == 2)
                     {
                         await RemoveGroup(groupId);
+                        return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, "Xóa thành viên khỏi nhóm thành công.");
                     }
-                    else
+                    else if (kickedAccount.RoleId == 2)
                     {
                         return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Không thể xóa người già này vì phải có ít nhất một người già trong nhóm!");
                     }
                 }
-                else if (countRole2 > 1)
+                else if (countRole2 < 1)
                 {
-                    var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
-                    if (group == null)
+                    await RemoveGroup(groupId);
+                    return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, "Xóa thành viên khỏi nhóm thành công.");
+                }
+
+                var group = await _unitOfWork.GroupRepository.GetByIdAsync(groupId);
+                if (group == null)
+                {
+                    return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Nhóm không tồn tại.");
+                }
+
+                var roomChatId = group.GroupChatId;
+
+                if (roomChatId != null)
+                {
+                    var groupRef = _firestoreDb.Collection("ChatRooms").Document(roomChatId);
+                    var groupDoc = await groupRef.GetSnapshotAsync();
+
+                    if (!groupDoc.Exists)
                     {
-                        return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Nhóm không tồn tại.");
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Nhóm chat không tồn tại!");
                     }
 
-                    var roomChatId = group.GroupChatId;
+                    var currentMembers = groupDoc.GetValue<Dictionary<string, object>>("MemberIds") ?? new Dictionary<string, object>();
+                    var memberIdStr = accountId.ToString();
 
-                    if (roomChatId != null)
+                    if (!currentMembers.ContainsKey(memberIdStr))
                     {
-                        var groupRef = _firestoreDb.Collection("ChatRooms").Document(roomChatId);
-                        var groupDoc = await groupRef.GetSnapshotAsync();
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Thành viên không thuộc nhóm này!");
+                    }
 
-                        if (!groupDoc.Exists)
-                        {
-                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Nhóm chat không tồn tại!");
-                        }
+                    currentMembers.Remove(memberIdStr);
 
-                        var currentMembers = groupDoc.GetValue<Dictionary<string, object>>("MemberIds") ?? new Dictionary<string, object>();
-                        var memberIdStr = accountId.ToString();
-
-                        if (!currentMembers.ContainsKey(memberIdStr))
-                        {
-                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Thành viên không thuộc nhóm này!");
-                        }
-
-                        currentMembers.Remove(memberIdStr);
-
-                        var updateData = new Dictionary<string, object>
+                    var updateData = new Dictionary<string, object>
                     {
                         { "MemberIds", currentMembers }
                     };
 
-                        await groupRef.UpdateAsync(updateData);
+                    await groupRef.UpdateAsync(updateData);
 
-                        var membersRef = groupRef.Collection("Members").Document(memberIdStr);
-                        await membersRef.DeleteAsync();
-                    }
+                    var membersRef = groupRef.Collection("Members").Document(memberIdStr);
+                    await membersRef.DeleteAsync();
+                }
 
-                    var existingMembers = _unitOfWork.GroupMemberRepository.GetAll()
-                                .Where(gm => gm.GroupId == groupId && gm.Status.Equals(SD.GeneralStatus.ACTIVE) && gm.AccountId != accountId && gm.AccountId != kickerId)
-                                .Select(gm => gm.AccountId)
-                                .ToList();
+                var existingMembers = _unitOfWork.GroupMemberRepository.GetAll()
+                            .Where(gm => gm.GroupId == groupId && gm.Status.Equals(SD.GeneralStatus.ACTIVE) && gm.AccountId != accountId && gm.AccountId != kickerId)
+                            .Select(gm => gm.AccountId)
+                            .ToList();
 
-                    foreach (var familyMember in existingMembers)
+                foreach (var familyMember in existingMembers)
+                {
+                    var relationshipExists = _unitOfWork.UserLinkRepository.GetAll()
+                        .Where(ul => (ul.AccountId1 == familyMember && ul.AccountId2 == accountId && ul.RelationshipType.Equals("Family")) ||
+                                   (ul.AccountId1 == accountId && ul.AccountId2 == familyMember && ul.RelationshipType.Equals("Family"))).FirstOrDefault();
+
+                    if (relationshipExists != null)
                     {
-                        var relationshipExists = _unitOfWork.UserLinkRepository.GetAll()
-                            .Where(ul => (ul.AccountId1 == familyMember && ul.AccountId2 == accountId && ul.RelationshipType.Equals("Family")) ||
-                                       (ul.AccountId1 == accountId && ul.AccountId2 == familyMember && ul.RelationshipType.Equals("Family"))).FirstOrDefault();
+                        var deleteRs = await _unitOfWork.UserLinkRepository.RemoveAsync(relationshipExists);
 
-                        if (relationshipExists != null)
+                        if (!deleteRs)
                         {
-                            var deleteRs = await _unitOfWork.UserLinkRepository.RemoveAsync(relationshipExists);
-
-                            if (!deleteRs)
-                            {
-                                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Không thể xóa liên kết người dùng.");
-                            }
+                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, $"Không thể xóa liên kết người dùng.");
                         }
                     }
+                }
 
-                    await _unitOfWork.GroupMemberRepository.RemoveAsync(groupMember);
-                }
-                else if (countRole2 < 1)
-                {
-                    await RemoveGroup(groupId);
-                }
+                await _unitOfWork.GroupMemberRepository.RemoveAsync(groupMember);
 
                 return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG, "Xóa thành viên khỏi nhóm thành công.");
             }
