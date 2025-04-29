@@ -8,9 +8,9 @@ namespace SE.API.Controllers
     [ApiController]
     public class ComboController : ControllerBase
     {
-        private readonly IComboService _comboService;
+        private readonly ISubscriptionService _comboService;
 
-        public ComboController(IComboService comboService)
+        public ComboController(ISubscriptionService comboService)
         {
             _comboService = comboService;
         }

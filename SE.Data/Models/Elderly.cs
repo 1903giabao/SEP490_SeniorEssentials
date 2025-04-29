@@ -41,8 +41,6 @@ public partial class Elderly
 
     public virtual ICollection<Height> Heights { get; set; } = new List<Height>();
 
-    public virtual ICollection<Iotdevice> Iotdevices { get; set; } = new List<Iotdevice>();
-
     public virtual ICollection<KidneyFunction> KidneyFunctions { get; set; } = new List<KidneyFunction>();
 
     public virtual ICollection<LipidProfile> LipidProfiles { get; set; } = new List<LipidProfile>();

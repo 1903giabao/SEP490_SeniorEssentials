@@ -15,7 +15,7 @@ using SE.Service.Base;
 
 namespace SE.Service.Services
 {
-    public interface IComboService
+    public interface ISubscriptionService
     {
         Task<IBusinessResult> CreateCombo(CreateComboModel req);
         Task<IBusinessResult> UpdateCombo(int comboId, CreateComboModel req);
@@ -26,11 +26,11 @@ namespace SE.Service.Services
 
     }
 
-    public class ComboService : IComboService
+    public class SubscriptionService : ISubscriptionService
     {
         private readonly UnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public ComboService(UnitOfWork unitOfWork, IMapper mapper)
+        public SubscriptionService(UnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
