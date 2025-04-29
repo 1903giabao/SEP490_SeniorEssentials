@@ -361,12 +361,12 @@ namespace SE.Service.Services
                                                 .FirstOrDefault();
                 user.Role = userRole!;
 
-                var findDevice = _unitOfWork.AccountRepository.FindByCondition(a=>a.DeviceToken == deviceToken).FirstOrDefault();
+                var findDevice = _unitOfWork.AccountRepository.FindByCondition(a=>a.DeviceToken == deviceToken && a.AccountId != user.AccountId).FirstOrDefault();
                 if(findDevice != null)
                 {
                     findDevice.DeviceToken = null;
                 }
-                await _unitOfWork.AccountRepository.UpdateAsync(user);
+                await _unitOfWork.AccountRepository.UpdateAsync(findDevice);
                 if (deviceToken != null)
                 {
                     user.DeviceToken = deviceToken;
