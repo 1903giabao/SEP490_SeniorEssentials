@@ -365,8 +365,9 @@ namespace SE.Service.Services
                 if(findDevice != null)
                 {
                     findDevice.DeviceToken = null;
+                    await _unitOfWork.AccountRepository.UpdateAsync(findDevice);
+
                 }
-                await _unitOfWork.AccountRepository.UpdateAsync(findDevice);
                 if (deviceToken != null)
                 {
                     user.DeviceToken = deviceToken;
