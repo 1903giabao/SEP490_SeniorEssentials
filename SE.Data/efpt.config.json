@@ -95,10 +95,6 @@
          "ObjectType": 0
       },
       {
-         "Name": "[dbo].[IOTDevice]",
-         "ObjectType": 0
-      },
-      {
          "Name": "[dbo].[KidneyFunction]",
          "ObjectType": 0
       },

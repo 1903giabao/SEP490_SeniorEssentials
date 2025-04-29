@@ -68,8 +68,6 @@ public partial class SeniorEssentialsContext : DbContext
 
     public virtual DbSet<Height> Heights { get; set; }
 
-    public virtual DbSet<Iotdevice> Iotdevices { get; set; }
-
     public virtual DbSet<KidneyFunction> KidneyFunctions { get; set; }
 
     public virtual DbSet<Lesson> Lessons { get; set; }
@@ -522,28 +520,6 @@ public partial class SeniorEssentialsContext : DbContext
             entity.HasOne(d => d.Elderly).WithMany(p => p.Heights)
                 .HasForeignKey(d => d.ElderlyId)
                 .HasConstraintName("FK__Height__ElderlyI__245D67DE");
-        });
-
-        modelBuilder.Entity<Iotdevice>(entity =>
-        {
-            entity.HasKey(e => e.DeviceId).HasName("PK__IOTDevic__49E1231182F55968");
-
-            entity.ToTable("IOTDevice");
-
-            entity.Property(e => e.DeviceName)
-                .IsRequired()
-                .HasMaxLength(50);
-            entity.Property(e => e.LastConnected).HasColumnType("datetime");
-            entity.Property(e => e.Note).HasMaxLength(255);
-            entity.Property(e => e.SerialNumber).HasMaxLength(50);
-            entity.Property(e => e.Status)
-                .IsRequired()
-                .HasMaxLength(20);
-
-            entity.HasOne(d => d.Elderly).WithMany(p => p.Iotdevices)
-                .HasForeignKey(d => d.ElderlyId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__IOTDevice__Elder__25518C17");
         });
 
         modelBuilder.Entity<KidneyFunction>(entity =>

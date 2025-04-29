@@ -23,7 +23,6 @@ namespace SE.Data.UnitOfWork
         private FamilyMemberRepository _familyMemberRepository;
         private GroupRepository _groupRepository;
         private GroupMemberRepository _groupMemberRepository;
-        private IotdeviceRepository _idoeviceRepository;
         private LessonRepository _lessonRepository;
         private MedicationRepository _medicationRepository;
         private MedicationScheduleRepository _medicationScheduleRepository;
@@ -203,10 +202,6 @@ namespace SE.Data.UnitOfWork
         public GroupMemberRepository GroupMemberRepository
         {
             get => _groupMemberRepository ??= new GroupMemberRepository(_unitOfWorkContext);
-        }
-        public IotdeviceRepository IotdeviceRepository
-        {
-            get => _idoeviceRepository ??= new IotdeviceRepository(_unitOfWorkContext);
         }
 
         public LessonRepository LessonRepository

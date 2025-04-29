@@ -86,9 +86,6 @@ namespace SE.Common.Mapper
             CreateMap<CreateMedicationRequest, Medication>();
             CreateMap<UpdateMedicationRequest, Medication>();
 
-            CreateMap<CreateIotDeviceRequest, Iotdevice>();
-            CreateMap<IotDeviceDto, Iotdevice>();
-
             CreateMap<Subscription, SubscriptionDTO>().ReverseMap();
 
             CreateMap<EmergencyInformation, GetEmergencyInformationDTO>().ReverseMap();
