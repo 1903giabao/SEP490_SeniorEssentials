@@ -157,6 +157,23 @@ namespace SE.Service.Services
                     };
                     string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
                 }
+                else
+                {
+                    var message = new Message()
+                    {
+                        Token = account.DeviceToken,
+                        Notification = new Notification()
+                        {
+                            Title = "Lấy vị trí thất bại",
+                            Body = $"Không Không xác định được vị trí của người già {elderly.FullName}"
+                        },
+                        Data = new Dictionary<string, string>()
+                        {
+                            { "FamilyMemberId", account.AccountId.ToString() },
+                        }
+                    };
+                    string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+                }
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Send notification to get location sucessfully");
             }
