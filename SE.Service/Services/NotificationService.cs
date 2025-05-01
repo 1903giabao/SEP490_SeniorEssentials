@@ -21,6 +21,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> UpdateStatusNotificaction(int notiId, string status);
         Task<IBusinessResult> SendNotiToGetLocation(int familyMemberId, int elderlyId);
         Task<IBusinessResult> SendNotiLocation(int familyMemberId, int elderlyId, string longitude, string latitude);
+        Task<IBusinessResult> SendNotToGetHealthIndicator(int accountId);
     }
 
     public class NotificationService : INotificationService
@@ -240,6 +241,44 @@ namespace SE.Service.Services
 
                         string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
                     }
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Send location sucessfully");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }        
+        
+        public async Task<IBusinessResult> SendNotToGetHealthIndicator(int accountId)
+        {
+            try
+            {
+                var account = await _unitOfWork.AccountRepository.GetAccountAsync(accountId);
+
+                if (account == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Account does not exist!");
+                }                               
+
+                if (!string.IsNullOrEmpty(account.DeviceToken) && account.DeviceToken != "string")
+                {
+                    var message = new Message()
+                    {
+                        Token = account.DeviceToken,
+                        Notification = new Notification()
+                        {
+                            Title = "Cập nhật chỉ số sức khỏe",
+                            Body = $"Đã đến giờ cập nhật chỉ số sức khỏe"
+                        },
+                        Data = new Dictionary<string, string>()
+                        {
+                            { "", ""},
+                        }
+                    };
+
+                    string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
                 }
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Send location sucessfully");
