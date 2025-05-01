@@ -55,6 +55,13 @@ namespace SE.API.Controllers
         {
             var result = await _notificationService.SendNotiLocation(familyMemberId, elderlyId, longitude, latitude);
             return Ok(result);
+        }        
+        
+        [HttpGet("health-notification")]
+        public async Task<IActionResult> SendNotToGetHealthIndicator([FromQuery] int accountId)
+        {
+            var result = await _notificationService.SendNotToGetHealthIndicator(accountId);
+            return Ok(result);
         }
     }
 }

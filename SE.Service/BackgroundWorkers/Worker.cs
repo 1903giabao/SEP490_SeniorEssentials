@@ -52,9 +52,10 @@ namespace SE.Service.BackgroundWorkers
                         await CheckAndSendWaterReminders(unitOfWork, notificationService, stoppingToken);
                         await CheckAndDisableStatus(unitOfWork, firestoreDb, stoppingToken);
                         await DisableAppointment(unitOfWork, stoppingToken);
+                        await CheckAndSendNotiReminderToGetHealth(unitOfWork, notificationService, stoppingToken);
 
                     }
-}
+                }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Error occurred in Activity Notification Background Service");
@@ -207,6 +208,40 @@ namespace SE.Service.BackgroundWorkers
                                 Status = SD.NotificationStatus.SEND
                             };
                             await _unitOfWork.NotificationRepository.CreateAsync(newNoti);
+                        }
+                    }
+
+                    // Wait for 1 hour to prevent duplicate sends
+                    await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while checking and sending water reminders");
+            }
+        }           
+        
+        private async Task CheckAndSendNotiReminderToGetHealth(UnitOfWork _unitOfWork, INotificationService _notificationService, CancellationToken stoppingToken)
+        {
+            Log.Information("Health Reminder Background Service starting...");
+
+            try
+            {
+                var now = DateTime.UtcNow.AddHours(7);
+                var currentTime = now.ToString("HH:mm");
+
+                if (currentTime.Equals("07:00"))
+                {
+                    var accounts = _unitOfWork.AccountRepository.FindByCondition(a => a.RoleId == 2).ToList();
+
+                    foreach (var account in accounts)
+                    {
+                        if (account.DeviceToken != null && account.DeviceToken != "string")
+                        {
+                            var title = "Cập nhật chỉ số sức khỏe";
+                            var body = $"Đã đến giờ cập nhật chỉ số sức khỏe";
+
+                            await _notificationService.SendNotification(account.DeviceToken, title, body);                         
                         }
                     }
 
