@@ -42,5 +42,19 @@ namespace SE.API.Controllers
             var result = await _notificationService.UpdateStatusNotificaction(notiId, status);
             return Ok(result);
         }
+
+        [HttpPost("send-notification-location")]
+        public async Task<IActionResult> SendNotiToGetLocation([FromQuery] int familyMemberId, [FromQuery] int elderlyId)
+        {
+            var result = await _notificationService.SendNotiToGetLocation(familyMemberId, elderlyId);
+            return Ok(result);
+        }        
+        
+        [HttpGet("send-location")]
+        public async Task<IActionResult> SendNotiLocation([FromQuery] int familyMemberId, [FromQuery] int elderlyId, [FromQuery] string? longitude, [FromQuery] string? latitude)
+        {
+            var result = await _notificationService.SendNotiLocation(familyMemberId, elderlyId, longitude, latitude);
+            return Ok(result);
+        }
     }
 }

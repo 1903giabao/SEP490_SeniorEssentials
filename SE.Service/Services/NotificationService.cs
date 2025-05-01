@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using FirebaseAdmin.Messaging;
+using Newtonsoft.Json.Linq;
 using SE.Common;
 using SE.Common.Response.Notification;
 using SE.Data.UnitOfWork;
@@ -18,7 +19,8 @@ namespace SE.Service.Services
         Task<string> SendNotification(string token, string title, string body);
         Task<IBusinessResult> GetAllNotiInAccount(int accountId);
         Task<IBusinessResult> UpdateStatusNotificaction(int notiId, string status);
-
+        Task<IBusinessResult> SendNotiToGetLocation(int familyMemberId, int elderlyId);
+        Task<IBusinessResult> SendNotiLocation(int familyMemberId, int elderlyId, string longitude, string latitude);
     }
 
     public class NotificationService : INotificationService
@@ -119,6 +121,116 @@ namespace SE.Service.Services
             };
             string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
             return response;
+        }
+
+        public async Task<IBusinessResult> SendNotiToGetLocation(int familyMemberId, int elderlyId)
+        {
+            try
+            {
+                var account = await _unitOfWork.AccountRepository.GetAccountAsync(familyMemberId);
+
+                if (account == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Account does not exist!");
+                }                
+                
+                var elderly = await _unitOfWork.AccountRepository.GetAccountAsync(elderlyId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+                if (!string.IsNullOrEmpty(elderly.DeviceToken) && elderly.DeviceToken != "string")
+                {
+                    var message = new Message()
+                    {
+                        Token = elderly.DeviceToken,
+                        Notification = new Notification()
+                        {
+                            Title = "Yêu cầu lấy vị trí",
+                            Body = $"Bạn nhận được yêu cầu lấy vị trí từ người thân {account.FullName}"
+                        },
+                        Data = new Dictionary<string, string>()
+                        {
+                            { "FamilyMemberId", account.AccountId.ToString() },
+                        }
+                    };
+                    string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Send notification to get location sucessfully");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
+        }        
+        
+        public async Task<IBusinessResult> SendNotiLocation(int familyMemberId, int elderlyId, string longitude, string latitude)
+        {
+            try
+            {
+                var account = await _unitOfWork.AccountRepository.GetAccountAsync(familyMemberId);
+
+                if (account == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Account does not exist!");
+                }                
+                
+                var elderly = await _unitOfWork.AccountRepository.GetAccountAsync(elderlyId);
+
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly does not exist!");
+                }
+
+                if (!string.IsNullOrEmpty(account.DeviceToken) && account.DeviceToken != "string")
+                {
+                    if (!string.IsNullOrEmpty(longitude) && !string.IsNullOrEmpty(latitude))
+                    {
+                        var message = new Message()
+                        {
+                            Token = account.DeviceToken,
+                            Notification = new Notification()
+                            {
+                                Title = "Lấy vị trí thành công",
+                                Body = $"Đã xác định được vị trí của {elderly.FullName}"
+                            },
+                            Data = new Dictionary<string, string>()
+                            {
+                                { "Longitude",longitude },
+                                { "Latitude", latitude },
+                            }
+                        };
+
+                        string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+                    }
+                    else
+                    {
+                        var message = new Message()
+                        {
+                            Token = account.DeviceToken,
+                            Notification = new Notification()
+                            {
+                                Title = "Lấy vị trí thất bại",
+                                Body = $"Không xác định được vị trí của người già {elderly.FullName}"
+                            },
+                            Data = new Dictionary<string, string>()
+                            {
+                                { "", ""},
+                            }
+                        };
+
+                        string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+                    }
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Send location sucessfully");
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
+            }
         }
     }
 }
