@@ -52,10 +52,11 @@ namespace SE.Service.Services
                         CreatedDate = item.CreatedDate,
                         Message = item.Message,
                         NotificationType = item.NotificationType,
-                        NotificationId = item.NotificationId,   
-                        Status = item.Status,   
+                        NotificationId = item.NotificationId,
+                        Status = item.Status,
                         Title = item.Title,
                         Data = item.Data,
+                        ElderlyId = item.ElderlyId ?? 0
                     };
 
                     if (item.Title == "Cảnh báo sức khỏe")
