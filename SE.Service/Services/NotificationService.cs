@@ -35,12 +35,12 @@ namespace SE.Service.Services
             _mapper = mapper;
         }
 
-        public async Task<IBusinessResult> GetAllNotiInAccount (int accountId)
+        public async Task<IBusinessResult> GetAllNotiInAccount(int accountId)
         {
             try
             {
-                var result = _unitOfWork.NotificationRepository.FindByCondition(n=>n.AccountId == accountId)
-                    .OrderByDescending(n=>n.NotificationId).ToList();
+                var result = _unitOfWork.NotificationRepository.FindByCondition(n => n.AccountId == accountId)
+                    .OrderByDescending(n => n.NotificationId).ToList();
 
                 var final = new List<GetNotificationVM>();
 
@@ -56,18 +56,16 @@ namespace SE.Service.Services
                         Status = item.Status,
                         Title = item.Title,
                         Data = item.Data,
-                        ElderlyId = item.ElderlyId ?? 0
                     };
 
-                    if (item.Title == "Cảnh báo sức khỏe")
+                    if (item.ElderlyId.HasValue)
                     {
-                        
-                        var elderly =await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(noti.ElderlyId);
-                        if (elderly != null)
+                        var getAccount = await _unitOfWork.ElderlyRepository.GetByIdAsync(item.ElderlyId);
+                        var elderlyAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(getAccount.AccountId);
+                        if (elderlyAccount != null)
                         {
-                            //return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, " Không tìm thấy người già trong thông báo");
-                            noti.ElderlyId = elderly.Elderly.ElderlyId;
-                            noti.FullName = elderly.FullName;
+                            noti.FullName = elderlyAccount.FullName;
+                            noti.ElderlyId = getAccount.AccountId;
                         }
                     }
                     final.Add(noti);
@@ -75,10 +73,10 @@ namespace SE.Service.Services
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, final);
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
+                // Consider logging the error here
                 throw new Exception(ex.Message);
-
             }
         }
 
