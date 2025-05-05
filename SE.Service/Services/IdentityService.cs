@@ -127,13 +127,24 @@ namespace SE.Service.Services
                     if (existedPhone != null && existedPhone.FullName != null)
                     {
                         return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Số điện thoại đã tồn tại trong hệ thống!");
-
                     }
                     else if (existedPhone != null && existedPhone.IsVerified == true && existedPhone.FullName == null)
                     {
                         var remove = await _unitOfWork.AccountRepository.RemoveAsync(existedPhone);
+                        if (!remove)
+                        {
+                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Something went wrong!");
+                        }
                     }
-                        var sendPhoneOTP = await _smsService.SendOTPSmsAsync(account, otp.ToString());
+                    else if( existedPhone != null && existedPhone.IsVerified == false)
+                    {
+                        var remove = await _unitOfWork.AccountRepository.RemoveAsync(existedPhone);
+                        if (!remove)
+                        {
+                            return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Something went wrong!");
+                        }
+                    }
+                    var sendPhoneOTP = await _smsService.SendOTPSmsAsync(account, otp.ToString());
                     if (sendPhoneOTP == null)
                     {
                         return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG, "Cannot send sms.");
@@ -152,7 +163,6 @@ namespace SE.Service.Services
                         Message = "Send OTP successfully!",
                         Method = "Phone number",
                         AccountId = user.AccountId
-
                     };
 
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, rs);

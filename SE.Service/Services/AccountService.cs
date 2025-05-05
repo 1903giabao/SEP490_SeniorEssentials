@@ -239,7 +239,8 @@ namespace SE.Service.Services
                         Otp = req.OTP,
                         Password = SecurityUtil.Hash(req.Password),
                         IsVerified = false,
-                        Status = SD.GeneralStatus.ACTIVE
+                        Status = SD.GeneralStatus.ACTIVE,
+                        IsSuperAdmin = false
                     };
                     rs = await _unitOfWork.AccountRepository.CreateAsync(newAccount);
                 }
@@ -252,12 +253,12 @@ namespace SE.Service.Services
                         Otp = req.OTP,
                         Password = SecurityUtil.Hash(req.Password),
                         IsVerified = false,
-                        Status = SD.GeneralStatus.ACTIVE
+                        Status = SD.GeneralStatus.ACTIVE,
+                        IsSuperAdmin = false
+
                     };
                     rs = await _unitOfWork.AccountRepository.CreateAsync(newAccount);
                 }
-
-
                 if (rs > 0)
                 {
                     return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, newAccount);
