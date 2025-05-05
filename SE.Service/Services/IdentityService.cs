@@ -19,6 +19,7 @@ using SE.Common;
 using SE.Common.DTO;
 using SE.Common.Enums;
 using SE.Common.Request;
+using SE.Common.Request.SE.Common.Request;
 using SE.Common.Setting;
 using SE.Data.Models;
 using SE.Data.UnitOfWork;
@@ -42,30 +43,25 @@ namespace SE.Service.Services
 
     public class IdentityService : IIdentityService
     {
-        private readonly JwtSettings _jwtSettings;
         private readonly IJwtService _jwtService;
         private readonly UnitOfWork _unitOfWork;
-        private readonly IFirebaseService _firebaseService;
-        private readonly string _confirmUrl;
-        private readonly string _frontendUrl;
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
         private readonly ISmsService _smsService;
         private readonly FirestoreDb _firestoreDb;
-
+        private readonly IUserLinkService _userLinkService;
         private readonly IAccountService _accountService;
 
-        public IdentityService(IMapper mapper, UnitOfWork unitOfWork, IOptions<JwtSettings> jwtSettingsOptions, IFirebaseService firebaseService, IEmailService emailService, IAccountService accountService, ISmsService smsService, FirestoreDb firestoreDb, IJwtService jwtService)
+        public IdentityService(IMapper mapper, UnitOfWork unitOfWork, IEmailService emailService, IAccountService accountService, ISmsService smsService, FirestoreDb firestoreDb, IJwtService jwtService, IUserLinkService userLinkService)
         {
             _unitOfWork = unitOfWork;
-            _jwtSettings = jwtSettingsOptions.Value;
-            _firebaseService = firebaseService;
             _emailService = emailService;
             _accountService = accountService;
             _mapper = mapper;
             _smsService = smsService;
             _firestoreDb = firestoreDb;
             _jwtService = jwtService;
+            _userLinkService = userLinkService;
         }
 
         public async Task<IBusinessResult> SendOtpToUser(string account, string password, int role)
@@ -329,6 +325,22 @@ namespace SE.Service.Services
                     };
 
                     await _unitOfWork.UserLinkRepository.CreateAsync(createUserLink);
+
+                    var chatMembers = new List<GroupMemberRequest>
+                    {
+                        new GroupMemberRequest
+                        {
+                            AccountId = req.CreatorAccountId,
+                            IsCreator = false
+                        },
+                        new GroupMemberRequest
+                        {
+                            AccountId = req.AccountId,
+                            IsCreator = false
+                        }
+                    };
+
+                    await _userLinkService.CreatePairRoomChat(chatMembers);
                 }
 
                 return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, "Create new account successfully!");
