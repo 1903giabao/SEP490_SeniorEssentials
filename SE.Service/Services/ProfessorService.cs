@@ -616,13 +616,15 @@ namespace SE.Service.Services
                 {
                     var professor = new GetAllProfessorReponse();
                     var professorInfor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(item.AccountId);
+                    var rating = _unitOfWork.ProfessorRatingRepository.FindByCondition(p=>p.ProfessorId == item.ProfessorId).Count();
 
                     professor.ProfessorAvatar = professorInfor.Avatar;
                     professor.ProfessorName = professorInfor.FullName;
                     professor.ProfessorId = professorInfor.Professor.ProfessorId;
                     professor.Major = professorInfor.Professor.Knowledge;
-                    professor.Rating = (decimal)professorInfor.Professor.Rating;
+                    professor.Rating = (decimal) professorInfor.Professor.Rating;
                     professor.AccountId = professorInfor.AccountId;
+                    professor.TotalRating = rating;
 
                     result.Add(professor);
 
