@@ -28,6 +28,7 @@ public partial class SeniorEssentialsContext : DbContext
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer(GetConnectionString("DefaultConnection"));
+
     public virtual DbSet<Account> Accounts { get; set; }
 
     public virtual DbSet<Activity> Activities { get; set; }
@@ -698,13 +699,13 @@ public partial class SeniorEssentialsContext : DbContext
             entity.Property(e => e.Message).HasMaxLength(255);
             entity.Property(e => e.NotificationType)
                 .IsRequired()
-                .HasMaxLength(20);
+                .HasMaxLength(255);
             entity.Property(e => e.Status)
                 .IsRequired()
                 .HasMaxLength(20);
             entity.Property(e => e.Title)
                 .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(255);
 
             entity.HasOne(d => d.Account).WithMany(p => p.Notifications)
                 .HasForeignKey(d => d.AccountId)
