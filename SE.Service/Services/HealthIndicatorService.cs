@@ -22,6 +22,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using SE.Common.Response.HealthIndicator;
 using System.Text.Json;
 using AutoMapper.Execution;
+using DateTime = System.DateTime;
 
 namespace SE.Service.Services
 {
@@ -5816,31 +5817,30 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, "No health indicators found.");
                 }
 
+                // Dictionary để lưu thời gian gốc của mỗi response
+                var responseTimeDict = new Dictionary<GetAllHealthIndicatorReponse, DateTime>();
+
                 // Function to calculate BMI
                 double CalculateBMI(decimal weight, decimal height)
                 {
-                    if (height == 0)
-                        return 0;
-
-                    // Convert height from cm to meters
+                    if (height == 0) return 0;
                     double heightInMeters = (double)height / 100;
                     return (double)weight / (heightInMeters * heightInMeters);
                 }
 
-                // Function to get the latest record and average for a specific type
+                // Function to get the latest record and average
                 GetAllHealthIndicatorReponse GetIndicatorResponse<T>(
                     List<T> records,
-                    Func<T, System.DateTime?> getDateRecorded,
+                    Func<T, DateTime?> getDateRecorded,
                     Func<T, decimal?> getIndicatorValue,
                     string type,
                     List<HealthIndicatorBase> indicators,
-                    bool calculateDifference = false, // Add a flag for weight and height
-                    double? bmi = null) // Add BMI for evaluation
-                    where T : class
+                    bool calculateDifference = false,
+                    double? bmi = null) where T : class
                 {
                     var latestRecord = records
-                        .OrderByDescending(r => getDateRecorded(r))
-                        .FirstOrDefault();
+                .OrderByDescending(r => getDateRecorded(r))
+                .FirstOrDefault();
 
                     if (latestRecord == null)
                         return null;
@@ -5850,8 +5850,8 @@ namespace SE.Service.Services
 
                     if (!latestDate.HasValue || !latestIndicator.HasValue)
                         return null;
+
                     var indicatorBase = new HealthIndicatorBase();
-                    // Get the HealthIndicatorBase for the type
                     if (type == "KidneyFunction")
                     {
                         indicatorBase = indicators.FirstOrDefault(h => h.Type == "Creatinine");
@@ -5869,43 +5869,38 @@ namespace SE.Service.Services
                         indicatorBase = indicators.FirstOrDefault(h => h.Type == type);
                     }
 
-                    // Determine evaluation
                     string evaluation;
                     if (bmi.HasValue && (type == "Weight" || type == "Height"))
                     {
-                        // Use BMI for evaluation
                         evaluation = (decimal)bmi < indicatorBase.MinValue ? "Thấp" :
-                                      (decimal)bmi > indicatorBase.MaxValue ? "Cao" :
-                                      "Bình thường";
+                                    (decimal)bmi > indicatorBase.MaxValue ? "Cao" :
+                                    "Bình thường";
                     }
                     else if (indicatorBase != null)
                     {
-                        // Use the indicator value for evaluation
                         evaluation = latestIndicator < indicatorBase.MinValue ? "Thấp" :
-                                      latestIndicator > indicatorBase.MaxValue ? "Cao" :
-                                      "Bình thường";
+                                    latestIndicator > indicatorBase.MaxValue ? "Cao" :
+                                    "Bình thường";
                     }
                     else
                     {
-                        evaluation = "N/A"; // For types without evaluation criteria
+                        evaluation = "N/A";
                     }
 
-                    // Calculate average for the last 30 days
                     var last30DaysRecords = records
-                        .Where(r => getDateRecorded(r) >= System.DateTime.UtcNow.AddDays(-30))
+                        .Where(r => getDateRecorded(r) >= DateTime.UtcNow.AddDays(-30))
                         .ToList();
 
                     var averageIndicator = Math.Round(last30DaysRecords.Any() ?
                         last30DaysRecords.Average(r => getIndicatorValue(r) ?? 0) :
                         0, 2);
 
-                    // For weight and height, calculate the difference with the previous indicator
                     string formattedAverageIndicator = averageIndicator.ToString();
                     if (calculateDifference)
                     {
                         var previousRecord = records
                             .OrderByDescending(r => getDateRecorded(r))
-                            .Skip(1) // Skip the latest record to get the previous one
+                            .Skip(1)
                             .FirstOrDefault();
 
                         if (previousRecord != null)
@@ -5919,7 +5914,6 @@ namespace SE.Service.Services
                         }
                         else
                         {
-                            // If it's the first indicator, set the difference to +0
                             formattedAverageIndicator = "+0";
                         }
                     }
@@ -5928,13 +5922,13 @@ namespace SE.Service.Services
                     {
                         Tabs = type,
                         Evaluation = evaluation,
-                        DateTime = latestDate.Value.ToString("dd-MM HH:mm"), // Format DateTime as DD-MM HH-mm
+                        DateTime = latestDate.Value.ToString("dd-MM HH:mm"),
                         Indicator = latestIndicator.Value.ToString(),
                         AverageIndicator = formattedAverageIndicator
                     };
                 }
 
-                // Fetch records for each type
+                // Fetch all records
                 var heightRecords = _unitOfWork.HeightRepository
                     .FindByCondition(h => h.ElderlyId == elderly.Elderly.ElderlyId && h.Status == SD.GeneralStatus.ACTIVE)
                     .ToList();
@@ -5967,7 +5961,6 @@ namespace SE.Service.Services
                     .FindByCondition(kf => kf.ElderlyId == elderly.Elderly.ElderlyId && kf.Status == SD.GeneralStatus.ACTIVE)
                     .ToList();
 
-                // Add new records for the 4 additional indicators
                 var caloriesConsumptionRecords = _unitOfWork.CaloriesConsumptionRepository
                     .FindByCondition(cc => cc.ElderlyId == elderly.Elderly.ElderlyId && cc.Status == SD.GeneralStatus.ACTIVE)
                     .ToList();
@@ -5984,77 +5977,51 @@ namespace SE.Service.Services
                     .FindByCondition(st => st.ElderlyId == elderly.Elderly.ElderlyId && st.Status == SD.GeneralStatus.ACTIVE)
                     .ToList();
 
-                // Get the newest Height and Weight
-                var newestHeight = heightRecords
-                    .OrderByDescending(h => h.DateRecorded)
-                    .FirstOrDefault();
-
-                var newestWeight = weightRecords
-                    .OrderByDescending(w => w.DateRecorded)
-                    .FirstOrDefault();
-
-                // Calculate BMI if both Height and Weight are available
+                // Calculate BMI
                 double? bmi = null;
+                var newestHeight = heightRecords.OrderByDescending(h => h.DateRecorded).FirstOrDefault();
+                var newestWeight = weightRecords.OrderByDescending(w => w.DateRecorded).FirstOrDefault();
+
                 if (newestHeight != null && newestWeight != null && newestHeight.Height1.HasValue && newestWeight.Weight1.HasValue)
                 {
                     bmi = CalculateBMI(newestWeight.Weight1.Value, newestHeight.Height1.Value);
                 }
 
-                // Create responses for each type
-                var heightResponse = GetIndicatorResponse(
-                    heightRecords,
-                    h => h.DateRecorded,
-                    h => h.Height1,
-                    "Height",
-                    healthIndicators,
-                    calculateDifference: true,
-                    bmi: bmi);
+                // Create responses
+                var responseList = new List<GetAllHealthIndicatorReponse>();
 
-                var weightResponse = GetIndicatorResponse(
-                    weightRecords,
-                    w => w.DateRecorded,
-                    w => w.Weight1,
-                    "Weight",
-                    healthIndicators,
-                    calculateDifference: true,
-                    bmi: bmi);
+                // Helper function to add response with date tracking
+                void AddResponse(GetAllHealthIndicatorReponse response, DateTime? date)
+                {
+                    if (response != null && date.HasValue)
+                    {
+                        responseList.Add(response);
+                        responseTimeDict.Add(response, date.Value);
+                    }
+                }
 
-                var heartRateResponse = GetIndicatorResponse(
-                    heartRateRecords,
-                    hr => hr.DateRecorded,
-                    hr => hr.HeartRate1,
-                    "HeartRate",
-                    healthIndicators);
+                // Add all responses
+                var heightResponse = GetIndicatorResponse(heightRecords, h => h.DateRecorded, h => h.Height1, "Height", healthIndicators, true, bmi);
+                AddResponse(heightResponse, heightRecords.Max(h => h.DateRecorded));
+
+                var weightResponse = GetIndicatorResponse(weightRecords, w => w.DateRecorded, w => w.Weight1, "Weight", healthIndicators, true, bmi);
+                AddResponse(weightResponse, weightRecords.Max(w => w.DateRecorded));
+
+                var heartRateResponse = GetIndicatorResponse(heartRateRecords, hr => hr.DateRecorded, hr => hr.HeartRate1, "HeartRate", healthIndicators);
+                AddResponse(heartRateResponse, heartRateRecords.Max(hr => hr.DateRecorded));
 
                 var bloodPressureResponse = GetBloodPressureResponse(bloodPressureRecords, healthIndicators);
+                AddResponse(bloodPressureResponse, bloodPressureRecords.Max(bp => bp.DateRecorded));
 
-                // Lipid Profile: Only use TotalCholesterol
-                var lipidProfileResponse = GetIndicatorResponse(
-                    lipidProfileRecords,
-                    lp => lp.DateRecorded,
-                    lp => lp.TotalCholesterol, // Use TotalCholesterol as the indicator
-                    "LipidProfile", // Renamed to "LipidProfile"
-                    healthIndicators,
-                    calculateDifference: true); // Enable difference calculation
+                var lipidProfileResponse = GetIndicatorResponse(lipidProfileRecords, lp => lp.DateRecorded, lp => lp.TotalCholesterol, "LipidProfile", healthIndicators, true);
+                AddResponse(lipidProfileResponse, lipidProfileRecords.Max(lp => lp.DateRecorded));
 
-                // Kidney Function: Only use eGFR
-                var kidneyFunctionResponse = GetIndicatorResponse(
-                    kidneyFunctionRecords,
-                    kf => kf.DateRecorded,
-                    kf => kf.EGfr,
-                    "KidneyFunction",
-                    healthIndicators,
-                    calculateDifference: true); // Enable difference calculation
+                var kidneyFunctionResponse = GetIndicatorResponse(kidneyFunctionRecords, kf => kf.DateRecorded, kf => kf.EGfr, "KidneyFunction", healthIndicators, true);
+                AddResponse(kidneyFunctionResponse, kidneyFunctionRecords.Max(kf => kf.DateRecorded));
 
-                var liverEnzymeResponse = GetIndicatorResponse(
-                    liverEnzymeRecords,
-                    lz => lz.DateRecorded,
-                    lz => lz.Alt,
-                    "LiverEnzyme",
-                    healthIndicators,
-                    calculateDifference: true);
+                var liverEnzymeResponse = GetIndicatorResponse(liverEnzymeRecords, le => le.DateRecorded, le => le.Alt, "LiverEnzyme", healthIndicators, true);
+                AddResponse(liverEnzymeResponse, liverEnzymeRecords.Max(le => le.DateRecorded));
 
-                // Blood Glucose: Evaluate based on Time field
                 var bloodGlucoseResponse = bloodGlucoseRecords
                     .OrderByDescending(bg => bg.DateRecorded)
                     .Select(bg => new GetAllHealthIndicatorReponse
@@ -6063,79 +6030,27 @@ namespace SE.Service.Services
                         Evaluation = GetBloodGlucoseEvaluation(bg.BloodGlucose1, bg.Time, healthIndicators),
                         DateTime = bg.DateRecorded?.ToString("dd-MM HH:mm") ?? "N/A",
                         Indicator = bg.BloodGlucose1?.ToString() ?? "N/A",
-                        AverageIndicator = GetDifferenceIndicator(bloodGlucoseRecords, bg => bg.BloodGlucose1) // Calculate difference for Blood Glucose
+                        AverageIndicator = GetDifferenceIndicator(bloodGlucoseRecords, bg => bg.BloodGlucose1)
                     })
                     .FirstOrDefault();
+                AddResponse(bloodGlucoseResponse, bloodGlucoseRecords.Max(bg => bg.DateRecorded));
 
-                // New indicators responses
-                var caloriesConsumptionResponse = GetIndicatorResponse(
-                    caloriesConsumptionRecords,
-                    cc => cc.DateRecorded,
-                    cc => cc.CaloriesConsumption1,
-                    "CaloriesConsumption",
-                    healthIndicators);
+                var caloriesConsumptionResponse = GetIndicatorResponse(caloriesConsumptionRecords, cc => cc.DateRecorded, cc => cc.CaloriesConsumption1, "CaloriesConsumption", healthIndicators);
+                AddResponse(caloriesConsumptionResponse, caloriesConsumptionRecords.Max(cc => cc.DateRecorded));
 
-                var footStepResponse = GetIndicatorResponse(
-                    footStepRecords,
-                    fs => fs.DateRecorded,
-                    fs => fs.FootStep1,
-                    "FootStep",
-                    healthIndicators);
+                var footStepResponse = GetIndicatorResponse(footStepRecords, fs => fs.DateRecorded, fs => fs.FootStep1, "FootStep", healthIndicators);
+                AddResponse(footStepResponse, footStepRecords.Max(fs => fs.DateRecorded));
 
-                var bloodOxygenResponse = GetIndicatorResponse(
-                    bloodOxygenRecords,
-                    bo => bo.DateRecorded,
-                    bo => bo.BloodOxygen1,
-                    "BloodOxygen",
-                    healthIndicators);
+                var bloodOxygenResponse = GetIndicatorResponse(bloodOxygenRecords, bo => bo.DateRecorded, bo => bo.BloodOxygen1, "BloodOxygen", healthIndicators);
+                AddResponse(bloodOxygenResponse, bloodOxygenRecords.Max(bo => bo.DateRecorded));
 
-                var sleepTimeResponse = GetIndicatorResponse(
-                    sleepTimeRecords,
-                    st => st.DateRecorded,
-                    st => st.SleepTime1,
-                    "SleepTime",
-                    healthIndicators);
+                var sleepTimeResponse = GetIndicatorResponse(sleepTimeRecords, st => st.DateRecorded, st => st.SleepTime1, "SleepTime", healthIndicators);
+                AddResponse(sleepTimeResponse, sleepTimeRecords.Max(st => st.DateRecorded));
 
-                // Combine responses
-                var responseList = new List<GetAllHealthIndicatorReponse>();
-
-                if (heightResponse != null)
-                    responseList.Add(heightResponse);
-
-                if (weightResponse != null)
-                    responseList.Add(weightResponse);
-
-                if (heartRateResponse != null)
-                    responseList.Add(heartRateResponse);
-
-                if (bloodPressureResponse != null)
-                    responseList.Add(bloodPressureResponse);
-
-               
-                if (bloodGlucoseResponse != null)
-                    responseList.Add(bloodGlucoseResponse);
-
-              
-                // Add new indicators to response list
-                if (caloriesConsumptionResponse != null)
-                    responseList.Add(caloriesConsumptionResponse);
-
-                if (footStepResponse != null)
-                    responseList.Add(footStepResponse);
-
-                if (bloodOxygenResponse != null)
-                    responseList.Add(bloodOxygenResponse);
-
-                if (sleepTimeResponse != null)
-                    responseList.Add(sleepTimeResponse);
-                if (lipidProfileResponse != null)
-                    responseList.Add(lipidProfileResponse);
-
-                if (liverEnzymeResponse != null)
-                    responseList.Add(liverEnzymeResponse);
-
-                if (kidneyFunctionResponse != null)
-                    responseList.Add(kidneyFunctionResponse);
+                // Sort by latest date
+                responseList = responseList
+                    .OrderByDescending(r => responseTimeDict.TryGetValue(r, out var date) ? date : DateTime.MinValue)
+                    .ToList();
 
                 return new BusinessResult(Const.SUCCESS_READ, "Health indicators retrieved successfully.", responseList);
             }
@@ -6143,8 +6058,7 @@ namespace SE.Service.Services
             {
                 return new BusinessResult(Const.FAIL_READ, "An unexpected error occurred: " + ex.Message);
             }
-        }
-        // Function to calculate the difference indicator
+        }// Function to calculate the difference indicator
         private string GetDifferenceIndicator<T>(List<T> records, Func<T, decimal?> getIndicatorValue)
         {
             if (!records.Any())
