@@ -12,6 +12,7 @@ namespace SE.Common.Response.Professor
 
         public string ProfessorAvatar { get; set; }
         public int ProfessorId {  get; set; }
+        public int AccountId {  get; set; }
         public string Major {  get; set; }
         public string DateTime { get; set; }
         public string Date {  get; set; }

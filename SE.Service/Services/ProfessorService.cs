@@ -609,7 +609,7 @@ namespace SE.Service.Services
             {
                 var getAllProfessor = _unitOfWork.ProfessorRepository.FindByCondition(p => p.Status.Equals(SD.GeneralStatus.ACTIVE));
                 var result = new List<GetAllProfessorReponse>();
-                var currentDate = DateTime.Now;
+                var currentDate = DateTime.UtcNow.AddHours(7);
                 var currentDayOfWeek = currentDate.DayOfWeek;
 
                 foreach (var item in getAllProfessor)
@@ -622,6 +622,7 @@ namespace SE.Service.Services
                     professor.ProfessorId = professorInfor.Professor.ProfessorId;
                     professor.Major = professorInfor.Professor.Knowledge;
                     professor.Rating = (decimal)professorInfor.Professor.Rating;
+                    professor.AccountId = professorInfor.AccountId;
 
                     result.Add(professor);
 
