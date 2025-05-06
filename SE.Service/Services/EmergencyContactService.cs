@@ -727,23 +727,20 @@ namespace SE.Service.Services
                         var bookings = _unitOfWork.BookingRepository.FindByCondition(b => b.ElderlyId == emergencyConfirmation.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
                                                                 .Select(b => b.BookingId).ToList();
 
-                        var doctor = await _unitOfWork.UserServiceRepository.GetProfessorByBookingIdAsync(bookings, SD.GeneralStatus.ACTIVE);
+                        var doctor = await _unitOfWork.UserServiceRepository.GetProfessorByBookingIdAsync(bookings, SD.UserSubscriptionStatus.AVAILABLE);
 
-                        if (doctor == null)
+                        if (doctor != null)
                         {
-                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không tìm thấy bác sĩ cho người già này.");
+                            var phone = doctor.Account.PhoneNumber;
+                            var doctorToken = doctor.Account.DeviceToken;
+
+                            if (FunctionCommon.IsValidPhoneNumber(phone))
+                            {
+                                await _smsService.SendSmsAsync(phone, "Đây là vị trí của bệnh nhân bạn: " + googleMapsUrl);
+                            }
+
+                            await _notificationService.SendNotification(doctorToken, "TÍN HIỆU CẦU CỨU KHẨN CẤP", "Bệnh nhân của bạn đang gặp tình trạng khẩn cấp, hãy truy cập vào ứng dụng để xem vị trí!");
                         }
-
-                        var phone = doctor.Account.PhoneNumber;
-                        var doctorToken = doctor.Account.DeviceToken;
-
-                        if (!FunctionCommon.IsValidPhoneNumber(phone))
-                        {
-                            return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Số điện thoại của bác sĩ không hợp lệ hoặc không tìm thấy.");
-                        }
-
-                        await _smsService.SendSmsAsync(phone, googleMapsUrl);
-                        await _notificationService.SendNotification(doctorToken, "TÍN HIỆU CẦU CỨU KHẨN CẤP", "Bệnh nhân của bạn đang gặp tình trạng khẩn cấp, hãy truy cập vào ứng dụng để xem vị trí!");
                     }
                 }              
 
