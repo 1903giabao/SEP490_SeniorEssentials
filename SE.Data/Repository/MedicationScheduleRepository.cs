@@ -49,7 +49,7 @@ namespace SE.Data.Repository
                 .Where(ms => ms.Medication.ElderlyId == elderlyId && 
                              ms.DateTaken.HasValue && 
                              ms.DateTaken.Value.Date == dateTime.Date &&
-                             ms.Status == "Active")
+                             ms.Status != "Inactive")
                 .ToListAsync();
 
             return result;
