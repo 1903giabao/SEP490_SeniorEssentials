@@ -319,7 +319,7 @@ namespace SE.Service.Services
                                 await _notificationService.SendNotification(
                                     responseUser.DeviceToken,
                                     "Chấp nhận kết bạn",
-                                    $"{responseUser.FullName} đã chấp nhận lời mời kết bạn.");
+                                    $"{requestUser.FullName} đã chấp nhận lời mời kết bạn.");
 
                                 var newNotification = new Data.Models.Notification
                                 {
@@ -327,7 +327,7 @@ namespace SE.Service.Services
                                     AccountId = responseUser.AccountId,
                                     Status = SD.NotificationStatus.SEND,
                                     Title = "Chấp nhận kết bạn",
-                                    Message = $"{responseUser.FullName} đã chấp nhận lời mời kết bạn.",
+                                    Message = $"{requestUser.FullName} đã chấp nhận lời mời kết bạn.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 };
 
@@ -338,7 +338,7 @@ namespace SE.Service.Services
                                 await _notificationService.SendNotification(
                                     responseUser.DeviceToken,
                                     "Xác Nhận Hỗ Trợ",
-                                    $"{responseUser.FullName} đã chấp nhận yêu cầu hỗ trợ của bạn.");
+                                    $"{requestUser.FullName} đã chấp nhận yêu cầu hỗ trợ của bạn.");
 
                                 var newNotification = new Data.Models.Notification
                                 {
@@ -346,7 +346,7 @@ namespace SE.Service.Services
                                     AccountId = responseUser.AccountId,
                                     Status = SD.NotificationStatus.SEND,
                                     Title = "Xác Nhận Hỗ Trợ",
-                                    Message = $"{responseUser.FullName} đã chấp nhận yêu cầu hỗ trợ của bạn.",
+                                    Message = $"{requestUser.FullName} đã chấp nhận yêu cầu hỗ trợ của bạn.",
                                     CreatedDate = System.DateTime.UtcNow.AddHours(7),
                                 };
 
