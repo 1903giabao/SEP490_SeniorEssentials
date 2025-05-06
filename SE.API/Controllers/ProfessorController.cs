@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Client;
 using SE.Common.Request;
 using SE.Common.Request.Professor;
 using SE.Common.Request.Subscription;
@@ -44,10 +45,10 @@ namespace SE.API.Controllers
             var result = await _professorScheduleService.GiveProfessorFeedbackByAccount(req);
             return Ok(result);
         }
-        [HttpGet("feedback/{professorId}")]
-        public async Task<IActionResult> GetAllProfessor([FromRoute] int professorId)
+        [HttpGet("feedback/{accountId}")]
+        public async Task<IActionResult> GetAllProfessor([FromRoute] int accountId)
         {
-            var result = await _professorScheduleService.GetAllRatingsByProfessorId(professorId);
+            var result = await _professorScheduleService.GetAllRatingsByProfessorId(accountId);
             return Ok(result);
         }
 

@@ -248,97 +248,7 @@ namespace SE.Service.Services
             }
         }
 
-        /*public async Task<IBusinessResult> ScanByGoogle(IFormFile file)
-        {
-            // Create the scoped credential using the injected GoogleCredential
-            var scopedCredential = _googleCredential.CreateScoped(ImageAnnotatorClient.DefaultScopes);
-
-            // Create the ImageAnnotatorClient using the Builder pattern
-            var client = await new ImageAnnotatorClientBuilder
-            {
-                Credential = scopedCredential
-            }.BuildAsync(); // Use BuildAsync() for async
-
-            // Check if the file is not null and has content
-            if (file == null || file.Length == 0)
-            {
-                return new BusinessResult(Const.ERROR_EXEPTION, "Không nhận được hình ảnh", null);
-            }
-
-            // Convert the uploaded file to a byte array
-            using var memoryStream = new MemoryStream();
-            await file.CopyToAsync(memoryStream);
-
-            // Load the image from the byte array
-            var image = Google.Cloud.Vision.V1.Image.FromBytes(memoryStream.ToArray());
-
-            // Call the API to detect text
-            var response = client.DetectText(image);
-
-            // Create a List to store the unique text
-            List<string> uniqueTextList = new List<string>();
-
-            // Use a HashSet to track already added lines to avoid duplicates
-            var uniqueLines = new HashSet<string>();
-
-            // StringBuilder to concatenate detected words into sentences
-            StringBuilder sb = new StringBuilder();
-
-            // Iterate over each text annotation in the response
-            foreach (var annotation in response)
-            {
-                // Avoid adding duplicates using HashSet
-                if (!uniqueLines.Contains(annotation.Description))
-                {
-                    uniqueLines.Add(annotation.Description);
-
-                    sb.Append(annotation.Description.Trim() + " ");
-                }
-            }
-
-            var resultText = sb.ToString().Trim();
-            var lines = resultText.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-
-            foreach (var line in lines)
-            {
-                uniqueTextList.Add(line);
-            }
-
-            int numberDate = ExtractReExaminationDate(uniqueTextList);
-
-            uniqueTextList.RemoveAt(uniqueTextList.Count - 1);
-
-            Parallel.ForEach(uniqueTextList, (item, state, index) =>
-            {
-                uniqueTextList[(int)index] = item.Replace("Viện", "Viên");
-            });
-
-            var treatment = ParseDiagnosis(uniqueTextList);
-
-
-            var groupData = GetData(GroupData(uniqueTextList));
-
-
-            var hehe = new List<MedicationModel>();
-
-            var medicationList = ConvertToMedicationModels(groupData);
-            if (!medicationList.Any())
-            {
-                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Không thể quét toa thuốc này!");
-
-            }
-
-
-            var result = new
-            {
-                Treatment = ParseDiagnosis(uniqueTextList),
-                EndDate = DateTime.UtcNow.AddHours(7).AddDays(numberDate).ToString("yyyy-MM-dd"),
-                Medicines = medicationList
-            };
-
-            return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
-        }
-*/
+        
         public List<List<string>> GroupData(List<string> data)
         {
             string diagnosis = string.Empty;
@@ -637,7 +547,7 @@ namespace SE.Service.Services
                 throw new InvalidOperationException("Lịch uống thuốc không thể trống");
             }
 
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow.AddHours(7);
             var currentDate = ConvertToDateTime(medication.StartDate).Value;
 
             // Nếu ngày bắt đầu là hôm nay, điều chỉnh để bỏ qua các thời điểm đã qua
@@ -925,7 +835,7 @@ namespace SE.Service.Services
                     {
                         return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG, "Đơn thuốc không tồn tại.");
                     }
-                    var today = DateTime.Now;
+                    var today = DateTime.UtcNow.AddHours(7);
                     existingPrescription.Treatment = req.Treatment;
                     var updatePrescriptionResult = await _unitOfWork.PrescriptionRepository.UpdateAsync(existingPrescription);
                     if (updatePrescriptionResult < 1)
