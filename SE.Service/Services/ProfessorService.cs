@@ -47,7 +47,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> BookProfessorAppointment(BookProfessorAppointmentRequest req);
         Task<IBusinessResult> CreateAppointmentReport(CreateReportRequest request);
         Task<IBusinessResult> GiveProfessorFeedbackByAccount(GiveProfessorFeedbackByAccountVM request);
-        Task<IBusinessResult> GetAllRatingsByProfessorId(int professorId);
+        Task<IBusinessResult> GetAllRatingsByProfessorId(int accountId);
         Task<IBusinessResult> ConfirmMeeting(int appointmentId, List<int> participantAccountIds);
         Task<IBusinessResult> CancelMeeting(int appointmentId, int accountId);
 
@@ -363,11 +363,12 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> GetAllRatingsByProfessorId(int professorId)
+        public async Task<IBusinessResult> GetAllRatingsByProfessorId(int accountId)
         {
             try
             {
                 var ratings = new List<GetProfessorRatingVM>();
+                var professorId = _unitOfWork.ProfessorRepository.FindByCondition(p=>p.AccountId == accountId).Select(p=>p.ProfessorId).FirstOrDefault();
                 ratings = _unitOfWork.ProfessorRatingRepository
                     .FindByCondition(r => r.ProfessorId == professorId && r.Status == SD.GeneralStatus.ACTIVE)
                     .Select(r => new GetProfessorRatingVM
