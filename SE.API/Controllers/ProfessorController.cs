@@ -167,6 +167,13 @@ namespace SE.API.Controllers
         {
             var rs = await _professorScheduleService.CreateAppointmentReport(req);
             return Ok(rs);
-        }
+        }        
+        
+        [HttpPost("professor-appointment/image")]
+        public async Task<IActionResult> UploadAppointmentImage([FromForm] UploadAppointmentImageRequest req)
+        {
+            var rs = await _professorScheduleService.UploadAppointmentImage(req);
+            return Ok(rs);
+        }               
     }
 }

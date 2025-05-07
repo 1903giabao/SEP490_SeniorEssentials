@@ -17,6 +17,7 @@ namespace SE.Service.Helper
         }
 
         public const string IMAGE_FOLDER = "IMAGES";
+        public const string APPOINTMENT_FOLDER = "IMAGES/APPOINTMENT";
         public const string AUDIO_FOLDER = "AUDIOS";
         public const string VIDEO_FOLDER = "VIDEOS";
 
@@ -38,6 +39,35 @@ namespace SE.Service.Helper
                 Folder = IMAGE_FOLDER,
                 Overwrite = true,
                 UseFilename = false
+            };
+
+            var result = await _cloudinary.UploadAsync(uploadParams);
+
+            if (result.Error != null)
+            {
+                throw new Exception($"Upload failed: {result.Error.Message}");
+            }
+
+            return (result.PublicId, result.SecureUrl.ToString());
+        }        
+        
+        public static async Task<(string PublicId, string Url)> UploadAppointmentImageAsync(IFormFile imageFile, int appointmentId)
+        {
+            if (imageFile == null || imageFile.Length == 0)
+            {
+                throw new ArgumentException("Invalid file: File is empty or null.");
+            }
+
+            using var fileStream = imageFile.OpenReadStream();
+            var uniqueFileName = $"{DateTime.UtcNow.AddHours(7):yyyyMMddHHmmss}_{imageFile.FileName}";
+
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription(uniqueFileName, fileStream),
+                Folder = APPOINTMENT_FOLDER + "/" + appointmentId,
+                Overwrite = true,
+                UseFilename = false,
+                Tags = "appointment" + appointmentId
             };
 
             var result = await _cloudinary.UploadAsync(uploadParams);

@@ -60,5 +60,19 @@ namespace SE.API.Controllers
             var result = await _comboService.UpdateComboStatus(comboId,status);
             return Ok(result);
         }
+
+        [HttpPut("back/{userSubscriptionId}")]
+        public async Task<IActionResult> BackSubscription([FromRoute] int userSubscriptionId)
+        {
+            var rs = await _comboService.BackSubscription(userSubscriptionId);
+            return Ok(rs);
+        }        
+        
+        [HttpGet("one-time-subscription/{elderlyId}")]
+        public async Task<IActionResult> CheckIfUserHasOneTimeSubscription([FromRoute] int elderlyId)
+        {
+            var rs = await _comboService.CheckIfUserHasOneTimeSubscription(elderlyId);
+            return Ok(rs);
+        }
     }
 }

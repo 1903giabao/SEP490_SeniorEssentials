@@ -52,9 +52,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetAllRatingsByProfessorId(int accountId);
         Task<IBusinessResult> ConfirmMeeting(int appointmentId, List<int> participantAccountIds);
         Task<IBusinessResult> CancelMeeting(int appointmentId, int accountId);
-
+        Task<IBusinessResult> UploadAppointmentImage(UploadAppointmentImageRequest req);
         Task<IBusinessResult> GetAllAppointment();
-
     }
 
     public class ProfessorService : IProfessorService
@@ -1616,6 +1615,32 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_READ, ex.Message);
             }
         }
+
+        public async Task<IBusinessResult> UploadAppointmentImage(UploadAppointmentImageRequest req)
+        {
+            try
+            {
+                var appointment = await _unitOfWork.ProfessorAppointmentRepository.GetByIdAsync(req.AppointmentId);
+
+                if (appointment == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot find appointment");
+                }
+
+                var imageURL = ("", "");
+
+                if (req.Image != null)
+                {
+                    imageURL = await CloudinaryHelper.UploadAppointmentImageAsync(req.Image, req.AppointmentId);
+                }
+
+                return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, imageURL.Item2);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
+            }
+        }                   
     }
 
 }
