@@ -330,7 +330,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor does not exist!");
                 }
 
-                var listUserElderly = await _unitOfWork.UserServiceRepository.GetListElderlyByProfessorId(getProfessorInfor.Professor.ProfessorId);
+                var listUserElderly = await _unitOfWork.UserServiceRepository.GetListElderlyByProfessorId(getProfessorInfor.Professor.ProfessorId, SD.UserSubscriptionStatus.AVAILABLE);
 
                 var result = _mapper.Map<List<AccountElderlyDTO>>(listUserElderly);
 

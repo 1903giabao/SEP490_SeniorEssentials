@@ -152,12 +152,12 @@ namespace SE.Data.Repository
 
         }
 
-        public async Task<List<Account>> GetListElderlyByProfessorId(int professorId)
+        public async Task<List<Account>> GetListElderlyByProfessorId(int professorId, string status)
         {
             var result = await _context.UserSubscriptions
                 .Include(us => us.Professor).ThenInclude(us => us.Account)
                 .Include(us => us.Booking).ThenInclude(us => us.Elderly).ThenInclude(us => us.Account).ThenInclude(us => us.Elderly)
-                .Where(us => us.ProfessorId == professorId).Select(us => us.Booking.Elderly.Account).ToListAsync();
+                .Where(us => us.ProfessorId == professorId && us.Status.Equals(status)).Select(us => us.Booking.Elderly.Account).ToListAsync();
 
             var rs = result.DistinctBy(us => us.AccountId).ToList();
             return rs;
