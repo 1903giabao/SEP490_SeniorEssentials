@@ -26,6 +26,7 @@ using Google.Cloud.Firestore;
 using System.Text.RegularExpressions;
 using CloudinaryDotNet;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace SE.Service.Services
 {
@@ -38,12 +39,12 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetProfessorDetail(int professorId);
         Task<IBusinessResult> GetTimeSlot(int professorId, DateTime date);
         Task<IBusinessResult> GetFilteredProfessors(FilterProfessorRequest request);
-        Task<IBusinessResult> GetProfessorSchedule(int accountId, string type);
+        Task<IBusinessResult> GetProfessorSchedule(int accountId, string type, string date);
         Task<IBusinessResult> GetReportInAppointment(int appointmentId);
         Task<IBusinessResult> GetProfessorDetailOfElderly(int elderlyId);
         Task<IBusinessResult> GetProfessorDetailByAccountId(int accountId);
         Task<IBusinessResult> UpdateProfessorInfor(UpdateProfessorRequest req);
-        Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId, string type);
+        Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId, string type, string date);
         Task<IBusinessResult> GetProfessorWeeklyTimeSlots(int accountId);
         Task<IBusinessResult> GetProfessorScheduleInProfessor(int professorId);
         Task<IBusinessResult> BookProfessorAppointment(BookProfessorAppointmentRequest req);
@@ -885,21 +886,35 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> GetProfessorSchedule(int accountId, string type)
+        public async Task<IBusinessResult> GetProfessorSchedule(int accountId, string type, string date)
         {
             try
             {
+                // Validate and parse the date parameter
+                DateTime filterDate;
+                if (!DateTime.TryParseExact(date, "MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out filterDate))
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid date format. Please use MM/yyyy format.");
+                }
+
                 var getElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(accountId);
                 if (getElderly == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Account does not exist!");
                 }
+
+                // Get all appointments first
                 var appointments = await _unitOfWork.ProfessorAppointmentRepository
                     .GetByElderlyIdAsync(getElderly.Elderly.ElderlyId, type);
 
+                // Filter appointments by month/year
+                var filteredAppointments = appointments.Where(a =>
+                    a.AppointmentTime.Month == filterDate.Month &&
+                    a.AppointmentTime.Year == filterDate.Year);
+
                 var result = new List<GetProfessorScheduleOfElderly>();
 
-                foreach (var appointment in appointments)
+                foreach (var appointment in filteredAppointments)
                 {
                     var peopleInAppointment = new List<PeopleOfSchedule>();
 
@@ -909,15 +924,14 @@ namespace SE.Service.Services
                     if (professor == null)
                     {
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Professor does not exist!");
-
                     }
+
                     var professorAccount = await _unitOfWork.AccountRepository
                         .GetByIdAsync(professor.AccountId);
 
                     if (professorAccount == null)
                     {
                         return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Account of professor does not exist!");
-
                     }
 
                     // Check if there is a report (Content in ProfessorAppointment)
@@ -936,8 +950,8 @@ namespace SE.Service.Services
                         ProfessorAppointmentId = appointment.ProfessorAppointmentId,
                         ProfessorAvatar = professorAccount.Avatar,
                         IsOnline = (bool)appointment.IsOnline,
-                        IsReport = isReport,   // Set IsReport
-                        IsFeedback = isFeedback,  // Set IsFeedback
+                        IsReport = isReport,
+                        IsFeedback = isFeedback,
                         People = new List<PeopleOfSchedule>()
                     };
 
@@ -984,7 +998,6 @@ namespace SE.Service.Services
                 throw ex;
             }
         }
-
         public async Task<IBusinessResult> GetProfessorScheduleInProfessor(int professorId)
         {
             try
@@ -1242,7 +1255,7 @@ namespace SE.Service.Services
             }
         }
 
-        public async Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId, string type)
+        public async Task<IBusinessResult> GetScheduleOfElderlyByProfessorId(int professorAccountId, string type, string date = null)
         {
             try
             {
@@ -1256,8 +1269,22 @@ namespace SE.Service.Services
                 }
 
                 // Get all appointments for this professor with type filtering
-                var appointments = await _unitOfWork.ProfessorAppointmentRepository
-                    .GetByProfessorIdAsync(professor.ProfessorId, type);
+                var appointments = (await _unitOfWork.ProfessorAppointmentRepository
+                    .GetByProfessorIdAsync(professor.ProfessorId, type)).ToList();
+
+                // Apply date filter if provided
+                if (!string.IsNullOrEmpty(date))
+                {
+                    DateTime filterDate;
+                    if (!DateTime.TryParseExact(date, "MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out filterDate))
+                    {
+                        return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Invalid date format. Please use MM/yyyy format.");
+                    }
+
+                    appointments = appointments.Where(a =>
+                        a.AppointmentTime.Month == filterDate.Month &&
+                        a.AppointmentTime.Year == filterDate.Year).ToList();
+                }
 
                 var result = new List<GetScheduleOfElderlyByProfessorVM>();
 
@@ -1290,7 +1317,7 @@ namespace SE.Service.Services
                     var schedule = new GetScheduleOfElderlyByProfessorVM
                     {
                         ProfessorAppointmentId = appointment.ProfessorAppointmentId,
-                        AccountId  = elderly.AccountId,
+                        AccountId = elderly.AccountId,
                         ElderlyId = elderly.ElderlyId,
                         ElderlyName = elderlyAccount.FullName,
                         Avatar = elderlyAccount.Avatar,
@@ -1299,12 +1326,12 @@ namespace SE.Service.Services
                         Description = appointment.Description,
                         Status = appointment.Status,
                         IsOnline = (bool)appointment.IsOnline,
-                        IsReport = isReport,  // Set IsReport
-                        IsFeedback = isFeedback,  // Set IsFeedback
+                        IsReport = isReport,
+                        IsFeedback = isFeedback,
                         People = new List<PeopleOfScheduleVM>()
                     };
 
-                    // Only add people if status is NOTYET (similar to first function)
+                    // Only add people if status is NOTYET
                     if (appointment.Status == SD.ProfessorAppointmentStatus.NOTYET)
                     {
                         // Add professor

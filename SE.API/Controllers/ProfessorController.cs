@@ -94,15 +94,15 @@ namespace SE.API.Controllers
         }
 
         [HttpGet("elderly/schedules/{accountId}")]
-        public async Task<IActionResult> GetProfessorSchedule([FromRoute]int accountId, string type)
+        public async Task<IActionResult> GetProfessorSchedule([FromRoute]int accountId, string type, string date)
         {
-            var rs = await _professorScheduleService.GetProfessorSchedule(accountId,type);
+            var rs = await _professorScheduleService.GetProfessorSchedule(accountId,type,date);
             return Ok(rs);
         }
         [HttpGet("appointment/{accountId}")]
-        public async Task<IActionResult> GetScheduleOfElderlyByProfessorId(int accountId, string type)
+        public async Task<IActionResult> GetScheduleOfElderlyByProfessorId(int accountId, string type, string date)
         {
-            var rs = await _professorScheduleService.GetScheduleOfElderlyByProfessorId(accountId, type);
+            var rs = await _professorScheduleService.GetScheduleOfElderlyByProfessorId(accountId, type, date);
             return Ok(rs);
         }
 
