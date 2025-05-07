@@ -24,6 +24,8 @@ using Org.BouncyCastle.Ocsp;
 using SE.Common.Request.SE.Common.Request;
 using Google.Cloud.Firestore;
 using System.Text.RegularExpressions;
+using CloudinaryDotNet;
+using System.Diagnostics;
 
 namespace SE.Service.Services
 {
@@ -525,7 +527,24 @@ namespace SE.Service.Services
                     {
                         return new BusinessResult(Const.FAIL_UPDATE, Const.FAIL_UPDATE_MSG);
                     }
+                     if (getProfessorInfor.DeviceToken != null && getProfessorInfor.DeviceToken != "string")
+                    {
+                        var title = "Bạn đã được chọn làm bác sĩ tư vấn";
+                        var body = $"{elderly.FullName} đã chọn bạn làm bác sĩ tư vấn.";
 
+                        await _notificationService.SendNotification(getProfessorInfor.DeviceToken, title, body);
+
+                        var newNoti = new Notification
+                        {
+                            Title = title,
+                            AccountId = getProfessorInfor.AccountId,
+                            CreatedDate = DateTime.UtcNow.AddHours(7),
+                            Message = body,
+                            NotificationType = title,
+                            Status = SD.NotificationStatus.SEND
+                        };
+                        await _unitOfWork.NotificationRepository.CreateAsync(newNoti);
+                    }
                     return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
                 }
 
