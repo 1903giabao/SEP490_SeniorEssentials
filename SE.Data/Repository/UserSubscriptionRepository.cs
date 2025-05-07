@@ -94,7 +94,7 @@ namespace SE.Data.Repository
         public async Task<int> TotalElderlyUseSub()
         {
             var result = _context.UserSubscriptions
-                               .Include(us => us.Booking)
+                               .Include(us => us.Booking) 
                                .Where(us=>us.Booking.Status == "Paid")
                                .ToList();
                                var rs1= result

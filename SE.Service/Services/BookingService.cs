@@ -423,7 +423,7 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);
                 }
 
-                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG);
+                return null;
             }
             catch (Exception ex)
             {

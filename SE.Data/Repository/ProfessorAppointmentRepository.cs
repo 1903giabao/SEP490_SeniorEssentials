@@ -157,5 +157,16 @@ namespace SE.Data.Repository
                            a.ProfessorAppointmentId == professorAppointmentId)
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<List<ProfessorAppointment>> GetAllIncludeSub()
+        {
+            return await _context.ProfessorAppointments
+                                    .Include(p=>p.UserSubscription)
+                                    .ThenInclude(p=>p.Professor)
+                                    .ThenInclude(p=>p.Account)
+                                    .Include(p=>p.Elderly)
+                                    .ThenInclude(e=>e.Account)
+                                    .ToListAsync();
+        }
     }
 }
