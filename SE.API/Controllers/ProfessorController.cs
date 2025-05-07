@@ -126,6 +126,12 @@ namespace SE.API.Controllers
             var rs = await _professorScheduleService.GetProfessorDetailOfElderly(elderlyId);
             return Ok(rs);
         }
+        [HttpGet("appointment")]
+        public async Task<IActionResult> GetAllAppointment()
+        {
+            var rs = await _professorScheduleService.GetAllAppointment();
+            return Ok(rs);
+        }
 
 
         [HttpPut("cancel/{appoinmentId}/{accountId}")]
