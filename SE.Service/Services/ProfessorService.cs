@@ -53,6 +53,7 @@ namespace SE.Service.Services
         Task<IBusinessResult> ConfirmMeeting(int appointmentId, List<int> participantAccountIds);
         Task<IBusinessResult> CancelMeeting(int appointmentId, int accountId);
 
+        Task<IBusinessResult> GetAllAppointment();
 
     }
 
@@ -71,6 +72,38 @@ namespace SE.Service.Services
             _groupService = groupService;
             _firestoreDb = firestoreDb;
             _notificationService = notificationService;
+        }
+
+        public async Task<IBusinessResult> GetAllAppointment()
+        {
+            try
+            {
+                var appointments =await _unitOfWork.ProfessorAppointmentRepository.GetAllIncludeSub();
+                var rs = new List<GetAllAppointmentResponse>();
+
+                foreach (var appointment in appointments)
+                {
+                    var newRs = new GetAllAppointmentResponse();
+                    newRs.ProAvatar = appointment.UserSubscription.Professor.Account.Avatar;
+                    newRs.ProName = appointment.UserSubscription.Professor.Account.FullName;
+                    newRs.ElderlyAvatar = appointment.Elderly.Account.Avatar;
+                    newRs.ElderlyFullName = appointment.Elderly.Account.FullName;
+                    newRs.DateOfAppointment = appointment.AppointmentTime.ToString("dd-MM-yyyy");
+                    newRs.TimeOfAppointment =$"{appointment.StartTime} - {appointment.EndTime}";
+                    newRs.ReasonOfMeeting = appointment.Description;
+                    newRs.Status = appointment.Status;
+                    newRs.ProEmail = appointment.UserSubscription.Professor.Account.Email;
+                    newRs.ElderlyEmail = appointment.Elderly.Account.Email;
+                    rs.Add(newRs);
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs.OrderByDescending(a=>a.DateOfAppointment));
+
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
+            }
         }
 
         public async Task<IBusinessResult> CancelMeeting(int appointmentId, int accountId)
@@ -383,7 +416,7 @@ namespace SE.Service.Services
                     var getCreatedBy = _unitOfWork.AccountRepository.FindByCondition(a=>a.FullName == rating.CreatedBy).FirstOrDefault();
                     rs.CreatedBy = rating.CreatedBy;
                     rs.Content = rating.RatingComment;
-                    rs.DateOfAppointment = getAppointment.CreatedDate.ToString("dd-MM-yyyy");
+                    rs.DateOfAppointment = getAppointment.AppointmentTime.ToString("dd-MM-yyyy");
                     rs.Avatar = getElderly.Account.Avatar;
                     rs.TimeOfAppointment = $"{getAppointment.StartTime} - {getAppointment.EndTime}";
                     rs.Star = (int)rating.Rating;
