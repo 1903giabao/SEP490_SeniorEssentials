@@ -9,6 +9,7 @@ namespace SE.Common.Response.Professor
 {
     public class GetAllAppointmentResponse
     {
+        public int AppointmentId {  get; set; }
         public string ProAvatar {  get; set; }
         public string ProName { get; set; }
 
