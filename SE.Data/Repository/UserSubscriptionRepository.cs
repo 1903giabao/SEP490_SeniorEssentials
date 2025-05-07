@@ -91,6 +91,18 @@ namespace SE.Data.Repository
                                 .FirstOrDefaultAsync();
             return result;
         }
+        public async Task<int> TotalElderlyUseSub()
+        {
+            var result = _context.UserSubscriptions
+                               .Include(us => us.Booking)
+                               .Where(us=>us.Booking.Status == "Paid")
+                               .ToList();
+                               var rs1= result
+                               .DistinctBy(b => b.Booking.ElderlyId)
+                               .Count();
+            return rs1;
+        }
+
 
         public async Task<UserSubscription> GetProfessorByElderlyId(int elderlyId)
         {

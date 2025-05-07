@@ -555,8 +555,6 @@ namespace SE.Service.Services
                 return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
             }
         }
-
-
         public async Task<IBusinessResult> GiveProfessorFeedbackByAccount(GiveProfessorFeedbackByAccountVM request)
         {
             try

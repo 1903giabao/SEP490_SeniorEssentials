@@ -39,7 +39,7 @@ namespace SE.Service.Services
         {
             try
             {
-                var totalUsers = _unitOfWork.AccountRepository.FindByCondition(u => u.Status.Equals(SD.GeneralStatus.ACTIVE)).Count();
+                var totalUsers = _unitOfWork.AccountRepository.FindByCondition(u => u.Status.Equals(SD.GeneralStatus.ACTIVE) && u.FullName!= null).Count();
 
                 var totalDoctor = _unitOfWork.ProfessorRepository.FindByCondition(u => u.Status.Equals(SD.GeneralStatus.ACTIVE)).Count();
 
@@ -49,7 +49,7 @@ namespace SE.Service.Services
 
                 var totalElderly = _unitOfWork.ElderlyRepository.FindByCondition(u => u.Status.Equals(SD.GeneralStatus.ACTIVE)).Count();
 
-                var totalEmergency = _unitOfWork.EmergencyConfirmationRepository.FindByCondition(u => u.Status.Equals(SD.GeneralStatus.ACTIVE) && u.IsConfirm == true).Count();
+                var totalEmergency = _unitOfWork.EmergencyConfirmationRepository.FindByCondition(u => u.Status != "Đã hủy").Count();
 
                 var totalAppointment = _unitOfWork.ProfessorAppointmentRepository.FindByCondition(u => u.Status.Equals(SD.ProfessorAppointmentStatus.JOINED)).Count();
 
@@ -57,6 +57,7 @@ namespace SE.Service.Services
 
                 var totalSubscription = _unitOfWork.SubscriptionRepository.FindByCondition(u => u.Status.Equals(SD.GeneralStatus.ACTIVE)).Count();
 
+                var totalUserSubscription = await _unitOfWork.UserServiceRepository.TotalElderlyUseSub();
                 var currentDate = DateTime.UtcNow.AddHours(7);
 
                 var monthlyRevenues = _unitOfWork.BookingRepository
@@ -167,6 +168,7 @@ namespace SE.Service.Services
                     RevenueByMonth = monthlyRevenueResult,
                     MonthlyGrowth = monthlyGrowth,
                     BoughtPackages = boughtPackages,
+                    UserUseSubs = totalUserSubscription,
                 };
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, rs);

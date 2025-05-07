@@ -278,7 +278,7 @@ namespace SE.Service.Services
 
             if (roleId == 0)
             {
-                users = _unitOfWork.AccountRepository.GetAll();
+                users = _unitOfWork.AccountRepository.FindByCondition(a=>a.FullName != null).ToList();
             }
             else
             {
