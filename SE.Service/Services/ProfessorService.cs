@@ -84,6 +84,7 @@ namespace SE.Service.Services
                 foreach (var appointment in appointments)
                 {
                     var newRs = new GetAllAppointmentResponse();
+                    newRs.AppointmentId = appointment.ProfessorAppointmentId;
                     newRs.ProAvatar = appointment.UserSubscription.Professor.Account.Avatar;
                     newRs.ProName = appointment.UserSubscription.Professor.Account.FullName;
                     newRs.ElderlyAvatar = appointment.Elderly.Account.Avatar;
