@@ -428,7 +428,7 @@ namespace SE.Service.Services
                 var result = new
                 {
                     TotalRating = ratings.Count(),
-                    ListOfRating = list
+                    ListOfRating = list.OrderByDescending(p=>p.DateOfAppointment).ToList(),
                 };
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, result);

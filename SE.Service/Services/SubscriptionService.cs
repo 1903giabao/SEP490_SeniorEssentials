@@ -286,10 +286,10 @@ namespace SE.Service.Services
                 if (userSubscription.Status.Equals(SD.UserSubscriptionStatus.BOOKED))
                 {
                     userSubscription.Status = SD.UserSubscriptionStatus.ONETIME;
+                    userSubscription.ProfessorId = null;
                 }
 
                 userSubscription.NumberOfMeetingLeft++;
-                userSubscription.ProfessorId = null;
 
                 var updateRs = await _unitOfWork.UserServiceRepository.UpdateAsync(userSubscription);
 
