@@ -282,7 +282,7 @@ namespace SE.Service.Services
             }
             else
             {
-                users = _unitOfWork.AccountRepository.FindByCondition(a => a.RoleId == roleId).ToList();
+                users = _unitOfWork.AccountRepository.FindByCondition(a => a.RoleId == roleId && a.FullName != null).ToList();
             }
 
             var rs = _mapper.Map<List<UserDTO>>(users);
