@@ -23,7 +23,8 @@ namespace SE.Service.Services
         Task<IBusinessResult> GetComboById(int comboId);
         Task<IBusinessResult> UpdateComboStatus(int comboId, string status);
         Task<IBusinessResult> GetAllUserInCombo(int comboId);
-
+        Task<IBusinessResult> BackSubscription(int userSubscriptionId);
+        Task<IBusinessResult> CheckIfUserHasOneTimeSubscription(int elderlyId);
     }
 
     public class SubscriptionService : ISubscriptionService
@@ -172,6 +173,7 @@ namespace SE.Service.Services
                 var subscriptionDtos = subscriptions.Select(s => new UserInSubVM
                 {
                     SubscriptionId = (int)s.Booking.SubscriptionId,
+                    UserSubscriptionId = s.UserSubscriptionId,
                     PurchaseDate = s.Booking.BookingDate.ToString("dd-MM-yyyy"),
                     SubName = s.Booking.Subscription.Name,
                     ValidityPeriod = s.Booking.Subscription.ValidityPeriod,
@@ -267,6 +269,84 @@ namespace SE.Service.Services
             catch (Exception ex)
             {
                 return new BusinessResult(Const.FAIL_UPDATE, ex.Message);
+            }
+        }
+
+        public async Task<IBusinessResult> BackSubscription(int userSubscriptionId)
+        {
+            try
+            {
+                var userSubscription = _unitOfWork.UserServiceRepository.FindByCondition(us => (us.Status.Equals(SD.UserSubscriptionStatus.AVAILABLE) || us.Status.Equals(SD.UserSubscriptionStatus.BOOKED)) && us.UserSubscriptionId == userSubscriptionId).FirstOrDefault();
+
+                if (userSubscription == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Cannot find user subscription");
+                }
+
+                if (userSubscription.Status.Equals(SD.UserSubscriptionStatus.BOOKED))
+                {
+                    userSubscription.Status = SD.UserSubscriptionStatus.ONETIME;
+                }
+
+                userSubscription.NumberOfMeetingLeft++;
+                userSubscription.ProfessorId = null;
+
+                var updateRs = await _unitOfWork.UserServiceRepository.UpdateAsync(userSubscription);
+
+                if (updateRs > 0)
+                {
+                    return new BusinessResult(Const.SUCCESS_CREATE, Const.SUCCESS_CREATE_MSG, "Status: " + userSubscription.Status + ", NumberOfMeetingLeft: " + userSubscription.NumberOfMeetingLeft);
+                }
+
+                return new BusinessResult(Const.FAIL_CREATE, Const.FAIL_CREATE_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
+            }
+        }
+        public async Task<IBusinessResult> CheckIfUserHasOneTimeSubscription(int elderlyId)
+        {
+            try
+            {
+                // 1. Validate Elderly account
+                var accountElderly = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(elderlyId);
+                if (accountElderly == null || accountElderly.RoleId != 2)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly doesn't exist!");
+                }
+
+                // 2. Verify elderly exists
+                var elderly = _unitOfWork.ElderlyRepository
+                    .FindByCondition(p => p.ElderlyId == accountElderly.Elderly.ElderlyId)
+                    .FirstOrDefault();
+                if (elderly == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Elderly doesn't exist!");
+                }
+
+                // 3. Check valid bookings
+                var bookings = _unitOfWork.BookingRepository
+                    .FindByCondition(b => b.ElderlyId == elderly.ElderlyId && b.Status.Equals(SD.BookingStatus.PAID))
+                    .Select(b => b.BookingId)
+                    .ToList();
+                if (!bookings.Any())
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Bookings of elderly not found.");
+                }
+
+                var userSubscription = await _unitOfWork.UserServiceRepository.GetAppointmentUserSubscriptionByBookingIdAsync(bookings, SD.UserSubscriptionStatus.ONETIME);
+
+                if (userSubscription?.Booking == null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Booking details not found.");
+                }
+
+                return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG);
+            }
+            catch (Exception ex)
+            {
+                return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, ex.Message);
             }
         }
     }

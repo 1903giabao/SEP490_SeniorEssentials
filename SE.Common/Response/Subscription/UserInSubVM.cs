@@ -9,8 +9,8 @@ namespace SE.Common.Response.Subscription
 {
     public class UserInSubVM
     {
+        public int UserSubscriptionId { get; set; }
         public int SubscriptionId { get; set; }
-
         public string PurchaseDate { get; set; }
         public string SubName { get; set; }
         public int ValidityPeriod { get; set; }

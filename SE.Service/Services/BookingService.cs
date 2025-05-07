@@ -293,23 +293,26 @@ namespace SE.Service.Services
 
                 if (!string.IsNullOrEmpty(booking.Elderly.Account.DeviceToken) && booking.Elderly.Account.DeviceToken != "string")
                 {
-                    // Send notification
-                    await _notificationService.SendNotification(
-                        booking.Elderly.Account.DeviceToken,
-                        "Đăng ký gói dịch vụ thành công",
-                        $"Người hỗ trợ đã đăng ký gói dịch vụ {booking.Subscription.Name} cho tài khoản của bạn. Cảm ơn bạn đã đồng hành cùng Senior Essentials.");
-
-                    var newNotification = new Data.Models.Notification
+                    if (booking.Account.AccountId != booking.Elderly.Account.AccountId)
                     {
-                        NotificationType = "Mua Gói Dịch Vụ",
-                        AccountId = booking.Elderly.Account.AccountId,
-                        Status = SD.NotificationStatus.SEND,
-                        Title = "Đăng ký gói dịch vụ thành công",
-                        Message = $"Người hỗ trợ đã đăng ký gói dịch vụ {booking.Subscription.Name} cho tài khoản của bạn. Cảm ơn bạn đã đồng hành cùng Senior Essentials.",
-                        CreatedDate = System.DateTime.UtcNow.AddHours(7),
-                    };
+                        // Send notification
+                        await _notificationService.SendNotification(
+                            booking.Elderly.Account.DeviceToken,
+                            "Đăng ký gói dịch vụ thành công",
+                            $"Người hỗ trợ đã đăng ký gói dịch vụ {booking.Subscription.Name} cho tài khoản của bạn. Cảm ơn bạn đã đồng hành cùng Senior Essentials.");
 
-                    await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                        var newNotification = new Data.Models.Notification
+                        {
+                            NotificationType = "Mua Gói Dịch Vụ",
+                            AccountId = booking.Elderly.Account.AccountId,
+                            Status = SD.NotificationStatus.SEND,
+                            Title = "Đăng ký gói dịch vụ thành công",
+                            Message = $"Người hỗ trợ đã đăng ký gói dịch vụ {booking.Subscription.Name} cho tài khoản của bạn. Cảm ơn bạn đã đồng hành cùng Senior Essentials.",
+                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                        };
+
+                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                    }
                 }
 
                 return new BusinessResult(Const.SUCCESS_UPDATE, Const.SUCCESS_UPDATE_MSG);
