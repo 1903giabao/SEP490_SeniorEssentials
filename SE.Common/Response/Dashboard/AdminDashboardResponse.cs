@@ -18,6 +18,7 @@ namespace SE.Common.Response.Dashboard
         public int EmergencyAlerts { get; set; }
         public double Revenue { get; set; }
         public int Subscriptions { get; set; }
+        public int UserUseSubs { get; set; }
         public List<MonthlyValue> MonthlyGrowth { get; set; }
         public List<BoughtPackage> BoughtPackages { get; set; }
         public List<MonthlyValue> RevenueByMonth { get; set; }
