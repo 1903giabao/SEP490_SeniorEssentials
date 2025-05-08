@@ -129,50 +129,76 @@ namespace SE.Service.Services
         {
             try
             {
-                // Kiểm tra tài khoản người cao tuổi
+                // 1. Validate elderly account
                 var elderlyAccount = await _unitOfWork.AccountRepository.GetElderlyByAccountIDAsync(model.AccountId);
                 if (elderlyAccount == null || elderlyAccount.Elderly == null)
                 {
                     return new BusinessResult(Const.FAIL_READ, "Không thể tìm thấy người già");
                 }
 
-                // Lấy tất cả lịch trình hiện có của người cao tuổi
+                // 2. Get existing schedules and professor appointments
                 var existingSchedules = await _unitOfWork.ActivityScheduleRepository
                     .GetByElderlyIdAsync(elderlyAccount.Elderly.ElderlyId);
 
                 var startDate = model.StartDate;
 
-                // Kiểm tra trùng lịch trước khi tạo
+                // 3. Check for conflicts
                 for (int i = 0; i < model.Duration; i++)
                 {
                     var scheduleDate = startDate.AddDays(i);
+
+                    // Get professor appointments for this date
+                    var professorAppointments = await _unitOfWork.ProfessorAppointmentRepository
+                        .GetProfessorAppointmentsForDay(elderlyAccount.Elderly.ElderlyId, scheduleDate);
+
                     foreach (var schedule in model.Schedules)
                     {
-                        var newStartTime = new DateTime(scheduleDate.Year, scheduleDate.Month, scheduleDate.Day,
-                                                      schedule.StartTime.Hour, schedule.StartTime.Minute, 0);
-                        var newEndTime = new DateTime(scheduleDate.Year, scheduleDate.Month, scheduleDate.Day,
-                                                    schedule.EndTime.Hour, schedule.EndTime.Minute, 0);
+                        // Create TimeOnly ranges for comparison
+                        var newStartTime = new TimeOnly(schedule.StartTime.Hour, schedule.StartTime.Minute);
+                        var newEndTime = new TimeOnly(schedule.EndTime.Hour, schedule.EndTime.Minute);
 
-                        // Kiểm tra trùng lịch với các hoạt động hiện có
-                        bool isConflict = existingSchedules.Any(existing =>
-                            existing.StartTime < newEndTime &&
-                            existing.EndTime > newStartTime);
+                        // Create DateTime ranges for database (if needed)
+                        var newStartDateTime = new DateTime(scheduleDate.Year, scheduleDate.Month, scheduleDate.Day,
+                                                          schedule.StartTime.Hour, schedule.StartTime.Minute, 0);
+                        var newEndDateTime = new DateTime(scheduleDate.Year, scheduleDate.Month, scheduleDate.Day,
+                                                        schedule.EndTime.Hour, schedule.EndTime.Minute, 0);
 
-                        if (isConflict)
+                        // Check conflict with existing activities
+                        bool isActivityConflict = existingSchedules.Any(existing =>
+                            existing.StartTime < newEndDateTime &&
+                            existing.EndTime > newStartDateTime);
+
+                        if (isActivityConflict)
                         {
                             var conflictActivity = existingSchedules.First(existing =>
-                                existing.StartTime < newEndTime &&
-                                existing.EndTime > newStartTime).Activity;
+                                existing.StartTime < newEndDateTime &&
+                                existing.EndTime > newStartDateTime).Activity;
 
                             return new BusinessResult(Const.FAIL_CREATE,
                                 $"Lịch trình bị trùng với hoạt động '{conflictActivity.ActivityName}' " +
                                 $"({conflictActivity.ActivityId}) từ {conflictActivity.ActivitySchedules.First().StartTime:HH:mm} " +
                                 $"đến {conflictActivity.ActivitySchedules.First().EndTime:HH:mm}");
                         }
+
+                        // Check conflict with professor appointments (using TimeOnly)
+                        bool hasProfessorAppointmentConflict = professorAppointments.Any(pa =>
+                            pa.StartTime < newEndTime &&
+                            pa.EndTime > newStartTime);
+
+                        if (hasProfessorAppointmentConflict)
+                        {
+                            var conflictAppointment = professorAppointments.First(pa =>
+                                pa.StartTime < newEndTime &&
+                                pa.EndTime > newStartTime);
+
+                            return new BusinessResult(Const.FAIL_CREATE,
+                                $"Lịch trình bị trùng với cuộc hẹn bác sĩ từ {conflictAppointment.StartTime:HH:mm} " +
+                                $"đến {conflictAppointment.EndTime:HH:mm}");
+                        }
                     }
                 }
 
-                // Tạo hoạt động mới nếu không có lịch trùng
+                // 4. Create the new activity
                 var newActivity = new Activity
                 {
                     ElderlyId = elderlyAccount.Elderly.ElderlyId,
@@ -183,7 +209,7 @@ namespace SE.Service.Services
                 };
                 await _unitOfWork.ActivityRepository.CreateAsync(newActivity);
 
-                // Tạo lịch trình mới
+                // 5. Create schedules
                 for (int i = 0; i < model.Duration; i++)
                 {
                     var scheduleDate = startDate.AddDays(i);
