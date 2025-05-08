@@ -22,6 +22,7 @@ namespace SE.Data.Repository
             var result = await _context.Bookings
                 .Include(b => b.Elderly).ThenInclude(b => b.Account)
                 .Include(a => a.Subscription)
+                .Include(a => a.Account)
                 .FirstOrDefaultAsync(e => e.TransactionId == transactionId);
             return result;
         }        

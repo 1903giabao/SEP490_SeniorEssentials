@@ -293,7 +293,7 @@ namespace SE.Service.Services
 
                 if (!string.IsNullOrEmpty(booking.Elderly.Account.DeviceToken) && booking.Elderly.Account.DeviceToken != "string")
                 {
-                    if (booking.Account.AccountId != booking.Elderly.Account.AccountId)
+                    if (booking.AccountId != booking.Elderly.Account.AccountId)
                     {
                         // Send notification
                         await _notificationService.SendNotification(
