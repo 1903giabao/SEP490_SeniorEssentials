@@ -389,6 +389,27 @@ namespace SE.Service.Services
 
                         await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
                     }
+
+                    if (!string.IsNullOrEmpty(elderly.DeviceToken) && elderly.DeviceToken != "string")
+                    {
+                        // Send notification
+                        await _notificationService.SendNotification(
+                            familyMember.DeviceToken,
+                            "Báo cáo tư vấn bác sĩ",
+                            $"Bạn đã nhận được báo cáo về buổi tư vấn của {elderly.FullName} và bác sĩ.");
+
+                        var newNotification = new Data.Models.Notification
+                        {
+                            NotificationType = "Báo cáo tư vấn bác sĩ",
+                            AccountId = elderly.AccountId,
+                            Status = SD.GeneralStatus.ACTIVE,
+                            Title = "Báo cáo tư vấn bác sĩ",
+                            Message = $"Bạn đã nhận được báo cáo về buổi tư vấn của mình và bác sĩ vào ngày {getAppointment.AppointmentTime.ToString("dd-MM-yyyy")}.",
+                            CreatedDate = System.DateTime.UtcNow.AddHours(7),
+                        };
+
+                        await _unitOfWork.NotificationRepository.CreateAsync(newNotification);
+                    }
                 }
 
                 return new BusinessResult(Const.SUCCESS_READ, Const.SUCCESS_READ_MSG, "Created report succesfully!");
