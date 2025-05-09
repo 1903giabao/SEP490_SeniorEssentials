@@ -45,6 +45,15 @@ namespace SE.Data.Repository
                 .Where(s => s.Activity.ElderlyId == elderlyId &&
                            s.Status == "Active")
                 .ToListAsync();
+        }        
+        
+        public async Task<ActivitySchedule> GetByTimeAsync(int elderlyId, DateTime startTime, DateTime endTime)
+        {
+            return await _context.ActivitySchedules
+                .Include(s => s.Activity)
+                .Where(s => s.Activity.ElderlyId == elderlyId && s.StartTime < endTime &&
+                           s.EndTime > startTime)
+                .FirstOrDefaultAsync();
         }
     }
 }
