@@ -441,14 +441,9 @@ namespace SE.Service.Services
                 }
 
                 var familyMember = await _unitOfWork.AccountRepository.GetAccountAsync(familyMemberId);
-                if (familyMember == null || familyMember.RoleId != 3 || !familyMember.Status.Equals(SD.GeneralStatus.ACTIVE))
+                if (familyMember == null || (familyMember.RoleId != 3 && familyMember.RoleId != 2) || !familyMember.Status.Equals(SD.GeneralStatus.ACTIVE))
                 {
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Family Member does not exist.");
-                }
-
-                if (familyMember.FamilyMember == null)
-                {
-                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Family Member details not found.");
                 }
 
                 var bookings = await _unitOfWork.BookingRepository.GetByFamilyMemberIdAsync(familyMember.AccountId, SD.BookingStatus.PAID);
