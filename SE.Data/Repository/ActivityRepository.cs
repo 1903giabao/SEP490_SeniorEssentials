@@ -27,7 +27,7 @@ namespace SE.Data.Repository
         {
             var result = await _context.Activities.Include(a => a.ActivitySchedules).Where(a => a.ActivityId == activityId).FirstOrDefaultAsync();
             return result;
-        }
+        }        
 
     }
 }

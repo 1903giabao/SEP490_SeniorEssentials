@@ -1603,6 +1603,17 @@ namespace SE.Service.Services
                     return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, "Hết số lần gặp bác sĩ!");
                 }
 
+                var newStartTime = appointmentDate.Date.Add(startTime.ToTimeSpan());
+                var newEndTime = appointmentDate.Date.Add(endTime.ToTimeSpan());
+
+                var allActivitySchedule = await _unitOfWork.ActivityScheduleRepository.GetByTimeAsync(elderly.ElderlyId, newStartTime, newEndTime);
+
+                if (allActivitySchedule != null)
+                {
+                    return new BusinessResult(Const.FAIL_READ, Const.FAIL_READ_MSG, $"Lịch hẹn bác sĩ bị trùng với lịch trình {allActivitySchedule.Activity.ActivityName} vào ngày {allActivitySchedule.StartTime:dd/MM/yyyy}" + 
+                                                                                     $" từ {allActivitySchedule.StartTime:HH:mm} đến {allActivitySchedule.EndTime:HH:mm}");
+                }
+
                 // 9. Create new appointment
                 var professorAppointment = new ProfessorAppointment
                 {
