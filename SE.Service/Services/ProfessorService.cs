@@ -394,7 +394,7 @@ namespace SE.Service.Services
                     {
                         // Send notification
                         await _notificationService.SendNotification(
-                            familyMember.DeviceToken,
+                            elderly.DeviceToken,
                             "Báo cáo tư vấn bác sĩ",
                             $"Bạn đã nhận được báo cáo về buổi tư vấn của {elderly.FullName} và bác sĩ.");
 
