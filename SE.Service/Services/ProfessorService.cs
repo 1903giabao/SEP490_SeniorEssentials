@@ -445,6 +445,7 @@ namespace SE.Service.Services
                     rs.ReasonOfMeeting = getAppointment.Description;
                     rs.FullName = getElderly.Account.FullName;
                     rs.CreatedByAvatar = getCreatedBy.Avatar;
+                    
                     list.Add(rs);
                 }
 
@@ -867,14 +868,14 @@ namespace SE.Service.Services
                 {
                     var professor = new GetAllProfessorReponse();
                     var professorInfor = await _unitOfWork.AccountRepository.GetProfessorByAccountIDAsync(item.AccountId);
-
+                    var totalRaing = _unitOfWork.ProfessorRatingRepository.FindByCondition(p=>p.ProfessorId == professorInfor.Professor.ProfessorId).Count();
                     professor.ProfessorName = professorInfor.FullName;
                     professor.ProfessorAvatar = professorInfor.Avatar;
                     professor.ProfessorId = professorInfor.Professor.ProfessorId;
                     professor.Major = professorInfor.Professor.Knowledge;
                     professor.Rating = professorInfor.Professor == null ? 0 : (decimal)professorInfor.Professor.Rating;
-                    professor.TotalRating = 0;
-
+                    professor.TotalRating = totalRaing;
+                    professor.AccountId = professorInfor.AccountId;
                     
                     result.Add(professor);
                 }
